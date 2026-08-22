@@ -668,10 +668,10 @@ function register({ describe, test, it, assert, loadESModule }) {
       assert.strictEqual(modal.isGameSupportedForGrade('LEVER_PHYSICS', 6), true);
       assert.strictEqual(modal.isGameSupportedForGrade('COSMIC_ORBIT', 6), true);
 
-      // Grade 0 (All Grades): everything supported
-      assert.strictEqual(modal.isGameSupportedForGrade('KUKU_LINK', 0), true);
-      assert.strictEqual(modal.isGameSupportedForGrade('LEVER_PHYSICS', 0), true);
-      assert.strictEqual(modal.isGameSupportedForGrade('CATEGORY_SORT', 0), true);
+      // Grade 0 means no grade has been selected: fail closed until the user chooses one.
+      assert.strictEqual(modal.isGameSupportedForGrade('KUKU_LINK', 0), false);
+      assert.strictEqual(modal.isGameSupportedForGrade('LEVER_PHYSICS', 0), false);
+      assert.strictEqual(modal.isGameSupportedForGrade('CATEGORY_SORT', 0), false);
     });
 
     test('GB3: generatePopularGameNode dynamically binds game metadata to the selected grade', () => {
@@ -692,13 +692,16 @@ function register({ describe, test, it, assert, loadESModule }) {
       assert.strictEqual(g4Context.name, '4年 英語情景趣味配対 (Word & Scene Match)');
     });
 
-    test('GB4: All 10 popular games can initialize and start without errors', async () => {
+    test('GB4: every registered game initializes at its first supported grade', async () => {
       const gameTypes = Object.keys(GAME_GRADE_SUPPORT_MAP);
       for (const gt of gameTypes) {
         if (gt === 'KANJI_CHALLENGE') continue;
-        const node = modal.generatePopularGameNode(gt, 2, 1);
+        const supportInfo = GAME_GRADE_SUPPORT_MAP[gt];
+        const supportedGrade = supportInfo.grades[0];
+        const node = modal.generatePopularGameNode(gt, supportedGrade, 1);
+        if (gt === 'ENGLISH_CURRICULUM') node.gameData.selectedMode = 'BASIC';
         const canvas = document.createElement('canvas');
-        modal.initGameInstance(gt, node, canvas, 2, 1);
+        modal.initGameInstance(gt, node, canvas, supportedGrade, 1);
         assert.ok(modal.currentGame, `Game instance for ${gt} must be created`);
         if (modal.currentGame && typeof modal.currentGame.destroy === 'function') {
           modal.currentGame.destroy();
@@ -721,6 +724,48 @@ function register({ describe, test, it, assert, loadESModule }) {
       for (let g = 1; g <= 6; g++) {
         modal.openKanjiGradeChallenge(g);
         assert.ok(modal.currentGame, `KanjiSlashGame must be created for Grade ${g}`);
+        if (modal.currentGame?.destroy) modal.currentGame.destroy();
+      }
+    });
+
+    test('GB7: Right-side Game Card Linkage & Direct Stage Launching for all 6 subjects across all grades', () => {
+      const subjects = ['国語', '算数', '理科', '社会', '生活', '外国語・英語'];
+      const grades = [1, 2, 3, 4, 5, 6];
+
+      for (const subj of subjects) {
+        for (const gr of grades) {
+          if ((gr === 1 || gr === 2) && (subj === '理科' || subj === '社会' || subj.includes('英語'))) continue;
+          if (gr >= 3 && subj === '生活') continue;
+
+          const gType = modal.inferGameTypeBySubject({ subject: subj, grade: gr });
+          const popNode = modal.generatePopularGameNode(gType, gr, 1);
+          assert.ok(popNode, `Dynamic node must be generated for ${subj} Grade ${gr}`);
+          if (gType === 'ENGLISH_CURRICULUM') popNode.gameData.selectedMode = 'BASIC';
+
+          modal.open(popNode, 1);
+          assert.ok(modal.currentGame, `Game instance must start for ${subj} Grade ${gr} Stage 1`);
+          if (modal.currentGame?.destroy) modal.currentGame.destroy();
+
+          modal.open(popNode, 3);
+          assert.strictEqual(modal.currentLevel, 3, 'Level must be set to 3');
+          if (modal.currentGame?.destroy) modal.currentGame.destroy();
+        }
+      }
+    });
+
+    test('GB8: Grade Comprehensive Exam (学年総合大試練) launches and grades across all 1-6 grades', () => {
+      assert.ok(GAME_GRADE_SUPPORT_MAP.GRADE_EXAM, 'GRADE_EXAM must be registered in support map');
+      assert.deepStrictEqual(GAME_GRADE_SUPPORT_MAP.GRADE_EXAM.grades, [1, 2, 3, 4, 5, 6]);
+
+      for (let g = 1; g <= 6; g++) {
+        const examNode = modal.generatePopularGameNode('GRADE_EXAM', g, 1);
+        assert.ok(examNode, `Exam node must exist for grade ${g}`);
+        assert.strictEqual(examNode.gameType, 'GRADE_EXAM');
+
+        modal.openGradeExam(g);
+        assert.ok(modal.currentGame, `Exam game instance must start for Grade ${g}`);
+        assert.strictEqual(modal.currentGame.grade, g);
+        assert.ok(modal.currentGame.questions.length >= 6, `Grade ${g} exam must have at least 6 questions`);
         if (modal.currentGame?.destroy) modal.currentGame.destroy();
       }
     });

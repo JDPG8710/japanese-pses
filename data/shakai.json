@@ -13,8 +13,8 @@
       "prerequisites": [],
       "mextRef": "MEXT-SHAKAI-G3-01",
       "learningObjectives": ["方位（東西南北）の理解", "主要な地図記号（学校・市役所・警察署・消防署・寺・神社）の認識", "地域の安全を守る人々の働き"],
-      "gameType": "PREFECTURE_JIGSAW",
-      "gameData": { "mode": "MAP_SYMBOLS", "region": "LOCAL" }
+      "gameType": "SOCIAL_CURRICULUM",
+      "gameData": { "mode": "GRADE_3_SOCIAL", "topicPool": ["COMMUNITY", "MAP_SYMBOLS", "LOCAL_PRODUCTION", "FIRE_POLICE_SAFETY"], "region": "LOCAL", "sessionSize": 10, "randomization": "WITHOUT_REPLACEMENT", "contentSafety": "NO_EMOJI_OR_ANSWER_HINTS" }
     },
     {
       "id": "SHAKAI_G4_PREFECTURES_47",
@@ -26,8 +26,8 @@
       "prerequisites": ["SHAKAI_G3_MAP_SYMBOLS"],
       "mextRef": "MEXT-SHAKAI-G4-01",
       "learningObjectives": ["日本の47都道府県の名称・位置・県庁所在地・地方区分", "都道府県の特産物と地理的特色", "ライフラインと防災体制"],
-      "gameType": "PREFECTURE_JIGSAW",
-      "gameData": { "mode": "PREFECTURES", "region": "ALL_JAPAN" }
+      "gameType": "SOCIAL_CURRICULUM",
+      "gameData": { "mode": "GRADE_4_SOCIAL", "topicPool": ["PREFECTURES_47", "WATER_SUPPLY", "WASTE_TREATMENT", "DISASTER_PREVENTION"], "region": "ALL_JAPAN", "sessionSize": 10, "randomization": "WITHOUT_REPLACEMENT", "contentSafety": "NO_EMOJI_OR_ANSWER_HINTS" }
     },
     {
       "id": "SHAKAI_G5_INDUSTRY_BELT",
@@ -39,8 +39,8 @@
       "prerequisites": ["SHAKAI_G4_PREFECTURES_47"],
       "mextRef": "MEXT-SHAKAI-G5-01",
       "learningObjectives": ["日本の農業（米作り・促成栽培・抑制栽培）と食料自給率", "太平洋ベルトをはじめとする工業地帯・工業地域の特色", "日本の貿易と国土の環境保全"],
-      "gameType": "PREFECTURE_JIGSAW",
-      "gameData": { "mode": "INDUSTRY", "region": "PACIFIC_BELT" }
+      "gameType": "SOCIAL_CURRICULUM",
+      "gameData": { "mode": "GRADE_5_SOCIAL", "topicPool": ["INDUSTRY", "NATIONAL_LAND_CLIMATE", "AGRICULTURE_FISHERIES", "INFORMATION_SOCIETY"], "region": "PACIFIC_BELT", "sessionSize": 10, "randomization": "WITHOUT_REPLACEMENT", "contentSafety": "NO_EMOJI_OR_ANSWER_HINTS" }
     },
     {
       "id": "SHAKAI_G6_HISTORY_CONSTITUTION",
@@ -52,8 +52,8 @@
       "prerequisites": ["SHAKAI_G5_INDUSTRY_BELT"],
       "mextRef": "MEXT-SHAKAI-G6-01",
       "learningObjectives": ["日本の歴史の大きな流れ（縄文・弥生〜戦国・江戸〜近代・現代）", "日本国憲法の三大原則（国民主権・基本的人権の尊重・平和主義）", "三権分立（国会・内閣・裁判所）と民主政治"],
-      "gameType": "PREFECTURE_JIGSAW",
-      "gameData": { "mode": "HISTORY_CIVICS", "region": "JAPAN" }
+      "gameType": "SOCIAL_CURRICULUM",
+      "gameData": { "mode": "GRADE_6_SOCIAL", "topicPool": ["JAPANESE_HISTORY", "CONSTITUTION_POLITICS", "INTERNATIONAL_UNDERSTANDING"], "region": "JAPAN", "sessionSize": 10, "randomization": "WITHOUT_REPLACEMENT", "contentSafety": "NO_EMOJI_OR_ANSWER_HINTS" }
     }
   ]
 }

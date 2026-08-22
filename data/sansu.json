@@ -7,27 +7,27 @@
       "id": "MATH_G1_ADD_SUB",
       "subject": "算数",
       "grade": 1,
-      "name": "1年 数の合成分解・くり上がり加減",
-      "desc": "10の補数づくり（7+3, 6+4）と繰り上がり・繰り下がりの計算の基礎。",
+      "name": "1年 数・たし算ひき算・形・長さ・時刻",
+      "desc": "100までの数、たし算とひき算、数量比較、形、長さ、時計の読み方。",
       "bloomDepth": 1.0,
       "prerequisites": [],
       "mextRef": "MEXT-MATH-G1-01",
-      "learningObjectives": ["10までの数の合成・分解", "繰り上がりのあるたし算・繰り下がりのあるひき算"],
-      "gameType": "AETHER_SCALE",
-      "gameData": { "targetRatio": 50, "leftWeights": [10], "targetValue": 10, "hint": "10の半分（50%）に合わせよう！" }
+      "learningObjectives": ["100までの数と数量比較", "たし算・ひき算", "形・長さ・時刻の基礎"],
+      "gameType": "MATH_CURRICULUM",
+      "gameData": { "mode": "GRADE_1", "topicPool": ["NUMBERS_TO_100", "ADD_SUBTRACT", "QUANTITY_COMPARE", "SHAPES", "LENGTH", "CLOCK_TIME"], "stages": 40, "sessionSize": 10, "randomization": "WITHOUT_REPLACEMENT", "hint": "学年の単元に合う答えを選ぼう！" }
     },
     {
       "id": "MATH_G2_KUKU_LINK",
       "subject": "算数",
       "grade": 2,
-      "name": "2年 かけ算九九星際マッチング",
-      "desc": "2の段〜9の段の九九暗唱（算式と積の照合）と星際レーザー連線。",
+      "name": "2年 大きな数・たし算ひき算・九九・量と表",
+      "desc": "大きな数、2けたの加減、九九、長さ・かさ・時間、簡単な表やグラフ。",
       "bloomDepth": 1.3,
       "prerequisites": ["MATH_G1_ADD_SUB"],
       "mextRef": "MEXT-MATH-G2-01",
-      "learningObjectives": ["かけ算九九（1〜9の段）の完全定着", "九九の構成原理（いくつ分）の理解"],
-      "gameType": "KUKU_LINK",
-      "gameData": { "rows": 4, "cols": 4, "timeLimit": 75, "minMatches": 8 }
+      "learningObjectives": ["大きな数と2けたの加減", "かけ算九九", "長さ・容量・時間と簡単な表"],
+      "gameType": "MATH_CURRICULUM",
+      "gameData": { "mode": "GRADE_2", "topicPool": ["LARGE_NUMBERS", "TWO_DIGIT_ADD_SUBTRACT", "MULTIPLICATION_TABLES", "LENGTH_CAPACITY_TIME", "SIMPLE_TABLES"], "optionalGameTypes": ["KUKU_LINK"], "stages": 40, "sessionSize": 10, "randomization": "WITHOUT_REPLACEMENT" }
     },
     {
       "id": "MATH_G3_DIV_FRACTION",
@@ -39,8 +39,8 @@
       "prerequisites": ["MATH_G2_KUKU_LINK"],
       "mextRef": "MEXT-MATH-G3-01",
       "learningObjectives": ["わり算の意味（等分除・包含除）とあまりの処理", "単位分数の概念（1/2, 1/3, 1/4）", "重さ（g, kg, t）と円の性質"],
-      "gameType": "AETHER_SCALE",
-      "gameData": { "targetRatio": 75, "leftWeights": [30], "rightWeights": [10, 10, 10, 10], "hint": "3/4（75%）に合わせよう！" }
+      "gameType": "MATH_CURRICULUM",
+      "gameData": { "mode": "GRADE_3", "topicPool": ["MULTIPLICATION_DIVISION_REMAINDER", "FRACTION_DECIMAL_INTRO", "TIME_MEASUREMENT", "TABLES", "BAR_GRAPHS"], "stages": 40, "sessionSize": 10, "randomization": "WITHOUT_REPLACEMENT", "hint": "わり算・分数・量と図形の問題を解こう！" }
     },
     {
       "id": "MATH_G4_AREA_DECIMAL",
@@ -52,8 +52,8 @@
       "prerequisites": ["MATH_G3_DIV_FRACTION"],
       "mextRef": "MEXT-MATH-G4-01",
       "learningObjectives": ["長方形・正方形の面積公式（縦×横）", "小数のたし算・ひき算・かけ算・わり算", "概数と四捨五入の範囲"],
-      "gameType": "AETHER_SCALE",
-      "gameData": { "targetRatio": 40, "leftWeights": [20], "rightWeights": [50], "hint": "2/5（40%）に合わせよう！" }
+      "gameType": "MATH_CURRICULUM",
+      "gameData": { "mode": "GRADE_4", "topicPool": ["LARGE_NUMBERS_FOUR_OPERATIONS", "DECIMALS_FRACTIONS", "ANGLES", "AREA", "LINE_GRAPHS"], "stages": 40, "sessionSize": 10, "randomization": "WITHOUT_REPLACEMENT", "hint": "大きな数・小数分数・角・面積・折れ線グラフを学ぼう！" }
     },
     {
       "id": "MATH_G5_RATIO",
@@ -65,8 +65,8 @@
       "prerequisites": ["MATH_G4_AREA_DECIMAL"],
       "mextRef": "MEXT-MATH-G5-01",
       "learningObjectives": ["割合（百分率・歩合）の三用法", "最大公約数・最小公倍数", "直方体・立方体の体積公式"],
-      "gameType": "AETHER_SCALE",
-      "gameData": { "targetRatio": 65, "leftWeights": [65], "rightWeights": [100], "hint": "6割5分（65%）に合わせよう！" }
+      "gameType": "MATH_CURRICULUM",
+      "gameData": { "mode": "GRADE_5", "topicPool": ["DECIMAL_FRACTION_OPERATIONS", "AREA_VOLUME", "AVERAGE_UNIT_RATE", "PERCENTAGE", "REGULAR_POLYGONS_CIRCLES"], "stages": 40, "sessionSize": 10, "randomization": "WITHOUT_REPLACEMENT", "hint": "小数分数・面積体積・平均・割合・図形を学ぼう！" }
     },
     {
       "id": "MATH_G6_PROPORTION_SPEED",
@@ -78,8 +78,8 @@
       "prerequisites": ["MATH_G5_RATIO"],
       "mextRef": "MEXT-MATH-G6-01",
       "learningObjectives": ["比の意味と等しい比の性質", "速さ・道のり・時間の関係", "比例・反比例の式とグラフ", "円の面積公式"],
-      "gameType": "AETHER_SCALE",
-      "gameData": { "targetRatio": 80, "leftWeights": [80], "rightWeights": [100], "hint": "4:5の比率（80%）に合わせよう！" }
+      "gameType": "MATH_CURRICULUM",
+      "gameData": { "mode": "GRADE_6", "topicPool": ["FRACTION_MIXED_OPERATIONS", "RATIO_PROPORTION", "SPEED", "SOLID_VOLUME", "SYMMETRY", "STATISTICS_DATA_JUDGMENT"], "stages": 40, "sessionSize": 10, "randomization": "WITHOUT_REPLACEMENT", "hint": "分数・比・速さ・立体・対称・統計を学ぼう！" }
     }
   ]
 }

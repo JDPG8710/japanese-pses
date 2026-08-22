@@ -13,9 +13,12 @@
       "prerequisites": [],
       "mextRef": "MEXT-KOKUGO-G1-01",
       "learningObjectives": ["ひらがな五十音の正確な読み書き", "カタカナの識別", "助詞を含む基礎短文の音読"],
-      "gameType": "KANJI_SLASH",
+      "gameType": "KOKUGO_CURRICULUM",
       "gameData": {
         "mode": "KANA_BASICS",
+        "topicPool": ["HIRAGANA", "KATAKANA", "READ_ALOUD"],
+        "sessionSize": 10,
+        "randomization": "WITHOUT_REPLACEMENT",
         "questions": [
           { "kanji": "あさ", "correct": "朝", "options": ["朝", "夜", "昼", "夕"] },
           { "kanji": "とり", "correct": "鳥", "options": ["鳥", "魚", "犬", "猫"] },
@@ -33,9 +36,12 @@
       "prerequisites": ["KOKUGO_G1_KANA"],
       "mextRef": "MEXT-KOKUGO-G1-02",
       "learningObjectives": ["1年生配当漢字80字の筆順と音訓", "助詞（は・を・へ・が・に）の役割理解"],
-      "gameType": "KANJI_SLASH",
+      "gameType": "KOKUGO_CURRICULUM",
       "gameData": {
         "mode": "KANJI_PARTICLES",
+        "topicPool": ["GRADE1_KANJI_80", "PARTICLES_WA_WO_E", "SHORT_SENTENCES"],
+        "sessionSize": 10,
+        "randomization": "WITHOUT_REPLACEMENT",
         "questions": [
           { "kanji": "がっこう（　）いく", "correct": "へ", "options": ["へ", "は", "を", "に"] },
           { "kanji": "ごはん（　）たべる", "correct": "を", "options": ["を", "は", "へ", "が"] },
@@ -53,9 +59,12 @@
       "prerequisites": ["KOKUGO_G1_KANJI_80"],
       "mextRef": "MEXT-KOKUGO-G2-01",
       "learningObjectives": ["2年生配当漢字160字の習得", "へんやつくり等部首の構造理解", "文の主語・述語関係の把握"],
-      "gameType": "RADICAL_BUILDER",
+      "gameType": "KOKUGO_CURRICULUM",
       "gameData": {
         "mode": "RADICAL_ASSEMBLY",
+        "topicPool": ["GRADE2_KANJI_160", "RADICAL_ASSEMBLY", "SUBJECT_PREDICATE", "SHORT_READING"],
+        "sessionSize": 10,
+        "randomization": "WITHOUT_REPLACEMENT",
         "questions": [
           { "target": "清", "radicals": ["氵", "青"], "options": ["氵", "木", "青", "日"], "hint": "水（さんずい）と青で清らか" },
           { "target": "休", "radicals": ["亻", "木"], "options": ["亻", "言", "木", "口"], "hint": "人（にんべん）が木によりそって休む" },
@@ -73,9 +82,12 @@
       "prerequisites": ["KOKUGO_G2_RADICAL_160"],
       "mextRef": "MEXT-KOKUGO-G3-01",
       "learningObjectives": ["ローマ字の読み書き", "国語辞典の活用方法", "日常で使われることわざ・慣用表現の理解"],
-      "gameType": "KANJI_SLASH",
+      "gameType": "KOKUGO_CURRICULUM",
       "gameData": {
         "mode": "ROMAJI_PROVERB",
+        "topicPool": ["GRADE3_KANJI_200", "ROMAJI", "DICTIONARY_ORDER", "PROVERBS", "READING"],
+        "sessionSize": 10,
+        "randomization": "WITHOUT_REPLACEMENT",
         "questions": [
           { "kanji": "「SAKURA」の読み", "correct": "さくら", "options": ["さくら", "すみれ", "すいか", "さかな"] },
           { "kanji": "犬も歩けば", "correct": "棒に当たる", "options": ["棒に当たる", "猫に小判", "猿も木から", "井の中の蛙"] },
@@ -93,9 +105,12 @@
       "prerequisites": ["KOKUGO_G3_ROMAJI_PROVERB"],
       "mextRef": "MEXT-KOKUGO-G4-01",
       "learningObjectives": ["段落相互の関係を結ぶ接続語の使い分け", "身体部位を使った慣用句の語彙拡充", "文章の要点要約"],
-      "gameType": "KANJI_SLASH",
+      "gameType": "KOKUGO_CURRICULUM",
       "gameData": {
         "mode": "CONJUNCTIONS_IDIOMS",
+        "topicPool": ["GRADE4_KANJI_202", "CONNECTIVES", "IDIOMS", "PARAGRAPH_STRUCTURE", "SUMMARY"],
+        "sessionSize": 10,
+        "randomization": "WITHOUT_REPLACEMENT",
         "questions": [
           { "kanji": "雨が降った（　）傘をさした", "correct": "だから", "options": ["だから", "しかし", "なぜなら", "または"] },
           { "kanji": "耳を", "correct": "傾ける", "options": ["傾ける", "折る", "立てる", "結ぶ"] },
@@ -113,9 +128,12 @@
       "prerequisites": ["KOKUGO_G4_CONJUNCTIONS"],
       "mextRef": "MEXT-KOKUGO-G5-01",
       "learningObjectives": ["相手と自分の立場に応じた敬語（尊敬・謙譲・丁寧）の識別", "古典文学の音読と伝統的言語文化の理解"],
-      "gameType": "KANJI_SLASH",
+      "gameType": "KOKUGO_CURRICULUM",
       "gameData": {
         "mode": "KEIGO_CLASSICS",
+        "topicPool": ["GRADE5_KANJI_193", "HONORIFICS", "CLASSICS", "EXPLANATORY_READING"],
+        "sessionSize": 10,
+        "randomization": "WITHOUT_REPLACEMENT",
         "questions": [
           { "kanji": "先生が「言う」の尊敬語", "correct": "おっしゃる", "options": ["おっしゃる", "申す", "申し上げる", "言われる"] },
           { "kanji": "自分が「行く」の謙譲語", "correct": "参る（うかがう）", "options": ["参る（うかがう）", "いらっしゃる", "おいでになる", "行かれる"] },
@@ -133,9 +151,12 @@
       "prerequisites": ["KOKUGO_G5_KEIGO_CLASSICS"],
       "mextRef": "MEXT-KOKUGO-G6-01",
       "learningObjectives": ["文脈に応じた同音異義語の使い分け", "対義語・類義語の理解と豊かな語彙力", "根拠と主張を明確にした論理的文章構成"],
-      "gameType": "KANJI_SLASH",
+      "gameType": "KOKUGO_CURRICULUM",
       "gameData": {
         "mode": "LOGIC_ESSAY",
+        "topicPool": ["GRADE6_KANJI_191", "HOMOPHONES", "ANTONYMS", "COMPOUNDS", "LOGICAL_READING", "ESSAY_ORDER"],
+        "sessionSize": 10,
+        "randomization": "WITHOUT_REPLACEMENT",
         "questions": [
           { "kanji": "将来を「〇そう」する", "correct": "構想", "options": ["構想", "感想", "快走", "改装"] },
           { "kanji": "「絶対」の対義語", "correct": "相対", "options": ["相対", "確実", "永久", "有限"] },

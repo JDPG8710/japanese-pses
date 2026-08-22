@@ -118,11 +118,17 @@ export const SAMPLE_GRAPH_MUTATION_DIRECTIVE = {
         id: 'MATH_G5_RATIO_VISUAL',
         name: '割合の可視化：面積図・テープ図ブリッジ',
         subject: '算数',
+        subjectId: 'sansu',
         grade: 5,
         bloomDepth: 1.4,
-        gameType: 'RATIO_SCALE',
-        mechanic_overrides: {
-          slider_step_size: 5,
+        gameType: 'MATH_CURRICULUM',
+        learningObjectives: ['テープ図で比べられる量・もとにする量・割合の関係を説明する'],
+        prerequisites: ['MATH_G4_AREA_DECIMAL'],
+        gameData: {
+          mode: 'GRADE_5_RATIO_BRIDGE',
+          topicPool: ['PERCENT_BAR_MODEL', 'RATIO_TAPE_DIAGRAM', 'BASE_QUANTITY'],
+          sessionSize: 10,
+          randomization: 'WITHOUT_REPLACEMENT',
           tolerance_percentage: 4.0,
           guide_visual_grid: true
         }

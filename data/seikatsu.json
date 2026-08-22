@@ -13,9 +13,12 @@
       "prerequisites": [],
       "mextRef": "MEXT-SEIKATSU-G1-01",
       "learningObjectives": ["学校施設の場所と使い方、友達・先生への挨拶", "通学路の安全な歩行ルール", "アサガオの栽培と生命への愛着"],
-      "gameType": "CATEGORY_SORT",
+      "gameType": "LIFE_CURRICULUM",
       "gameData": {
         "mode": "SCHOOL_SAFETY_GROWTH",
+        "topicPool": ["SCHOOL_LIFE", "TRAFFIC_SAFETY", "MORNING_GLORY_GROWTH", "SEASONS", "DAILY_HABITS"],
+        "sessionSize": 10,
+        "randomization": "INDEPENDENT_CATEGORY_ITEM_SHUFFLE",
         "categories": [
           { "id": "morning", "title": "あさの じゅんび" },
           { "id": "safety", "title": "あんぜんな こうどう" }
@@ -38,9 +41,12 @@
       "prerequisites": ["SEIKATSU_G1_SCHOOL_LIFE"],
       "mextRef": "MEXT-SEIKATSU-G2-01",
       "learningObjectives": ["地域の公共施設（図書館・公民館・駅）のマナーと利用法", "ミニトマトや夏野菜の継続的な世話と収穫", "自分の成長の振り返りと周囲への感謝"],
-      "gameType": "CATEGORY_SORT",
+      "gameType": "LIFE_CURRICULUM",
       "gameData": {
         "mode": "TOWN_PLANT_CARE",
+        "topicPool": ["COMMUNITY_EXPLORATION", "PUBLIC_FACILITIES", "VEGETABLE_GROWTH", "SEASONS", "PERSONAL_GROWTH"],
+        "sessionSize": 10,
+        "randomization": "INDEPENDENT_CATEGORY_ITEM_SHUFFLE",
         "categories": [
           { "id": "library_rules", "title": "としょかんの マナー" },
           { "id": "tomato_care", "title": "ミニトマトの おせわ" }

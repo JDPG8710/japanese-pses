@@ -30,6 +30,38 @@ export let SUBJECT_METADATA = {
 export let FULL_CURRICULUM_DAG = [];
 export let graphEngineInstance = new GraphEngine();
 
+export const CURRICULUM_GAME_TYPES_BY_SUBJECT = {
+  '国語': 'KOKUGO_CURRICULUM',
+  '算数': 'MATH_CURRICULUM',
+  '理科': 'SCIENCE_CURRICULUM',
+  '社会': 'SOCIAL_CURRICULUM',
+  '生活': 'LIFE_CURRICULUM',
+  '外国語・英語': 'ENGLISH_CURRICULUM'
+};
+
+/** Validate curriculum metadata before it is allowed into the runtime graph. */
+export function validateCurriculumNodeSchema(nodes = []) {
+  const errors = [];
+  const ids = new Set();
+  for (const node of nodes) {
+    if (!node?.id) errors.push('NODE_WITHOUT_ID');
+    else if (ids.has(node.id)) errors.push(`DUPLICATE_ID:${node.id}`);
+    else ids.add(node.id);
+    if (!Number.isInteger(Number(node?.grade)) || Number(node.grade) < 1 || Number(node.grade) > 6) errors.push(`INVALID_GRADE:${node?.id}`);
+    if (!node?.subject || !node?.subjectId) errors.push(`MISSING_SUBJECT:${node?.id}`);
+    if (!Array.isArray(node?.learningObjectives) || node.learningObjectives.length === 0) errors.push(`MISSING_OBJECTIVES:${node?.id}`);
+    const expectedType = CURRICULUM_GAME_TYPES_BY_SUBJECT[node?.subject];
+    if (!expectedType || node?.gameType !== expectedType) errors.push(`ROUTE_MISMATCH:${node?.id}:${node?.gameType || 'NONE'}:${expectedType || 'UNKNOWN_SUBJECT'}`);
+    if (!node?.gameData?.mode || !Array.isArray(node?.gameData?.topicPool) || node.gameData.topicPool.length === 0) errors.push(`MISSING_TOPIC_POOL:${node?.id}`);
+  }
+  for (const node of nodes) {
+    for (const prereq of (node?.prerequisites || [])) {
+      if (!ids.has(prereq)) errors.push(`MISSING_PREREQUISITE:${node.id}:${prereq}`);
+    }
+  }
+  return { valid: errors.length === 0, errors };
+}
+
 /**
  * 統合 JSON (subjects_curriculum.json) または個別教科 JSON を動的ロードして DAG を構築
  */
@@ -49,6 +81,8 @@ export async function loadCurriculumFromJSON() {
         }
       }
       if (Array.isArray(masterJson.nodes) && masterJson.nodes.length > 0) {
+        const validation = validateCurriculumNodeSchema(masterJson.nodes);
+        if (!validation.valid) throw new Error(`课程主数据校验失败: ${validation.errors.join(', ')}`);
         FULL_CURRICULUM_DAG = masterJson.nodes;
         graphEngineInstance.buildGraph(FULL_CURRICULUM_DAG);
         console.log(`[CurriculumLoader] 総合 subjects_curriculum.json より全 ${FULL_CURRICULUM_DAG.length} 件の単元ノードをロード完了。`);
@@ -72,7 +106,7 @@ export async function loadCurriculumFromJSON() {
         const res = await fetch(filePath);
         if (res.ok) {
           const data = await res.json();
-          return data.nodes || [];
+          return (data.nodes || []).map(node => ({ ...node, subjectId: node.subjectId || data.subjectId || key }));
         }
       } catch (err) {
         console.warn(`[CurriculumLoader] ${filePath} のロードをスキップ:`, err);
@@ -84,6 +118,8 @@ export async function loadCurriculumFromJSON() {
     const aggregatedNodes = results.flat();
 
     if (aggregatedNodes.length > 0) {
+      const validation = validateCurriculumNodeSchema(aggregatedNodes);
+      if (!validation.valid) throw new Error(`分科课程数据校验失败: ${validation.errors.join(', ')}`);
       FULL_CURRICULUM_DAG = aggregatedNodes;
       graphEngineInstance.buildGraph(FULL_CURRICULUM_DAG);
       console.log(`[CurriculumLoader] 個別教科 JSON より全 ${aggregatedNodes.length} 件の単元ノードをロード完了。`);
@@ -93,12 +129,11 @@ export async function loadCurriculumFromJSON() {
     console.warn('[CurriculumLoader] fetch 失敗、ビルトインフォールバックを使用:', e);
   }
 
-  // フォールバック用基本データ
+  // Fail closed: incomplete or mismatched fallback content must never be shown
+  // as another grade or subject's curriculum.
   if (FULL_CURRICULUM_DAG.length === 0) {
-    FULL_CURRICULUM_DAG = [
-      { id: 'KOKUGO_G1_KANA', subject: '国語', grade: 1, name: '1年 ひらがな・音読', desc: 'ひらがな・カタカナの読み書き。', bloomDepth: 1.0, prerequisites: [], gameType: 'KANJI_SLASH' },
-      { id: 'MATH_G2_KUKU_LINK', subject: '算数', grade: 2, name: '2年 九九星際マッチング', desc: '九九暗唱と星際連線。', bloomDepth: 1.3, prerequisites: [], gameType: 'KUKU_LINK', gameData: { rows: 4, cols: 4, timeLimit: 75 } }
-    ];
+    console.error('[CurriculumLoader] 有効な完全课程数据がありません。安全のため空图谱を返します。');
+    FULL_CURRICULUM_DAG = [];
     graphEngineInstance.buildGraph(FULL_CURRICULUM_DAG);
   }
   return FULL_CURRICULUM_DAG;

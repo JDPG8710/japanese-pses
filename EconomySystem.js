@@ -249,6 +249,18 @@ export class EconomyManager {
   }
 
   recordStageClear(nodeId, stageNum, accuracy = 1.0) {
+    const normalizedAccuracy = Number(accuracy);
+    if (!nodeId || !Number.isFinite(normalizedAccuracy) || normalizedAccuracy <= 0) {
+      return {
+        isFirstClear: false,
+        pointsEarned: 0,
+        breakdown: null,
+        newBalance: this.starCoins,
+        rejected: true,
+        reason: 'STAGE_NOT_CLEARED',
+        unlockedOverview: evaluateDAGProgression(FULL_CURRICULUM_DAG, this.playerMastery)
+      };
+    }
     if (!this.activeUser.clearedStages) {
       this.activeUser.clearedStages = {};
     }
@@ -257,10 +269,10 @@ export class EconomyManager {
     }
     this.activeUser.clearedStages[nodeId][stageNum] = {
       clearedAt: new Date().toISOString(),
-      accuracy
+      accuracy: normalizedAccuracy
     };
     this.saveState();
-    return this.awardNodeClear(nodeId, accuracy);
+    return this.awardNodeClear(nodeId, normalizedAccuracy);
   }
 
   saveState() {

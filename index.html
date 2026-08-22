@@ -53,12 +53,6 @@
     </div>
 
     <div class="pointer-events-auto flex items-center gap-2 sm:gap-3">
-      <!-- 国語 漢字1026字 闖関モード専用ボタン -->
-      <button id="open-kanji-mode-btn" class="glass-panel px-3.5 py-1.5 rounded-full bg-red-600/30 hover:bg-red-600/50 border border-red-500/50 text-xs font-bold text-red-200 flex items-center gap-1.5 shadow-lg transition">
-        <span>🎴</span>
-        <span><ruby>漢字<rt>かんじ</rt></ruby>1026<ruby>字<rt>じ</rt></ruby> <ruby>闖関<rt>ちょうかん</rt></ruby></span>
-      </button>
-
       <!-- 連勝ステータス -->
       <div class="glass-panel px-3 py-1.5 rounded-full flex items-center gap-1.5 text-xs text-amber-300">
         <span>🔥</span>
@@ -90,8 +84,7 @@
     <button id="grade-menu-toggle" type="button" aria-expanded="false" aria-controls="grade-tabs" class="glass-panel min-h-11 px-5 py-2 rounded-2xl text-sm font-bold text-white border border-indigo-400/50 shadow-2xl flex items-center gap-2">
       <span id="grade-menu-label">学年を選ぶ</span><span aria-hidden="true">▼</span>
     </button>
-    <nav id="grade-tabs" class="hidden absolute top-full left-1/2 -translate-x-1/2 mt-2 glass-panel p-2 rounded-2xl grid grid-cols-4 gap-1.5 text-xs shadow-2xl border border-indigo-500/40 min-w-72">
-        <button data-grade="0" class="grade-tab-btn active px-3.5 py-1.5 rounded-xl bg-indigo-600 text-white font-bold transition cursor-pointer">全学年</button>
+    <nav id="grade-tabs" class="hidden absolute top-full left-1/2 -translate-x-1/2 mt-2 glass-panel p-2 rounded-2xl grid grid-cols-3 gap-1.5 text-xs shadow-2xl border border-indigo-500/40 min-w-72">
         <button data-grade="1" class="grade-tab-btn px-3.5 py-1.5 rounded-xl text-slate-400 hover:text-white transition cursor-pointer">小1</button>
         <button data-grade="2" class="grade-tab-btn px-3.5 py-1.5 rounded-xl text-slate-400 hover:text-white transition cursor-pointer">小2</button>
         <button data-grade="3" class="grade-tab-btn px-3.5 py-1.5 rounded-xl text-slate-400 hover:text-white transition cursor-pointer">小3</button>
@@ -102,11 +95,8 @@
   </div>
 
   <!-- PC端：左側 教科旋臂ナビゲーション -->
-  <aside class="hidden md:flex flex-col gap-2 absolute left-6 top-1/2 -translate-y-1/2 z-10 glass-panel p-3 rounded-2xl shadow-2xl">
+  <aside id="subject-nav" style="display:none" class="fixed left-2 right-2 top-20 md:absolute md:left-6 md:right-auto md:top-1/2 md:-translate-y-1/2 z-10 glass-panel p-3 rounded-2xl shadow-2xl flex flex-row flex-wrap md:flex-col gap-2">
     <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center mb-1">6大教科星雲</div>
-    <button data-subj="ALL" class="subj-btn px-4 py-2 rounded-xl text-xs font-semibold tracking-wider transition flex items-center gap-2 cursor-pointer">
-      <span class="w-2 h-2 rounded-full bg-slate-300"></span>全教科 (All)
-    </button>
     <button data-subj="国語" class="subj-btn px-4 py-2 rounded-xl text-xs font-semibold tracking-wider transition flex items-center gap-2 cursor-pointer">
       <span class="w-2 h-2 rounded-full bg-red-500"></span>国語 (Kokugo)
     </button>
@@ -128,7 +118,7 @@
   </aside>
 
   <!-- PC端：右側 知識点詳細カード (幅をw-96に拡大し関門グリッドを拡張・スクロールバー非表示) -->
-  <div id="pc-detail-card" class="hidden md:block absolute right-6 top-24 w-96 z-10 glass-panel p-5 rounded-3xl shadow-2xl transition-all max-h-[calc(100vh-7.5rem)] overflow-y-auto no-scrollbar">
+  <div id="pc-detail-card" class="hidden md:block invisible pointer-events-none absolute right-6 top-24 w-96 z-10 glass-panel p-5 rounded-3xl shadow-2xl transition-all max-h-[calc(100vh-7.5rem)] overflow-y-auto no-scrollbar">
     <div class="flex items-center justify-between mb-2.5">
       <div class="flex items-center gap-1.5">
         <span id="node-grade-tag" class="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">小学1年</span>
@@ -203,7 +193,7 @@
 
     <div class="flex flex-col gap-2">
       <div class="flex gap-2">
-        <button id="start-game-mobile-btn" class="flex-1 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl text-xs font-bold shadow-lg shadow-indigo-600/30 cursor-pointer">
+        <button id="start-game-mobile-btn" type="button" onclick="window.closeSheet(); window.launchGame()" class="flex-1 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl text-xs font-bold shadow-lg shadow-indigo-600/30 cursor-pointer">
           <ruby>挑戦<rt>ちょうせん</rt></ruby><ruby>開始<rt>かいし</rt></ruby> (Play)
         </button>
         <button class="px-4 py-3 bg-white/10 rounded-xl text-xs font-semibold cursor-pointer" onclick="closeSheet()">
@@ -243,6 +233,20 @@
         <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">登録済みのお子さま一覧:</div>
         <div id="user-profile-list" class="flex flex-wrap gap-2"></div>
       </div>
+    </div>
+  </div>
+
+  <!-- 教科の Play から開く、学年対応ゲームタイプ選択 -->
+  <div id="game-type-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 hidden select-none">
+    <div class="relative w-full max-w-xl bg-slate-900 border border-indigo-500/40 rounded-3xl overflow-hidden shadow-2xl">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-slate-700">
+        <div>
+          <h2 id="game-type-title" class="text-base font-bold text-white">ゲームタイプを選ぶ</h2>
+          <p class="text-xs text-slate-300 mt-1">この学年と教科に合う内容だけを表示しています。</p>
+        </div>
+        <button id="game-type-close" type="button" class="w-10 h-10 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center justify-center">✕</button>
+      </div>
+      <div id="game-type-options" class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[65vh] overflow-y-auto custom-scroll"></div>
     </div>
   </div>
 
@@ -407,8 +411,10 @@
 
     let currentNode = curriculumNodes[0] || { subject: '国語', name: '単元読込中', desc: '' };
     let sessionStartTime = 0;
-    let currentActiveGrade = 0; // 0 = 全学年, 1〜6 = 小1〜小6
-    let currentActiveSubject = null; // null = 全教科 (ALL)
+    let currentActiveGrade = 0; // 0 = 未選択, 1〜6 = 小1〜小6
+    let currentActiveSubject = null;
+    let englishModeSelection = null;
+    const selectedModeByNode = new Map();
 
     // 国語 漢字1026字 闖関モード
     const kanjiModal = document.getElementById('kanji-mode-modal');
@@ -420,7 +426,8 @@
         kanjiModal.classList.remove('hidden');
       }
     };
-    document.getElementById('open-kanji-mode-btn').onclick = window.launchKanjiMode;
+    const standaloneKanjiButton = document.getElementById('open-kanji-mode-btn');
+    if (standaloneKanjiButton) standaloneKanjiButton.onclick = window.launchKanjiMode;
     document.getElementById('kanji-modal-close').onclick = () => kanjiModal.classList.add('hidden');
 
     window.startKanjiStage = (grade) => {
@@ -432,14 +439,14 @@
     window.launchStage = (nodeId, stageNum) => {
       const node = curriculumNodes.find(n => n.id === nodeId) || currentNode;
       if (!node) return;
-      sessionStartTime = Date.now();
       window.closeSheet();
-      gameModal.open(node, stageNum);
+      requestGameStart(node, stageNum);
     };
 
     // 学年総合大試練の起動
     window.launchGradeExam = (grade = null) => {
-      const targetGrade = grade || (currentActiveGrade > 0 ? currentActiveGrade : (currentNode?.grade || 1));
+      const targetGrade = grade || currentActiveGrade;
+      if (!targetGrade) return;
       sessionStartTime = Date.now();
       window.closeSheet();
       gameModal.openGradeExam(targetGrade);
@@ -448,19 +455,6 @@
     // 学年に応じたゲームUIの同期
     function syncGameButtonsWithGrade(grade) {
       currentActiveGrade = grade;
-
-      // 1. 漢字モードボタンの表示同期
-      const kanjiBtn = document.getElementById('open-kanji-mode-btn');
-      if (kanjiBtn) {
-        if (grade > 0) {
-          kanjiBtn.title = `小学${grade}年生の配当漢字（1026字）特訓を開始`;
-        } else {
-          kanjiBtn.title = '小学1〜6年生の配当漢字（1026字）学年別選択モード';
-        }
-      }
-
-      // 2. 右側カードのゲーム開始ボタンの状態同期
-      updateNodeCard(currentNode);
     }
 
     function updateNodeCard(node) {
@@ -552,10 +546,6 @@
     // 学年・教科 選択状態管理 ＆ 右側カード・3D星図 リアルタイム連動システム
     // =========================================================================
     const SUBJ_STYLE_CONFIG = {
-      'ALL': {
-        inactive: 'bg-slate-800/80 border border-slate-700/80 hover:bg-slate-700/80 text-slate-300',
-        active: 'bg-slate-700 border-slate-400 text-white font-bold ring-2 ring-slate-300 shadow-lg scale-105'
-      },
       '国語': {
         inactive: 'bg-red-600/20 border border-red-500/40 hover:bg-red-600/40 text-red-200',
         active: 'bg-red-600 border border-red-400 text-white font-bold ring-2 ring-red-400 shadow-lg shadow-red-600/50 scale-105'
@@ -583,11 +573,11 @@
     };
 
     function updateSubjectButtonsHighlight(activeSubj) {
-      const targetSubjKey = activeSubj || 'ALL';
       document.querySelectorAll('.subj-btn').forEach((btn) => {
         const s = btn.getAttribute('data-subj');
-        const isMatch = (s === targetSubjKey) || (targetSubjKey === '英語' && s === '外国語・英語');
-        const cfg = SUBJ_STYLE_CONFIG[s] || SUBJ_STYLE_CONFIG['ALL'];
+        const isMatch = Boolean(activeSubj) && ((s === activeSubj) || (activeSubj === '英語' && s === '外国語・英語'));
+        const cfg = SUBJ_STYLE_CONFIG[s];
+        if (!cfg) return;
 
         if (isMatch) {
           btn.className = `subj-btn px-4 py-2 rounded-xl text-xs font-semibold tracking-wider transition flex items-center gap-2 cursor-pointer ${cfg.active}`;
@@ -599,7 +589,7 @@
 
     function syncCurriculumSelection(grade, subject, options = {}) {
       if (grade !== undefined && grade !== null) currentActiveGrade = Number(grade);
-      if (subject !== undefined) currentActiveSubject = (subject === 'ALL' || subject === '' || subject === null) ? null : subject;
+      if (subject !== undefined) currentActiveSubject = (subject === '' || subject === null) ? null : subject;
 
       // 1. 学年タブUIの同期
       document.querySelectorAll('.grade-tab-btn').forEach((b) => {
@@ -613,38 +603,24 @@
         }
       });
 
-      // 2. 学年に応じたサイドバー教科ボタンの無効化・表示調整
+      // 2. 学年を選ぶまで教科を表示せず、選択学年に存在する教科だけを表示する
+      const subjectNav = document.getElementById('subject-nav');
+      const gradeSelected = currentActiveGrade >= 1 && currentActiveGrade <= 6;
+      subjectNav.style.display = gradeSelected ? 'flex' : 'none';
+      const allowedSubjects = currentActiveGrade <= 2
+        ? new Set(['国語', '算数', '生活'])
+        : new Set(['国語', '算数', '理科', '社会', '外国語・英語']);
+
       document.querySelectorAll('.subj-btn').forEach((sbtn) => {
         const s = sbtn.getAttribute('data-subj');
-        if (s === 'ALL') return;
-
-        if (currentActiveGrade === 1 || currentActiveGrade === 2) {
-          if (s === '理科' || s === '社会' || s === '外国語・英語' || s === '英語') {
-            sbtn.classList.add('opacity-30', 'pointer-events-none');
-            sbtn.title = '※理科・社会・英語は小学3年生から始まります';
-            if (currentActiveSubject === s || (s === '外国語・英語' && currentActiveSubject === '英語')) {
-              currentActiveSubject = '国語';
-            }
-          } else {
-            sbtn.classList.remove('opacity-30', 'pointer-events-none');
-            sbtn.title = '';
-          }
-        } else if (currentActiveGrade >= 3) {
-          if (s === '生活') {
-            sbtn.classList.add('opacity-30', 'pointer-events-none');
-            sbtn.title = '※生活科は小学1〜2年生のみです';
-            if (currentActiveSubject === '生活') {
-              currentActiveSubject = '国語';
-            }
-          } else {
-            sbtn.classList.remove('opacity-30', 'pointer-events-none');
-            sbtn.title = '';
-          }
-        } else {
-          sbtn.classList.remove('opacity-30', 'pointer-events-none');
-          sbtn.title = '';
-        }
+        const allowed = gradeSelected && allowedSubjects.has(s);
+        sbtn.style.display = allowed ? 'flex' : 'none';
+        sbtn.disabled = !allowed;
+        sbtn.setAttribute('aria-hidden', String(!allowed));
       });
+
+      const normalizedActiveSubject = currentActiveSubject === '英語' ? '外国語・英語' : currentActiveSubject;
+      if (!gradeSelected || !allowedSubjects.has(normalizedActiveSubject)) currentActiveSubject = null;
 
       // 3. 教科ボタンの高亮状態を保持・更新
       updateSubjectButtonsHighlight(currentActiveSubject);
@@ -668,25 +644,18 @@
               return matchSubj && n.grade === currentActiveGrade;
             });
           }
-          // 見つからなければ該当教科のノード
-          if (!targetNode) {
-            targetNode = curriculumNodes.find(n =>
-              n.subject === currentActiveSubject ||
-              (currentActiveSubject.includes('英語') && n.subject.includes('英語'))
-            );
-          }
-        } else {
-          // 全教科時：学年先頭ノード
-          if (currentActiveGrade > 0) {
-            targetNode = curriculumNodes.find(n => n.grade === currentActiveGrade);
-          } else {
-            targetNode = currentNode || curriculumNodes[0];
-          }
         }
       }
 
+      const pcDetailCard = document.getElementById('pc-detail-card');
+      pcDetailCard.classList.toggle('invisible', !targetNode);
+      pcDetailCard.classList.toggle('pointer-events-none', !targetNode);
+      if (!targetNode) document.getElementById('mobile-sheet').classList.add('translate-y-full');
       if (targetNode) {
         updateNodeCard(targetNode);
+        if (window.innerWidth < 768 && options.openMobile !== false) {
+          document.getElementById('mobile-sheet').classList.remove('translate-y-full');
+        }
       }
     }
 
@@ -716,8 +685,10 @@
     document.querySelectorAll('.grade-tab-btn').forEach((btn) => {
       btn.addEventListener('click', (e) => {
         const grade = parseInt(e.currentTarget.getAttribute('data-grade'), 10);
-        syncCurriculumSelection(grade, currentActiveSubject);
-        gradeMenuLabel.textContent = grade === 0 ? '全学年' : `小学${grade}年`;
+        englishModeSelection = null;
+        selectedModeByNode.clear();
+        syncCurriculumSelection(grade, null);
+        gradeMenuLabel.textContent = `小学${grade}年`;
         closeGradeMenu();
       });
     });
@@ -884,20 +855,132 @@
     document.getElementById('open-shop-btn').onclick = () => shopModal.classList.remove('hidden');
     document.getElementById('shop-close-btn').onclick = () => shopModal.classList.add('hidden');
 
-    function launchGame() {
-      sessionStartTime = Date.now();
-      gameModal.open(currentNode);
+    const gameTypeModal = document.getElementById('game-type-modal');
+    const gameTypeTitle = document.getElementById('game-type-title');
+    const gameTypeOptions = document.getElementById('game-type-options');
+    let pendingGameLaunch = null;
+
+    const SCIENCE_MODES_BY_GRADE = {
+      3: [
+        ['MAGNET_LAB', '磁石ラボ', '極・引き合い・反発を実験'],
+        ['LIGHT_SOUND_LAB', '光と音ラボ', '反射・影・音の伝わり方'],
+        ['LIFE_CYCLE_SORT', '生き物観察', '昆虫と植物の育ち方'],
+        ['CIRCUIT_SANDBOX', '電気の入口', '回路のつながりを観察']
+      ],
+      4: [
+        ['AIR_WATER_LAB', '空気と水', '体積・圧力・温度を比べる'],
+        ['COSMIC_ORBIT', '月と星の位置', '時刻と位置関係を観察'],
+        ['MUSCLE_MODEL', '体の動き', '骨と筋肉の働きを調べる'],
+        ['CIRCUIT_SANDBOX', '直列・並列回路', 'つなぎ方と明るさを比較']
+      ],
+      5: [
+        ['ELECTROMAGNET_LAB', '電磁石ラボ', '巻数と電流を変えて比較'],
+        ['SOLUBILITY_LAB', 'ものの溶け方', '溶解と結晶を予想'],
+        ['GERMINATION_LAB', '発芽と受粉', '成長条件を組み合わせる'],
+        ['RIVER_WEATHER_LAB', '流水と天気', '変化の原因を読み取る']
+      ],
+      6: [
+        ['LEVER_PHYSICS', 'てこの実験', '力と支点からつり合いを考える'],
+        ['AQUEOUS_LAB', '水溶液ラボ', '性質と指示薬を判断'],
+        ['COMBUSTION_LAB', '燃焼ラボ', '燃える条件を検証'],
+        ['PHOTOSYNTHESIS_LAB', '植物と人体', '養分・呼吸・体の働き'],
+        ['MOON_REASONING', '月相推理', '位置関係から月の形を説明']
+      ]
+    };
+
+    function getGameTypeChoices(node) {
+      const subject = node?.subject || '';
+      if (subject === '国語') return [
+        { mode: 'MIXED_CURRICULUM', label: '学年国語ミックス', desc: '漢字・ことば・文法・読解をバランスよく出題' },
+        { mode: 'KANJI_READING', label: '漢字チャレンジ', desc: 'この学年の配当漢字だけを練習' },
+        { mode: 'RADICAL_BUILDER', gameType: 'RADICAL_BUILDER', label: '部首ビルダー', desc: 'へん・つくり・かんむりを組み立てる' },
+        { mode: 'READING_QUIZ', label: 'ことば・読解', desc: '語彙、文法、段落理解を学年別に挑戦' }
+      ];
+      if (subject === '算数') {
+        const choices = [
+          { mode: 'NUMBER_CALCULATION', label: '数と計算', desc: '学年に合う計算と文章題' },
+          { mode: 'MEASUREMENT', label: '測定・量', desc: '時刻、長さ、面積、体積、速さ' },
+          { mode: 'GEOMETRY', label: '図形チャレンジ', desc: '形、角、対称、平面と立体' },
+          { mode: 'DATA_WORD_PROBLEM', label: 'データ・活用', desc: '表やグラフ、割合、統計判断' }
+        ];
+        if (Number(node.grade) === 2) choices.splice(1, 0, { mode: 'KUKU_LINK', gameType: 'KUKU_LINK', label: '九九レーザー', desc: '式と答えをつないで九九を定着' });
+        return choices;
+      }
+      if (subject === '理科') return (SCIENCE_MODES_BY_GRADE[Number(node.grade)] || []).map(([mode, label, desc]) => ({ mode, label, desc }));
+      if (subject === '社会') return [
+        { mode: 'SOCIAL_MIXED', label: '社会ミックス', desc: '地域・地理・産業・歴史を学年別に出題' },
+        { mode: 'MAP_GAME', label: '地図チャレンジ', desc: '地図記号、都道府県、国土を学ぶ' },
+        { mode: 'SEQUENCE_GAME', label: 'くらしと歴史の順序', desc: '工程や出来事を正しく並べる' }
+      ];
+      if (subject === '生活') return [
+        { mode: 'CATEGORY_SORT', label: '生活カード分類', desc: '学校・地域・季節のカードを分類' },
+        { mode: 'OBSERVATION_SEQUENCE', label: '自然観察', desc: '植物や季節の変化を順番に並べる' },
+        { mode: 'COMMUNITY_MATCH', label: 'まち探検', desc: '公共施設と役割を組み合わせる' }
+      ];
+      if (subject.includes('英語')) return [
+        { mode: 'BASIC', label: '学年英語 BASIC', desc: '語彙・会話・文の基本' },
+        { mode: 'EIKEN3', label: '英検3級', desc: '文法、会話、短文理解' },
+        { mode: 'EIKEN2', label: '英検2級', desc: '語彙、論理、推論に挑戦' },
+        { mode: 'SHORT_READING', label: '短篇英語読解', desc: '人物・場所・理由・順序を読む' },
+        { mode: 'LONG_READING', label: '長篇英語読解', desc: '主旨・詳細・推論・指示語を読む' }
+      ];
+      return [];
     }
 
-    document.getElementById('start-game-pc-btn').addEventListener('click', launchGame);
-    document.getElementById('start-game-mobile-btn').addEventListener('click', () => {
-      window.closeSheet();
-      launchGame();
+    function startGameWithChoice(node, stageNum, choice) {
+      const selectedNode = {
+        ...node,
+        gameType: choice.gameType || node.gameType,
+        gameData: { ...(node.gameData || {}), selectedMode: choice.mode }
+      };
+      selectedModeByNode.set(node.id, choice);
+      if (node.subject?.includes('英語')) englishModeSelection = choice;
+      gameTypeModal.classList.add('hidden');
+      sessionStartTime = Date.now();
+      gameModal.open(selectedNode, stageNum);
+    }
+
+    function requestGameStart(node, stageNum = 1, { alwaysChoose = false } = {}) {
+      if (!node || !currentActiveGrade || Number(node.grade) !== Number(currentActiveGrade)) return;
+      const isEnglish = node.subject?.includes('英語');
+      const savedChoice = isEnglish ? englishModeSelection : selectedModeByNode.get(node.id);
+      if (savedChoice && (isEnglish || !alwaysChoose)) {
+        startGameWithChoice(node, stageNum, savedChoice);
+        return;
+      }
+
+      const choices = getGameTypeChoices(node);
+      if (!choices.length) return;
+      pendingGameLaunch = { node, stageNum };
+      gameTypeTitle.textContent = `小学${node.grade}年・${node.subject}：ゲームタイプを選ぶ`;
+      gameTypeOptions.innerHTML = '';
+      choices.forEach((choice) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'min-h-20 p-4 rounded-2xl bg-indigo-500/15 hover:bg-indigo-500/30 border border-indigo-400/40 text-left transition';
+        button.innerHTML = `<span class="block text-sm font-bold text-white">${choice.label}</span><span class="block mt-1 text-xs leading-relaxed text-slate-300">${choice.desc}</span>`;
+        button.addEventListener('click', () => startGameWithChoice(node, stageNum, choice));
+        gameTypeOptions.appendChild(button);
+      });
+      gameTypeModal.classList.remove('hidden');
+    }
+
+    function launchGame() {
+      requestGameStart(currentNode, 1, { alwaysChoose: true });
+    }
+    window.launchGame = launchGame;
+
+    document.getElementById('game-type-close').addEventListener('click', () => {
+      pendingGameLaunch = null;
+      gameTypeModal.classList.add('hidden');
     });
 
+    document.getElementById('start-game-pc-btn').addEventListener('click', launchGame);
+
     window.addEventListener('GAME_CLEAR_SUCCESS', (e) => {
-      const accuracy = e.detail?.accuracy || 1.0;
-      const score = e.detail?.score || 100;
+      const accuracy = e.detail?.accuracy ?? 0;
+      const score = e.detail?.score ?? 0;
+      if (e.detail?.cleared === false || !Number.isFinite(Number(accuracy)) || Number(accuracy) <= 0) return;
       const targetNodeId = e.detail?.nodeId || currentNode.id;
       const durationMs = Date.now() - sessionStartTime;
 
@@ -966,15 +1049,19 @@
 
     document.querySelectorAll('.subj-btn').forEach((btn) => {
       btn.addEventListener('click', (e) => {
-        const rawSubj = e.currentTarget.getAttribute('data-subj');
-        const subj = rawSubj === 'ALL' ? null : rawSubj;
+        if (!currentActiveGrade) return;
+        const subj = e.currentTarget.getAttribute('data-subj');
+        if (currentActiveSubject !== subj) {
+          englishModeSelection = null;
+          gameTypeModal.classList.add('hidden');
+        }
         syncCurriculumSelection(currentActiveGrade, subj);
       });
     });
 
     window.addEventListener('GALAXY_NODE_SELECTED', (e) => {
       const node = e.detail;
-      if (node) {
+      if (node && currentActiveGrade && Number(node.grade) === currentActiveGrade) {
         syncCurriculumSelection(node.grade, node.subject, { node });
         audioSynth.playPositive(node?.grade || 1, 1);
         fxSystem.spawnStarBurst(window.innerWidth / 2, window.innerHeight / 2, 18, '#fbbf24');

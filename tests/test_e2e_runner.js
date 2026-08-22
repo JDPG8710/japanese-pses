@@ -823,6 +823,9 @@ function registerSuites() {
     'test_audio_fx.js',
     'test_curriculum_dag.js',
     'test_games.js',
+    'test_curriculum_traceability.js',
+    'test_question_banks.js',
+    'test_content_safety.js',
     'test_adversarial_challenger.js'
   ];
 

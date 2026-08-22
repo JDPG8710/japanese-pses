@@ -206,7 +206,7 @@ export class ErrorInterceptor {
 
   // 派发 Bug 日志到全局 Agent 管道与控制台
   dispatchBugReport(errorPayload) {
-    console.error('[ErrorInterceptor Captured Bug]', errorPayload);
+    console.error('[ErrorInterceptor Captured Bug]', JSON.stringify(errorPayload));
     window.dispatchEvent(new CustomEvent('AGENT_BUG_CAPTURED', { detail: errorPayload }));
   }
 }

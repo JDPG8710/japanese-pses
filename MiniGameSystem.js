@@ -112,6 +112,19 @@ export const GAME_GRADE_SUPPORT_MAP = {
     subject: '生活',
     grades: [1, 2],
     disabledNotice: '※生活科は小学1〜2年生専用の教科です（3年生以降は理科・社会に分化）'
+  },
+  KOKUGO_CURRICULUM: { id: 'KOKUGO_CURRICULUM', name: '国語学年テーマ', subject: '国語', grades: [1, 2, 3, 4, 5, 6], disabledNotice: '全学年対応' },
+  MATH_CURRICULUM: { id: 'MATH_CURRICULUM', name: '算数学年テーマ', subject: '算数', grades: [1, 2, 3, 4, 5, 6], disabledNotice: '全学年対応' },
+  SCIENCE_CURRICULUM: { id: 'SCIENCE_CURRICULUM', name: '理科学年テーマ', subject: '理科', grades: [3, 4, 5, 6], disabledNotice: '理科は小学3年生から' },
+  SOCIAL_CURRICULUM: { id: 'SOCIAL_CURRICULUM', name: '社会学年テーマ', subject: '社会', grades: [3, 4, 5, 6], disabledNotice: '社会は小学3年生から' },
+  LIFE_CURRICULUM: { id: 'LIFE_CURRICULUM', name: '生活学年テーマ', subject: '生活', grades: [1, 2], disabledNotice: '生活科は小学1・2年生' },
+  ENGLISH_CURRICULUM: { id: 'ENGLISH_CURRICULUM', name: '英語レベル別テーマ', subject: '外国語・英語', grades: [3, 4, 5, 6], disabledNotice: '外国語活動は小学3年生から' },
+  GRADE_EXAM: {
+    id: 'GRADE_EXAM',
+    name: '学年総合大試練',
+    subject: '全教科総合',
+    grades: [1, 2, 3, 4, 5, 6],
+    disabledNotice: '全学年対応'
   }
 };
 
@@ -158,7 +171,7 @@ export class MiniGameModal {
           </div>
 
           <!-- ゲームステージキャンバス -->
-          <div id="game-stage" class="relative w-full h-80 sm:h-96 md:h-[420px] bg-slate-950 overflow-hidden flex items-center justify-center">
+          <div id="game-stage" class="relative w-full h-[420px] bg-slate-950 overflow-hidden flex items-center justify-center">
             <canvas id="game-canvas" class="w-full h-full touch-none"></canvas>
             <div id="game-overlay-ui" class="absolute inset-0 pointer-events-none"></div>
           </div>
@@ -202,12 +215,12 @@ export class MiniGameModal {
     if (subj === '国語') {
       const KANJI_COUNTS = { 1: 80, 2: 160, 3: 200, 4: 202, 5: 193, 6: 191 };
       const cnt = KANJI_COUNTS[node.grade] || 80;
-      return Math.min(10, Math.max(4, Math.ceil(cnt / 15)));
+      return Math.min(12, Math.max(6, Math.ceil(cnt / 12)));
     }
-    if (subj.includes('英語') || subj === '外国語・英語') return 10;
-    if (subj === '算数') return 6;
-    if (subj === '理科') return 5;
-    if (subj === '社会') return 8;
+    if (subj.includes('英語') || subj === '外国語・英語') return 25;
+    if (subj === '算数') return 20;
+    if (subj === '理科') return 15;
+    if (subj === '社会') return 10;
     if (subj === '生活') return 4;
     return 6;
   }
@@ -215,19 +228,24 @@ export class MiniGameModal {
   // 知識ノードからゲームを開始
   open(nodeInfo, stageNum = 1) {
     if (this.modal) this.modal.classList.remove('hidden');
-    this.currentLevel = stageNum;
+    this.currentLevel = Number(stageNum) || 1;
 
-    const targetNode = FULL_CURRICULUM_DAG.find(n => n.id === nodeInfo?.id) ||
-                       FULL_CURRICULUM_DAG.find(n => n.subject === nodeInfo?.subject) ||
-                       FULL_CURRICULUM_DAG[0];
+    const targetNode = (nodeInfo && typeof nodeInfo === 'object' && (nodeInfo.name || nodeInfo.id))
+      ? nodeInfo
+      : (FULL_CURRICULUM_DAG.find(n => n.id === nodeInfo?.id) ||
+         FULL_CURRICULUM_DAG.find(n => n.subject === nodeInfo?.subject) ||
+         nodeInfo ||
+         FULL_CURRICULUM_DAG[0] ||
+         { id: 'DEFAULT_NODE', name: '学習ステージ', subject: '国語', grade: 1 });
 
+    const effectiveGrade = targetNode.grade || 1;
     const gradeText = targetNode.grade ? `小学${targetNode.grade}年` : '全学年';
     const gradeBadge = document.getElementById('game-grade-badge');
     if (gradeBadge) gradeBadge.innerText = gradeText;
     const subjBadge = document.getElementById('game-subject-badge');
     if (subjBadge) subjBadge.innerText = targetNode.subject || '全般';
     const titleEl = document.getElementById('game-title');
-    if (titleEl) titleEl.innerText = `${targetNode.name || '学習ステージ'} (Stage ${stageNum})`;
+    if (titleEl) titleEl.innerText = `${targetNode.name || '学習ステージ'} (Stage ${this.currentLevel})`;
 
     const canvas = document.getElementById('game-canvas') || (typeof document !== 'undefined' && document.createElement ? document.createElement('canvas') : null);
     const container = document.getElementById('game-stage');
@@ -242,29 +260,25 @@ export class MiniGameModal {
 
     const gameType = targetNode.gameType || this.inferGameTypeBySubject(targetNode);
     if (canvas) {
-      this.initGameInstance(gameType, targetNode, canvas, targetNode.grade, stageNum);
+      this.initGameInstance(gameType, targetNode, canvas, effectiveGrade, this.currentLevel);
     }
   }
 
   inferGameTypeBySubject(node) {
     const subj = node?.subject || '';
-    if (subj === '国語') return 'KANJI_SLASH';
-    if (subj === '算数') return node?.grade === 2 ? 'KUKU_LINK' : 'AETHER_SCALE';
-    if (subj === '理科') {
-      if (node?.grade === 4) return 'COSMIC_ORBIT';
-      if (node?.grade === 5) return 'CIRCUIT_SANDBOX';
-      return 'LEVER_PHYSICS';
-    }
-    if (subj === '社会') return 'PREFECTURE_JIGSAW';
-    if (subj === '生活') return 'CATEGORY_SORT';
-    if (subj === '外国語・英語' || subj === '英語') return 'CONTEXT_MATCH';
-    return 'KANJI_SLASH';
+    if (subj === '国語') return 'KOKUGO_CURRICULUM';
+    if (subj === '算数') return 'MATH_CURRICULUM';
+    if (subj === '理科') return 'SCIENCE_CURRICULUM';
+    if (subj === '社会') return 'SOCIAL_CURRICULUM';
+    if (subj === '生活') return 'LIFE_CURRICULUM';
+    if (subj === '外国語・英語' || subj === '英語') return 'ENGLISH_CURRICULUM';
+    return null;
   }
 
   isGameSupportedForGrade(gameType, grade) {
-    if (!grade || Number(grade) === 0) return true;
     const info = GAME_GRADE_SUPPORT_MAP[gameType];
-    if (!info || !info.grades) return true;
+    if (!info || !Array.isArray(info.grades)) return false;
+    if (!grade || Number(grade) === 0) return false;
     return info.grades.includes(Number(grade));
   }
 
@@ -286,7 +300,7 @@ export class MiniGameModal {
           id: `POPULAR_KUKU_G${g}`,
           subject: '算数',
           grade: g,
-          name: g === 2 ? '2年 かけ算九九 星際マッチング' : `${g}年 わり算・計算応用 星際マッチング`,
+          name: g === 2 ? '2年 九九星際連々 (九九マッチング)' : `${g}年 わり算・計算応用 星際マッチング`,
           desc: g === 2 ? '2〜9の段の九九暗唱。式と積を2曲がり以内の星際レーザーでつなごう！' : `小学${g}年生の計算応用。式と値を星際レーザーでつなごう！`,
           bloomDepth: 1.2 + g * 0.15,
           gameType: 'KUKU_LINK',
@@ -370,15 +384,48 @@ export class MiniGameModal {
           gameType: 'CATEGORY_SORT',
           gameData: { grade: g, level: level }
         };
+      case 'KOKUGO_CURRICULUM':
+      case 'MATH_CURRICULUM':
+      case 'SCIENCE_CURRICULUM':
+      case 'SOCIAL_CURRICULUM':
+      case 'LIFE_CURRICULUM':
+      case 'ENGLISH_CURRICULUM': {
+        const subjectByType = {
+          KOKUGO_CURRICULUM: '国語', MATH_CURRICULUM: '算数', SCIENCE_CURRICULUM: '理科',
+          SOCIAL_CURRICULUM: '社会', LIFE_CURRICULUM: '生活', ENGLISH_CURRICULUM: '外国語・英語'
+        };
+        const subject = subjectByType[gameType];
+        return {
+          id: `POPULAR_${gameType}_G${g}`,
+          subject,
+          grade: g,
+          name: `${g}年 ${subject} 学年テーマチャレンジ`,
+          desc: '学年の学習テーマから10問を無作為に出題します。',
+          bloomDepth: 1 + g * 0.25,
+          gameType,
+          gameData: { grade: g, level }
+        };
+      }
+      case 'GRADE_EXAM':
+        return {
+          id: `POPULAR_EXAM_G${g}`,
+          subject: '全教科総合',
+          grade: g,
+          name: `${g}年 学年総合大試練 (実力判定テスト)`,
+          desc: `小学${g}年生の全履修教科（国・算・理・社・英・生）から横断出題！実力を試して特別スターコイン（+300pt）を獲得しよう！`,
+          bloomDepth: 2.0 + g * 0.1,
+          gameType: 'GRADE_EXAM',
+          gameData: { grade: g, isExam: true, level: level }
+        };
       default:
         return {
-          id: `POPULAR_CUSTOM_G${g}`,
-          subject: '国語',
+          id: `UNSUPPORTED_${String(gameType || 'UNKNOWN')}_G${g}`,
+          subject: '未対応',
           grade: g,
-          name: `${g}年 特訓ステージ`,
-          desc: '学年に応じた特訓ステージに挑戦しよう！',
-          bloomDepth: 1.0 + g * 0.2,
-          gameType: 'KANJI_SLASH',
+          name: '未対応のゲーム',
+          desc: '対応するゲーム形式が登録されていません。',
+          bloomDepth: 1,
+          gameType: 'UNSUPPORTED_GAME_TYPE',
           gameData: { grade: g, level: level }
         };
     }
@@ -387,7 +434,7 @@ export class MiniGameModal {
   // 特訓・人気ミニゲームから直接起動 (学年指定対応)
   openPopularGame(gameType, level = 1, requestedGrade = null) {
     if (this.modal) this.modal.classList.remove('hidden');
-    this.currentLevel = level;
+    this.currentLevel = Number(level) || 1;
 
     const supportInfo = GAME_GRADE_SUPPORT_MAP[gameType];
     let effectiveGrade = 1;
@@ -407,14 +454,14 @@ export class MiniGameModal {
       effectiveGrade = supportInfo ? supportInfo.grades[0] : 1;
     }
 
-    const matchingNode = this.generatePopularGameNode(gameType, effectiveGrade, level);
+    const matchingNode = this.generatePopularGameNode(gameType, effectiveGrade, this.currentLevel);
 
     const gradeBadge = document.getElementById('game-grade-badge');
     if (gradeBadge) gradeBadge.innerText = matchingNode.grade ? `小学${matchingNode.grade}年` : '特訓モード';
     const subjBadge = document.getElementById('game-subject-badge');
     if (subjBadge) subjBadge.innerText = matchingNode.subject;
     const titleEl = document.getElementById('game-title');
-    if (titleEl) titleEl.innerText = `【特訓】${matchingNode.name} (Stage ${level})`;
+    if (titleEl) titleEl.innerText = `【特訓】${matchingNode.name} (Stage ${this.currentLevel})`;
 
     const canvas = document.getElementById('game-canvas') || (typeof document !== 'undefined' && document.createElement ? document.createElement('canvas') : null);
     const container = document.getElementById('game-stage');
@@ -428,7 +475,37 @@ export class MiniGameModal {
     }
 
     if (canvas) {
-      this.initGameInstance(gameType, matchingNode, canvas, effectiveGrade, level);
+      this.initGameInstance(gameType, matchingNode, canvas, effectiveGrade, this.currentLevel);
+    }
+  }
+
+  // 学年総合大試練モード
+  openGradeExam(grade = 1) {
+    if (this.modal) this.modal.classList.remove('hidden');
+    this.currentLevel = 1;
+    const g = Number(grade) || 1;
+    const examNode = this.generatePopularGameNode('GRADE_EXAM', g, 1);
+
+    const gBadge = document.getElementById('game-grade-badge');
+    if (gBadge) gBadge.innerText = `小学${g}年`;
+    const sBadge = document.getElementById('game-subject-badge');
+    if (sBadge) sBadge.innerText = '全教科総合大試練';
+    const tEl = document.getElementById('game-title');
+    if (tEl) tEl.innerText = examNode.name;
+
+    const canvas = document.getElementById('game-canvas') || (typeof document !== 'undefined' && document.createElement ? document.createElement('canvas') : null);
+    const container = document.getElementById('game-stage');
+    if (canvas && container) {
+      canvas.width = container.clientWidth || 640;
+      canvas.height = container.clientHeight || 384;
+    }
+
+    if (this.currentGame) {
+      this.currentGame.destroy();
+    }
+
+    if (canvas) {
+      this.initGameInstance('GRADE_EXAM', examNode, canvas, g, 1);
     }
   }
 
@@ -467,7 +544,7 @@ export class MiniGameModal {
     }
 
     if (canvas) {
-      this.initGameInstance('KANJI_SLASH', virtualNode, canvas, grade);
+      this.initGameInstance('KANJI_SLASH', virtualNode, canvas, grade, 1);
     }
   }
 
@@ -479,70 +556,209 @@ export class MiniGameModal {
     if (hintBtn) hintBtn.classList.add('hidden');
     if (shuffleBtn) shuffleBtn.classList.add('hidden');
 
-    const onWinCallback = (stars, score) => this.onGameOver(targetNode, stars, score);
+    const onWinCallback = (stars, score, result = {}) => this.onGameOver(targetNode, stars, score, result);
     const hintEl = document.getElementById('game-hint');
     const effectiveGrade = customGrade || targetNode.grade || 1;
+    const levelNum = Number(customLevel) || 1;
+    const selectedMode = targetNode.gameData?.selectedMode || targetNode.gameData?.mode || null;
+
+    const failClosed = (message) => {
+      this.currentGame = null;
+      const overlay = document.getElementById('game-overlay-ui');
+      if (overlay) {
+        overlay.style.pointerEvents = 'auto';
+        overlay.innerHTML = `<div class="w-full h-full bg-slate-950 flex flex-col items-center justify-center p-6 text-center">
+          <h3 class="text-xl font-black text-rose-300 mb-3">このゲームは開始できません</h3>
+          <p class="text-sm text-white max-w-md">${String(message || '対応する学習ゲームが見つかりません。')}</p>
+          <button id="unsupported-close-btn" class="mt-5 min-h-14 px-6 rounded-xl bg-slate-700 text-white font-bold">もどる</button>
+        </div>`;
+        const closeButton = document.getElementById('unsupported-close-btn');
+        if (closeButton) closeButton.onclick = () => this.close();
+      }
+    };
 
     switch (gameType) {
       case 'KUKU_LINK':
+        if (selectedMode === 'MATH_CURRICULUM') {
+          this.currentGame = new MathCurriculumGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum);
+          if (hintEl) hintEl.innerText = '操作ヒント：この学年の算数テーマ10問に答えよう！';
+          break;
+        }
         if (hintBtn) hintBtn.classList.remove('hidden');
         if (shuffleBtn) shuffleBtn.classList.remove('hidden');
         this.currentGame = new KukuLinkGame(canvas, {
           rows: targetNode.gameData?.rows || 4,
           cols: targetNode.gameData?.cols || 4,
           timeLimit: targetNode.gameData?.timeLimit || 75,
-          onWin: onWinCallback
+          onWin: onWinCallback,
+          grade: effectiveGrade,
+          level: levelNum
         });
         if (hintEl) hintEl.innerText = '操作ヒント：式（例: 7×8）と積（56）を2曲がり以内の星際レーザーでつなげよう！';
         break;
 
       case 'RADICAL_BUILDER':
-        this.currentGame = new RadicalBuilderGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade);
+        this.currentGame = new RadicalBuilderGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum);
         if (hintEl) hintEl.innerText = '操作ヒント：下の部首パーツをタップして上のスロットに合体させよう！';
         break;
 
       case 'AETHER_SCALE':
       case 'RATIO_SCALE':
-        this.currentGame = new PanBalanceScaleGame(canvas, targetNode.gameData, onWinCallback);
-        if (hintEl) hintEl.innerText = targetNode.gameData?.hint || '操作ヒント：右側の皿におもりを置いて天秤を釣り合わせよう！';
+        if (effectiveGrade >= 3) {
+          this.currentGame = new MathCurriculumGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum);
+          if (hintEl) hintEl.innerText = '操作ヒント：この学年の算数テーマ10問に答えよう！';
+        } else {
+          this.currentGame = new PanBalanceScaleGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum);
+          if (hintEl) hintEl.innerText = targetNode.gameData?.hint || '操作ヒント：右側の皿におもりを置いて天秤を釣り合わせよう！';
+        }
         break;
 
       case 'COSMIC_ORBIT':
       case 'CELESTIAL_ORBIT':
-        this.currentGame = new CosmicOrbitGame(canvas, targetNode.gameData, onWinCallback);
-        if (hintEl) hintEl.innerText = '操作ヒント：月をドラッグして、目標の月相（三日月・上弦・満月など）に合わせよう！';
+        if (selectedMode === 'COSMIC_ORBIT' || selectedMode === 'CELESTIAL_ORBIT') {
+          this.currentGame = new CosmicOrbitGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum);
+          if (hintEl) hintEl.innerText = '操作ヒント：月をドラッグして、目標の月相に合わせよう！';
+        } else {
+          this.currentGame = new CurriculumQuizGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum, '理科');
+          if (hintEl) hintEl.innerText = '操作ヒント：この学年の観察・実験テーマ10問に答えよう！';
+        }
         break;
 
       case 'LEVER_PHYSICS':
-        this.currentGame = new LeverPhysicsGame(canvas, targetNode.gameData, onWinCallback);
-        if (hintEl) hintEl.innerText = '操作ヒント：右側のおもりを選んで目盛りに吊るし、てこを釣り合わせよう！';
+        if (selectedMode === 'LEVER_PHYSICS') {
+          this.currentGame = new LeverPhysicsGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum);
+          if (hintEl) hintEl.innerText = '操作ヒント：右側のおもりを選んで目盛りに吊るし、てこを釣り合わせよう！';
+        } else {
+          this.currentGame = new CurriculumQuizGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum, '理科');
+          if (hintEl) hintEl.innerText = '操作ヒント：この学年の観察・実験テーマ10問に答えよう！';
+        }
         break;
 
       case 'CIRCUIT_SANDBOX':
-      case 'SCIENCE_SANDBOX':
-        this.currentGame = new CircuitSandboxGame(canvas, targetNode.gameData, onWinCallback);
-        if (hintEl) hintEl.innerText = '操作ヒント：スイッチを閉じて回路を通電させ、豆電球を点灯させよう！';
+        if (selectedMode === 'CIRCUIT_SANDBOX') {
+          this.currentGame = new CircuitSandboxGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum);
+          if (hintEl) hintEl.innerText = '操作ヒント：スイッチを閉じて回路を通電させ、豆電球を点灯させよう！';
+        } else {
+          this.currentGame = new CurriculumQuizGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum, '理科');
+          if (hintEl) hintEl.innerText = '操作ヒント：この学年の観察・実験テーマ10問に答えよう！';
+        }
         break;
+
+      case 'SCIENCE_SANDBOX': {
+        const experiment = String(targetNode.gameData?.experiment || '');
+        if (/ELECTRIC_CIRCUIT|SERIES|PARALLEL/.test(experiment)) {
+          this.currentGame = new CircuitSandboxGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum);
+        } else {
+          this.currentGame = new CurriculumQuizGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum, '理科');
+        }
+        if (hintEl) hintEl.innerText = '操作ヒント：この学年の観察・実験テーマ10問に答えよう！';
+        break;
+      }
 
       case 'PREFECTURE_JIGSAW':
-        this.currentGame = new PrefectureJigsawGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, customLevel);
-        if (hintEl) hintEl.innerText = '操作ヒント：都道府県ピースをマップの正しい位置にはめ込もう！';
+        if (effectiveGrade === 4 || selectedMode === 'PREFECTURE_JIGSAW') {
+          this.currentGame = new PrefectureJigsawGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum);
+          if (hintEl) hintEl.innerText = '操作ヒント：都道府県ピースをマップの正しい位置にはめ込もう！';
+        } else {
+          this.currentGame = new CurriculumQuizGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum, '社会');
+          if (hintEl) hintEl.innerText = '操作ヒント：学年の社会テーマから出る10問に答えよう！';
+        }
         break;
 
+      case 'KOKUGO_CURRICULUM':
+        if (selectedMode === 'KANJI_SLASH') {
+          this.currentGame = new KanjiSlashGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum);
+        } else if (selectedMode === 'RADICAL_BUILDER') {
+          this.currentGame = new RadicalBuilderGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum);
+        } else {
+          this.currentGame = new CurriculumQuizGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum, '国語');
+        }
+        if (hintEl) hintEl.innerText = '操作ヒント：10問の国語問題に順番に答えよう！';
+        break;
+
+      case 'MATH_CURRICULUM':
+        if (selectedMode === 'KUKU_LINK' && effectiveGrade === 2) {
+          this.currentGame = new KukuLinkGame(canvas, { rows: 4, cols: 4, timeLimit: 75, onWin: onWinCallback, grade: effectiveGrade, level: levelNum });
+        } else {
+          this.currentGame = new MathCurriculumGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum);
+        }
+        if (hintEl) hintEl.innerText = '操作ヒント：学年の単元から出る10問に答えよう！';
+        break;
+
+      case 'SCIENCE_CURRICULUM':
+        if (effectiveGrade < 3) {
+          failClosed('理科は小学3年生からの学習です。');
+          break;
+        }
+        if (selectedMode === 'COSMIC_ORBIT') this.currentGame = new CosmicOrbitGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum);
+        else if (selectedMode === 'LEVER_PHYSICS' && effectiveGrade === 6) this.currentGame = new LeverPhysicsGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum);
+        else if (selectedMode === 'CIRCUIT_SANDBOX') this.currentGame = new CircuitSandboxGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum);
+        else this.currentGame = new CurriculumQuizGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum, '理科');
+        if (hintEl) hintEl.innerText = '操作ヒント：学年の観察・実験テーマから出る10問に答えよう！';
+        break;
+
+      case 'LIFE_CURRICULUM':
+        if (effectiveGrade > 2) {
+          failClosed('生活科は小学1・2年生の学習です。');
+          break;
+        }
+        if (selectedMode === 'CATEGORY_SORT') this.currentGame = new CategorySortGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum);
+        else this.currentGame = new CurriculumQuizGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum, '生活');
+        if (hintEl) hintEl.innerText = '操作ヒント：学校・町・自然・成長について10問に答えよう！';
+        break;
+
+      case 'SOCIAL_CURRICULUM':
+        if (effectiveGrade < 3) {
+          failClosed('社会は小学3年生からの学習です。');
+          break;
+        }
+        if (selectedMode === 'PREFECTURE_JIGSAW') this.currentGame = new PrefectureJigsawGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum);
+        else this.currentGame = new CurriculumQuizGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum, '社会');
+        if (hintEl) hintEl.innerText = '操作ヒント：地図・産業・歴史・政治から出る10問に答えよう！';
+        break;
+
+      case 'ENGLISH_CURRICULUM': {
+        const englishMode = targetNode.gameData?.selectedMode;
+        const allowedModes = ['BASIC', 'EIKEN3', 'EIKEN2', 'SHORT_READING', 'LONG_READING'];
+        if (!allowedModes.includes(englishMode)) {
+          failClosed('英語のチャレンジレベルを先に選んでください。');
+          break;
+        }
+        this.currentGame = new ContextMatchGame(canvas, { ...targetNode.gameData, difficulty: englishMode }, onWinCallback, effectiveGrade, levelNum);
+        if (hintEl) hintEl.innerText = '操作ヒント：選んだ英語レベルの10問に挑戦しよう！';
+        break;
+      }
+
       case 'CONTEXT_MATCH':
-        this.currentGame = new ContextMatchGame(canvas, targetNode.gameData, onWinCallback);
+        this.currentGame = new ContextMatchGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum);
         if (hintEl) hintEl.innerText = '操作ヒント：左の英語表現と右の日本語・情景カードをタップしてペアにしよう！';
         break;
 
       case 'CATEGORY_SORT':
-        this.currentGame = new CategorySortGame(canvas, targetNode.gameData, onWinCallback);
+        this.currentGame = new CategorySortGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum);
         if (hintEl) hintEl.innerText = '操作ヒント：下のアイテムをタップまたはドラッグして正しい仕分け箱に入れよう！';
         break;
 
+      case 'GRADE_EXAM':
+        this.currentGame = new GradeComprehensiveExamGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum);
+        if (hintEl) hintEl.innerText = `操作ヒント：小学${effectiveGrade}年の全教科横断テスト！問題文をよく読んで正しい答えを選ぼう！`;
+        break;
+
       case 'KANJI_SLASH':
+        if (selectedMode === 'RADICAL_BUILDER') {
+          this.currentGame = new RadicalBuilderGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum);
+          if (hintEl) hintEl.innerText = '操作ヒント：部首パーツを選んで漢字を完成させよう！';
+        } else if (selectedMode && !['KANJI_SLASH', 'KANJI_CHALLENGE'].includes(selectedMode)) {
+          this.currentGame = new CurriculumQuizGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum, '国語');
+          if (hintEl) hintEl.innerText = '操作ヒント：この学年の国語テーマ10問に答えよう！';
+        } else {
+          this.currentGame = new KanjiSlashGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum);
+          if (hintEl) hintEl.innerText = `操作ヒント：小学${effectiveGrade}年の漢字が落ちる前に正しい読みをタップまたはスワイプ斬撃！`;
+        }
+        break;
+
       default:
-        this.currentGame = new KanjiSlashGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade);
-        if (hintEl) hintEl.innerText = `操作ヒント：小学${effectiveGrade}年の漢字が落ちる前に正しい読みをタップまたはスワイプ斬撃！`;
+        failClosed(`未対応のゲーム形式です：${gameType || 'UNKNOWN'}`);
         break;
     }
 
@@ -551,28 +767,87 @@ export class MiniGameModal {
     }
   }
 
-  onGameOver(node, stars = 3, score = 100) {
-    const accuracy = Number((stars / 3).toFixed(2));
-    window.dispatchEvent(new CustomEvent('GAME_CLEAR_SUCCESS', {
-      detail: { nodeId: node.id, subject: node.subject, grade: node.grade, stars, score, accuracy }
-    }));
+  onGameOver(node, stars = 3, score = 100, result = {}) {
+    const cleared = result?.cleared ?? result?.is_success ?? (Number(stars) > 0);
+    const accuracy = Number.isFinite(Number(result?.accuracy))
+      ? Math.max(0, Math.min(1, Number(result.accuracy)))
+      : Number((Math.max(0, Number(stars) || 0) / 3).toFixed(2));
+    this.lastPlayedNode = node;
+    this.lastPlayedLevel = this.currentLevel || 1;
+
+    const maxStages = this.getMaxStagesForNode(node);
+    const isLastStage = this.lastPlayedLevel >= maxStages;
+    const stageLevel = this.lastPlayedLevel;
+
+    if (cleared && typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('GAME_CLEAR_SUCCESS', {
+        detail: { nodeId: node.id, subject: node.subject, grade: node.grade, stars, score, accuracy, level: stageLevel, isFinalStage: isLastStage, cleared: true }
+      }));
+    }
 
     const overlay = document.getElementById('game-overlay-ui');
     if (overlay) {
       overlay.style.pointerEvents = 'auto';
+
+      if (!cleared) {
+        overlay.innerHTML = `<div class="w-full h-full bg-black/90 flex flex-col items-center justify-center p-6 text-center">
+          <div class="text-4xl mb-3">🌱</div>
+          <h3 class="text-2xl font-black text-sky-300 mb-2">もう一度やってみよう！</h3>
+          <p class="text-sm text-white mb-5">正解 ${Number(result?.correctCount) || 0} / ${Number(result?.totalCount) || 10} 問</p>
+          <div class="flex gap-3 flex-wrap justify-center">
+            <button id="retry-stage-btn" class="min-h-14 px-5 rounded-xl bg-sky-500 text-slate-950 font-bold">同じステージに再挑戦</button>
+            <button id="settle-confirm-btn" class="min-h-14 px-5 rounded-xl bg-slate-600 text-white font-bold">銀河星図へ戻る</button>
+          </div>
+        </div>`;
+        const retryBtn = document.getElementById('retry-stage-btn');
+        if (retryBtn) retryBtn.onclick = () => {
+          overlay.innerHTML = '';
+          overlay.style.pointerEvents = 'none';
+          if (this.currentGame) this.currentGame.destroy();
+          this.currentGame = null;
+          this.open(this.lastPlayedNode, this.lastPlayedLevel);
+        };
+        const backBtn = document.getElementById('settle-confirm-btn');
+        if (backBtn) backBtn.onclick = () => this.close();
+        return;
+      }
+
+      const isExam = node.gameType === 'GRADE_EXAM' || node.id?.includes('EXAM');
+      const examBonusHtml = isExam ? `<div class="mb-3 px-3 py-1.5 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-bold animate-pulse">🌟 学年総合大試練クリア！特別ボーナス +300 スターコイン獲得！</div>` : '';
+
+      const nextBtnHtml = isLastStage
+        ? `<button disabled class="px-5 py-2.5 bg-gradient-to-r from-yellow-600 to-amber-500 text-white font-bold rounded-xl shadow-lg cursor-default opacity-90">🏆 全${maxStages}ステージ完全制覇！</button>`
+        : `<button id="next-stage-btn" class="px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-bold rounded-xl shadow-lg transition cursor-pointer">🚀 次のステージへ挑戦！</button>`;
+
       overlay.innerHTML = `
         <div class="w-full h-full bg-black/90 flex flex-col items-center justify-center p-6 text-center animate-fade-in">
-          <div class="text-4xl mb-2">${'⭐'.repeat(stars)}${'☆'.repeat(3 - stars)}</div>
-          <h3 class="text-2xl font-black text-amber-400 mb-1">ステージクリア！単元マスター！</h3>
-          <p class="text-sm font-semibold text-white mb-1">[${node.name}]</p>
+          <div class="text-4xl mb-2">${isLastStage ? '🏆🏆🏆' : '⭐'.repeat(stars) + '☆'.repeat(3 - stars)}</div>
+          <h3 class="text-2xl font-black text-amber-400 mb-1">${isLastStage ? '🎉 全ステージ完全制覇！おめでとう！ 🎉' : (isExam ? '🎓 学年総合大試練 合格マスター！' : 'ステージクリア！')}</h3>
+          <p class="text-sm font-semibold text-white mb-1">[${node.name}] — Stage ${stageLevel} / ${maxStages}</p>
           <p class="text-xs text-slate-400 mb-4 max-w-md">${node.desc || ''}</p>
-          <div class="flex gap-3">
-            <button id="settle-confirm-btn" class="px-6 py-2.5 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-bold rounded-xl shadow-lg transition cursor-pointer">銀河星図へ戻る</button>
+          ${examBonusHtml}
+          <div class="flex gap-3 flex-wrap justify-center">
+            ${nextBtnHtml}
+            <button id="settle-confirm-btn" class="px-5 py-2.5 bg-gradient-to-r from-slate-600 to-slate-500 hover:from-slate-500 hover:to-slate-400 text-white font-bold rounded-xl shadow-lg transition cursor-pointer">🏠 銀河星図へ戻る</button>
           </div>
         </div>
       `;
       const confirmBtn = document.getElementById('settle-confirm-btn');
       if (confirmBtn) confirmBtn.onclick = () => this.close();
+
+      const nextBtn = document.getElementById('next-stage-btn');
+      if (nextBtn) {
+        nextBtn.onclick = () => {
+          const nextLevel = this.lastPlayedLevel + 1;
+          overlay.innerHTML = '';
+          overlay.style.pointerEvents = 'none';
+          if (this.currentGame) {
+            this.currentGame.destroy();
+            this.currentGame = null;
+          }
+          this.open(this.lastPlayedNode, nextLevel);
+        };
+      }
     }
   }
 
@@ -686,7 +961,7 @@ export class KanjiSlashGame {
       if (tEl) tEl.innerText = `⏱ ${this.timeLeft}s`;
       if (this.timeLeft <= 0) {
         this.destroy();
-        this.onWin(2, this.score);
+        this.onWin(0, this.score, { cleared: false, accuracy: 0, correctCount: this.qIndex, totalCount: this.questions.length });
       }
     }, 1000);
 
@@ -1111,6 +1386,394 @@ export class RadicalBuilderGame {
   destroy() {
     this.running = false;
     this.canvas.removeEventListener('pointerdown', this.boundPointer);
+  }
+}
+
+// =========================================================================
+// 学年・教科別 10 問カリキュラムセッション
+// =========================================================================
+function shuffleCopy(items = []) {
+  const result = [...items];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
+
+function curriculumQuestion(prompt, correct, distractors, mode = 'ALL', explanation = '') {
+  return { prompt, correct: String(correct), distractors: distractors.map(String), mode, explanation };
+}
+
+function getFallbackCurriculumBank(subject, grade) {
+  const g = Math.max(1, Math.min(6, Number(grade) || 1));
+  const q = curriculumQuestion;
+  if (subject === '生活') {
+    return g === 1 ? [
+      q('横断歩道を渡る前にすることは？', '左右をよく見る', ['すぐ走り出す', '目を閉じる', '後ろだけを見る'], 'SAFETY'),
+      q('学校で会った先生への朝のあいさつは？', 'おはようございます', ['いただきます', 'ただいま', 'おやすみなさい'], 'SCHOOL'),
+      q('アサガオの種をまいた後に必要な世話は？', '土が乾いたら水をやる', ['毎日掘り返す', '暗い箱に入れる', '葉を全部取る'], 'NATURE'),
+      q('教室で友達が困っているときは？', '声をかけて助ける', ['知らないふりをする', '大声で笑う', '物を隠す'], 'SCHOOL'),
+      q('雨の日の通学で安全な行動は？', '前を見てゆっくり歩く', ['傘で遊びながら走る', '車道を歩く', '水たまりへ飛び込む'], 'SAFETY'),
+      q('春に見つけやすい自然の変化は？', '花が咲き始める', ['雪が毎日積もる', '木の葉が全部落ちる', '日が最も短くなる'], 'SEASON'),
+      q('使ったはさみを片づける場所は？', '決められた道具箱', ['床の上', '机の端', '通路の中央'], 'SCHOOL'),
+      q('給食の前にすることは？', '手を洗う', ['外を走る', '机に靴を置く', '帽子を投げる'], 'HEALTH'),
+      q('生き物を観察するときに大切なことは？', 'やさしく扱って元の場所へ戻す', ['強くつかむ', '持ち帰って放置する', '巣を壊す'], 'NATURE'),
+      q('家族に手伝ってもらったときの言葉は？', 'ありがとう', ['知らない', 'いやだ', 'あとで'], 'GROWTH')
+    ] : [
+      q('図書館で本を読むときのマナーは？', '静かな声で読む', ['大声で話す', '本を投げる', '走り回る'], 'COMMUNITY'),
+      q('借りた本を読み終えたらどうする？', '期限までに返す', ['家の外へ置く', 'ページを切る', '友達に隠す'], 'COMMUNITY'),
+      q('ミニトマトの土が乾いていたら？', '根元へ水をやる', ['実を全部取る', '茎を折る', '土を捨てる'], 'PLANT'),
+      q('町探検で道路を歩く場所は？', '歩道の内側', ['車道の中央', '線路の上', '駐車場の出口'], 'SAFETY'),
+      q('駅で電車を待つときは？', '黄色い線の内側で待つ', ['線路をのぞき込む', 'ホームを走る', '扉を押さえる'], 'COMMUNITY'),
+      q('野菜の成長を比べる方法は？', '日付と様子を記録する', ['一度だけ見る', '名前を変える', '土を毎日替える'], 'PLANT'),
+      q('地域のお店で質問するときは？', 'あいさつしてから尋ねる', ['商品を勝手に開ける', '大声で命令する', '返事を聞かず帰る'], 'COMMUNITY'),
+      q('自分の成長を振り返る資料は？', '写真やできるようになったこと', ['知らない人の荷物', '空の箱だけ', '道路標識だけ'], 'GROWTH'),
+      q('冬の生き物の様子を調べるときは？', '安全な場所で静かに観察する', ['巣を壊す', '池へ入る', '枝を全部折る'], 'SEASON'),
+      q('家の仕事を分担するときに大切なのは？', 'できる仕事を相談する', ['全部人に任せる', '約束を忘れる', '道具を出したままにする'], 'GROWTH')
+    ];
+  }
+
+  if (subject === '理科') {
+    const banks = {
+      3: [
+        q('磁石の異なる極を近づけると？', '引き合う', ['しりぞけ合う', '光り出す', '溶け出す'], 'MAGNET'), q('磁石の同じ極を近づけると？', 'しりぞけ合う', ['引き合う', '重くなる', '温かくなる'], 'MAGNET'),
+        q('日光は鏡でどのように進む？', '反射して向きが変わる', ['鏡を通り抜けるだけ', '必ず消える', '音に変わる'], 'LIGHT'), q('虫眼鏡で日光を集めると明るさは？', '集めた所が明るくなる', ['全体が暗くなる', '色がなくなる', '風が起こる'], 'LIGHT'),
+        q('モンシロチョウの育つ順序は？', '卵・幼虫・さなぎ・成虫', ['卵・成虫・幼虫・さなぎ', '幼虫・卵・成虫・さなぎ', 'さなぎ・卵・幼虫・成虫'], 'LIFE'), q('植物の根の主なはたらきは？', '水を吸い上げる', ['光を出す', '音を作る', '種を飛ばす'], 'PLANT'),
+        q('乾電池と豆電球が光る回路は？', '一つの輪につながった回路', ['途中が切れた回路', '導線が一本だけの回路', '電池がない回路'], 'ELECTRIC'), q('電気を通しやすい物は？', 'アルミニウムはく', ['乾いた木', '消しゴム', 'ガラス'], 'ELECTRIC'),
+        q('音が出ている物に触れると？', '細かくふるえている', ['必ず冷たい', '動かない', '軽くなる'], 'SOUND'), q('風の強さを比べる方法は？', '物の動き方をそろえて比べる', ['色だけを見る', '場所を毎回変える', '時間を記録しない'], 'WIND')
+      ],
+      4: [
+        q('閉じ込めた空気を押すと？', '体積が小さくなる', ['体積が必ず増える', '重さがなくなる', '水に変わる'], 'AIR_WATER'), q('閉じ込めた水を押したときは？', '体積はほとんど変わらない', ['半分になる', '空気になる', '必ず凍る'], 'AIR_WATER'),
+        q('金属を温めると体積は？', '少し大きくなる', ['必ず半分になる', '変化せず消える', '水になる'], 'TEMPERATURE'), q('水が沸騰すると出る泡の中身は？', '水蒸気', ['空気だけ', '酸素だけ', '氷の粒'], 'WATER'),
+        q('月や星は時間がたつとおおむねどちらへ動く？', '東から西へ', ['西から東へだけ', '北から南へだけ', '動かない'], 'ASTRONOMY'), q('星の並び方を保った集まりは？', '星座', ['地層', '回路', '磁極'], 'ASTRONOMY'),
+        q('腕を曲げるとき縮む筋肉は？', '曲げる側の筋肉', ['両側が必ず同じだけ縮む', '骨だけ', '皮膚だけ'], 'BODY'), q('乾電池を直列につなぐと豆電球は？', '一個のときより明るくなる', ['必ず消える', '色だけ変わる', '音が鳴る'], 'ELECTRIC'),
+        q('雨水が低い所へ流れる理由は？', '地面に高低があるから', ['水が磁石だから', '太陽が押すから', '土が光るから'], 'WEATHER'), q('一日の気温を比べる条件は？', '同じ場所で時刻ごとに測る', ['毎回温度計を変える', '日付を書かない', '手の感覚だけで決める'], 'WEATHER')
+      ],
+      5: [
+        q('電磁石を強くする方法は？', 'コイルの巻き数を増やす', ['電流を止める', '導線を切る', '鉄心を外して必ず弱くしない'], 'ELECTROMAGNET'), q('電磁石の極を反対にするには？', '電流の向きを反対にする', ['コイルを水に入れる', '鉄心を短くするだけ', '電池を外す'], 'ELECTROMAGNET'),
+        q('食塩が水に溶けた後の全体の重さは？', '溶かす前の合計と同じ', ['食塩の分だけ消える', '二倍になる', '水だけの重さになる'], 'DISSOLUTION'), q('多くの物質で水温を上げると溶ける量は？', '増えることがある', ['必ずゼロになる', 'どれも同じ', '測れなくなる'], 'DISSOLUTION'),
+        q('花粉がめしべの先につくことを何という？', '受粉', ['発芽', '蒸散', '呼吸'], 'PLANT'), q('種子が発芽するために必要なものは？', '水・空気・適した温度', ['光だけ', '肥料だけ', '土だけ'], 'PLANT'),
+        q('流れる水が地面をけずるはたらきは？', '侵食', ['堆積', '蒸発', '受粉'], 'RIVER'), q('川の流れが緩やかな所で起きやすいのは？', '土砂の堆積', ['強い侵食だけ', '沸騰', '磁化'], 'RIVER'),
+        q('台風の進路を調べる資料は？', '気象衛星画像や天気図', ['歴史年表', '地形図だけ', '漢字辞典'], 'WEATHER'), q('ふりこの一往復の時間を変える条件は？', 'ふりこの長さ', ['おもりの色', '糸の色', '支柱の材質だけ'], 'PENDULUM')
+      ],
+      6: [
+        q('てこがつり合う条件は？', '力と支点からの距離の積が等しい', ['左右の重さだけが等しい', '棒の色が同じ', '支点が端にある'], 'LEVER'), q('支点から遠い所で押すと必要な力は？', '小さくてすむ', ['必ず大きくなる', '変わらない', 'ゼロになる'], 'LEVER'),
+        q('青色リトマス紙を赤くする水溶液は？', '酸性の水溶液', ['中性の水溶液', 'アルカリ性の水溶液', 'どの水溶液でも同じ'], 'SOLUTION'), q('塩酸に金属を入れた後にできる物は？', '元の金属と異なる物質', ['必ず同じ金属だけ', '水だけ', '何も残らない'], 'SOLUTION'),
+        q('物が燃え続けるために必要な気体は？', '酸素', ['二酸化炭素', '窒素だけ', '水蒸気だけ'], 'COMBUSTION'), q('植物が日光を受けて葉で作るものは？', 'でんぷん', ['食塩', '金属', '砂'], 'PHOTOSYNTHESIS'),
+        q('月の形が変わって見える主な理由は？', '太陽・地球・月の位置関係が変わるから', ['月自身が変形するから', '雲が毎日同じ形だから', '地球が止まるから'], 'MOON'), q('新月のころの月は太陽に対してどこにある？', '太陽とほぼ同じ方向', ['太陽と反対方向', '地球の真下', '位置は関係しない'], 'MOON'),
+        q('電気を光や熱に変えて利用する例は？', '発光ダイオード', ['方位磁針だけ', '温度計だけ', '虫眼鏡だけ'], 'ENERGY'), q('土地のしま模様から分かることは？', '地層が積み重なった順序', ['今日の風向だけ', '電流の向き', '月の満ち欠け'], 'EARTH')
+      ]
+    };
+    return banks[g] || [];
+  }
+
+  if (subject === '社会') {
+    const banks = {
+      3: [
+        q('一般的な地図で上が表す方位は？', '北', ['南', '東', '西'], 'MAP'), q('土地の高さや建物の位置を表すものは？', '地図', ['年表', '回路図', '楽譜'], 'MAP'),
+        q('火事や救急に対応する施設は？', '消防署', ['郵便局', '図書館', '博物館'], 'COMMUNITY'), q('町の安全を守る仕事をする施設は？', '警察署', ['農場', '工場', '市場'], 'COMMUNITY'),
+        q('商品を売る店が工夫する目的は？', '買う人が利用しやすくするため', ['道路を狭くするため', '品物を隠すため', '客を減らすため'], 'WORK'), q('農家が作物を出荷する前に行うことは？', '大きさや品質をそろえる', ['土を付け足す', '名前を消す', '全部同じ箱から出す'], 'WORK'),
+        q('市役所が行う仕事として適切なのは？', '住民票などの手続きを行う', ['電車を運転する', '魚を育てる', '本を出版する'], 'GOVERNMENT'), q('昔の町の様子を調べる資料は？', '古い写真や地図', ['未来の予定だけ', '今日の献立だけ', '音階表だけ'], 'HISTORY'),
+        q('事故を防ぐため道路に設置されるものは？', '信号機や横断歩道', ['本棚や黒板', 'ベッドや机', '漁網や船'], 'SAFETY'), q('地域で働く人へ話を聞く前にすることは？', '質問を準備して許可を得る', ['勝手に録音する', '仕事を止める', '名前を隠す'], 'RESEARCH')
+      ],
+      4: [
+        q('日本の都道府県の数は？', '47', ['43', '45', '50'], 'PREFECTURE'), q('北海道が属する地方区分は？', '北海道地方', ['東北地方', '関東地方', '中部地方'], 'PREFECTURE'),
+        q('東京都が属する地方区分は？', '関東地方', ['近畿地方', '中国地方', '九州地方'], 'PREFECTURE'), q('京都府が属する地方区分は？', '近畿地方', ['東北地方', '四国地方', '関東地方'], 'PREFECTURE'),
+        q('香川県が属する地方区分は？', '四国地方', ['中国地方', '中部地方', '東北地方'], 'PREFECTURE'), q('沖縄県が属する地方区分は？', '九州地方', ['北海道地方', '近畿地方', '関東地方'], 'PREFECTURE'),
+        q('家庭から出たごみを集めて処理する主な主体は？', '市区町村', ['外国政府', '学校だけ', '各家庭だけ'], 'PUBLIC'), q('安全な水を家庭へ送る施設は？', '浄水場', ['発電所', '消防署', '裁判所'], 'PUBLIC'),
+        q('使った水をきれいにして川へ戻す施設は？', '下水処理場', ['図書館', '空港', '郵便局'], 'PUBLIC'), q('地域の災害に備えて確認する地図は？', 'ハザードマップ', ['世界時差表', '星座早見表', '音楽記号表'], 'DISASTER')
+      ],
+      5: [
+        q('日本の国土で最も面積が大きい地形は？', '山地', ['平地', '湖', '砂浜'], 'LAND'), q('暖流と寒流が出会う海域の特徴は？', '魚が集まりやすい', ['雨が降らない', '海水が凍らないだけ', '船が進めない'], 'FISHERY'),
+        q('都市の近くで新鮮な野菜を作る農業は？', '近郊農業', ['焼畑農業', '遊牧', '遠洋漁業'], 'AGRICULTURE'), q('涼しい高地を利用して出荷時期を遅らせる栽培は？', '抑制栽培', ['促成栽培', '水耕だけ', '二毛作だけ'], 'AGRICULTURE'),
+        q('自動車工業が特に盛んな工業地帯は？', '中京工業地帯', ['京浜工業地帯', '阪神工業地帯', '北九州工業地域'], 'INDUSTRY'), q('原料を輸入して製品を輸出する貿易は？', '加工貿易', ['中継貿易', '自由貿易', '国内取引'], 'TRADE'),
+        q('工場同士をパイプで結んだ地域は？', 'コンビナート', ['ニュータウン', '棚田', '漁港'], 'INDUSTRY'), q('食料自給率が表すものは？', '国内消費を国内生産でまかなう割合', ['輸出品だけの割合', '人口増加の割合', '森林だけの割合'], 'FOOD'),
+        q('ニュースを複数の資料で確かめる理由は？', '情報の正確さを判断するため', ['文字を減らすため', '広告を増やすため', '意見を一つにするため'], 'INFORMATION'), q('森林が水をたくわえるはたらきは？', '水源を守るはたらき', ['海水を増やすはたらき', '地震を起こすはたらき', '電気を直接作るはたらき'], 'ENVIRONMENT')
+      ],
+      6: [
+        q('米づくりが広まった時代は？', '弥生時代', ['縄文時代', '江戸時代', '明治時代'], 'HISTORY'), q('武士による最初の本格的な幕府は？', '鎌倉幕府', ['江戸幕府', '室町幕府', '大和朝廷'], 'HISTORY'),
+        q('全国統一を進め太閤検地を行った人物は？', '豊臣秀吉', ['源頼朝', '徳川家光', '伊能忠敬'], 'HISTORY'), q('日本全国を測量して地図を作った人物は？', '伊能忠敬', ['聖徳太子', '福沢諭吉', '杉田玄白'], 'HISTORY'),
+        q('明治政府が藩を廃止して置いたものは？', '府と県', ['幕府と藩', '荘園と国', '郡だけ'], 'HISTORY'), q('日本国憲法の基本原則の一つは？', '国民主権', ['武家政治', '身分制度', '鎖国政策'], 'CIVICS'),
+        q('法律をつくる国の機関は？', '国会', ['内閣', '裁判所', '都道府県庁'], 'CIVICS'), q('行政を担当する国の機関は？', '内閣', ['国会', '裁判所', '選挙管理委員会だけ'], 'CIVICS'),
+        q('争いを法に基づいて判断する機関は？', '裁判所', ['内閣', '国会', '消防署'], 'CIVICS'), q('選挙で大切にされる原則は？', '一人一票の平等', ['家族で一票', '税金で票数を決める', '役所だけが投票する'], 'CIVICS')
+      ]
+    };
+    return banks[g] || [];
+  }
+
+  if (subject !== '国語') return [];
+  const kokugoByGrade = {
+    1: [['「あ」の次のひらがなは？','い',['う','え','お']],['「ア」と同じ音のひらがなは？','あ',['い','う','え']],['「やま」を表す漢字は？','山',['川','木','日']],['「かわ」を表す漢字は？','川',['山','田','火']],['「おおきい」の反対の言葉は？','ちいさい',['ながい','はやい','あかるい']],['文の終わりにつける記号は？','。',['、','・','「']],['「はな」を二つの音に分けると？','は・な',['はな・な','な・は・な','は・は']],['「がっこう」にある小さい文字は？','っ',['ょ','ゅ','ゃ']],['丁寧な返事は？','はい',['いや','だめ','あと']],['相手にお願いするときの言葉は？','おねがいします',['しらない',['あとで'],'いやだ']]],
+    2: [['「明るい」の読みは？','あかるい',['あけるい','あかりい','めいるい']],['「海」の読みは？','うみ',['そら','やま','かわ']],['「春」の次の季節は？','夏',['冬','秋','朝']],['「高い」の反対の言葉は？','低い',['長い','広い','近い']],['「わたしは本を読みます」の主語は？','わたし',['本','読みます','は']],['読点として使う記号は？','、',['。','？','！']],['仲間になる言葉の組は？','犬と猫',['赤と走る','本と高い','朝と読む']],['「きょう」を漢字で表すと？','今日',['教日','京日','今月']],['順序を表す言葉は？','はじめに',['もしもし','さようなら','たしかに']],['手紙の最後に書く内容は？','自分の名前',['題名だけ','相手の住所だけ','天気だけ']]],
+    3: [['「登る」の読みは？','のぼる',['くだる','わたる','はしる']],['「温度」の読みは？','おんど',['おんとう','あつど','おど']],['出来事の順序を表す言葉は？','まず・次に・最後に',['もし・だから・でも','右・左・上','赤・青・白']],['段落が変わるときは？','行を変えて一字下げる',['句点を消す','題名を変える','文字を小さくする']],['国語辞典で言葉を探す順序は？','五十音順',['文字数順','意味の長さ順','漢字の画数だけ']],['「頭が下がる」の意味は？','感心する',['眠くなる','帽子を取る','走り出す']],['理由を表す接続語は？','なぜなら',['しかし','そして','ところで']],['引用部分を囲む記号は？','「 」',['（ ）',['〔 〕'],'・ ・']],['物語の中心人物を何という？','主人公',['筆者','読者','編集者']],['相手に分かる説明で大切なことは？','順序と具体例',['声の大きさだけ','同じ言葉の繰り返しだけ','結論を隠すこと']]],
+    4: [['「景色」の読みは？','けしき',['けいろ','かげいろ','けいしょく']],['「努力」の読みは？','どりょく',['どうりき','どりき','ぬりょく']],['「石の上にも三年」の意味は？','辛抱すれば成果が出る',['石は三年で割れる','毎日場所を変える','急げば必ず成功する']],['説明文の要点はどこに表れやすい？','段落の中心文',['ページ番号だけ','挿絵だけ','漢字の数だけ']],['「一方」を使う場面は？','二つを比べる場面',['名前を呼ぶ場面','時刻を聞く場面','謝る場面']],['同じ意味に近い言葉は？','希望と願い',['希望と失敗','願いと禁止','未来と昨日']],['新聞の見出しの役割は？','内容を短く伝える',['文字を飾るだけ','広告を隠す','日付を消す']],['事実と意見を分ける手がかりは？','根拠が示されているか',['文字の色だけ','文の長さだけ','句読点の数だけ']],['話し合いで大切なことは？','理由を添えて発言する',['相手をさえぎる','同じ意見だけ聞く','結論を決めない']],['要約するときに残すものは？','中心となる内容',['すべての例','同じ表現全部','飾りの言葉全部']]],
+    5: [['「経験」の読みは？','けいけん',['きょうけん','けいげん','けんけい']],['「責任」の読みは？','せきにん',['せいにん','せきじん','せつにん']],['先生が来る、の尊敬語は？','先生がいらっしゃる',['先生が参る','先生がうかがう','先生が来てやる']],['自分が先生の本を読む、の謙譲表現は？','拝読する',['お読みになる','読まれる','お読みにする']],['提案文で必要なものは？','主張と根拠',['感想だけ','題名だけ','反対意見だけ']],['資料を引用するときに必要なことは？','出典を示す',['数字を変える','作者名を消す','一部を逆にする']],['「臨機応変」の意味は？','状況に合わせて対応する',['計画を必ず変えない','急いで逃げる','同じ失敗を重ねる']],['複合語の組は？','読書会',['読む','静かに','美しい']],['物語の人物像を考える手がかりは？','行動や会話',['ページ数だけ','表紙の色だけ','題名の文字数だけ']],['討論で反対意見を述べる前にすることは？','相手の考えを確かめる',['話を途中で止める','根拠を隠す','声だけ大きくする']]],
+    6: [['「創造」の読みは？','そうぞう',['そうそう','しょうぞう','ぞうそう']],['「推測」の読みは？','すいそく',['すいそつ','おしはかり','ついそく']],['「温故知新」の意味は？','昔を学び新しい知識を得る',['新しい物だけを見る','昔を忘れる','温度を調べる']],['筆者の主張を支えるものは？','根拠や具体例',['題名の長さ','漢字の数','余白の広さ']],['反論を書くときに必要なことは？','相手の主張を正確に捉える',['相手を否定する言葉だけ','資料を使わない','結論を隠す']],['随筆の特徴は？','体験や考えを自由に書く',['事実を年代順だけに書く','会話だけを書く','数式だけを書く']],['敬意を表す言葉遣いは？','相手や場面に応じた敬語',['いつも同じ話し方','命令形だけ','主語を省くだけ']],['複数資料を読むときに比べるものは？','共通点と相違点',['紙の厚さだけ','文字色だけ','ページ番号だけ']],['文章を推敲する目的は？','より分かりやすく正確にする',['文字数を必ず増やす','題名を消す','段落を一つにする']],['スピーチの構成として適切なのは？','導入・本論・結論',['結論・結論・結論','例だけ','質問だけ']]]
+  };
+  return (kokugoByGrade[g] || kokugoByGrade[1]).map(([prompt, correct, wrong]) => q(prompt, correct, Array.isArray(wrong) ? wrong : []));
+}
+
+function sanitizeCurriculumBank(records, subject, selectedMode) {
+  const removeEmoji = (value) => String(value ?? '').replace(/[\p{Extended_Pictographic}\uFE0F]/gu, '').replace(/\s{2,}/g, ' ').trim();
+  const normalized = records.map((record, index) => {
+    const prompt = subject === '社会' ? removeEmoji(record.prompt ?? record.q) : String(record.prompt ?? record.q ?? '');
+    const correct = subject === '社会' ? removeEmoji(record.correct) : String(record.correct ?? '');
+    const rawOptions = record.options || [correct, ...(record.distractors || [])];
+    const options = [...new Set(rawOptions.map(item => subject === '社会' ? removeEmoji(item) : String(item)))];
+    if (!options.includes(correct)) options.unshift(correct);
+    return { ...record, id: record.id || `${subject}_${index}`, prompt, correct, options: options.slice(0, 4), mode: record.mode || 'ALL' };
+  }).filter(record => record.prompt && record.correct && record.options.length >= 4)
+    .filter(record => subject !== '社会' || !record.prompt.toLocaleLowerCase().includes(record.correct.toLocaleLowerCase()));
+  const preferred = selectedMode ? normalized.filter(record => record.mode === selectedMode) : [];
+  const remaining = normalized.filter(record => !preferred.includes(record));
+  return [...shuffleCopy(preferred), ...shuffleCopy(remaining)];
+}
+
+export class CurriculumQuizGame {
+  constructor(canvas, gameData, onWin, grade = 1, level = 1, subject = '国語') {
+    this.canvas = canvas;
+    this.ctx = canvas.getContext('2d');
+    this.onWin = onWin;
+    this.grade = Number(grade) || 1;
+    this.level = Math.max(1, Number(level) || 1);
+    this.subject = subject;
+    this.gameData = gameData || {};
+    this.selectedMode = this.gameData.selectedMode || this.gameData.mode || null;
+    const supplied = Array.isArray(this.gameData.questionBank) ? this.gameData.questionBank : [];
+    const fallback = getFallbackCurriculumBank(subject, this.grade);
+    const bank = sanitizeCurriculumBank([...supplied, ...fallback], subject, this.selectedMode);
+    this.questions = bank.slice(0, 10).map(question => ({ ...question, options: shuffleCopy(question.options) }));
+    this.qIndex = 0;
+    this.correctCount = 0;
+    this.locked = false;
+    this.feedback = '';
+    this.running = false;
+    this.boundPointer = this.handlePointer.bind(this);
+  }
+
+  start() {
+    if (this.questions.length < 10) {
+      this.onWin(0, 0, { cleared: false, accuracy: 0, correctCount: 0, totalCount: 10, reason: 'QUESTION_BANK_TOO_SMALL' });
+      return;
+    }
+    this.running = true;
+    this.canvas.addEventListener('pointerdown', this.boundPointer);
+    this.loop();
+  }
+
+  getOptionLayout() {
+    const h = this.canvas.height;
+    const startY = 154;
+    const gap = 8;
+    const optionH = Math.max(56, Math.floor((h - startY - 12 - gap * 3) / 4));
+    return { x: 24, w: this.canvas.width - 48, startY, gap, optionH };
+  }
+
+  handlePointer(event) {
+    if (!this.running || this.locked) return;
+    const rect = this.canvas.getBoundingClientRect();
+    const x = (event.clientX - rect.left) * (this.canvas.width / rect.width);
+    const y = (event.clientY - rect.top) * (this.canvas.height / rect.height);
+    const layout = this.getOptionLayout();
+    const question = this.questions[this.qIndex];
+    question.options.forEach((option, index) => {
+      const optionY = layout.startY + index * (layout.optionH + layout.gap);
+      if (this.locked || x < layout.x || x > layout.x + layout.w || y < optionY || y > optionY + layout.optionH) return;
+      this.locked = true;
+      const correct = option === question.correct;
+      const audio = getAudioSynthesizer();
+      const fx = getFXSystem();
+      const guidance = getErrorGuidanceSystem();
+      if (correct) {
+        this.correctCount++;
+        this.feedback = '正解！';
+        audio.playPositive(this.grade, this.correctCount);
+        fx.spawnStarBurst(this.canvas.width / 2, optionY + layout.optionH / 2, 24, '#34d399');
+        guidance.registerSuccess({ questionId: question.id });
+      } else {
+        this.feedback = `正解は「${question.correct}」`;
+        audio.playGentleError();
+        guidance.registerError({ subject: this.subject, questionId: question.id, targetElement: this.canvas, customExplanation: question.explanation || this.feedback });
+        fx.triggerScreenShake(this.canvas, 'bounce', 180);
+      }
+      setTimeout(() => this.advance(), 550);
+    });
+  }
+
+  advance() {
+    if (!this.running) return;
+    this.qIndex++;
+    this.feedback = '';
+    this.locked = false;
+    if (this.qIndex >= this.questions.length) {
+      const accuracy = this.correctCount / this.questions.length;
+      const cleared = this.correctCount >= 7;
+      const stars = cleared ? (this.correctCount === 10 ? 3 : this.correctCount >= 8 ? 2 : 1) : 0;
+      this.destroy();
+      this.onWin(stars, this.correctCount * 100, { cleared, accuracy, correctCount: this.correctCount, totalCount: this.questions.length });
+    }
+  }
+
+  drawWrappedText(text, x, y, width, height, fontSize = 16, color = '#ffffff') {
+    const chars = Array.from(String(text || ''));
+    const lines = [];
+    let line = '';
+    this.ctx.font = `bold ${fontSize}px sans-serif`;
+    chars.forEach(char => {
+      const candidate = line + char;
+      if (this.ctx.measureText(candidate).width > width && line) {
+        lines.push(line);
+        line = char;
+      } else line = candidate;
+    });
+    if (line) lines.push(line);
+    const lineHeight = fontSize + 5;
+    const visible = lines.slice(0, Math.max(1, Math.floor(height / lineHeight)));
+    const start = y + (height - visible.length * lineHeight) / 2 + lineHeight * 0.75;
+    this.ctx.fillStyle = color;
+    this.ctx.textAlign = 'center';
+    visible.forEach((entry, index) => this.ctx.fillText(entry, x + width / 2, start + index * lineHeight));
+  }
+
+  loop() {
+    if (!this.running) return;
+    const w = this.canvas.width;
+    const question = this.questions[this.qIndex];
+    this.ctx.clearRect(0, 0, w, this.canvas.height);
+    this.ctx.fillStyle = '#f8fafc';
+    this.ctx.font = 'bold 16px sans-serif';
+    this.ctx.textAlign = 'center';
+    this.ctx.fillText(`${this.subject}・小学${this.grade}年　${this.qIndex + 1} / ${this.questions.length}`, w / 2, 28);
+    this.ctx.fillStyle = '#38bdf8';
+    this.ctx.fillRect(24, 40, (w - 48) * (this.qIndex / this.questions.length), 5);
+    this.drawWrappedText(question.prompt, 28, 52, w - 56, 86, 17, '#e0f2fe');
+    const layout = this.getOptionLayout();
+    question.options.forEach((option, index) => {
+      const optionY = layout.startY + index * (layout.optionH + layout.gap);
+      this.ctx.fillStyle = '#172554';
+      this.ctx.strokeStyle = '#60a5fa';
+      this.ctx.lineWidth = 2;
+      this.ctx.beginPath();
+      safeRoundRect(this.ctx, layout.x, optionY, layout.w, layout.optionH, 12);
+      this.ctx.fill();
+      this.ctx.stroke();
+      this.drawWrappedText(`${String.fromCharCode(65 + index)}. ${option}`, layout.x + 8, optionY + 2, layout.w - 16, layout.optionH - 4, option.length > 30 ? 12 : 14, '#ffffff');
+    });
+    if (this.feedback) this.ctx.fillText(this.feedback, w / 2, 146);
+    requestAnimationFrame(() => this.loop());
+  }
+
+  destroy() {
+    this.running = false;
+    this.canvas.removeEventListener('pointerdown', this.boundPointer);
+  }
+}
+
+// =========================================================================
+// 算数：学年別テーマ 10 問セッション
+// =========================================================================
+export class MathCurriculumGame extends CurriculumQuizGame {
+  constructor(canvas, gameData, onWin, grade = 1, level = 1) {
+    super(canvas, gameData, onWin, grade, level, '算数');
+    const forcedVariant = this.variantForMode(this.selectedMode);
+    const variants = forcedVariant == null ? shuffleCopy([0, 1, 2, 3, 4, 0, 1, 2, 3, 4]) : Array(10).fill(forcedVariant);
+    const seen = new Set();
+    this.questions = variants.map((variant, index) => {
+      let question;
+      for (let attempt = 0; attempt < 30; attempt++) {
+        question = this.buildQuestion(variant);
+        if (!seen.has(question.prompt)) break;
+      }
+      seen.add(question.prompt);
+      return { ...question, id: `MATH_G${this.grade}_L${this.level}_${index}`, options: shuffleCopy(question.options) };
+    });
+  }
+
+  variantForMode(mode) {
+    if (!mode || mode === 'MATH_CURRICULUM') return null;
+    const value = String(mode).toUpperCase();
+    const mappings = {
+      ADD_SUB: 0, NUMBER: 0, SHAPE: 4, MEASURE: 3, KUKU: 1,
+      DIVISION: 0, FRACTION: 1, DATA: 3, AREA: 0, DECIMAL: 2,
+      ANGLE: 4, PERCENT: 0, AVERAGE: 3, VOLUME: 1, RATIO: 1,
+      SPEED: 0, PROPORTION: 2, SYMMETRY: 4, STATISTICS: 3
+    };
+    return Number.isInteger(mappings[value]) ? mappings[value] : null;
+  }
+
+  makeChoice(correct, distractors) {
+    const values = [String(correct), ...distractors.map(String)];
+    const unique = [...new Set(values)];
+    let delta = 1;
+    while (unique.length < 4) {
+      const numeric = Number(correct);
+      const candidate = Number.isFinite(numeric) ? String(numeric + delta) : `ほかの答え ${delta}`;
+      if (!unique.includes(candidate)) unique.push(candidate);
+      delta++;
+    }
+    return { correct: String(correct), options: unique.slice(0, 4) };
+  }
+
+  buildQuestion(variant) {
+    let prompt, answer, distractors, theme;
+    const lane = Math.abs(Number(variant) || 0) % 5;
+    const chance = (limit) => Math.floor(Math.random() * limit);
+    if (this.grade === 1) {
+      const a = 1 + chance(9), b = 1 + chance(Math.max(1, 10 - a));
+      if (lane === 0 && Math.random() < 0.5) { prompt = `${a}こ と ${b}こ。ぜんぶで いくつ？`; answer = a + b; distractors = [a + b - 1, a + b + 1, a]; theme = '10までのたし算'; }
+      else if (lane === 0) { const n = 20 + chance(80); prompt = `${n} の十の位の数字は？`; answer = Math.floor(n / 10); distractors = [n % 10, n, Math.floor(n / 10) + 1]; theme = '100までの数'; }
+      else if (lane === 1) { const total = a + b; prompt = `${total}こ から ${b}こ とると、のこりは？`; answer = a; distractors = [b, total, a + 1]; theme = '10までのひき算'; }
+      else if (lane === 2) { const left = 1 + chance(9), right = 10 + chance(10); prompt = `${left} と ${right}、大きい数は？`; answer = right; distractors = [left, left + right, 10]; theme = '数の比較・大小'; }
+      else if (lane === 3 && Math.random() < 0.5) { const cm = 2 + chance(8); prompt = `${cm} cm のテープと ${cm + 2} cm のテープ。長いのは何 cm？`; answer = `${cm + 2} cm`; distractors = [`${cm} cm`, `${cm + 1} cm`, `${cm + 3} cm`]; theme = '長さくらべ'; }
+      else if (lane === 3) { const hour = 1 + chance(11); prompt = `短い針が ${hour}、長い針が12を指す時刻は？`; answer = `${hour}時`; distractors = [`${hour}時30分`, `${hour + 1}時`, '12時']; theme = '時刻'; }
+      else { const sides = [3, 4, 5, 6][chance(4)]; prompt = `辺が ${sides}本の形はどれ？`; const names = { 3: '三角形', 4: '四角形', 5: '五角形', 6: '六角形' }; answer = names[sides]; distractors = Object.values(names).filter(item => item !== answer).slice(0, 3); theme = 'かたち・形'; }
+    } else if (this.grade === 2) {
+      if (lane === 0 && Math.random() < 0.5) { const a = 20 + chance(60), b = 10 + chance(40); prompt = `${a} + ${b} = ?`; answer = a + b; distractors = [a + b - 10, a + b + 10, Math.abs(a - b)]; theme = '2けたのたし算'; }
+      else if (lane === 0) { const n = 100 + chance(900); prompt = `${n} の百の位の数字は？`; answer = Math.floor(n / 100); distractors = [Math.floor(n / 10) % 10, n % 10, n]; theme = '1000までの大きな数'; }
+      else if (lane === 1) { const table = 2 + chance(8), factor = 1 + chance(9); prompt = `${table} × ${factor} = ?`; answer = table * factor; distractors = [table + factor, table * Math.max(1, factor - 1), table * (factor + 1)]; theme = 'かけ算九九'; }
+      else if (lane === 2 && Math.random() < 0.5) { const a = 50 + chance(50), b = 10 + chance(30); prompt = `${a} - ${b} = ?`; answer = a - b; distractors = [a + b, a - b + 10, a - b - 10]; theme = '2けたのひき算'; }
+      else if (lane === 2) { const counts = [3 + chance(5), 2 + chance(5), 1 + chance(5)]; prompt = `表：赤 ${counts[0]}人、青 ${counts[1]}人、黄 ${counts[2]}人。いちばん多い色は？`; const index = counts.indexOf(Math.max(...counts)); answer = ['赤', '青', '黄'][index]; distractors = ['赤', '青', '黄', '同じ'].filter(v => v !== answer); theme = '簡単な表'; }
+      else if (lane === 3 && Math.random() < 0.5) { const cm = 100 + chance(190); prompt = `${cm} cm は何 m 何 cm？`; answer = `${Math.floor(cm / 100)} m ${cm % 100} cm`; distractors = [`${cm} m`, `${cm % 100} m`, `${Math.floor(cm / 10)} m ${cm % 10} cm`]; theme = '長さ'; }
+      else if (lane === 3) { const dl = 10 + chance(20); prompt = `${dl} dL は何 L 何 dL？`; answer = `${Math.floor(dl / 10)} L ${dl % 10} dL`; distractors = [`${dl} L`, `${dl % 10} L`, `${Math.floor(dl / 10)} dL`]; theme = '水の容量・かさ'; }
+      else { const hour = 1 + chance(10), minutes = [10, 20, 30][chance(3)]; prompt = `${hour}時${minutes}分の 30分後は？`; const total = hour * 60 + minutes + 30; answer = `${Math.floor(total / 60)}時${total % 60}分`; distractors = [`${hour}時${minutes + 10}分`, `${hour + 1}時${minutes}分`, `${hour}時30分`]; theme = '時刻と時間'; }
+    } else if (this.grade === 3) {
+      if (lane === 0 && Math.random() < 0.34) { const a = 12 + chance(28), b = 2 + chance(7); prompt = `${a} × ${b} = ?`; answer = a * b; distractors = [a + b, a * b - b, a * b + a]; theme = '2けたのかけ算・乗法'; }
+      else if (lane === 0 && Math.random() < 0.5) { const d = 2 + chance(7), n = 3 + chance(8); prompt = `${d * n} ÷ ${d} = ?`; answer = n; distractors = [d, n + 1, d * n]; theme = 'わり算・除法'; }
+      else if (lane === 0) { const d = 3 + chance(6), q = 2 + chance(7), r = 1 + chance(d - 1); prompt = `${d * q + r} ÷ ${d} の答えは？`; answer = `${q} あまり ${r}`; distractors = [`${q + 1} あまり ${r}`, `${q} あまり ${r + 1}`, `${q}`]; theme = '余りのあるわり算'; }
+      else if (lane === 1) { const denominator = [2, 3, 4, 5, 8][chance(5)]; prompt = `1を ${denominator}等分した1つ分は？`; answer = `1/${denominator}`; distractors = [`${denominator}/1`, `1/${denominator + 1}`, `${denominator - 1}/${denominator}`]; theme = '分数'; }
+      else if (lane === 2 && Math.random() < 0.5) { const whole = 1 + chance(8), tenths = 1 + chance(9); prompt = `${whole}と 0.${tenths} を合わせた数は？`; answer = `${whole}.${tenths}`; distractors = [`${whole + tenths}`, `0.${whole}${tenths}`, `${whole}.${tenths + 1}`]; theme = '小数'; }
+      else if (lane === 2) { const minutes = 2 + chance(8); prompt = `${minutes}分は何秒？`; answer = `${minutes * 60}秒`; distractors = [`${minutes * 10}秒`, `${minutes + 60}秒`, `${minutes * 100}秒`]; theme = '時刻と時間'; }
+      else if (lane === 3 && Math.random() < 0.34) { const kg = 1 + chance(5); prompt = `${kg} kg は何 g？`; answer = `${kg * 1000} g`; distractors = [`${kg * 100} g`, `${kg * 10} g`, `${kg + 1000} g`]; theme = '計量・重さ'; }
+      else if (lane === 3 && Math.random() < 0.5) { const values = [2, 3, 3, 4, 5, 5, 5, 6]; const target = [3, 5][chance(2)]; prompt = `表：${values.join('、')}。${target} はいくつある？`; answer = values.filter(value => value === target).length; distractors = [1, 2, 4]; theme = '表とデータ'; }
+      else if (lane === 3) { const red = 2 + chance(6), blue = red + 2; prompt = `棒グラフで赤が${red}人、青が${blue}人。何人多い？`; answer = `${blue - red}人`; distractors = [`${blue}人`, `${red}人`, `${blue + red}人`]; theme = '棒グラフ'; }
+      else { const r = 2 + chance(8); prompt = `半径 ${r} cm の円の直径は？`; answer = `${r * 2} cm`; distractors = [`${r} cm`, `${r * 3} cm`, `${r * 2 + 1} cm`]; theme = '円と球'; }
+    } else if (this.grade === 4) {
+      if (lane === 0) { const width = 3 + chance(12), height = 3 + chance(10); prompt = `たて ${height} cm、横 ${width} cm の長方形の面積は？`; answer = `${width * height} cm²`; distractors = [`${width + height} cm²`, `${width * height + width} cm²`, `${(width + height) * 2} cm²`]; theme = '面積'; }
+      else if (lane === 1) { const denominator = [4, 5, 8, 10][chance(4)], a = 1 + chance(denominator - 2); prompt = `${a}/${denominator} + 1/${denominator} = ?`; answer = `${a + 1}/${denominator}`; distractors = [`${a + 1}/${denominator * 2}`, `${a}/${denominator}`, `${a + 2}/${denominator}`]; theme = '同分母の分数'; }
+      else if (lane === 2) { const a = (10 + chance(70)) / 10, b = (10 + chance(40)) / 10; prompt = `${a} + ${b} = ?`; answer = (a + b).toFixed(1); distractors = [(a + b + 0.1).toFixed(1), Math.abs(a - b).toFixed(1), (a + b + 1).toFixed(1)]; theme = '小数の計算'; }
+      else if (lane === 3 && Math.random() < 0.5) { const n = 100000 + chance(800000), divisor = [10, 100][chance(2)]; prompt = `${n} ÷ ${divisor} = ?`; answer = n / divisor; distractors = [n * divisor, n / 10, n / divisor + 10]; theme = '大きな数と四則計算'; }
+      else if (lane === 3) { const mon = 10 + chance(20), tue = mon + 2 + chance(8); prompt = `折れ線グラフで月曜${mon}℃、火曜${tue}℃。何℃上がった？`; answer = `${tue - mon}℃`; distractors = [`${tue}℃`, `${mon}℃`, `${tue + mon}℃`]; theme = '折れ線グラフ'; }
+      else { const angle = [45, 90, 135, 180][chance(4)]; const labels = { 45: '鋭角', 90: '直角', 135: '鈍角', 180: '平角' }; prompt = `${angle}° の角の名前は？`; answer = labels[angle]; distractors = ['鋭角', '直角', '鈍角', '平角'].filter(label => label !== answer); theme = '角'; }
+    } else if (this.grade === 5) {
+      if (lane === 0 && Math.random() < 0.5) { const percent = [10, 20, 25, 40, 50][chance(5)], base = 20 * (5 + chance(6)); prompt = `${base}人の ${percent}% は何人？`; answer = base * percent / 100; distractors = [base - answer, percent, answer + 10]; theme = '割合・百分率'; }
+      else if (lane === 0) { const people = 3 + chance(8), pages = people * (2 + chance(5)); prompt = `${pages}ページを${people}人で同じ数ずつ読むと、1人あたり何ページ？`; answer = `${pages / people}ページ`; distractors = [`${pages}ページ`, `${people}ページ`, `${pages - people}ページ`]; theme = '単位量あたりの大きさ'; }
+      else if (lane === 1) { const a = 2 + chance(7), b = 2 + chance(7), c = 2 + chance(7); prompt = `たて ${a} cm、横 ${b} cm、高さ ${c} cm の直方体の体積は？`; answer = `${a * b * c} cm³`; distractors = [`${a + b + c} cm³`, `${a * b} cm³`, `${(a + b) * c} cm³`]; theme = '体積'; }
+      else if (lane === 2 && Math.random() < 0.5) { const a = 4 + chance(12), b = 4 + chance(12); prompt = `${a} と ${b} の平均は？`; answer = (a + b) / 2; distractors = [a + b, Math.abs(a - b), (a + b) / 2 + 1]; theme = '平均'; }
+      else if (lane === 2) { const a = 2 + chance(8), b = 2 + chance(8); prompt = `${a}.${b} × 10 = ?`; answer = `${a * 10 + b}`; distractors = [`${a}.${b}`, `${a * 100 + b}`, `${a + b}`]; theme = '小数の乗法'; }
+      else if (lane === 3 && Math.random() < 0.5) { const base = 2 + chance(8), height = 2 + chance(8); prompt = `底辺 ${base} cm、高さ ${height} cm の三角形の面積は？`; answer = `${base * height / 2} cm²`; distractors = [`${base * height} cm²`, `${base + height} cm²`, `${(base + height) * 2} cm²`]; theme = '三角形の面積'; }
+      else if (lane === 3) { const denominator = [4, 5, 8][chance(3)], a = 1 + chance(denominator - 2); prompt = `${a}/${denominator} + 1/${denominator} = ?`; answer = `${a + 1}/${denominator}`; distractors = [`${a}/${denominator}`, `${a + 2}/${denominator}`, `${a + 1}/${denominator + 1}`]; theme = '分数の加法'; }
+      else { const sides = [5, 6, 8][chance(3)]; prompt = `辺も角もすべて等しい${sides}角形の名前は？`; answer = `正${sides}角形`; distractors = [`${sides}角形`, `正${sides + 1}角形`, '円']; theme = '正多角形と円'; }
+    } else {
+      if (lane === 0 && Math.random() < 0.5) { const speed = 30 + chance(50), time = 2 + chance(4); prompt = `時速 ${speed} km で ${time}時間進む道のりは？`; answer = `${speed * time} km`; distractors = [`${Math.floor(speed / time)} km`, `${speed + time} km`, `${speed} km`]; theme = '速さ'; }
+      else if (lane === 0) { const a = 2 + chance(7), b = 2 + chance(7), c = 2 + chance(7); prompt = `底面積${a * b} cm²、高さ${c} cmの角柱の体積は？`; answer = `${a * b * c} cm³`; distractors = [`${a * b + c} cm³`, `${a * b} cm³`, `${(a + b) * c} cm³`]; theme = '立体の体積'; }
+      else if (lane === 1) { const a = 2 + chance(7), b = 2 + chance(7), multiple = 2 + chance(5); prompt = `${a}:${b} = ${a * multiple}:? の ? は？`; answer = b * multiple; distractors = [a * multiple, b + multiple, a + b]; theme = '比'; }
+      else if (lane === 2 && Math.random() < 0.5) { const x = 2 + chance(8), k = 2 + chance(7); prompt = `y = ${k}x で、x = ${x} のとき y は？`; answer = k * x; distractors = [k + x, k * x + 1, x]; theme = '比例'; }
+      else if (lane === 2) { const denominator = [3, 4, 5, 6][chance(4)], numerator = 1 + chance(denominator - 1), multiple = 2 + chance(4); prompt = `${numerator}/${denominator} × ${multiple} = ?`; answer = `${numerator * multiple}/${denominator}`; distractors = [`${numerator}/${denominator * multiple}`, `${numerator + multiple}/${denominator}`, `${numerator * multiple}/${denominator + 1}`]; theme = '分数の乗法'; }
+      else if (lane === 3) { const values = shuffleCopy([2, 3, 3, 4, 4, 4, 5, 5, 6, 7]); prompt = `資料 ${values.join('、')} の最頻値は？`; answer = 4; distractors = [3, 5, 7]; theme = '統計・データ'; }
+      else { const square = Math.random() < 0.35; prompt = `${square ? '正方形' : '長方形'}の対称の軸は何本？`; answer = square ? 4 : 2; distractors = square ? [1, 2, 3] : [0, 1, 4]; theme = '対称な図形'; }
+    }
+    return { prompt, theme, ...this.makeChoice(answer, distractors) };
   }
 }
 
@@ -1962,6 +2625,31 @@ export class PrefectureJigsawGame {
       { id: 'G6_10', title: '10. 世界平和と国際連合', q: 'ユニセフやユネスコ、PKO（平和維持活動）とSDGs（持続可能な開発目標）への貢献は？', correct: '🌐 国際連合(UN)と地球規模課題(SDGs)への国際協力', options: ['🌐 国際連合(UN)と地球規模課題(SDGs)への国際協力', '⚔️ 鎖国政策の徹底', '🏰 幕藩体制の維持', '🏺 巨大古墳の築造'] }
     ];
 
+    const removeSocialEmoji = (value) => String(value || '').replace(/[\p{Extended_Pictographic}\uFE0F]/gu, '').replace(/\s{2,}/g, ' ').trim();
+    const semanticSocialAnswer = (value) => {
+      const raw = removeSocialEmoji(value);
+      const parenthetical = raw.match(/\(([^)]{1,40})\)|（([^）]{1,40})）/);
+      return (parenthetical ? (parenthetical[1] || parenthetical[2]) : raw).trim();
+    };
+    const sanitizeSocialStages = (stages) => stages.map(stage => {
+      const correct = removeSocialEmoji(stage.correct);
+      const semanticAnswer = semanticSocialAnswer(correct);
+      let q = removeSocialEmoji(stage.q);
+      if (semanticAnswer.length >= 2 && q.includes(semanticAnswer)) {
+        q = q.replaceAll(semanticAnswer, 'この施設・内容');
+      }
+      return {
+        ...stage,
+        title: removeSocialEmoji(stage.title),
+        q,
+        correct,
+        options: stage.options.map(removeSocialEmoji)
+      };
+    });
+    this.grade3Stages = sanitizeSocialStages(this.grade3Stages);
+    this.grade5Stages = sanitizeSocialStages(this.grade5Stages);
+    this.grade6Stages = sanitizeSocialStages(this.grade6Stages);
+
     this.selectedPref = null;
     this.selectedOption = null;
     this.placedCount = 0;
@@ -2349,7 +3037,157 @@ export class PrefectureJigsawGame {
 // =========================================================================
 // 8. 英語：情景趣味配対 (ContextMatchGame)
 // =========================================================================
-export class ContextMatchGame {
+const ENGLISH_SESSION_SIZE = 10;
+
+function expandNaturalEnglishPairs(actions, frames, prefix) {
+  const pairs = [];
+  actions.forEach(([action, japanese], actionIndex) => {
+    frames.forEach(([englishFrame, japaneseFrame], frameIndex) => {
+      pairs.push({
+        id: `${prefix}_${actionIndex}_${frameIndex}`,
+        eng: englishFrame.replace('{action}', action),
+        jpn: japaneseFrame.replace('{action}', japanese)
+      });
+    });
+  });
+  return pairs;
+}
+
+function makeEnglishReadingBank(longMode = false) {
+  const names = ['Aki', 'Ben', 'Mika', 'Ken', 'Yui', 'Sora', 'Emma', 'Leo', 'Hana', 'Riku'];
+  const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+  const scenarios = [
+    ['the library', 'borrow a book about space', 'prepare for a science project', 'found a useful diagram'],
+    ['the community center', 'practice a short speech', 'welcome new students', 'spoke with more confidence'],
+    ['the school garden', 'water the tomato plants', 'help the plants grow', 'noticed three new flowers'],
+    ['the science museum', 'join a robot workshop', 'learn how sensors work', 'built a small moving car'],
+    ['the riverside park', 'collect plastic litter', 'protect birds and fish', 'filled two recycling bags'],
+    ['the train station', 'make a barrier-free map', 'help visitors move safely', 'found a new elevator'],
+    ['the sports center', 'practice swimming', 'improve endurance', 'completed ten laps'],
+    ['the town hall', 'interview a city worker', 'study disaster preparation', 'learned about emergency water'],
+    ['the art museum', 'sketch a landscape painting', 'study the use of color', 'shared the sketch with classmates'],
+    ['the local bakery', 'learn how bread is made', 'write a report about local jobs', 'watched the dough rise'],
+    ['the animal shelter', 'prepare clean water bowls', 'support rescued animals', 'helped five dogs'],
+    ['the school kitchen', 'cook vegetable soup', 'learn about healthy meals', 'used locally grown carrots'],
+    ['the beach', 'count different shells', 'compare the coastal environment', 'recorded six kinds of shells'],
+    ['the music room', 'rehearse a flute piece', 'perform at the school festival', 'kept the rhythm correctly'],
+    ['the history museum', 'examine an old farming tool', 'understand life in the past', 'wrote notes about its shape'],
+    ['the fire station', 'ask about rescue equipment', 'make a community safety guide', 'learned how firefighters train'],
+    ['the recycling center', 'sort used containers', 'reduce waste at school', 'understood three recycling marks'],
+    ['the weather station', 'check rainfall records', 'compare this month with last month', 'discovered a wetter week'],
+    ['the nursing home', 'read a picture book aloud', 'spend time with older residents', 'received helpful storytelling advice'],
+    ['the shopping street', 'survey reusable bag use', 'study environmentally friendly habits', 'collected forty responses']
+  ];
+  const placeOptions = scenarios.map(item => item[0]);
+  const actionOptions = scenarios.map(item => item[1]);
+  const reasonOptions = scenarios.map(item => item[2]);
+  const outcomeOptions = scenarios.map(item => item[3]);
+  return Array.from({ length: 200 }, (_, index) => {
+    const name = names[index % names.length];
+    const scenario = scenarios[Math.floor(index / names.length) % scenarios.length];
+    const day = days[index % days.length];
+    const [place, action, reason, outcome] = scenario;
+    const passage = longMode
+      ? `On ${day}, ${name} visited ${place} with a small school team. Their main task was to ${action}. Before starting, they discussed safety rules and divided the work fairly. They chose this activity because they wanted to ${reason}. Although one part of the task was difficult, the team exchanged ideas and continued carefully. By the end of the visit, ${name} ${outcome} and wrote a reflection for the next class.`
+      : `On ${day}, ${name} went to ${place} after school. ${name} wanted to ${action} because the class hoped to ${reason}. In the end, ${name} ${outcome}.`;
+    const questionType = index % 4;
+    const specs = [
+      [`Where did ${name} go?`, place, placeOptions],
+      [`What did ${name} plan to do?`, action, actionOptions],
+      [`Why did ${name} choose the activity?`, `To ${reason}.`, reasonOptions.map(item => `To ${item}.`)],
+      [`What happened at the end?`, `${name} ${outcome}.`, outcomeOptions.map(item => `${name} ${item}.`)]
+    ];
+    const [prompt, correct, sourceOptions] = specs[questionType];
+    const distractors = sourceOptions.filter(item => item !== correct);
+    return {
+      id: `${longMode ? 'LONG' : 'SHORT'}_${index}`,
+      passage,
+      prompt: `${passage}\n\n${prompt}`,
+      correct,
+      options: [correct, ...shuffleCopy(distractors).slice(0, 3)]
+    };
+  });
+}
+
+export function getEnglishQuestionBank(mode = 'BASIC') {
+  const basicActions = [
+    ['read picture books', '絵本を読む'], ['play soccer', 'サッカーをする'], ['practice the piano', 'ピアノを練習する'], ['draw animals', '動物の絵を描く'],
+    ['visit the library', '図書館へ行く'], ['help my family', '家族を手伝う'], ['cook breakfast', '朝ごはんを作る'], ['water the flowers', '花に水をやる'],
+    ['ride a bicycle', '自転車に乗る'], ['study English', '英語を勉強する'], ['sing this song', 'この歌を歌う'], ['clean the classroom', '教室を掃除する'],
+    ['watch birds', '鳥を観察する'], ['take pictures', '写真を撮る'], ['write a short story', '短い物語を書く'], ['make a paper plane', '紙飛行機を作る'],
+    ['play with my dog', '犬と遊ぶ'], ['walk in the park', '公園を歩く'], ['eat fresh fruit', '新鮮な果物を食べる'], ['drink some water', '水を飲む'],
+    ['open the window', '窓を開ける'], ['close the door', 'ドアを閉める'], ['use a dictionary', '辞書を使う'], ['ask a question', '質問する'],
+    ['answer the teacher', '先生に答える'], ['listen to music', '音楽を聞く'], ['make a calendar', 'カレンダーを作る'], ['check the time', '時刻を確認する'],
+    ['buy a notebook', 'ノートを買う'], ['carry an umbrella', '傘を持つ'], ['meet my friend', '友達に会う'], ['learn a new word', '新しい単語を覚える'],
+    ['feed the fish', '魚にえさをやる'], ['wash my hands', '手を洗う'], ['set the table', '食卓を整える'], ['read the map', '地図を読む'],
+    ['join the game', '試合に参加する'], ['share my idea', '考えを伝える'], ['plant a seed', '種を植える'], ['write my name', '名前を書く']
+  ];
+  const basicFrames = [
+    ['I like to {action}.', '私は{action}ことが好きです。'], ['I want to {action}.', '私は{action}たいです。'], ['I can {action}.', '私は{action}ことができます。'],
+    ['Let us {action}.', 'いっしょに{action}ましょう。'], ['We often {action}.', '私たちはよく{action}ます。']
+  ];
+  const eiken3Actions = [
+    ['study for the test', 'テストに向けて勉強する'], ['visit the history museum', '歴史博物館を訪れる'], ['help an elderly neighbor', '近所の高齢者を手伝う'], ['join the science club', '科学部に入る'],
+    ['finish the report', '報告書を仕上げる'], ['practice for the concert', '演奏会に向けて練習する'], ['take an earlier train', '早い電車に乗る'], ['prepare a healthy lunch', '健康的な昼食を用意する'],
+    ['ask the teacher for advice', '先生に助言を求める'], ['read the local news', '地域のニュースを読む'], ['protect wild animals', '野生動物を守る'], ['complete the homework before dinner', '夕食前に宿題を終える'],
+    ['meet my cousin at the station', '駅でいとこに会う'], ['learn about Japanese history', '日本の歴史を学ぶ'], ['bring an umbrella tomorrow', '明日傘を持ってくる'], ['write a thank-you letter', 'お礼の手紙を書く'],
+    ['watch the final game', '決勝戦を見る'], ['prepare for the school trip', '修学旅行の準備をする'], ['share my opinion clearly', '自分の意見を明確に伝える'], ['improve my English pronunciation', '英語の発音を改善する'],
+    ['volunteer at the festival', '祭りでボランティアをする'], ['save enough money for the book', '本を買うお金を十分にためる'], ['return the library books', '図書館の本を返す'], ['invite a new classmate', '新しい同級生を招く'],
+    ['check the weather forecast', '天気予報を確認する'], ['learn how to cook curry', 'カレーの作り方を学ぶ'], ['keep a daily journal', '毎日日記をつける'], ['explain the rule to everyone', '全員に規則を説明する'],
+    ['choose a topic for the speech', 'スピーチの話題を選ぶ'], ['repair my old bicycle', '古い自転車を修理する'], ['collect information online', 'オンラインで情報を集める'], ['compare the two plans', '二つの計画を比べる'],
+    ['remember the meeting time', '集合時刻を覚えておく'], ['solve the problem together', '一緒に問題を解く'], ['take care of the class pet', 'クラスの動物を世話する'], ['review the new vocabulary', '新しい語彙を復習する'],
+    ['follow the safety instructions', '安全の指示に従う'], ['introduce my hometown', '自分の故郷を紹介する'], ['organize the sports equipment', '運動用具を整理する'], ['practice speaking slowly', 'ゆっくり話す練習をする']
+  ];
+  const eiken3Frames = [
+    ['I decided to {action}.', '私は{action}ことにしました。'], ['We plan to {action}.', '私たちは{action}予定です。'], ['I tried to {action}.', '私は{action}ようとしました。'],
+    ['We need to {action}.', '私たちは{action}必要があります。'], ['I hope to {action}.', '私は{action}たいと思っています。']
+  ];
+  const eiken2Actions = [
+    ['reduce plastic waste', 'プラスチックごみを減らす'], ['improve public transportation', '公共交通を改善する'], ['protect local forests', '地域の森林を守る'], ['support elderly residents', '高齢の住民を支援する'],
+    ['save energy at home', '家庭でエネルギーを節約する'], ['share reliable information', '信頼できる情報を共有する'], ['prepare for natural disasters', '自然災害に備える'], ['encourage healthy habits', '健康的な習慣を促す'],
+    ['welcome students from abroad', '海外からの生徒を歓迎する'], ['solve community problems', '地域の問題を解決する'], ['develop useful technology', '有用な技術を開発する'], ['respect different opinions', '異なる意見を尊重する'],
+    ['increase urban green spaces', '都市の緑地を増やす'], ['improve air quality', '大気の質を改善する'], ['make education more accessible', '教育をより受けやすくする'], ['preserve traditional culture', '伝統文化を保存する'],
+    ['respond to climate change', '気候変動に対応する'], ['build safer cities', 'より安全な都市を築く'], ['promote international cooperation', '国際協力を促進する'], ['use natural resources responsibly', '天然資源を責任をもって利用する'],
+    ['prevent food waste', '食品ロスを防ぐ'], ['protect personal information', '個人情報を守る'], ['provide equal opportunities', '平等な機会を提供する'], ['strengthen local businesses', '地域企業を強化する'],
+    ['improve working conditions', '労働条件を改善する'], ['expand renewable energy', '再生可能エネルギーを拡大する'], ['support scientific research', '科学研究を支援する'], ['maintain public facilities', '公共施設を維持する'],
+    ['restore damaged ecosystems', '損なわれた生態系を回復する'], ['increase media literacy', 'メディアリテラシーを高める'], ['reduce economic inequality', '経済格差を縮小する'], ['prepare students for future careers', '生徒の将来の職業に備える'],
+    ['make tourism more sustainable', '観光をより持続可能にする'], ['improve emergency communication', '緊急時の情報伝達を改善する'], ['protect endangered species', '絶滅危惧種を守る'], ['encourage civic participation', '市民参加を促す'],
+    ['design inclusive public spaces', '誰もが使いやすい公共空間を設計する'], ['improve access to medical care', '医療へのアクセスを改善する'], ['support responsible consumption', '責任ある消費を支援する'], ['preserve clean water sources', 'きれいな水源を守る']
+  ];
+  const eiken2Frames = [
+    ['The project aims to {action}.', 'その計画は{action}ことを目指しています。'], ['Local leaders have proposed a plan to {action}.', '地域の指導者は{action}計画を提案しました。'],
+    ['It is increasingly important to {action}.', '{action}ことの重要性が高まっています。'], ['The report recommends several ways to {action}.', '報告書は{action}ための方法をいくつか提案しています。'],
+    ['Citizens can work together to {action}.', '市民は協力して{action}ことができます。']
+  ];
+
+  if (mode === 'SHORT_READING') return makeEnglishReadingBank(false);
+  if (mode === 'LONG_READING') return makeEnglishReadingBank(true);
+  const pairs = mode === 'EIKEN2'
+    ? expandNaturalEnglishPairs(eiken2Actions, eiken2Frames, 'E2')
+    : mode === 'EIKEN3'
+      ? expandNaturalEnglishPairs(eiken3Actions, eiken3Frames, 'E3')
+      : expandNaturalEnglishPairs(basicActions, basicFrames, 'BASIC');
+  return pairs.map((pair, index) => {
+    const distractors = [1, 7, 19].map(offset => pairs[(index + offset) % pairs.length].jpn);
+    return { id: pair.id, prompt: `「${pair.eng}」の意味として最も近いものは？`, correct: pair.jpn, options: [pair.jpn, ...distractors] };
+  });
+}
+
+export class ContextMatchGame extends CurriculumQuizGame {
+  constructor(canvas, gameData, onWin, grade = 3, level = 1) {
+    const difficulty = gameData?.difficulty || gameData?.selectedMode || 'BASIC';
+    const bank = getEnglishQuestionBank(difficulty);
+    super(canvas, { ...gameData, selectedMode: difficulty, questionBank: bank }, onWin, grade, level, '外国語・英語');
+    this.difficulty = difficulty;
+    this.questions = shuffleCopy(bank).slice(0, ENGLISH_SESSION_SIZE).map((question, index) => ({
+      ...question,
+      id: question.id || `ENGLISH_${difficulty}_${index}`,
+      options: shuffleCopy([...new Set(question.options)]).slice(0, 4)
+    }));
+  }
+}
+
+class LegacyContextMatchGame {
   constructor(canvas, gameData, onWin) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
@@ -2497,10 +3335,12 @@ export class ContextMatchGame {
 // 9. 生活：生活仕分け箱 (CategorySortGame)
 // =========================================================================
 export class CategorySortGame {
-  constructor(canvas, gameData, onWin) {
+  constructor(canvas, gameData, onWin, grade = 1, level = 1) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
     this.onWin = onWin;
+    this.grade = Math.max(1, Math.min(2, Number(grade) || 1));
+    this.level = Math.max(1, Number(level) || 1);
     this.running = false;
 
     this.categories = gameData?.categories || [
@@ -2508,12 +3348,12 @@ export class CategorySortGame {
       { id: 'safety', title: 'あんぜんな こうどう' }
     ];
 
-    this.items = (gameData?.items || [
+    this.items = shuffleCopy((gameData?.items || [
       { text: 'ランドセルを せおう', category: 'morning', sorted: false },
       { text: 'みぎ・ひだりを よくみる', category: 'safety', sorted: false },
       { text: 'おはようと あいさつする', category: 'morning', sorted: false },
       { text: 'てを あげて わたる', category: 'safety', sorted: false }
-    ]).map(it => ({ ...it, sorted: false }));
+    ]).map(it => ({ ...it, sorted: false })));
 
     this.selectedItem = null;
     this.boundPointer = this.handlePointer.bind(this);
@@ -2654,6 +3494,215 @@ export class CategorySortGame {
   }
 }
 
+// =========================================================================
+// 10. 全教科総合：学年総合大試練 (GradeComprehensiveExamGame)
+// =========================================================================
+export class GradeComprehensiveExamGame {
+  constructor(canvas, gameData, onWin, grade = 1, level = 1) {
+    this.canvas = canvas;
+    this.ctx = canvas.getContext('2d');
+    this.onWin = onWin;
+    this.grade = Number(grade) || 1;
+    this.level = Number(level) || 1;
+    this.score = 0;
+    this.combo = 0;
+    this.running = false;
+    this.qIndex = 0;
+    this.boundPointer = this.handlePointer.bind(this);
+
+    // 文部科学省各学年カリキュラム準拠の全教科総合横断問題バンク（各学年6問：国・算・理・社・英・生）
+    const EXAM_QUESTION_BANK = {
+      1: [
+        { subject: '国語', q: '「やま」を漢字で書くとどれ？', correct: '山', options: ['山', '川', '日', '木'] },
+        { subject: '算数', q: '5 ＋ 3 は いくつ？', correct: '8', options: ['8', '7', '9', '6'] },
+        { subject: '生活', q: 'あさ、おきたときに かわす あいさつは？', correct: 'おはようございます', options: ['おはようございます', 'こんにちは', 'さようなら', 'おやすみなさい'] },
+        { subject: '算数', q: '10 から 4 を ひくと いくつ？', correct: '6', options: ['6', '5', '7', '4'] },
+        { subject: '国語', q: '「雨」の正しい読み方はどれ？', correct: 'あめ', options: ['あめ', 'ゆき', 'かぜ', 'そら'] },
+        { subject: '生活', q: 'どうろを わたるとき、ただしい こうどうは？', correct: 'みぎ・ひだりを よくみて てをあげる', options: ['みぎ・ひだりを よくみて てをあげる', 'はしって わたる', 'したを むいて わたる', 'めを つむる'] }
+      ],
+      2: [
+        { subject: '算数', q: '九九の「しちに（7×2）」の答えは？', correct: '14', options: ['14', '16', '21', '12'] },
+        { subject: '国語', q: '「日」と「月」を合体させてできる漢字は？', correct: '明', options: ['明', '休', '林', '秋'] },
+        { subject: '算数', q: '1メートル（1m）は何センチメートル（cm）？', correct: '100cm', options: ['100cm', '10cm', '1000cm', '50cm'] },
+        { subject: '生活', q: '春にきれいな花を咲かせる植物はどれ？', correct: 'チューリップ', options: ['チューリップ', 'アサガオ', 'ヒマワリ', 'コスモス'] },
+        { subject: '国語', q: '「話」の部首（へん）はどれ？', correct: '言（ごんべん）', options: ['言（ごんべん）', '氵（さんずい）', '木（きへん）', '亻（にんべん）'] },
+        { subject: '算数', q: '九九の「はっく（8×9）」の答えは？', correct: '72', options: ['72', '64', '56', '81'] }
+      ],
+      3: [
+        { subject: '国語', q: '「太陽」の「陽」の音読みは？', correct: 'よう', options: ['よう', 'たい', 'こう', 'さん'] },
+        { subject: '算数', q: '56 ÷ 7 の計算の答えは？', correct: '8', options: ['8', '7', '9', '6'] },
+        { subject: '理科', q: '豆電球に明かりをつけるために必要な回路の条件は？', correct: '導線が輪のようにつながっていること', options: ['導線が輪のようにつながっていること', 'スイッチが開いていること', '導線が途中で切れていること', '電池を外すこと'] },
+        { subject: '社会', q: '地図記号で、教科書を開いた「文」の形は何を表す？', correct: '小・中学校', options: ['小・中学校', '消防署', '警察署', '郵便局'] },
+        { subject: '英語', q: '「こんにちは」を英語で言うと？', correct: 'Hello', options: ['Hello', 'Good night', 'Thank you', 'Goodbye'] },
+        { subject: '理科', q: 'じしゃくの N極 と S極 を近づけるとどうなる？', correct: '引きつけ合う', options: ['引きつけ合う', 'しりぞけ合う', 'なにも起きない', '回転し続ける'] }
+      ],
+      4: [
+        { subject: '算数', q: '3/7 ＋ 2/7 の分数の計算の答えは？', correct: '5/7', options: ['5/7', '5/14', '6/7', '1'] },
+        { subject: '理科', q: '月の形が毎日変わって見える理由は？', correct: '月が地球のまわりを公転しているから', options: ['月が地球のまわりを公転しているから', '月が形を変形させているから', '雲が隠しているから', '太陽が自転しているから'] },
+        { subject: '社会', q: '日本で一番面積が広い都道府県はどこ？', correct: '北海道', options: ['北海道', '岩手県', '東京都', '沖縄県'] },
+        { subject: '国語', q: 'ことわざ「猿も木から◯◯」に入る言葉は？', correct: '落ちる', options: ['落ちる', 'すべる', '飛ぶ', '登る'] },
+        { subject: '英語', q: '「りんご」を英語で書くと？', correct: 'Apple', options: ['Apple', 'Orange', 'Banana', 'Peach'] },
+        { subject: '社会', q: '日本列島のまわりを取り囲む4つの海に含まれないのは？', correct: '大西洋', options: ['大西洋', '太平洋', '日本海', 'オホーツク海'] }
+      ],
+      5: [
+        { subject: '算数', q: '割合の公式「割合 ＝ 比べられる量 ÷ ◯◯」に入るのは？', correct: 'もとにする量', options: ['もとにする量', '全体の量', '残りの量', '単位量'] },
+        { subject: '理科', q: '植物の葉で行われる、光を受けてデンプンを作るはたらきは？', correct: '光合成', options: ['光合成', '呼吸', '蒸散', '受粉'] },
+        { subject: '社会', q: '愛知県の豊田市を中心に発達した日本一の工業分野は？', correct: '自動車工業（中京工業地帯）', options: ['自動車工業（中京工業地帯）', '石油化学のみ', '造船業のみ', '伝統工芸のみ'] },
+        { subject: '国語', q: '敬語で「先生が本を◯◯」の尊敬語として適切なのは？', correct: 'お読みになる', options: ['お読みになる', '拝読する', '読まれる', '読む'] },
+        { subject: '英語', q: '「私は野球が好きです」の正しい英文は？', correct: 'I like baseball.', options: ['I like baseball.', 'I am baseball.', 'I play likes baseball.', 'He likes baseball.'] },
+        { subject: '社会', q: '暖流の黒潮と寒流の親潮がぶつかる好漁場を何と呼ぶ？', correct: '潮目（しおめ）', options: ['潮目（しおめ）', '海溝', '砂浜', '干潟'] }
+      ],
+      6: [
+        { subject: '算数', q: '比の計算で、2 : 3 ＝ 6 : □ の □ に入る数は？', correct: '9', options: ['9', '8', '12', '6'] },
+        { subject: '理科', q: 'てこの規則性で、つり合う条件は？', correct: '（左のおもり×支点からの距離）＝（右のおもり×支点からの距離）', options: ['（左のおもり×支点からの距離）＝（右のおもり×支点からの距離）', '左のおもりの重さ ＝ 右のおもりの重さ', '支点の位置が中央にあること', '棒の長さが等しいこと'] },
+        { subject: '社会', q: '日本国憲法の三大原則に含まれないものはどれ？', correct: '君主主権', options: ['君主主権', '国民主権', '基本的人権の尊重', '平和主義'] },
+        { subject: '社会', q: '三権分立で「法律を定める」役割を持つ機関はどこ？', correct: '国会（立法）', options: ['国会（立法）', '内閣（行政）', '裁判所（司法）', '都道府県庁'] },
+        { subject: '国語', q: '「温故知新」の四字熟語の意味として正しいものは？', correct: '昔のことを調べて新しい知識や見解を得ること', options: ['昔のことを調べて新しい知識や見解を得ること', '新しいことだけを学ぶこと', '昔のやり方をそのまま守ること', '友達と仲良く助け合うこと'] },
+        { subject: '英語', q: '"Where are you from?" に対する適切な返答は？', correct: 'I am from Japan.', options: ['I am from Japan.', 'I like apples.', 'Yes, I do.', 'It is 3 o\'clock.'] }
+      ]
+    };
+
+    const qPool = EXAM_QUESTION_BANK[this.grade] || EXAM_QUESTION_BANK[1];
+    this.questions = [...qPool].sort(() => Math.random() - 0.5);
+    this.shuffledOptions = [];
+  }
+
+  start() {
+    this.running = true;
+    this.score = 0;
+    this.combo = 0;
+    this.qIndex = 0;
+    this.setupQuestion();
+    this.canvas.addEventListener('pointerdown', this.boundPointer);
+    this.loop();
+  }
+
+  setupQuestion() {
+    if (this.qIndex >= this.questions.length) {
+      this.destroy();
+      // 大試練クリア：満点スコア 350 + スター3個
+      const audio = getAudioSynthesizer();
+      if (audio) audio.playVictory();
+      this.onWin(3, 350);
+      return;
+    }
+    const cur = this.questions[this.qIndex];
+    this.shuffledOptions = [...cur.options].sort(() => Math.random() - 0.5);
+  }
+
+  handlePointer(e) {
+    const rect = this.canvas.getBoundingClientRect();
+    const x = (e.clientX - rect.left) * (this.canvas.width / rect.width);
+    const y = (e.clientY - rect.top) * (this.canvas.height / rect.height);
+    const w = this.canvas.width;
+
+    const audio = getAudioSynthesizer();
+    const fx = getFXSystem();
+    const guidance = getErrorGuidanceSystem();
+
+    const optW = Math.min(480, w - 60);
+    const optH = 46;
+    const startY = 110;
+    const curQ = this.questions[this.qIndex];
+
+    for (let i = 0; i < this.shuffledOptions.length; i++) {
+      const optText = this.shuffledOptions[i];
+      const oy = startY + i * 54;
+      const ox = (w - optW) / 2;
+
+      if (x >= ox && x <= ox + optW && y >= oy && y <= oy + optH) {
+        if (optText === curQ.correct) {
+          this.combo++;
+          this.score += 50 * this.combo;
+          const scoreEl = document.getElementById('game-score');
+          if (scoreEl) scoreEl.innerText = this.score;
+
+          if (audio) audio.playPositive(this.grade, this.combo);
+          if (fx) {
+            fx.spawnStarBurst(w / 2, oy + optH / 2, 30, '#fbbf24');
+            fx.showFloatingScore(w / 2, oy, `正解！+${50 * this.combo}pt!`, '#34d399');
+          }
+          if (guidance) guidance.registerSuccess({ questionId: `EXAM_G${this.grade}_Q${this.qIndex}` });
+
+          setTimeout(() => {
+            this.qIndex++;
+            this.setupQuestion();
+          }, 500);
+        } else {
+          this.combo = 0;
+          if (audio) audio.playGentleError();
+          if (guidance) {
+            guidance.registerError({
+              subject: curQ.subject,
+              questionId: `EXAM_G${this.grade}_Q${this.qIndex}`,
+              targetElement: this.canvas
+            });
+          }
+          if (fx) fx.triggerScreenShake(this.canvas, 'bounce', 250);
+        }
+        return;
+      }
+    }
+  }
+
+  loop() {
+    if (!this.running) return;
+    const w = this.canvas.width;
+    const h = this.canvas.height;
+    this.ctx.clearRect(0, 0, w, h);
+
+    const curQ = this.questions[this.qIndex];
+    if (!curQ) return;
+
+    // Header & Progress
+    this.ctx.fillStyle = '#f59e0b';
+    this.ctx.font = 'bold 13px sans-serif';
+    this.ctx.textAlign = 'center';
+    this.ctx.fillText(`🌟 小学${this.grade}年 全教科総合大試練 🌟`, w / 2, 26);
+
+    // Subject badge + Question Title
+    this.ctx.fillStyle = '#38bdf8';
+    this.ctx.font = 'bold 12px sans-serif';
+    this.ctx.fillText(`【教科: ${curQ.subject}】 問 ${this.qIndex + 1} / ${this.questions.length}`, w / 2, 48);
+
+    // Question body
+    this.ctx.fillStyle = '#ffffff';
+    this.ctx.font = 'bold 15px sans-serif';
+    this.ctx.fillText(curQ.q, w / 2, 82);
+
+    // Options
+    const optW = Math.min(480, w - 60);
+    const optH = 46;
+    const startY = 110;
+
+    this.shuffledOptions.forEach((optText, i) => {
+      const oy = startY + i * 54;
+      const ox = (w - optW) / 2;
+
+      this.ctx.fillStyle = '#1e293b';
+      this.ctx.strokeStyle = '#38bdf8';
+      this.ctx.lineWidth = 1.5;
+      this.ctx.beginPath();
+      safeRoundRect(this.ctx, ox, oy, optW, optH, 12);
+      this.ctx.fill();
+      this.ctx.stroke();
+
+      this.ctx.fillStyle = '#ffffff';
+      this.ctx.font = optText.length > 25 ? '11px sans-serif' : 'bold 13px sans-serif';
+      this.ctx.textAlign = 'center';
+      this.ctx.textBaseline = 'middle';
+      this.ctx.fillText(optText, w / 2, oy + optH / 2);
+    });
+
+    requestAnimationFrame(() => this.loop());
+  }
+
+  destroy() {
+    this.running = false;
+    this.canvas.removeEventListener('pointerdown', this.boundPointer);
+  }
+}
+
 // Global Singleton Initialization
 let globalMiniGameModal = null;
 export function getMiniGameModal() {
@@ -2667,6 +3716,8 @@ if (typeof window !== 'undefined') {
   window.MiniGameModal = MiniGameModal;
   window.KanjiSlashGame = KanjiSlashGame;
   window.RadicalBuilderGame = RadicalBuilderGame;
+  window.CurriculumQuizGame = CurriculumQuizGame;
+  window.MathCurriculumGame = MathCurriculumGame;
   window.PanBalanceScaleGame = PanBalanceScaleGame;
   window.CosmicOrbitGame = CosmicOrbitGame;
   window.LeverPhysicsGame = LeverPhysicsGame;
@@ -2674,5 +3725,6 @@ if (typeof window !== 'undefined') {
   window.PrefectureJigsawGame = PrefectureJigsawGame;
   window.ContextMatchGame = ContextMatchGame;
   window.CategorySortGame = CategorySortGame;
+  window.GradeComprehensiveExamGame = GradeComprehensiveExamGame;
   window.miniGameModal = getMiniGameModal();
 }

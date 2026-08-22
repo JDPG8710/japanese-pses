@@ -40,6 +40,28 @@ node tests/test_e2e_runner.js
 
 個別の検証方法と対象範囲は [TEST_INFRA.md](TEST_INFRA.md) と [TEST_READY.md](TEST_READY.md) を参照してください。
 
+## Cloudflare Workers への公開
+
+本プロジェクトは Cloudflare Workers Static Assets に対応しています。公開用ファイルだけを `dist/` に生成するため、テスト、開発文書、エージェント設定は配信されません。
+
+```powershell
+npm install
+npm run check
+npm run deploy
+```
+
+初回の手動公開では、先に `npx wrangler login` で Cloudflare を認証してください。独自ドメインを設定しなくても、Cloudflare が発行する `workers.dev` の URL で確認できます。
+
+### Git 連携による自動公開
+
+Cloudflare ダッシュボードの **Workers & Pages** から **Create application**、**Import a repository** の順に進み、このリポジトリを接続します。次の値を設定すると、`main` ブランチへの更新時に自動でテスト、ビルド、公開できます。
+
+- Build command: `npm run check`
+- Deploy command: `npx wrangler deploy`
+- Production branch: `main`
+
+機能ブランチの変更はプレビュー URL で確認し、問題がなければ `main` にマージしてください。
+
 ## 主な構成
 
 - `index.html`：ホーム画面、学年・教科メニュー、各種モーダル

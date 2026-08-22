@@ -20,6 +20,7 @@ export class GalaxyEngine {
     this.height = container.clientHeight || window.innerHeight;
     this.isMobile = window.innerWidth <= 768;
     this.currentGradeFilter = 0; // 0 = 全学年 (All)
+    this.currentSubjectFilter = null; // null = 全教科 (All Subjects)
 
     this.initScene();
     this.createNucleus();
@@ -217,8 +218,27 @@ export class GalaxyEngine {
     this.nodeGroup = new THREE.Group();
 
     this.starNodes.forEach((node) => {
+      // 学年フィルタリング
       if (this.currentGradeFilter > 0 && node.grade !== this.currentGradeFilter) {
         return;
+      }
+
+      // 教科フィルタリング
+      if (this.currentSubjectFilter) {
+        const isSubjMatch = node.subject === this.currentSubjectFilter ||
+          (this.currentSubjectFilter.includes('英語') && node.subject?.includes('英語'));
+        if (!isSubjMatch) return;
+      }
+
+      // 日本小学校学習指導要領の学年別教科フィルタリング (小1・小2は生活のみ、理科・社会・英語は小3〜)
+      if (this.currentGradeFilter === 1 || this.currentGradeFilter === 2) {
+        if (node.subject === '理科' || node.subject === '社会' || node.subject === '外国語・英語' || node.subject === '英語') {
+          return; // 小1・小2では理科・社会・英語を表示しない
+        }
+      } else if (this.currentGradeFilter >= 3) {
+        if (node.subject === '生活') {
+          return; // 小3〜小6では生活科を表示しない
+        }
       }
 
       const singleNodeGroup = new THREE.Group();
@@ -384,6 +404,28 @@ export class GalaxyEngine {
   setGradeFilter(grade = 0) {
     this.currentGradeFilter = grade;
     this.renderNodeMeshesAndSprites();
+  }
+
+  setSubjectFilter(subject = null) {
+    this.currentSubjectFilter = (!subject || subject === 'ALL' || subject === '全教科') ? null : subject;
+    this.renderNodeMeshesAndSprites();
+    this.updateConstellationHighlight();
+  }
+
+  updateConstellationHighlight() {
+    if (!this.constellationGroup) return;
+    this.constellationGroup.children.forEach((line) => {
+      const lineSubj = line.userData?.subject;
+      if (!this.currentSubjectFilter) {
+        line.visible = true;
+        if (line.material) line.material.opacity = 0.8;
+      } else {
+        const isMatch = lineSubj === this.currentSubjectFilter ||
+          (this.currentSubjectFilter.includes('英語') && lineSubj?.includes('英語'));
+        line.visible = isMatch;
+        if (line.material) line.material.opacity = isMatch ? 1.0 : 0.2;
+      }
+    });
   }
 
   // 跨学科关联光束

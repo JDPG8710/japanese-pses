@@ -9,8 +9,8 @@
  * 6. 生活：生活仕分け箱 (CategorySortGame)
  */
 
-import { FULL_CURRICULUM_DAG } from './CurriculumData.js?v=2';
-import { KukuLinkGame } from './KukuLinkGame.js?v=2';
+import { FULL_CURRICULUM_DAG } from './CurriculumData.js';
+import { KukuLinkGame } from './KukuLinkGame.js';
 import { getAudioSynthesizer } from './AudioSynthesizer.js';
 import { getFXSystem } from './FXSystem.js';
 import { getErrorGuidanceSystem } from './ErrorGuidanceSystem.js';
@@ -22,16 +22,103 @@ function withKidsReading(kanjiTitle, hiragana, grade) {
 }
 
 
+export const GAME_GRADE_SUPPORT_MAP = {
+  KANJI_CHALLENGE: {
+    id: 'KANJI_CHALLENGE',
+    name: '漢字闖関',
+    subject: '国語',
+    grades: [1, 2, 3, 4, 5, 6],
+    disabledNotice: '全学年対応'
+  },
+  RADICAL_BUILDER: {
+    id: 'RADICAL_BUILDER',
+    name: '部首合体',
+    subject: '国語',
+    grades: [1, 2, 3, 4, 5, 6],
+    disabledNotice: '全学年対応'
+  },
+  KUKU_LINK: {
+    id: 'KUKU_LINK',
+    name: '九九連々',
+    subject: '算数',
+    grades: [2, 3, 4, 5, 6],
+    disabledNotice: '※九九・かけ算わり算は小学2年生から始まります'
+  },
+  AETHER_SCALE: {
+    id: 'AETHER_SCALE',
+    name: '星艦天秤',
+    subject: '算数',
+    grades: [1, 2, 3, 4, 5, 6],
+    disabledNotice: '全学年対応'
+  },
+  RATIO_SCALE: {
+    id: 'RATIO_SCALE',
+    name: '星艦天秤',
+    subject: '算数',
+    grades: [1, 2, 3, 4, 5, 6],
+    disabledNotice: '全学年対応'
+  },
+  COSMIC_ORBIT: {
+    id: 'COSMIC_ORBIT',
+    name: '天体月相',
+    subject: '理科',
+    grades: [4, 5, 6],
+    disabledNotice: '※天体・月の満ち欠けは小学4・6年生の内容です'
+  },
+  LEVER_PHYSICS: {
+    id: 'LEVER_PHYSICS',
+    name: 'てこ実験',
+    subject: '理科',
+    grades: [6],
+    disabledNotice: '※てこの原理と規則性は小学6年生で学習します'
+  },
+  CIRCUIT_SANDBOX: {
+    id: 'CIRCUIT_SANDBOX',
+    name: '回路実験',
+    subject: '理科',
+    grades: [3, 4, 5, 6],
+    disabledNotice: '※理科（電気と回路）は小学3年生から始まります'
+  },
+  PREFECTURE_JIGSAW: {
+    id: 'PREFECTURE_JIGSAW',
+    name: '列島パズル',
+    subject: '社会',
+    grades: [3, 4, 5, 6],
+    disabledNotice: '※社会科（47都道府県・地域産業）は小学3年生以上が対象です'
+  },
+  CONTEXT_MATCH: {
+    id: 'CONTEXT_MATCH',
+    name: '英語配対',
+    subject: '外国語・英語',
+    grades: [3, 4, 5, 6],
+    disabledNotice: '※外国語・英語は小学3年生から始まります'
+  },
+  CATEGORY_SORT: {
+    id: 'CATEGORY_SORT',
+    name: '生活仕分け',
+    subject: '生活',
+    grades: [1, 2],
+    disabledNotice: '※生活科は小学1〜2年生専用の教科です（3年生以降は理科・社会に分化）'
+  }
+};
+
+if (typeof window !== 'undefined') {
+  window.GAME_GRADE_SUPPORT_MAP = GAME_GRADE_SUPPORT_MAP;
+}
+
 // =========================================================================
 // 0. MiniGameModal - モーダル管理 ＆ ゲームルーティング
 // =========================================================================
 export class MiniGameModal {
+  static GAME_GRADE_SUPPORT_MAP = GAME_GRADE_SUPPORT_MAP;
+
   constructor() {
     this.createModalDOM();
     this.currentGame = null;
   }
 
   createModalDOM() {
+    if (typeof document === 'undefined' || !document.createElement) return;
     let modal = document.getElementById('game-modal');
     if (!modal) {
       modal = document.createElement('div');
@@ -72,15 +159,24 @@ export class MiniGameModal {
           </div>
         </div>
       `;
-      document.body.appendChild(modal);
+      if (document.body) {
+        document.body.appendChild(modal);
+      }
 
-      document.getElementById('game-close-btn').addEventListener('click', () => this.close());
-      document.getElementById('game-hint-btn').addEventListener('click', () => {
-        if (this.currentGame?.useHint) this.currentGame.useHint();
-      });
-      document.getElementById('game-shuffle-btn').addEventListener('click', () => {
-        if (this.currentGame?.useShuffle) this.currentGame.useShuffle();
-      });
+      const closeBtn = document.getElementById('game-close-btn');
+      if (closeBtn) closeBtn.addEventListener('click', () => this.close());
+      const hintBtn = document.getElementById('game-hint-btn');
+      if (hintBtn) {
+        hintBtn.addEventListener('click', () => {
+          if (this.currentGame?.useHint) this.currentGame.useHint();
+        });
+      }
+      const shuffleBtn = document.getElementById('game-shuffle-btn');
+      if (shuffleBtn) {
+        shuffleBtn.addEventListener('click', () => {
+          if (this.currentGame?.useShuffle) this.currentGame.useShuffle();
+        });
+      }
     }
     this.modal = modal;
   }
@@ -126,127 +222,175 @@ export class MiniGameModal {
     return 'KANJI_SLASH';
   }
 
-  // 特訓・人気ミニゲームから直接起動
-  openPopularGame(gameType) {
-    this.modal.classList.remove('hidden');
+  isGameSupportedForGrade(gameType, grade) {
+    if (!grade || Number(grade) === 0) return true;
+    const info = GAME_GRADE_SUPPORT_MAP[gameType];
+    if (!info || !info.grades) return true;
+    return info.grades.includes(Number(grade));
+  }
 
-    const POPULAR_GAME_STUBS = {
-      KUKU_LINK: {
-        id: 'POPULAR_KUKU_LINK',
-        subject: '算数',
-        grade: 2,
-        name: '2年 かけ算九九 星際マッチング',
-        desc: '2〜9の段の九九暗唱。式と積を2曲がり以内の星際レーザーでつなごう！',
-        bloomDepth: 1.3,
-        gameType: 'KUKU_LINK',
-        gameData: { rows: 4, cols: 4, timeLimit: 75 }
-      },
-      RADICAL_BUILDER: {
-        id: 'POPULAR_RADICAL_BUILDER',
-        subject: '国語',
-        grade: 2,
-        name: '2年 漢字偏旁部首拼装 (部首合成)',
-        desc: 'へん・つくり・かんむり等の部首パーツを合体させて正しい漢字を完成させよう！',
-        bloomDepth: 1.4,
-        gameType: 'RADICAL_BUILDER'
-      },
-      AETHER_SCALE: {
-        id: 'POPULAR_AETHER_SCALE',
-        subject: '算数',
-        grade: 5,
-        name: '5年 割合・百分率 星艦エネルギー天秤',
-        desc: '左右の天秤におもりや結晶を配置し、力と割合の平衡を達成しよう！',
-        bloomDepth: 2.3,
-        gameType: 'AETHER_SCALE',
-        gameData: { targetRatio: 65, hint: '6割5分（65%）に合わせよう！' }
-      },
-      RATIO_SCALE: {
-        id: 'POPULAR_RATIO_SCALE',
-        subject: '算数',
-        grade: 5,
-        name: '5年 割合・百分率 星艦エネルギー天秤',
-        desc: '左右の天秤におもりや結晶を配置し、力と割合の平衡を達成しよう！',
-        bloomDepth: 2.3,
-        gameType: 'AETHER_SCALE',
-        gameData: { targetRatio: 65, hint: '6割5分（65%）に合わせよう！' }
-      },
-      COSMIC_ORBIT: {
-        id: 'POPULAR_COSMIC_ORBIT',
-        subject: '理科',
-        grade: 4,
-        name: '4年 月と星・太陽 天体軌道実験室',
-        desc: '月を地球のまわりに回転させ、太陽の光による月の満ち欠け（新月・三日月・上弦・満月）を観察しよう！',
-        bloomDepth: 1.6,
-        gameType: 'COSMIC_ORBIT'
-      },
-      LEVER_PHYSICS: {
-        id: 'POPULAR_LEVER_PHYSICS',
-        subject: '理科',
-        grade: 6,
-        name: '6年 てこの規則性 宇宙物理実験室',
-        desc: '支点・力点・作用点と力のモーメント平衡。おもりを正しい目盛りに吊るして釣り合わせよう！',
-        bloomDepth: 2.5,
-        gameType: 'LEVER_PHYSICS',
-        gameData: { targetLeft: 50, armLeft: 2, targetRight: 20, correctSlot: 5 }
-      },
-      CIRCUIT_SANDBOX: {
-        id: 'POPULAR_CIRCUIT_SANDBOX',
-        subject: '理科',
-        grade: 5,
-        name: '5年 電流と回路・電磁石実験室',
-        desc: '乾電池・スイッチ・豆電球を配線し、直列・並列つなぎで豆電球の明るさを実験しよう！',
-        bloomDepth: 2.0,
-        gameType: 'CIRCUIT_SANDBOX'
-      },
-      PREFECTURE_JIGSAW: {
-        id: 'POPULAR_PREFECTURE_JIGSAW',
-        subject: '社会',
-        grade: 4,
-        name: '4年 日本47都道府県 列島パズル＆特産品尋宝',
-        desc: '8地方47都道府県の名称・位置・特産品。ピースを地図の正しい位置にはめ込もう！',
-        bloomDepth: 1.7,
-        gameType: 'PREFECTURE_JIGSAW',
-        gameData: { mode: 'PREFECTURES', region: 'ALL_JAPAN' }
-      },
-      CONTEXT_MATCH: {
-        id: 'POPULAR_CONTEXT_MATCH',
-        subject: '外国語・英語',
-        grade: 3,
-        name: '3年 英語情景趣味配対 (Word & Scene Match)',
-        desc: '英単語・挨拶表現とイラストや日本語の意味をエネルギーレーザーでペアマッチング！',
-        bloomDepth: 1.3,
-        gameType: 'CONTEXT_MATCH'
-      },
-      CATEGORY_SORT: {
-        id: 'POPULAR_CATEGORY_SORT',
-        subject: '生活',
-        grade: 1,
-        name: '1年 生活仕分け箱 (Category Sorting)',
-        desc: '毎日の生活習慣、安全な行動、ゴミ分別などを正しい仕分けボックスへドラッグ！',
-        bloomDepth: 1.1,
-        gameType: 'CATEGORY_SORT'
+  generatePopularGameNode(gameType, grade = 1, level = 1) {
+    const g = Number(grade) || 1;
+    switch (gameType) {
+      case 'RADICAL_BUILDER':
+        return {
+          id: `POPULAR_RADICAL_G${g}`,
+          subject: '国語',
+          grade: g,
+          name: `${g}年 漢字偏旁部首拼装 (部首合成)`,
+          desc: `小学${g}年生配当漢字の部首・かんむり・へんパーツを合体させて正しい漢字を完成させよう！`,
+          bloomDepth: 1.0 + g * 0.2,
+          gameType: 'RADICAL_BUILDER'
+        };
+      case 'KUKU_LINK':
+        return {
+          id: `POPULAR_KUKU_G${g}`,
+          subject: '算数',
+          grade: g,
+          name: g === 2 ? '2年 かけ算九九 星際マッチング' : `${g}年 わり算・計算応用 星際マッチング`,
+          desc: g === 2 ? '2〜9の段の九九暗唱。式と積を2曲がり以内の星際レーザーでつなごう！' : `小学${g}年生の計算応用。式と値を星際レーザーでつなごう！`,
+          bloomDepth: 1.2 + g * 0.15,
+          gameType: 'KUKU_LINK',
+          gameData: { rows: 4, cols: 4, timeLimit: 75, grade: g, level: level }
+        };
+      case 'AETHER_SCALE':
+      case 'RATIO_SCALE':
+        return {
+          id: `POPULAR_SCALE_G${g}`,
+          subject: '算数',
+          grade: g,
+          name: g <= 2 ? `${g}年 数の合成分解・星艦天秤` : (g <= 4 ? `${g}年 小数・分数 星艦天秤` : `${g}年 割合・方程式 星艦天秤`),
+          desc: '左右の天秤におもりや結晶を配置し、力と割合の平衡を達成しよう！',
+          bloomDepth: 1.0 + g * 0.25,
+          gameType: 'AETHER_SCALE',
+          gameData: { targetRatio: 50 + g * 5, grade: g, level: level }
+        };
+      case 'COSMIC_ORBIT':
+        return {
+          id: `POPULAR_ORBIT_G${g}`,
+          subject: '理科',
+          grade: g,
+          name: `${g}年 月と星・太陽 天体軌道実験室`,
+          desc: '月を地球のまわりに回転させ、太陽の光による月の満ち欠けを観察しよう！',
+          bloomDepth: 1.6 + (g - 4) * 0.3,
+          gameType: 'COSMIC_ORBIT',
+          gameData: { grade: g, level: level }
+        };
+      case 'LEVER_PHYSICS':
+        return {
+          id: `POPULAR_LEVER_G${g}`,
+          subject: '理科',
+          grade: g,
+          name: `${g}年 てこの規則性 宇宙物理実験室`,
+          desc: '支点・力点・作用点と力のモーメント平衡。おもりを正しい目盛りに吊るして釣り合わせよう！',
+          bloomDepth: 2.5,
+          gameType: 'LEVER_PHYSICS',
+          gameData: { targetLeft: 50, armLeft: 2, targetRight: 20, correctSlot: 5, grade: g, level: level }
+        };
+      case 'CIRCUIT_SANDBOX':
+        return {
+          id: `POPULAR_CIRCUIT_G${g}`,
+          subject: '理科',
+          grade: g,
+          name: g === 3 ? '3年 豆電球と磁石・回路実験室' : (g === 4 ? '4年 直列・並列つなぎ実験室' : `${g}年 電流と回路・電磁石実験室`),
+          desc: '乾電池・スイッチ・豆電球を配線し、直列・並列つなぎで豆電球の明るさを実験しよう！',
+          bloomDepth: 1.5 + (g - 3) * 0.25,
+          gameType: 'CIRCUIT_SANDBOX',
+          gameData: { grade: g, level: level }
+        };
+      case 'PREFECTURE_JIGSAW':
+        return {
+          id: `POPULAR_PREF_G${g}`,
+          subject: '社会',
+          grade: g,
+          name: `${g}年 日本47都道府県 列島パズル＆特産品尋宝`,
+          desc: '8地方47都道府県の名称・位置・特産品。ピースを地図の正しい位置にはめ込もう！',
+          bloomDepth: 1.5 + (g - 3) * 0.2,
+          gameType: 'PREFECTURE_JIGSAW',
+          gameData: { mode: 'PREFECTURES', region: 'ALL_JAPAN', grade: g, level: level }
+        };
+      case 'CONTEXT_MATCH':
+        return {
+          id: `POPULAR_CONTEXT_G${g}`,
+          subject: '外国語・英語',
+          grade: g,
+          name: `${g}年 英語情景趣味配対 (Word & Scene Match)`,
+          desc: '英単語・挨拶表現とイラストや日本語の意味をエネルギーレーザーでペアマッチング！',
+          bloomDepth: 1.2 + (g - 3) * 0.2,
+          gameType: 'CONTEXT_MATCH',
+          gameData: { grade: g, level: level }
+        };
+      case 'CATEGORY_SORT':
+        return {
+          id: `POPULAR_SORT_G${g}`,
+          subject: '生活',
+          grade: g,
+          name: `${g}年 生活仕分け箱 (Category Sorting)`,
+          desc: '毎日の生活習慣、安全な行動、ゴミ分別などを正しい仕分けボックスへドラッグ！',
+          bloomDepth: 1.0 + g * 0.15,
+          gameType: 'CATEGORY_SORT',
+          gameData: { grade: g, level: level }
+        };
+      default:
+        return {
+          id: `POPULAR_CUSTOM_G${g}`,
+          subject: '国語',
+          grade: g,
+          name: `${g}年 特訓ステージ`,
+          desc: '学年に応じた特訓ステージに挑戦しよう！',
+          bloomDepth: 1.0 + g * 0.2,
+          gameType: 'KANJI_SLASH',
+          gameData: { grade: g, level: level }
+        };
+    }
+  }
+
+  // 特訓・人気ミニゲームから直接起動 (学年指定対応)
+  openPopularGame(gameType, level = 1, requestedGrade = null) {
+    if (this.modal) this.modal.classList.remove('hidden');
+    this.currentLevel = level;
+
+    const supportInfo = GAME_GRADE_SUPPORT_MAP[gameType];
+    let effectiveGrade = 1;
+
+    if (requestedGrade && Number(requestedGrade) > 0) {
+      const gNum = Number(requestedGrade);
+      if (supportInfo && Array.isArray(supportInfo.grades)) {
+        if (supportInfo.grades.includes(gNum)) {
+          effectiveGrade = gNum;
+        } else {
+          effectiveGrade = supportInfo.grades[0];
+        }
+      } else {
+        effectiveGrade = gNum;
       }
-    };
+    } else {
+      effectiveGrade = supportInfo ? supportInfo.grades[0] : 1;
+    }
 
-    const matchingNode = POPULAR_GAME_STUBS[gameType] ||
-      FULL_CURRICULUM_DAG.find(n => n.gameType === gameType) ||
-      FULL_CURRICULUM_DAG[0];
+    const matchingNode = this.generatePopularGameNode(gameType, effectiveGrade, level);
 
-    const gradeText = matchingNode.grade ? `小学${matchingNode.grade}年` : '特訓モード';
-    document.getElementById('game-grade-badge').innerText = gradeText;
-    document.getElementById('game-subject-badge').innerText = matchingNode.subject;
-    document.getElementById('game-title').innerText = `【特訓】${matchingNode.name}`;
+    const gradeBadge = document.getElementById('game-grade-badge');
+    if (gradeBadge) gradeBadge.innerText = matchingNode.grade ? `小学${matchingNode.grade}年` : '特訓モード';
+    const subjBadge = document.getElementById('game-subject-badge');
+    if (subjBadge) subjBadge.innerText = matchingNode.subject;
+    const titleEl = document.getElementById('game-title');
+    if (titleEl) titleEl.innerText = `【特訓】${matchingNode.name} (Stage ${level})`;
 
     const canvas = document.getElementById('game-canvas');
     const container = document.getElementById('game-stage');
-    canvas.width = container.clientWidth || 640;
-    canvas.height = container.clientHeight || 384;
+    if (canvas && container) {
+      canvas.width = container.clientWidth || 640;
+      canvas.height = container.clientHeight || 384;
+    }
 
     if (this.currentGame) {
       this.currentGame.destroy();
     }
 
-    this.initGameInstance(gameType, matchingNode, canvas);
+    if (canvas) {
+      this.initGameInstance(gameType, matchingNode, canvas, effectiveGrade, level);
+    }
   }
 
   // 国語 漢字1026字 学年別闖関モード
@@ -1653,115 +1797,465 @@ export class CircuitSandboxGame {
   }
 }
 
+let PREFECTURES_47_CACHE = null;
+async function fetchPrefectures47() {
+  if (!PREFECTURES_47_CACHE) {
+    try {
+      const res = await fetch('./data/prefectures_47.json');
+      if (res.ok) PREFECTURES_47_CACHE = await res.json();
+    } catch (e) {
+      console.warn('prefectures_47.json load failed, using fallback:', e);
+    }
+  }
+  return PREFECTURES_47_CACHE;
+}
+
 // =========================================================================
-// 7. 社会：日本47都道府県 列島パズル＆特産品尋宝 (PrefectureJigsawGame)
+// 7. 社会：小学校3〜6年 学年別総合社会科学習システム (PrefectureJigsawGame / ShakaiQuest)
 // =========================================================================
 export class PrefectureJigsawGame {
-  constructor(canvas, gameData, onWin) {
+  constructor(canvas, gameData, onWin, grade = 4, level = 1) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
     this.onWin = onWin;
+    this.grade = Number(grade) || 4;
+    this.level = Number(level) || 1;
+    this.gameData = gameData;
     this.running = false;
 
-    this.prefectures = [
-      { name: '北海道', region: '北海道', specialty: '乳製品・じゃがいも', targetX: 300, targetY: 85, currentX: 70, currentY: 280, snapped: false },
-      { name: '青森県', region: '東北', specialty: 'りんご', targetX: 280, targetY: 135, currentX: 160, currentY: 280, snapped: false },
-      { name: '東京都', region: '関東', specialty: '江戸切子・雷おこし', targetX: 240, targetY: 190, currentX: 250, currentY: 280, snapped: false },
-      { name: '静岡県', region: '中部', specialty: '緑茶・うなぎ', targetX: 210, targetY: 210, currentX: 340, currentY: 280, snapped: false },
-      { name: '京都府', region: '近畿', specialty: '西陣織・宇治茶', targetX: 160, targetY: 195, currentX: 430, currentY: 280, snapped: false },
-      { name: '沖縄県', region: '九州・沖縄', specialty: 'ゴーヤ・ちんすこう', targetX: 90, targetY: 250, currentX: 520, currentY: 280, snapped: false }
+    // 学年に応じた出題モード（小3: 地図記号・安全, 小4: 47都道府県・特産品, 小5: 国土産業・太平洋ベルト, 小6: 歴史・憲法公民）
+    this.mode = gameData?.mode || (this.grade === 3 ? 'MAP_SYMBOLS' : (this.grade === 5 ? 'INDUSTRY' : (this.grade === 6 ? 'HISTORY_CIVICS' : 'PREFECTURES')));
+
+    // 8大地方区分と代表座標（小学4年用）
+    this.regions = [
+      { id: 'hokkaido', aliases: ['hokkaido', '北海道', '北海道地方'], name: '北海道地方', mapX: 430, mapY: 90, color: '#38bdf8' },
+      { id: 'tohoku', aliases: ['tohoku', '東北', '東北地方'], name: '東北地方', mapX: 385, mapY: 150, color: '#34d399' },
+      { id: 'kanto', aliases: ['kanto', '関東', '関東地方'], name: '関東地方', mapX: 345, mapY: 210, color: '#fbbf24' },
+      { id: 'chubu', aliases: ['chubu', '中部', '中部地方', '北陸', '甲信越', '東海'], name: '中部地方', mapX: 285, mapY: 215, color: '#f87171' },
+      { id: 'kinki', aliases: ['kinki', '近畿', '近畿地方', '関西', '関西地方'], name: '近畿地方', mapX: 225, mapY: 225, color: '#a78bfa' },
+      { id: 'chugoku', aliases: ['chugoku', '中国', '中国地方', '山陰', '山陽'], name: '中国地方', mapX: 165, mapY: 220, color: '#fb923c' },
+      { id: 'shikoku', aliases: ['shikoku', '四国', '四国地方'], name: '四国地方', mapX: 170, mapY: 260, color: '#4ade80' },
+      { id: 'kyushu_okinawa', aliases: ['kyushu', 'kyushu_okinawa', 'okinawa', '九州', '沖縄', '九州地方', '九州・沖縄', '九州・沖縄地方'], name: '九州・沖縄', mapX: 105, mapY: 270, color: '#e879f9' }
     ];
 
+    // 小学3年：地図記号・方位・消防警察・まち探検（10ステージ）
+    this.grade3Stages = [
+      { id: 'G3_1', title: '1. 小中学校の記号 🏫', q: '教科書を開いた「文」の文字からできた小中学校の記号は？', correct: '🏫 文 (小中学校)', options: ['🏫 文 (小中学校)', '🚒 Y (消防署)', '🚓 X (警察署・交番)', '🏣 〒 (郵便局)'] },
+      { id: 'G3_2', title: '2. 消防署の記号 🚒', q: '昔の火消し道具「さすまた」の形からできた消防署の記号は？', correct: '🚒 Y (消防署)', options: ['🚒 Y (消防署)', '🚓 X (警察署)', '🏥 十 (病院)', '🏛️ ◎ (市役所)'] },
+      { id: 'G3_3', title: '3. 警察署・交番の記号 🚓', q: '交差した2本の警棒の形から生まれた警察署・交番の記号は？', correct: '🚓 X (警察署・交番)', options: ['🚓 X (警察署・交番)', '🏫 文 (学校)', '🏭 ⚙ (工場)', '⛩️ ⛩ (神社)'] },
+      { id: 'G3_4', title: '4. 病院・診療所の記号 🏥', q: '救急・赤十字マークを表す病院・診療所の地図記号はどれ？', correct: '🏥 十 (病院・診療所)', options: ['🏥 十 (病院・診療所)', '卍 卍 (寺院)', '🌾 ⊞ (田んぼ)', '🌽 ᐯ (畑)'] },
+      { id: 'G3_5', title: '5. 郵便局の記号 🏣', q: '手紙でおなじみの「テイシン」マークからできた郵便局の記号は？', correct: '🏣 〒 (郵便局)', options: ['🏣 〒 (郵便局)', '🏛️ ◎ (市役所)', '🏫 文 (学校)', '🚒 Y (消防署)'] },
+      { id: 'G3_6', title: '6. 市役所・区役所の記号 🏛️', q: 'まちの行政の中心となる市役所・区役所を表す二重丸の記号は？', correct: '🏛️ ◎ (市役所・区役所)', options: ['🏛️ ◎ (市役所・区役所)', '〇 〇 (町村役場)', '🏣 〒 (郵便局)', '🏥 十 (病院)'] },
+      { id: 'G3_7', title: '7. 神社と寺院の記号 ⛩️', q: '神社の入口にある鳥居の形をした「神社」の地図記号は？', correct: '⛩️ ⛩ (神社)', options: ['⛩️ ⛩ (神社)', '卍 卍 (寺院)', '⛪ ✝ (教会)', '🏰 ⛫ (城跡)'] },
+      { id: 'G3_8', title: '8. 田んぼと畑の記号 🌾', q: 'お米を作る水田を表す「田」の漢字からできた地図記号は？', correct: '🌾 ⊞ (田んぼ・水田)', options: ['🌾 ⊞ (田んぼ・水田)', '🌽 ᐯ (畑)', '🌲 ☨ (針葉樹林)', '🌳 ⚲ (広葉樹林)'] },
+      { id: 'G3_9', title: '9. 工場・発電所の記号 🏭', q: '製品や機械を作る歯車の形をした「工場」の地図記号はどれ？', correct: '🏭 ⚙ (工場)', options: ['🏭 ⚙ (工場)', '♨ ♨ (温泉)', '🗼 ⛯ (電波塔)', '⛰️ ▲ (山頂・三角点)'] },
+      { id: 'G3_10', title: '10. 東西南北の方位 🧭', q: '太陽が昇る方角（東）と沈む方角（西）、地図の上（北）と下（南）の並びは？', correct: '🧭 東西南北（北が上・東が右）', options: ['🧭 東西南北（北が上・東が右）', '🧭 南北東西（南が上）', '🧭 西東南北', '🧭 北南東西'] }
+    ];
+
+    // 小学5年：国土・米作り・太平洋ベルト・工業地帯探検（10ステージ）
+    this.grade5Stages = [
+      { id: 'G5_1', title: '1. 日本の気候区分と季節風', q: '冬に大雪が降る「日本海側」と、冬に晴れて乾燥する「太平洋側」の特徴は？', correct: '❄️ 冬の北西季節風が日本海に雪をもたらす', options: ['❄️ 冬の北西季節風が日本海に雪をもたらす', '☀️ 夏の南東季節風のみ', '🌧️ 梅雨前線のみ', '🌀 年中同じ気候'] },
+      { id: 'G5_2', title: '2. 米作りの工夫と品種改良', q: '山形県の庄内平野や新潟県の越後平野で行われている稲作の工夫は？', correct: '🌾 客土・かんがい施設とコシヒカリ等の品種改良', options: ['🌾 客土・かんがい施設とコシヒカリ等の品種改良', '🍎 りんごの促成栽培', '🍊 みかんの段々畑', '🍵 茶畑の霜よけ'] },
+      { id: 'G5_3', title: '3. 近郊農業と促成栽培', q: '大都市に近い近郊農業に対し、温暖な気候を生かした高知・宮崎の栽培法は？', correct: '🍆 ビニールハウスを使う促成栽培（なす・ピーマン）', options: ['🍆 ビニールハウスを使う促成栽培（なす・ピーマン）', '🥬 高原での抑制栽培', '🌲 人工林の間伐', '🐄 酪農の放牧'] },
+      { id: 'G5_4', title: '4. 抑制栽培と高原野菜', q: '長野県の野辺山原や群馬県の嬬恋村で、涼しい夏の気候を生かして出荷する野菜は？', correct: '🥬 キャベツやレタスなどの高原野菜（抑制栽培）', options: ['🥬 キャベツやレタスなどの高原野菜（抑制栽培）', '🍇 温室ぶどう栽培', '🌾 秋まき小麦', '🍉 促成スイカ'] },
+      { id: 'G5_5', title: '5. 中京工業地帯 (愛知・三重・岐阜)', q: '日本一の工業生産額を誇り、豊田市を中心とする主力の工業分野は？', correct: '🚗 自動車・機械・航空宇宙産業', options: ['🚗 自動車・機械・航空宇宙産業', '🚢 造船・鉄鋼のみ', '📰 印刷・出版のみ', '🛢️ 石油化学のみ'] },
+      { id: 'G5_6', title: '6. 阪神工業地帯 (大阪・兵庫)', q: '東大阪の中小企業技術や神戸港を背景に発展した工業地帯の特色は？', correct: '⚙️ 金属・一般機械・化学工業が盛ん', options: ['⚙️ 金属・一般機械・化学工業が盛ん', '🚗 自動車専業', '🌾 農業関連のみ', '📰 出版・印刷専業'] },
+      { id: 'G5_7', title: '7. 京浜工業地帯 (東京・神奈川)', q: '巨大な大消費地を背景に、印刷・出版や精密機械が集まる工業地帯は？', correct: '📰 京浜工業地帯（印刷・精密機械・情報通信）', options: ['📰 京浜工業地帯（印刷・精密機械・情報通信）', '🚢 阪神工業地帯', '🚗 中京工業地帯', '🛢️ 瀬戸内工業地域'] },
+      { id: 'G5_8', title: '8. 瀬戸内工業地域とコンビナート', q: '岡山（水島）や山口（周南）などにパイプラインで結ばれて広がる施設は？', correct: '🛢️ 石油化学コンビナートと製鉄・造船業', options: ['🛢️ 石油化学コンビナートと製鉄・造船業', '🚗 自動車組み立て工場群', '📰 印刷・出版会社群', '🌲 製材・木工所群'] },
+      { id: 'G5_9', title: '9. 日本の水産業と潮目の漁場', q: '暖流（黒潮）と寒流（親潮）がぶつかり、プランクトンが豊富な好漁場は？', correct: '🐟 潮目（しおめ）と三陸沖の豊かな好漁場', options: ['🐟 潮目（しおめ）と三陸沖の豊かな好漁場', '🏜️ 内陸砂漠地帯', '🏞️ 閉鎖性湖沼', '🏔️ 高山植物帯'] },
+      { id: 'G5_10', title: '10. 日本の貿易港と国際コンテナ船', q: '原油・鉄鉱石・大豆を輸入し、高品質な工業製品を世界へ輸出する仕組みは？', correct: '🚢 加工貿易と名古屋港・東京港などの国際拠点港湾', options: ['🚢 加工貿易と名古屋港・東京港などの国際拠点港湾', '✈️ 観光のみの島国', '🚆 鉄道輸送専業', '🚚 国内完結型流通'] }
+    ];
+
+    // 小学6年：日本の歴史年表＆日本国憲法・三権分立（10ステージ）
+    this.grade6Stages = [
+      { id: 'G6_1', title: '1. 縄文・弥生・古墳時代', q: '狩猟採集の縄文土器から、稲作が始まった弥生、大仙古墳（仁徳天皇陵）の時代は？', correct: '🏺 縄文土器・弥生稲作・卑弥呼・大仙古墳', options: ['🏺 縄文土器・弥生稲作・卑弥呼・大仙古墳', '🏯 江戸幕府の参勤交代', '📜 聖徳太子の法隆寺', '🏛️ 明治維新の富岡製糸場'] },
+      { id: 'G6_2', title: '2. 飛鳥・奈良時代', q: '聖徳太子の十七条の憲法、現存最古の木造建築・法隆寺、聖武天皇の大仏建立は？', correct: '📜 聖徳太子・法隆寺・東大寺大仏・鑑真の来日', options: ['📜 聖徳太子・法隆寺・東大寺大仏・鑑真の来日', '⚔️ 源頼朝の鎌倉幕府', '🏯 織田信長の天下布武', '🚢 ペリーの黒船来航'] },
+      { id: 'G6_3', title: '3. 平安時代と国風文化', q: '平安京遷都の後、紫式部の『源氏物語』や仮名文字が栄えた文化は？', correct: '📖 紫式部・清少納言・国風文化・平等院鳳凰堂', options: ['📖 紫式部・清少納言・国風文化・平等院鳳凰堂', '🏺 縄文土器の狩猟文化', '⚔️ 武家政権の成立', '🏛️ 大日本帝国憲法の制定'] },
+      { id: 'G6_4', title: '4. 鎌倉・室町時代', q: '源頼朝の武家政権、足利義満の金閣寺、足利義政の銀閣寺や水墨画の雪舟の時代は？', correct: '⚔️ 源頼朝（鎌倉幕府）・金閣寺・銀閣寺・雪舟', options: ['⚔️ 源頼朝（鎌倉幕府）・金閣寺・銀閣寺・雪舟', '📜 聖徳太子（飛鳥）', '🏯 豊臣秀吉（安土桃山）', '🏛️ 日本国憲法の制定'] },
+      { id: 'G6_5', title: '5. 戦国・安土桃山時代', q: '織田信長の楽市楽座、豊臣秀吉の太閤検地・刀狩と天下統一の偉業は？', correct: '🏯 織田信長・豊臣秀吉・楽市楽座と天下統一', options: ['🏯 織田信長・豊臣秀吉・楽市楽座と天下統一', '📖 紫式部の源氏物語', '📜 鑑真の戒律伝来', '⚖️ 三権分立の確立'] },
+      { id: 'G6_6', title: '6. 江戸時代と社会の安定', q: '徳川家康の幕府、参勤交代、鎖国政策、杉田玄白の解体新書、伊能忠敬の日本地図は？', correct: '🗺️ 徳川家康・参勤交代・鎖国・伊能忠敬の地図', options: ['🗺️ 徳川家康・参勤交代・鎖国・伊能忠敬の地図', '🏺 卑弥呼の邪馬台国', '⚔️ 源頼朝の幕府', '🌐 国際連合の設立'] },
+      { id: 'G6_7', title: '7. 明治維新と近代国家の建設', q: '坂本龍馬・西郷隆盛らの活躍、富岡製糸場の官営工場、大日本帝国憲法発布の時代は？', correct: '🏭 明治維新・富岡製糸場・文明開化・近代化', options: ['🏭 明治維新・富岡製糸場・文明開化・近代化', '🏯 安土城の築城', '📜 法隆寺の建立', '🏺 縄文土器の製作'] },
+      { id: 'G6_8', title: '8. 日本国憲法の三大原則', q: '日本の最高法規である日本国憲法を支える「三大原則」の組み合わせは？', correct: '🕊️ 国民主権・基本的人権の尊重・平和主義', options: ['🕊️ 国民主権・基本的人権の尊重・平和主義', '⚔️ 征夷大将軍・武家諸法度・参勤交代', '👑 君主主権・軍備拡張・階級制度', '📜 律令制・班田収授・租庸調'] },
+      { id: 'G6_9', title: '9. 三権分立の仕組み', q: '権力の集中を防ぎ国民の権利を守る「国会」「内閣」「裁判所」の役割分担は？', correct: '🏛️ 国会(立法)・内閣(行政)・裁判所(司法)', options: ['🏛️ 国会(立法)・内閣(行政)・裁判所(司法)', '🏛️ 内閣がすべての権力を持つ', '🏛️ 裁判所が法律を作り実行する', '🏛️ 国会が裁判もすべて行う'] },
+      { id: 'G6_10', title: '10. 世界平和と国際連合', q: 'ユニセフやユネスコ、PKO（平和維持活動）とSDGs（持続可能な開発目標）への貢献は？', correct: '🌐 国際連合(UN)と地球規模課題(SDGs)への国際協力', options: ['🌐 国際連合(UN)と地球規模課題(SDGs)への国際協力', '⚔️ 鎖国政策の徹底', '🏰 幕藩体制の維持', '🏺 巨大古墳の築造'] }
+    ];
+
+    this.selectedPref = null;
+    this.selectedOption = null;
+    this.placedCount = 0;
     this.boundPointer = this.handlePointer.bind(this);
   }
 
-  start() {
+  getStagesForCurrentMode() {
+    if (this.mode === 'MAP_SYMBOLS' || this.grade === 3) return this.grade3Stages;
+    if (this.mode === 'INDUSTRY' || this.grade === 5) return this.grade5Stages;
+    if (this.mode === 'HISTORY_CIVICS' || this.grade === 6) return this.grade6Stages;
+    // 小4は 8地方ステージ
+    return [
+      { id: 'G4_1', title: '1. 北海道・東北地方', regionName: '北海道・東北' },
+      { id: 'G4_2', title: '2. 関東地方', regionName: '関東地方' },
+      { id: 'G4_3', title: '3. 中部地方', regionName: '中部地方' },
+      { id: 'G4_4', title: '4. 近畿地方', regionName: '近畿地方' },
+      { id: 'G4_5', title: '5. 中国地方', regionName: '中国地方' },
+      { id: 'G4_6', title: '6. 四国地方', regionName: '四国地方' },
+      { id: 'G4_7', title: '7. 九州・沖縄地方', regionName: '九州・沖縄' },
+      { id: 'G4_8', title: '8. 日本列島 オールスター', regionName: '全国' }
+    ];
+  }
+
+  async start() {
     this.running = true;
+    this.selectedPref = null;
+    this.selectedOption = null;
+    this.placedCount = 0;
+
+    const stages = this.getStagesForCurrentMode();
+    this.totalStages = stages.length;
+    this.currentStageIdx = (this.level - 1) % this.totalStages;
+
+    if (this.mode === 'PREFECTURES' || this.grade === 4) {
+      const db = await fetchPrefectures47();
+      const allPrefList = db?.prefectures || [
+        { name: '北海道', region: '北海道地方', regionId: 'hokkaido', specialty: '夕張メロン・じゃがいも' },
+        { name: '青森県', region: '東北地方', regionId: 'tohoku', specialty: 'りんご・ねぶた祭' },
+        { name: '東京都', region: '関東地方', regionId: 'kanto', specialty: '江戸切子・雷おこし' },
+        { name: '静岡県', region: '中部地方', regionId: 'chubu', specialty: 'お茶・うなぎ・富士山' },
+        { name: '京都府', region: '近畿地方', regionId: 'kinki', specialty: '西陣織・宇治茶・八ツ橋' },
+        { name: '香川県', region: '四国地方', regionId: 'shikoku', specialty: '讃岐うどん' },
+        { name: '福岡県', region: '九州・沖縄地方', regionId: 'kyushu_okinawa', specialty: '博多明太子・あまおう' },
+        { name: '沖縄県', region: '九州・沖縄地方', regionId: 'kyushu_okinawa', specialty: 'ゴーヤ・ちんすこう' }
+      ];
+
+      const stageInfo = stages[this.currentStageIdx];
+      let pool = allPrefList;
+      if (this.currentStageIdx < 7) {
+        const targetReg = this.regions[this.currentStageIdx];
+        const regPool = allPrefList.filter(p => this.isRegionMatch(p, targetReg));
+        if (regPool.length > 0) pool = regPool;
+      }
+
+      const count = Math.min(pool.length, Math.min(6, 4 + this.level));
+      this.targetPrefs = [...pool].sort(() => Math.random() - 0.5).slice(0, count).map((p, idx) => ({
+        ...p,
+        id: `pref_${idx}`,
+        placed: false,
+        slotIdx: idx
+      }));
+    } else {
+      // クイズ形式（小3, 小5, 小6）
+      const stage = stages[this.currentStageIdx];
+      this.currentQuiz = stage;
+      this.shuffledOptions = [...stage.options].sort(() => Math.random() - 0.5);
+    }
+
     this.canvas.addEventListener('pointerdown', this.boundPointer);
     this.loop();
+  }
+
+  setStage(newStage) {
+    this.level = Math.max(1, Math.min(this.totalStages, newStage));
+    const audio = getAudioSynthesizer();
+    audio.playClick();
+    this.destroy();
+    this.start();
+  }
+
+  isRegionMatch(pref, reg) {
+    if (!pref || !reg) return false;
+    const pRegion = (pref.region || '').toLowerCase();
+    const pRegionId = (pref.regionId || '').toLowerCase();
+    const rId = (reg.id || '').toLowerCase();
+    const rName = (reg.name || '').toLowerCase();
+
+    if (pRegion === rName || pRegionId === rId) return true;
+    if (reg.aliases && reg.aliases.some(a => a.toLowerCase() === pRegion || a.toLowerCase() === pRegionId)) return true;
+
+    const cleanP = pRegion.replace(/地方|・/g, '');
+    const cleanR = rName.replace(/地方|・/g, '');
+    if (cleanP && cleanR && (cleanP.includes(cleanR) || cleanR.includes(cleanP))) return true;
+    return false;
   }
 
   handlePointer(e) {
     const rect = this.canvas.getBoundingClientRect();
     const x = (e.clientX - rect.left) * (this.canvas.width / rect.width);
     const y = (e.clientY - rect.top) * (this.canvas.height / rect.height);
+    const w = this.canvas.width;
+    const h = this.canvas.height;
+
+    // 0. 上部ステージ進行バー (y: 4 ~ 26)
+    if (y >= 4 && y <= 26) {
+      const btnW = Math.min(28, (w - 40) / this.totalStages);
+      const clickedStage = Math.floor((x - 20) / btnW) + 1;
+      if (clickedStage >= 1 && clickedStage <= this.totalStages) {
+        this.setStage(clickedStage);
+        return;
+      }
+    }
 
     const audio = getAudioSynthesizer();
     const fx = getFXSystem();
     const guidance = getErrorGuidanceSystem();
 
-    let hit = false;
-    this.prefectures.forEach((p) => {
-      // 56px child-friendly tap hitbox
-      if (!p.snapped && Math.hypot(p.currentX - x, p.currentY - y) < 45) {
-        p.snapped = true;
-        p.currentX = p.targetX;
-        p.currentY = p.targetY;
-        hit = true;
+    // 1. 小学4年モード：47都道府県 列島パズル
+    if (this.mode === 'PREFECTURES' || this.grade === 4) {
+      const dockY = h - 45;
+      const stepX = (w - 40) / (this.targetPrefs?.length || 4);
 
-        audio.playCoin();
-        fx.spawnStarBurst(p.targetX, p.targetY, 20, '#4ade80');
-        fx.showFloatingScore(p.targetX, p.targetY, `正解！【${p.name}】`, '#4ade80');
-        guidance.registerSuccess({ questionId: 'PREFECTURE_' + p.name });
+      for (let i = 0; i < (this.targetPrefs?.length || 0); i++) {
+        const p = this.targetPrefs[i];
+        if (p.placed) continue;
+        const px = 20 + i * stepX + stepX / 2;
+        if (Math.abs(px - x) < 42 && Math.abs(dockY - y) < 28) {
+          this.selectedPref = p;
+          audio.playClick();
+          return;
+        }
       }
-    });
 
-    if (!hit) {
-      const rem = this.prefectures.find(pr => !pr.snapped);
-      if (rem) {
-        guidance.registerError({
-          subject: '社会',
-          questionId: 'PREFECTURE_JIGSAW',
-          questionData: { prefecture: rem.name, region: rem.region },
-          targetElement: this.canvas
-        });
-        fx.triggerScreenShake(this.canvas, 'bounce', 250);
+      if (this.selectedPref) {
+        for (let i = 0; i < this.regions.length; i++) {
+          const reg = this.regions[i];
+          if (Math.hypot(reg.mapX - x, reg.mapY - y) < 50) {
+            if (this.isRegionMatch(this.selectedPref, reg)) {
+              this.selectedPref.placed = true;
+              this.placedCount++;
+              audio.playPositive(4, 1);
+              fx.spawnStarBurst(reg.mapX, reg.mapY, 25, '#4ade80');
+              fx.showFloatingScore(reg.mapX, reg.mapY, `正解！【${this.selectedPref.name}】(${this.selectedPref.specialty || ''})`, '#fbbf24');
+              guidance.registerSuccess({ questionId: 'SHAKAI_' + this.selectedPref.name });
+
+              this.selectedPref = null;
+
+              if (this.placedCount >= this.targetPrefs.length) {
+                audio.playVictory();
+                setTimeout(() => {
+                  this.destroy();
+                  this.onWin(3, 300);
+                }, 600);
+              }
+            } else {
+              audio.playGentleError();
+              guidance.registerError({
+                subject: '社会',
+                questionId: 'SHAKAI_' + this.selectedPref.name,
+                questionData: { prefecture: this.selectedPref.name, correctRegion: this.selectedPref.region || reg.name },
+                targetElement: this.canvas
+              });
+              fx.triggerScreenShake(this.canvas, 'wobble', 250);
+            }
+            return;
+          }
+        }
       }
+      return;
     }
 
-    if (this.prefectures.every((p) => p.snapped)) {
-      audio.playFanfare();
-      fx.spawnConfetti(this.canvas.width, this.canvas.height, 60);
-      setTimeout(() => {
-        this.destroy();
-        this.onWin(3, 300);
-      }, 500);
+    // 2. 小学3年, 5年, 6年モード：学年特化型インタラクティブクイズ
+    if (this.shuffledOptions) {
+      const optW = w - 80;
+      const optH = 42;
+      const startY = 100;
+
+      for (let i = 0; i < this.shuffledOptions.length; i++) {
+        const optText = this.shuffledOptions[i];
+        const oy = startY + i * 50;
+
+        if (x >= 40 && x <= 40 + optW && y >= oy && y <= oy + optH) {
+          if (optText === this.currentQuiz.correct) {
+            audio.playPositive(this.grade, 1);
+            fx.spawnStarBurst(w / 2, oy + optH / 2, 30, '#4ade80');
+            fx.showFloatingScore(w / 2, oy, '正解！ Perfect!', '#fbbf24');
+            guidance.registerSuccess({ questionId: 'SHAKAI_' + this.currentQuiz.id });
+
+            setTimeout(() => {
+              this.destroy();
+              this.onWin(3, 280);
+            }, 650);
+          } else {
+            audio.playGentleError();
+            guidance.registerError({
+              subject: '社会',
+              questionId: 'SHAKAI_' + this.currentQuiz.id,
+              questionData: { q: this.currentQuiz.q, wrong: optText, correct: this.currentQuiz.correct },
+              targetElement: this.canvas
+            });
+            fx.triggerScreenShake(this.canvas, 'wobble', 250);
+          }
+          return;
+        }
+      }
     }
   }
 
   loop() {
     if (!this.running) return;
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    const w = this.canvas.width;
+    const h = this.canvas.height;
+    this.ctx.clearRect(0, 0, w, h);
 
-    this.ctx.fillStyle = '#ffffff';
-    this.ctx.font = 'bold 18px sans-serif';
-    this.ctx.textAlign = 'center';
-    this.ctx.fillText(`${withKidsReading('日本列島47都道府県', 'にほんれっとう・とどうふけん')}：下のピースを地図の正しい位置にはめ込もう！`, this.canvas.width / 2, 35);
-
-    this.prefectures.forEach((p) => {
-      // Target slot
-      this.ctx.strokeStyle = p.snapped ? '#4ade80' : '#475569';
-      this.ctx.setLineDash([4, 4]);
-      this.ctx.strokeRect(p.targetX - 35, p.targetY - 18, 70, 36);
-      this.ctx.setLineDash([]);
-
-      // Piece badge
-      this.ctx.fillStyle = p.snapped ? '#4ade80' : '#1e293b';
+    // 0. 上部ステージ進行バー
+    const btnW = Math.min(28, (w - 40) / this.totalStages);
+    for (let s = 1; s <= this.totalStages; s++) {
+      const sx = 20 + (s - 1) * btnW;
+      const isCurrent = s === this.level;
+      this.ctx.fillStyle = isCurrent ? '#f59e0b' : '#334155';
       this.ctx.beginPath();
-      this.ctx.roundRect(p.currentX - 35, p.currentY - 18, 70, 36, 10);
+      this.ctx.roundRect(sx, 6, btnW - 3, 16, 4);
       this.ctx.fill();
-      this.ctx.strokeStyle = p.snapped ? '#4ade80' : '#38bdf8';
-      this.ctx.lineWidth = 1.5;
+
+      this.ctx.fillStyle = isCurrent ? '#0f172a' : '#94a3b8';
+      this.ctx.font = 'bold 9px sans-serif';
+      this.ctx.textAlign = 'center';
+      this.ctx.fillText(`${s}`, sx + (btnW - 3) / 2, 17);
+    }
+
+    // 1. 小4：47都道府県 日本列島パズル描画
+    if (this.mode === 'PREFECTURES' || this.grade === 4) {
+      this.ctx.fillStyle = '#ffffff';
+      this.ctx.font = 'bold 15px sans-serif';
+      this.ctx.textAlign = 'center';
+      this.ctx.fillText(`${withKidsReading('4年 社会：日本47都道府県 列島パズル', 'にほんれっとう・ちほうくぶん')} (Stage ${this.level})`, w / 2, 44);
+
+      this.ctx.fillStyle = '#38bdf8';
+      this.ctx.font = '11px sans-serif';
+      this.ctx.fillText('下の都道府県カードをタップし、日本地図の正しい地域枠を選んではめ込もう！', w / 2, 62);
+
+      // 日本列島の背景輪郭
+      this.ctx.fillStyle = '#1e293b';
+      this.ctx.strokeStyle = '#475569';
+      this.ctx.lineWidth = 2;
+
+      // 北海道
+      this.ctx.beginPath();
+      this.ctx.ellipse(430, 90, 36, 26, Math.PI / 6, 0, Math.PI * 2);
+      this.ctx.fill();
       this.ctx.stroke();
 
-      this.ctx.fillStyle = p.snapped ? '#0f172a' : '#f8fafc';
-      this.ctx.font = 'bold 12px sans-serif';
-      this.ctx.textAlign = 'center';
-      this.ctx.textBaseline = 'middle';
-      this.ctx.fillText(p.name, p.currentX, p.currentY);
-    });
+      // 本州・東北
+      this.ctx.beginPath();
+      this.ctx.ellipse(385, 150, 24, 38, -Math.PI / 12, 0, Math.PI * 2);
+      this.ctx.fill();
+      this.ctx.stroke();
 
-    requestAnimationFrame(() => this.loop());
+      // 本州・関東〜中部
+      this.ctx.beginPath();
+      this.ctx.ellipse(315, 212, 45, 26, -Math.PI / 8, 0, Math.PI * 2);
+      this.ctx.fill();
+      this.ctx.stroke();
+
+      // 本州・近畿〜中国
+      this.ctx.beginPath();
+      this.ctx.ellipse(195, 222, 44, 20, -Math.PI / 16, 0, Math.PI * 2);
+      this.ctx.fill();
+      this.ctx.stroke();
+
+      // 四国
+      this.ctx.beginPath();
+      this.ctx.ellipse(170, 260, 30, 16, Math.PI / 12, 0, Math.PI * 2);
+      this.ctx.fill();
+      this.ctx.stroke();
+
+      // 九州・沖縄
+      this.ctx.beginPath();
+      this.ctx.ellipse(105, 270, 32, 24, Math.PI / 4, 0, Math.PI * 2);
+      this.ctx.fill();
+      this.ctx.stroke();
+
+      // 8大地方ターゲットスロット描画
+      this.regions.forEach((reg) => {
+        this.ctx.strokeStyle = reg.color || '#38bdf8';
+        this.ctx.lineWidth = 2;
+        this.ctx.setLineDash([3, 3]);
+        this.ctx.beginPath();
+        this.ctx.arc(reg.mapX, reg.mapY, 26, 0, Math.PI * 2);
+        this.ctx.stroke();
+        this.ctx.setLineDash([]);
+
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.font = 'bold 10px sans-serif';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText(reg.name, reg.mapX, reg.mapY + 38);
+      });
+
+      // 既に配置された都道府県バッジ
+      this.targetPrefs?.forEach((p) => {
+        if (p.placed) {
+          const reg = this.regions.find(r => this.isRegionMatch(p, r)) || this.regions[0];
+          this.ctx.fillStyle = '#10b981';
+          this.ctx.beginPath();
+          this.ctx.roundRect(reg.mapX - 34, reg.mapY - 14, 68, 28, 6);
+          this.ctx.fill();
+
+          this.ctx.fillStyle = '#ffffff';
+          this.ctx.font = 'bold 11px sans-serif';
+          this.ctx.fillText(p.name, reg.mapX, reg.mapY + 4);
+        }
+      });
+
+      // 下部ドックの都道府県カード
+      const dockY = h - 45;
+      const stepX = (w - 40) / (this.targetPrefs?.length || 4);
+
+      this.targetPrefs?.forEach((p, idx) => {
+        if (!p.placed) {
+          const px = 20 + idx * stepX + stepX / 2;
+          const isSel = this.selectedPref === p;
+
+          this.ctx.fillStyle = isSel ? '#f59e0b' : '#1e293b';
+          this.ctx.strokeStyle = isSel ? '#fef08a' : '#38bdf8';
+          this.ctx.lineWidth = isSel ? 3 : 1.5;
+          this.ctx.beginPath();
+          this.ctx.roundRect(px - 34, dockY - 18, 68, 36, 8);
+          this.ctx.fill();
+          this.ctx.stroke();
+
+          this.ctx.fillStyle = isSel ? '#0f172a' : '#ffffff';
+          this.ctx.font = 'bold 11px sans-serif';
+          this.ctx.textAlign = 'center';
+          this.ctx.fillText(p.name, px, dockY + 4);
+        }
+      });
+    } else {
+      // 2. 小3, 小5, 小6：学年特化型インタラクティブクイズ描画
+      const stage = this.currentQuiz;
+      const gradeTitle = this.grade === 3 ? '3年 社会：地図記号・方位・まち探検' : (this.grade === 5 ? '5年 社会：日本の国土・産業・太平洋ベルト' : '6年 社会：日本歴史クロニクル・日本国憲法');
+
+      this.ctx.fillStyle = '#ffffff';
+      this.ctx.font = 'bold 15px sans-serif';
+      this.ctx.textAlign = 'center';
+      this.ctx.fillText(`${withKidsReading(gradeTitle, 'しゃかい')}：${stage.title}`, w / 2, 44);
+
+      this.ctx.fillStyle = '#38bdf8';
+      this.ctx.font = '12px sans-serif';
+      this.ctx.fillText(stage.q, w / 2, 70);
+
+      // 4択選択肢カード
+      const optW = w - 80;
+      const optH = 42;
+      const startY = 100;
+
+      this.shuffledOptions?.forEach((optText, i) => {
+        const oy = startY + i * 50;
+
+        this.ctx.fillStyle = '#1e293b';
+        this.ctx.strokeStyle = '#38bdf8';
+        this.ctx.lineWidth = 1.5;
+        this.ctx.beginPath();
+        this.ctx.roundRect(40, oy, optW, optH, 10);
+        this.ctx.fill();
+        this.ctx.stroke();
+
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.font = 'bold 13px sans-serif';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText(optText, w / 2, oy + optH / 2 + 5);
+      });
+    }
+
+    if (typeof requestAnimationFrame !== 'undefined') {
+      requestAnimationFrame(() => this.loop());
+    }
   }
 
   destroy() {

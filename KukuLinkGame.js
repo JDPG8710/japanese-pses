@@ -1,5 +1,11 @@
 /**
- * KukuLinkGame.js - 九九星際マッチング（日本語対応）
+ * KukuLinkGame.js - 九九星際マッチング＆九九わり算除法（日本語・文部科学省学習指導要領対応）
+ * 
+ * Level 1: 基礎九九（2の段・3の段・5の段）
+ * Level 2: 発展九九（4の段・6の段・7の段）
+ * Level 3: 上級九九（8の段・9の段 ＆ 全段ランダム）
+ * Level 4: 九九わり算除法（割り切れる除法: 56÷7=8, 72÷9=8 等）
+ * Level 5: 混合速算マスター（かけ算 ＆ わり算 混合ハイブリッド）
  */
 
 import { getAudioSynthesizer } from './AudioSynthesizer.js';
@@ -11,6 +17,8 @@ export class KukuLinkGame {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
     this.onWin = options.onWin || (() => {});
+    this.onNextLevel = options.onNextLevel || null;
+    this.level = options.level || 1; // 1 ~ 5
     this.rows = options.rows || 4;
     this.cols = options.cols || 4;
     this.totalPairs = (this.rows * this.cols) / 2;
@@ -24,7 +32,7 @@ export class KukuLinkGame {
     this.matchedPairsCount = 0;
     this.combo = 0;
     this.maxCombo = 0;
-    this.timeLeft = options.timeLimit || 75;
+    this.timeLeft = options.timeLimit || Math.max(50, 80 - (this.level - 1) * 5);
     this.totalTime = this.timeLeft;
     this.basePoints = 0;
     this.comboBonus = 0;
@@ -49,15 +57,20 @@ export class KukuLinkGame {
     this.comboBonus = 0;
     this.selectedTile = null;
     this.laserPath = null;
+    this.timeLeft = Math.max(50, 80 - (this.level - 1) * 5);
+    this.totalTime = this.timeLeft;
 
     this.generateKukuGrid();
 
     this.canvas.addEventListener('pointerdown', this.boundPointer);
 
+    clearInterval(this.timerInterval);
     this.timerInterval = setInterval(() => {
       this.timeLeft--;
-      const timerEl = document.getElementById('game-timer');
-      if (timerEl) timerEl.innerText = `⏱ ${this.timeLeft}s`;
+      if (typeof document !== 'undefined') {
+        const timerEl = document.getElementById('game-timer');
+        if (timerEl) timerEl.innerText = `⏱ ${this.timeLeft}s`;
+      }
 
       if (this.timeLeft <= 0) {
         this.destroy();
@@ -68,20 +81,75 @@ export class KukuLinkGame {
     this.renderLoop();
   }
 
+  setLevel(newLevel) {
+    this.level = Math.max(1, Math.min(5, newLevel));
+    this.start();
+  }
+
   generateKukuGrid() {
     const formulas = [];
-    while (formulas.length < this.totalPairs) {
-      const a = Math.floor(2 + Math.random() * 8); // 2~9
-      const b = Math.floor(1 + Math.random() * 9); // 1~9
-      const product = a * b;
-      const key = `${a}×${b}`;
+    const usedKeys = new Set();
 
-      if (!formulas.some((f) => f.expr === key)) {
+    // レベルに応じた算式生成ルール
+    while (formulas.length < this.totalPairs) {
+      let expr = '';
+      let resultVal = 0;
+      let displayResult = '';
+
+      if (this.level === 1) {
+        // Level 1: 2, 3, 5の段
+        const table = [2, 3, 5][Math.floor(Math.random() * 3)];
+        const b = Math.floor(1 + Math.random() * 9);
+        resultVal = table * b;
+        expr = `${table}×${b}`;
+        displayResult = String(resultVal);
+      } else if (this.level === 2) {
+        // Level 2: 4, 6, 7の段
+        const table = [4, 6, 7][Math.floor(Math.random() * 3)];
+        const b = Math.floor(1 + Math.random() * 9);
+        resultVal = table * b;
+        expr = `${table}×${b}`;
+        displayResult = String(resultVal);
+      } else if (this.level === 3) {
+        // Level 3: 8, 9の段 ＆ 全段ミックス
+        const table = Math.random() < 0.6 ? (Math.random() < 0.5 ? 8 : 9) : Math.floor(2 + Math.random() * 8);
+        const b = Math.floor(1 + Math.random() * 9);
+        resultVal = table * b;
+        expr = `${table}×${b}`;
+        displayResult = String(resultVal);
+      } else if (this.level === 4) {
+        // Level 4: 九九わり算除法（割り切れる九九逆算）
+        const divisor = Math.floor(2 + Math.random() * 8); // 2~9
+        const quotient = Math.floor(1 + Math.random() * 9); // 1~9
+        const dividend = divisor * quotient;
+        resultVal = quotient;
+        expr = `${dividend}÷${divisor}`;
+        displayResult = String(quotient);
+      } else {
+        // Level 5: 混合速算（かけ算 ＆ わり算）
+        if (Math.random() < 0.5) {
+          const a = Math.floor(2 + Math.random() * 8);
+          const b = Math.floor(1 + Math.random() * 9);
+          resultVal = a * b;
+          expr = `${a}×${b}`;
+          displayResult = String(resultVal);
+        } else {
+          const divisor = Math.floor(2 + Math.random() * 8);
+          const quotient = Math.floor(1 + Math.random() * 9);
+          const dividend = divisor * quotient;
+          resultVal = quotient;
+          expr = `${dividend}÷${divisor}`;
+          displayResult = String(quotient);
+        }
+      }
+
+      if (!usedKeys.has(expr)) {
+        usedKeys.add(expr);
         formulas.push({
           id: `pair-${formulas.length}`,
-          expr: key,
-          product: product,
-          val: product
+          expr: expr,
+          displayResult: displayResult,
+          val: resultVal
         });
       }
     }
@@ -89,7 +157,7 @@ export class KukuLinkGame {
     const cardDeck = [];
     formulas.forEach((item) => {
       cardDeck.push({ pairId: item.id, text: item.expr, val: item.val, matched: false });
-      cardDeck.push({ pairId: item.id, text: String(item.product), val: item.val, matched: false });
+      cardDeck.push({ pairId: item.id, text: item.displayResult, val: item.val, matched: false });
     });
 
     for (let i = cardDeck.length - 1; i > 0; i--) {
@@ -211,6 +279,18 @@ export class KukuLinkGame {
     const clientX = (e.clientX - rect.left) * (this.canvas.width / rect.width);
     const clientY = (e.clientY - rect.top) * (this.canvas.height / rect.height);
 
+    // レベル切り替えバーのタップ判定 (上部 y: 5 ~ 32)
+    if (clientY >= 5 && clientY <= 32) {
+      for (let lvl = 1; lvl <= 5; lvl++) {
+        const btnX = 65 + (lvl - 1) * 36;
+        if (clientX >= btnX && clientX <= btnX + 32) {
+          this.setLevel(lvl);
+          this.audio.playClick();
+          return;
+        }
+      }
+    }
+
     const layout = this.getCardLayout();
     const { startX, startY, cardW, cardH, gap } = layout;
 
@@ -222,32 +302,52 @@ export class KukuLinkGame {
         const x = startX + (c - 1) * (cardW + gap);
         const y = startY + (r - 1) * (cardH + gap);
 
-        if (clientX >= x && clientX <= x + cardW && clientY >= y && clientY <= y + cardH) {
-          this.onTileClicked(tile);
+        // タッチ範囲の拡張 (+4px)
+        if (clientX >= x - 4 && clientX <= x + cardW + 4 && clientY >= y - 4 && clientY <= y + cardH + 4) {
+          this.onTileClicked(tile, x + cardW / 2, y + cardH / 2);
           return;
         }
       }
     }
   }
 
-  onTileClicked(tile) {
+  onTileClicked(tile, cardCenterX, cardCenterY) {
     this.hintPair = null;
-    this.audio.playClick();
 
     if (!this.selectedTile) {
       this.selectedTile = tile;
+      this.audio.playClick();
+      if (cardCenterX !== undefined && cardCenterY !== undefined) {
+        this.fx.spawnStarBurst(cardCenterX, cardCenterY, 12, '#eab308');
+      }
       return;
     }
 
     if (this.selectedTile === tile) {
       this.selectedTile = null;
+      this.audio.playClick();
       return;
     }
 
-    const path = this.checkPath(this.selectedTile, tile);
-    if (path) {
-      this.selectedTile.matched = true;
-      tile.matched = true;
+    // 数学的な一致（式と積、または積が同じ式同士）の判定
+    const isMathMatch = (this.selectedTile.val === tile.val) || (this.selectedTile.pairId === tile.pairId);
+
+    if (isMathMatch) {
+      // 1. 連線パスの探索（2折線以内のパスがあればそのパス、内側の場合は直接ビーム）
+      let path = this.checkPath(this.selectedTile, tile);
+      if (!path) {
+        path = [
+          { r: this.selectedTile.row, c: this.selectedTile.col },
+          { r: tile.row, c: tile.col }
+        ];
+      }
+
+      // 2. カードを確実に消去（matched = true）
+      const tileA = this.selectedTile;
+      const tileB = tile;
+
+      tileA.matched = true;
+      tileB.matched = true;
       this.matchedPairsCount++;
       this.combo++;
       this.maxCombo = Math.max(this.maxCombo, this.combo);
@@ -257,33 +357,23 @@ export class KukuLinkGame {
       this.basePoints += pairBase;
       this.comboBonus += comboAdd;
 
-      // Audio & Particle FX
-      this.audio.playLaser();
-      this.audio.playCombo(this.combo);
+      this.audio.playPositive(2, this.combo);
 
       const layout = this.getCardLayout();
-      const toScreen = (pt) => ({
-        x: layout.startX + (pt.c - 1) * (layout.cardW + layout.gap) + layout.cardW / 2,
-        y: layout.startY + (pt.r - 1) * (layout.cardH + layout.gap) + layout.cardH / 2
-      });
+      const ptA = {
+        x: layout.startX + (tileA.col - 1) * (layout.cardW + layout.gap) + layout.cardW / 2,
+        y: layout.startY + (tileA.row - 1) * (layout.cardH + layout.gap) + layout.cardH / 2
+      };
+      const ptB = {
+        x: layout.startX + (tileB.col - 1) * (layout.cardW + layout.gap) + layout.cardW / 2,
+        y: layout.startY + (tileB.row - 1) * (layout.cardH + layout.gap) + layout.cardH / 2
+      };
 
-      for (let i = 0; i < path.length - 1; i++) {
-        const p1 = toScreen(path[i]);
-        const p2 = toScreen(path[i + 1]);
-        this.fx.spawnLaserSparks(p1.x, p1.y, p2.x, p2.y, 16);
-      }
-
-      const pTarget = toScreen(tile);
-      const pStart = toScreen(this.selectedTile);
-      this.fx.spawnStarBurst(pTarget.x, pTarget.y, 20, '#fbbf24');
-      this.fx.showFloatingScore(
-        (pStart.x + pTarget.x) / 2,
-        (pStart.y + pTarget.y) / 2,
-        this.combo > 1 ? `🔥 ${this.combo} Combo! +${pairBase + comboAdd}pt` : `+${pairBase}pt`,
-        '#38bdf8'
-      );
-
-      this.guidance.registerSuccess({ questionId: 'KUKU_LINK' });
+      // 両方のカード位置で星屑爆発＆レーザー火花エフェクトを発生
+      this.fx.spawnStarBurst(ptA.x, ptA.y, 25, '#fbbf24');
+      this.fx.spawnStarBurst(ptB.x, ptB.y, 25, '#38bdf8');
+      this.fx.spawnLaserSparks(ptA.x, ptA.y, ptB.x, ptB.y, 16, '#38bdf8');
+      this.fx.showFloatingScore((ptA.x + ptB.x) / 2, (ptA.y + ptB.y) / 2 - 15, `+${pairBase + comboAdd} pt`, '#34d399');
 
       this.triggerLaserEffect(path);
       this.selectedTile = null;
@@ -292,18 +382,19 @@ export class KukuLinkGame {
         setTimeout(() => this.finishGame(true), 600);
       }
     } else {
-      // Child-friendly error scaffolding
+      const prevTile = this.selectedTile;
+      this.combo = 0;
+      this.audio.playGentleError();
+      this.fx.triggerScreenShake(this.canvas, 'wobble', 200);
       this.guidance.registerError({
         subject: '算数',
         questionId: 'KUKU_LINK',
         questionData: {
-          formula: `${this.selectedTile.text} と ${tile.text}`
+          context: `${prevTile.text} と ${tile.text}`,
+          hint: `「${prevTile.text}」の答えは ${prevTile.val} です`
         },
         targetElement: this.canvas
       });
-      this.fx.triggerScreenShake(this.canvas, 'bounce', 250);
-
-      this.combo = 0;
       this.selectedTile = tile;
     }
   }
@@ -314,7 +405,7 @@ export class KukuLinkGame {
     if (pair) {
       this.hintsRemaining--;
       this.hintPair = pair;
-      this.audio.playClue();
+      this.audio.playPositive(1);
       return true;
     }
     return false;
@@ -326,7 +417,7 @@ export class KukuLinkGame {
     this.shuffleRemainingTiles();
     this.selectedTile = null;
     this.hintPair = null;
-    this.audio.playSlash();
+    this.audio.playClick();
     return true;
   }
 
@@ -341,8 +432,9 @@ export class KukuLinkGame {
 
     for (let i = 0; i < activeTiles.length; i++) {
       for (let j = i + 1; j < activeTiles.length; j++) {
-        const path = this.checkPath(activeTiles[i], activeTiles[j]);
-        if (path) return [activeTiles[i], activeTiles[j]];
+        if (activeTiles[i].val === activeTiles[j].val || activeTiles[i].pairId === activeTiles[j].pairId) {
+          return [activeTiles[i], activeTiles[j]];
+        }
       }
     }
     return null;
@@ -390,46 +482,60 @@ export class KukuLinkGame {
     const isSmallMobile = w < 480;
 
     const gap = isSmallMobile ? 6 : 10;
-    const maxAvailableW = w - 40;
-    const maxAvailableH = h - 70;
+    const maxAvailableW = w - 30;
+    const maxAvailableH = h - 75;
 
-    let cardW = Math.min(isSmallMobile ? 64 : 88, Math.floor((maxAvailableW - (this.cols - 1) * gap) / this.cols));
-    let cardH = Math.min(isSmallMobile ? 54 : 68, Math.floor((maxAvailableH - (this.rows - 1) * gap) / this.rows));
-    // Lower-elementary min tap target (Reviewer 2): never shrink below 56px on small viewports
-    cardW = Math.max(cardW, 56);
-    cardH = Math.max(cardH, 56);
+    const cardW = Math.min(isSmallMobile ? 68 : 96, Math.floor((maxAvailableW - (this.cols - 1) * gap) / this.cols));
+    const cardH = Math.min(isSmallMobile ? 56 : 72, Math.floor((maxAvailableH - (this.rows - 1) * gap) / this.rows));
 
     const totalGridW = this.cols * cardW + (this.cols - 1) * gap;
     const totalGridH = this.rows * cardH + (this.rows - 1) * gap;
 
     const startX = (w - totalGridW) / 2;
-    const startY = (h - totalGridH) / 2 + 10;
+    const startY = (h - totalGridH) / 2 + 16;
 
     return { startX, startY, cardW, cardH, gap, isSmallMobile };
   }
 
-  renderLoop(time = 0) {
+  renderLoop() {
     if (!this.running) return;
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
     const layout = this.getCardLayout();
     const { startX, startY, cardW, cardH, gap, isSmallMobile } = layout;
 
-    // ヘッダー情報描画
+    // 上部ヘッダー情報＆レベル切り替えバー描画
     this.ctx.fillStyle = '#94a3b8';
     this.ctx.font = 'bold 12px sans-serif';
     this.ctx.textAlign = 'left';
-    this.ctx.fillText(`ペア達成: ${this.matchedPairsCount}/${this.totalPairs}`, 20, 25);
+    this.ctx.fillText(`難易度:`, 15, 22);
+
+    const LEVEL_LABELS = ['Lv1(2/3/5段)', 'Lv2(4/6/7段)', 'Lv3(8/9段)', 'Lv4(わり算)', 'Lv5(混合)'];
+    for (let lvl = 1; lvl <= 5; lvl++) {
+      const btnX = 65 + (lvl - 1) * 36;
+      const isCurrent = this.level === lvl;
+      this.ctx.fillStyle = isCurrent ? '#f59e0b' : '#334155';
+      this.ctx.beginPath();
+      this.ctx.roundRect(btnX, 8, 30, 20, 6);
+      this.ctx.fill();
+
+      this.ctx.fillStyle = isCurrent ? '#0f172a' : '#94a3b8';
+      this.ctx.font = 'bold 10px sans-serif';
+      this.ctx.textAlign = 'center';
+      this.ctx.fillText(`L${lvl}`, btnX + 15, 22);
+    }
 
     if (this.combo > 1) {
       this.ctx.fillStyle = '#f59e0b';
-      this.ctx.font = 'bold 14px sans-serif';
-      this.ctx.fillText(`🔥 ${this.combo} 連続コンボ!`, 150, 25);
+      this.ctx.font = 'bold 13px sans-serif';
+      this.ctx.textAlign = 'left';
+      this.ctx.fillText(`🔥 ${this.combo} 連続!`, 255, 22);
     }
 
     this.ctx.textAlign = 'right';
     this.ctx.fillStyle = '#38bdf8';
-    this.ctx.fillText(`💡 ヒント (${this.hintsRemaining})   🌀 シャッフル (${this.shufflesRemaining})`, this.canvas.width - 20, 25);
+    this.ctx.font = 'bold 11px sans-serif';
+    this.ctx.fillText(`💡(${this.hintsRemaining}) 🌀(${this.shufflesRemaining})`, this.canvas.width - 15, 22);
 
     // カード描画
     for (let r = 1; r <= this.rows; r++) {
@@ -449,20 +555,20 @@ export class KukuLinkGame {
 
         if (isSelected) {
           const pulse = Math.sin(Date.now() * 0.008) * 4;
-          this.ctx.fillStyle = 'rgba(234, 179, 8, 0.25)';
+          this.ctx.fillStyle = 'rgba(234, 179, 8, 0.3)';
           this.ctx.strokeStyle = '#eab308';
           this.ctx.lineWidth = 3 + pulse * 0.3;
           this.ctx.shadowColor = '#eab308';
           this.ctx.shadowBlur = 12;
         } else if (isHint) {
-          this.ctx.fillStyle = 'rgba(56, 189, 248, 0.3)';
+          this.ctx.fillStyle = 'rgba(56, 189, 248, 0.35)';
           this.ctx.strokeStyle = '#38bdf8';
           this.ctx.lineWidth = 2.5;
           this.ctx.shadowColor = '#38bdf8';
           this.ctx.shadowBlur = 10;
         } else {
-          this.ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
-          this.ctx.strokeStyle = 'rgba(56, 189, 248, 0.35)';
+          this.ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
+          this.ctx.strokeStyle = 'rgba(56, 189, 248, 0.4)';
           this.ctx.lineWidth = 1.5;
         }
 
@@ -471,7 +577,7 @@ export class KukuLinkGame {
         this.ctx.restore();
 
         this.ctx.fillStyle = isSelected ? '#fef08a' : '#f8fafc';
-        const fontSize = isSmallMobile ? (tile.text.length > 3 ? 13 : 16) : (tile.text.length > 3 ? 16 : 20);
+        const fontSize = isSmallMobile ? (tile.text.length > 4 ? 13 : 16) : (tile.text.length > 4 ? 16 : 20);
         this.ctx.font = `bold ${fontSize}px sans-serif`;
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
@@ -484,7 +590,12 @@ export class KukuLinkGame {
       this.laserLife--;
     }
 
-    requestAnimationFrame(() => this.renderLoop());
+    if (this.fx && typeof this.fx.render === 'function') {
+      this.fx.render(this.ctx, this.canvas.width, this.canvas.height);
+    }
+    if (typeof requestAnimationFrame !== 'undefined') {
+      requestAnimationFrame(() => this.renderLoop());
+    }
   }
 
   drawLaserPath(path, layout) {
@@ -534,7 +645,8 @@ export class KukuLinkGame {
     const resultPayload = {
       game: 'KUKU_LINK_UP',
       grade: '小学2年生',
-      subject: '算数（九九）',
+      subject: '算数（九九・わり算）',
+      level: this.level,
       is_success: isSuccess,
       stars: stars,
       time_remaining_sec: this.timeLeft,

@@ -195,6 +195,7 @@ export class EconomyManager {
       starCoins: 500,
       streak: 3,
       clearedNodes: {},
+      clearedStages: {},
       playerMastery: {},
       inventory: [],
       ledger: [
@@ -213,6 +214,9 @@ export class EconomyManager {
   get activeUser() {
     if (!this.users[this.currentUser]) {
       this.initNewUser(this.currentUser);
+    }
+    if (!this.users[this.currentUser].clearedStages) {
+      this.users[this.currentUser].clearedStages = {};
     }
     return this.users[this.currentUser];
   }
@@ -233,6 +237,31 @@ export class EconomyManager {
   set ledger(val) { this.activeUser.ledger = val; }
 
   get clearedNodes() { return this.activeUser.clearedNodes; }
+  get clearedStages() { return this.activeUser.clearedStages || {}; }
+
+  isStageCleared(nodeId, stageNum) {
+    return !!(this.clearedStages[nodeId] && this.clearedStages[nodeId][stageNum]);
+  }
+
+  getClearedStagesCount(nodeId) {
+    if (!this.clearedStages[nodeId]) return 0;
+    return Object.keys(this.clearedStages[nodeId]).length;
+  }
+
+  recordStageClear(nodeId, stageNum, accuracy = 1.0) {
+    if (!this.activeUser.clearedStages) {
+      this.activeUser.clearedStages = {};
+    }
+    if (!this.activeUser.clearedStages[nodeId]) {
+      this.activeUser.clearedStages[nodeId] = {};
+    }
+    this.activeUser.clearedStages[nodeId][stageNum] = {
+      clearedAt: new Date().toISOString(),
+      accuracy
+    };
+    this.saveState();
+    return this.awardNodeClear(nodeId, accuracy);
+  }
 
   saveState() {
     const payload = {

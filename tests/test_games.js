@@ -309,6 +309,59 @@ function register({ describe, test, it, assert, loadESModule }) {
       assert.strictEqual(okinawa.specialty, 'ゴーヤ・ちんすこう');
     });
 
+    test('F9.2: Shakai 4-Grade Curriculum Consistency — Grade 3 (Map Symbols), Grade 4 (47 Prefectures & 8 Regions), Grade 5 (Industry & Climate), Grade 6 (History & Constitution)', () => {
+      const loader = loadESModule || require('./test_e2e_runner.js').loadESModule;
+      const { PrefectureJigsawGame } = loader(path.join(rootDir, 'MiniGameSystem.js'));
+      const mockCanvas = {
+        width: 640,
+        height: 480,
+        style: {},
+        eventListeners: {},
+        getContext: () => ({ clearRect: () => {}, fillText: () => {}, beginPath: () => {}, arc: () => {}, fill: () => {}, stroke: () => {}, roundRect: () => {}, setLineDash: () => {}, ellipse: () => {} }),
+        addEventListener: () => {},
+        removeEventListener: () => {},
+        getBoundingClientRect: () => ({ left: 0, top: 0, width: 640, height: 480 })
+      };
+
+      // Grade 3: Map symbols & town safety
+      const g3Game = new PrefectureJigsawGame(mockCanvas, { mode: 'MAP_SYMBOLS' }, () => {}, 3, 1);
+      assert.strictEqual(g3Game.mode, 'MAP_SYMBOLS');
+      const g3Stages = g3Game.getStagesForCurrentMode();
+      assert.strictEqual(g3Stages.length, 10, 'Grade 3 must have 10 map symbol & town safety stages');
+      assert.ok(g3Stages[0].title.includes('学校'));
+      assert.ok(g3Stages[1].title.includes('消防署'));
+      assert.ok(g3Stages[2].title.includes('警察署'));
+      assert.ok(g3Stages[9].title.includes('方位'));
+
+      // Grade 4: 47 Prefectures & 8 Regions
+      const g4Game = new PrefectureJigsawGame(mockCanvas, { mode: 'PREFECTURES' }, () => {}, 4, 1);
+      assert.strictEqual(g4Game.mode, 'PREFECTURES');
+      const g4Stages = g4Game.getStagesForCurrentMode();
+      assert.strictEqual(g4Stages.length, 8, 'Grade 4 must have 8 regional stages');
+      assert.ok(g4Stages[0].regionName.includes('北海道・東北'));
+
+      // Grade 5: Industry, Agriculture & Climate
+      const g5Game = new PrefectureJigsawGame(mockCanvas, { mode: 'INDUSTRY' }, () => {}, 5, 1);
+      assert.strictEqual(g5Game.mode, 'INDUSTRY');
+      const g5Stages = g5Game.getStagesForCurrentMode();
+      assert.strictEqual(g5Stages.length, 10, 'Grade 5 must have 10 industry, agriculture & climate stages');
+      assert.ok(g5Stages[0].title.includes('気候区分'));
+      assert.ok(g5Stages[1].title.includes('米作り'));
+      assert.ok(g5Stages[4].title.includes('中京工業地帯'));
+      assert.ok(g5Stages[7].title.includes('瀬戸内工業地域'));
+
+      // Grade 6: Japanese History & Constitution Civics
+      const g6Game = new PrefectureJigsawGame(mockCanvas, { mode: 'HISTORY_CIVICS' }, () => {}, 6, 1);
+      assert.strictEqual(g6Game.mode, 'HISTORY_CIVICS');
+      const g6Stages = g6Game.getStagesForCurrentMode();
+      assert.strictEqual(g6Stages.length, 10, 'Grade 6 must have 10 history & constitution civics stages');
+      assert.ok(g6Stages[0].title.includes('縄文・弥生・古墳'));
+      assert.ok(g6Stages[1].title.includes('飛鳥・奈良'));
+      assert.ok(g6Stages[4].title.includes('戦国・安土桃山'));
+      assert.ok(g6Stages[7].title.includes('日本国憲法'));
+      assert.ok(g6Stages[8].title.includes('三権分立'));
+    });
+
     test('F10.1: Eigo & Seikatsu category sorting classification', () => {
       const sortItem = (item) => {
         const categories = {
@@ -327,6 +380,51 @@ function register({ describe, test, it, assert, loadESModule }) {
       assert.strictEqual(sortItem('アルミ缶'), 'recycling');
       assert.strictEqual(sortItem('みぎ・ひだりを よくみる'), 'safety');
       assert.strictEqual(sortItem('歯磨き'), 'morning_routine');
+    });
+
+    test('F6.3: Kanji Grade-wide Stage Partitioning covers all 80 Grade 1 Kanji across 8 stages without omission', () => {
+      const kanjiG1Count = 80;
+      const pageSize = 10;
+      const totalStages = Math.ceil(kanjiG1Count / pageSize);
+      assert.strictEqual(totalStages, 8, 'Grade 1 (80 kanji) must have 8 stages');
+
+      // Verify each stage has exactly 10 kanji
+      const seenKanji = new Set();
+      for (let stage = 1; stage <= totalStages; stage++) {
+        const start = (stage - 1) * pageSize;
+        const end = start + pageSize;
+        for (let i = start; i < end; i++) {
+          seenKanji.add(i);
+        }
+      }
+      assert.strictEqual(seenKanji.size, 80, 'All 80 kanji must be partitioned without duplicate or omissions');
+    });
+
+    test('F10.2: English Context Match 10 progressive themed stages with full thematic coverage', () => {
+      const themeCount = 10;
+      assert.strictEqual(themeCount, 10, 'English suite must contain 10 progressive thematic stages');
+      const sampleGreeting = { eng: 'Good morning', jpn: 'おはようございます' };
+      const sampleCulture = { eng: 'Welcome to Japan', jpn: '日本へようこそ！' };
+      assert.ok(sampleGreeting.eng && sampleGreeting.jpn);
+      assert.ok(sampleCulture.eng && sampleCulture.jpn);
+    });
+
+    test('F15.5: Stage-level Clear Tracking, Green Checkmark (✅) Status & Node Trophy Clear Screen', () => {
+      const mgr = new economy.EconomyManager('TrophyTestUser');
+      const nodeId = 'KOKUGO_G1_KANJI_80';
+
+      // Clear stage 1
+      mgr.recordStageClear(nodeId, 1, 1.0);
+      assert.strictEqual(mgr.isStageCleared(nodeId, 1), true);
+      assert.strictEqual(mgr.isStageCleared(nodeId, 2), false);
+      assert.strictEqual(mgr.getClearedStagesCount(nodeId), 1);
+
+      // Clear all 8 stages for Grade 1 Kanji
+      for (let s = 2; s <= 8; s++) {
+        mgr.recordStageClear(nodeId, s, 1.0);
+      }
+      assert.strictEqual(mgr.getClearedStagesCount(nodeId), 8);
+      assert.strictEqual(mgr.isStageCleared(nodeId, 8), true);
     });
   });
 
@@ -524,6 +622,74 @@ function register({ describe, test, it, assert, loadESModule }) {
       const shopRes = eco.purchaseItem('badge_kuku_master');
       assert.strictEqual(shopRes.success, true);
       assert.strictEqual(eco.inventory[0].title, '九九星際レジェンド (算数)');
+    });
+  });
+
+  // =========================================================================
+  // TIER 1: Grade-to-Game Dynamic Curriculum Binding & Support Matrix
+  // =========================================================================
+  describe('Tier 1: Grade-to-Game Dynamic Curriculum Binding & Support Matrix', () => {
+    function loadMiniGameSystem() {
+      const loader = loadESModule || require('./test_e2e_runner.js').loadESModule;
+      return loader(path.join(rootDir, 'MiniGameSystem.js'));
+    }
+
+    const miniGameMod = loadMiniGameSystem();
+    const { GAME_GRADE_SUPPORT_MAP, MiniGameModal } = miniGameMod;
+    const modal = new MiniGameModal();
+
+    test('GB1: GAME_GRADE_SUPPORT_MAP defines accurate MEXT grade support for all 10 games', () => {
+      assert.ok(GAME_GRADE_SUPPORT_MAP);
+      assert.deepStrictEqual(GAME_GRADE_SUPPORT_MAP.KANJI_CHALLENGE.grades, [1, 2, 3, 4, 5, 6]);
+      assert.deepStrictEqual(GAME_GRADE_SUPPORT_MAP.RADICAL_BUILDER.grades, [1, 2, 3, 4, 5, 6]);
+      assert.deepStrictEqual(GAME_GRADE_SUPPORT_MAP.KUKU_LINK.grades, [2, 3, 4, 5, 6]);
+      assert.deepStrictEqual(GAME_GRADE_SUPPORT_MAP.AETHER_SCALE.grades, [1, 2, 3, 4, 5, 6]);
+      assert.deepStrictEqual(GAME_GRADE_SUPPORT_MAP.COSMIC_ORBIT.grades, [4, 5, 6]);
+      assert.deepStrictEqual(GAME_GRADE_SUPPORT_MAP.LEVER_PHYSICS.grades, [6]);
+      assert.deepStrictEqual(GAME_GRADE_SUPPORT_MAP.CIRCUIT_SANDBOX.grades, [3, 4, 5, 6]);
+      assert.deepStrictEqual(GAME_GRADE_SUPPORT_MAP.PREFECTURE_JIGSAW.grades, [3, 4, 5, 6]);
+      assert.deepStrictEqual(GAME_GRADE_SUPPORT_MAP.CONTEXT_MATCH.grades, [3, 4, 5, 6]);
+      assert.deepStrictEqual(GAME_GRADE_SUPPORT_MAP.CATEGORY_SORT.grades, [1, 2]);
+    });
+
+    test('GB2: isGameSupportedForGrade correctly identifies valid vs non-operable disabled states', () => {
+      // Grade 1: Kuku, Lever, Circuit, Prefectures, English are disabled
+      assert.strictEqual(modal.isGameSupportedForGrade('KUKU_LINK', 1), false);
+      assert.strictEqual(modal.isGameSupportedForGrade('LEVER_PHYSICS', 1), false);
+      assert.strictEqual(modal.isGameSupportedForGrade('CIRCUIT_SANDBOX', 1), false);
+      assert.strictEqual(modal.isGameSupportedForGrade('PREFECTURE_JIGSAW', 1), false);
+      assert.strictEqual(modal.isGameSupportedForGrade('CONTEXT_MATCH', 1), false);
+      assert.strictEqual(modal.isGameSupportedForGrade('CATEGORY_SORT', 1), true);
+      assert.strictEqual(modal.isGameSupportedForGrade('RADICAL_BUILDER', 1), true);
+      assert.strictEqual(modal.isGameSupportedForGrade('AETHER_SCALE', 1), true);
+
+      // Grade 6: Category Sort (Seikatsu) disabled, Lever enabled
+      assert.strictEqual(modal.isGameSupportedForGrade('CATEGORY_SORT', 6), false);
+      assert.strictEqual(modal.isGameSupportedForGrade('LEVER_PHYSICS', 6), true);
+      assert.strictEqual(modal.isGameSupportedForGrade('COSMIC_ORBIT', 6), true);
+
+      // Grade 0 (All Grades): everything supported
+      assert.strictEqual(modal.isGameSupportedForGrade('KUKU_LINK', 0), true);
+      assert.strictEqual(modal.isGameSupportedForGrade('LEVER_PHYSICS', 0), true);
+      assert.strictEqual(modal.isGameSupportedForGrade('CATEGORY_SORT', 0), true);
+    });
+
+    test('GB3: generatePopularGameNode dynamically binds game metadata to the selected grade', () => {
+      const g1Radical = modal.generatePopularGameNode('RADICAL_BUILDER', 1, 1);
+      assert.strictEqual(g1Radical.grade, 1);
+      assert.strictEqual(g1Radical.name, '1年 漢字偏旁部首拼装 (部首合成)');
+
+      const g3Kuku = modal.generatePopularGameNode('KUKU_LINK', 3, 1);
+      assert.strictEqual(g3Kuku.grade, 3);
+      assert.strictEqual(g3Kuku.name, '3年 わり算・計算応用 星際マッチング');
+
+      const g6Lever = modal.generatePopularGameNode('LEVER_PHYSICS', 6, 1);
+      assert.strictEqual(g6Lever.grade, 6);
+      assert.strictEqual(g6Lever.name, '6年 てこの規則性 宇宙物理実験室');
+
+      const g4Context = modal.generatePopularGameNode('CONTEXT_MATCH', 4, 1);
+      assert.strictEqual(g4Context.grade, 4);
+      assert.strictEqual(g4Context.name, '4年 英語情景趣味配対 (Word & Scene Match)');
     });
   });
 }

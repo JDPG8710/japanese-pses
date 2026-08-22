@@ -509,6 +509,13 @@ export class FXSystem {
   }
 
   /**
+   * Alias: render(ctx, width, height)
+   */
+  render(ctx, width, height) {
+    return this.updateAndDraw(ctx, width, height);
+  }
+
+  /**
    * Updates all particles and floating text; draws them onto context
    */
   updateAndDraw(ctx, width, height) {

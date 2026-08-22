@@ -98,11 +98,11 @@ d:/Japanese PSES/
 ## Milestones
 | # | Name | Scope | Dependencies | Status |
 |---|------|-------|-------------|--------|
-| M1 | Multi-Agent Teamwork & PM Agent | `.agents/agents/` PM agent definition, agent alignment, `AgentIntegration.js` & `AgentQADiagnostics.js` PM coordination | none | PLANNED |
-| M2 | Audio-Visual FX & Friendly Error Feedback | Web Audio API procedural sound engine, canvas/CSS particle system, screen shake, and 3-tier friendly error guidance | none | PLANNED |
-| M3 | 6-Subject Mini-Games Variety & Interactivity | Kokugo (Radical Assembly), Sansu (Kuku & Starship Balance), Rika (Celestial/Lever/Circuit sandbox), Shakai (47 Prefectures & Specialties), Eigo/Seikatsu (Matching & Sorting), 56px Hitboxes | M2 | PLANNED |
-| M4 | Knowledge Graph DAG & Evolution Engine | 1026 Kanji + 6-subject curriculum DAG integrity validation, cycle/deadlock tests, graph evolution agent auto-smoothing | none | PLANNED |
-| M5 | E2E Testing Track & Final Verification | Comprehensive E2E test suite (Tiers 1-5), zero-error browser integration, Reviewer/Challenger/Auditor gates | M1, M2, M3, M4 | PLANNED |
+| M1 | Multi-Agent Teamwork & PM Agent | `.agents/agents/` PM agent definition, agent alignment, `AgentIntegration.js` & `AgentQADiagnostics.js` PM coordination | none | DONE |
+| M2 | Audio-Visual FX & Friendly Error Feedback | Web Audio API procedural sound engine, canvas/CSS particle system, screen shake, and 3-tier friendly error guidance | none | DONE |
+| M3 | 6-Subject Mini-Games Variety & Interactivity | Kokugo (Radical Assembly), Sansu (Kuku & Starship Balance), Rika (Celestial/Lever/Circuit sandbox), Shakai (47 Prefectures & Specialties), Eigo/Seikatsu (Matching & Sorting), 56px Hitboxes | M2 | DONE |
+| M4 | Knowledge Graph DAG & Evolution Engine | 1026 Kanji + 6-subject curriculum DAG integrity validation, cycle/deadlock tests, graph evolution agent auto-smoothing | none | DONE |
+| M5 | E2E Testing Track & Final Verification | Comprehensive E2E test suite (Tiers 1-5), zero-error browser integration, Reviewer/Challenger/Auditor gates | M1, M2, M3, M4 | DONE |
 
 ## Interface Contracts
 ### AudioSynthesizer ↔ MiniGameSystem & UI

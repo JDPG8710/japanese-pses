@@ -42,6 +42,9 @@ class MockAudioParam {
     this.value = Math.max(0.0001, val);
     this.timeline.push({ type: 'exponential', val: this.value, time });
   }
+  cancelScheduledValues(time) {
+    this.timeline = this.timeline.filter(e => e.time < time);
+  }
 }
 
 class MockGainNode extends MockAudioNode {
@@ -813,7 +816,8 @@ function registerSuites() {
     'test_agents.js',
     'test_audio_fx.js',
     'test_curriculum_dag.js',
-    'test_games.js'
+    'test_games.js',
+    'test_adversarial_challenger.js'
   ];
 
   for (const file of testFiles) {

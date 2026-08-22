@@ -349,7 +349,7 @@ function register({ describe, test, it, assert, loadESModule }) {
         fps: 60
       };
       const diag = diagnoseAndRecommendFix(errorLog);
-      assert.strictEqual(diag.classification, '[UI遮挡/响应式错误]');
+      assert.strictEqual(diag.classification, '[UI重なり／レスポンシブ表示エラー]');
       assert.strictEqual(diag.recommendedFix.actionType, 'CSS_ZINDEX_PATCH');
       assert.strictEqual(diag.repairPatch.schema, 'REPAIR_PATCH_v1');
       assert.strictEqual(diag.repairPatch.status, 'RESOLVED');
@@ -363,7 +363,7 @@ function register({ describe, test, it, assert, loadESModule }) {
         fps: 60
       };
       const diag = diagnoseAndRecommendFix(errorLog);
-      assert.strictEqual(diag.classification, '[卡死死锁]');
+      assert.strictEqual(diag.classification, '[UI応答停止]');
       assert.strictEqual(diag.recommendedFix.actionType, 'STATE_MACHINE_RESET');
     });
 
@@ -375,7 +375,7 @@ function register({ describe, test, it, assert, loadESModule }) {
         fps: 12
       };
       const diag = diagnoseAndRecommendFix(errorLog);
-      assert.strictEqual(diag.classification, '[WebGL渲染异常]');
+      assert.strictEqual(diag.classification, '[WebGL描画エラー]');
       assert.strictEqual(diag.recommendedFix.actionType, 'GPU_FALLBACK_RECOVERY');
     });
 

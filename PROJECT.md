@@ -1,147 +1,57 @@
-# Project: Japanese PSES Galaxy Engine
+# Japanese PSES Galaxy Engine プロジェクト仕様
 
-## Architecture
-The Japanese PSES Galaxy Engine is an educational multi-agent gaming platform for Japanese elementary school students (Grades 1-6), covering 6 core subjects (Kokugo, Sansu, Rika, Shakai, Eigo, Seikatsu) across 1,026 MEXT Joyo Kanji and curriculum topics.
+## 概要
 
-### Core Systems
-1. **Multi-Agent Collaboration Engine (`.agents/agents/`, `js/AgentIntegration.js`, `js/AgentQADiagnostics.js`)**:
-   - `product_manager_agent`: Defines developmental psychology rules, fun/challenge metrics, feedback rules, and curriculum roadmap.
-   - `director_agent`: Master orchestrator coordinating PM, Game Designer, Graph Evolution, QA, and Bug Repair agents.
-   - `game_designer_agent`: Mini-game mechanics and pedagogical level design.
-   - `graph_evolution_agent`: DAG topological integrity, fracture detection, and auto-smoothing.
-   - `qa_player_agent`: Automated playthrough simulations and stress testing.
-   - `bug_repair_agent`: Diagnostic telemetry and runtime error auto-patching.
+本プロジェクトは、日本の小学校1〜6年生を対象とした複数教科対応の学習ゲームです。国語、算数、理科、社会、生活、外国語／英語を、学年別の学習テーマ、1,026字の学年別漢字配当表、知識グラフと結び付けます。
 
-2. **Audio-Visual & Feedback Engine (`js/AudioSynthesizer.js`, `js/FXSystem.js`, `css/style.css`)**:
-   - Web Audio API zero-dependency procedural synthesizer (positive chimes, combo glissando, gentle error boop, UI clicks, mute controls).
-   - 2D Canvas & CSS particle explosion engine (stardust, coins, sparkles) and screen shake/cartoon wiggle system.
-   - 3-tier child-friendly error guidance (soft bounce -> clue glow -> mascot "星の子ピコ" explanation bubble).
+## 中核システム
 
-3. **Curriculum & 3D Galaxy Graph Engine (`js/CurriculumData.js`, `js/GraphEngine.js`, `data/kanji_1026.json`)**:
-   - 6-subject DAG topology with 1,026 Kanji and multi-subject nodes; cycle-free topological sorting.
-   - Dynamic graph evolution and mutation repair.
+1. **複数エージェント連携**
+   - 製品管理、全体統括、ゲーム設計、知識グラフ管理、品質保証、修復の6役で構成します。
+   - `PM_SPEC_v1` から設計・検証・修復・再検証までを一つの品質ループとして扱います。
 
-4. **6-Subject Mini-Game Suite (`js/MiniGameSystem.js`, `js/games/`)**:
-   - **Kokugo**: Radical Assembly (偏旁部首) + Star Stream Kanji Slash.
-   - **Sansu**: Kuku Multiplication Laser Combo + Starship Balance Scale (星舰天平).
-   - **Rika**: Celestial Orbits + Lever Physics Balance + Electric Circuit Sandbox.
-   - **Shakai**: 47 Prefectures Map Puzzle + Regional Specialty Treasure Hunt.
-   - **Eigo & Seikatsu**: Contextual Scene Matching & Drag-and-Drop Categorization.
-   - Child-friendly touch/mouse hitboxes (min 56px, zero accidental double-tap).
+2. **音・視覚・誤答支援**
+   - Web Audio API で正解音、連続正解音、やさしい誤答音、ボタン音、クリア音を合成します。
+   - Canvas と CSS で星、コイン、紙吹雪、軽い画面振動を描画します。
+   - 誤答回数に応じて、やさしい動き、手がかりの強調、星の子ピコの説明へ段階的に移行します。
 
-## Feature Inventory
-| # | Feature | Description | Milestone | Source |
-|---|---------|-------------|-----------|--------|
-| 1 | PM Agent Architecture | Create `product_manager_agent/agent.md` with developmental psychology, fun metrics, and I/O schemas | M1 | ORIGINAL_REQUEST §R1 |
-| 2 | Agent Alignment & Director Integration | Align 5 existing agents in `.agents/agents/` and update director runtime coordination logic in `AgentIntegration.js` | M1 | ORIGINAL_REQUEST §R1 |
-| 3 | Web Audio Synthesizer | Zero-dependency procedural Web Audio engine with arpeggios, combo pitch increments, soft error tones, and mute button | M2 | ORIGINAL_REQUEST §R2 |
-| 4 | Canvas/CSS Particle Explosions & Screen Shake | 2D particle burst effects (stars, coins) and subtle screen shake/wobble on events | M2 | ORIGINAL_REQUEST §R2 |
-| 5 | 3-Tier Friendly Error Guidance | Gentle wobble feedback, clue highlighting, and mascot speech bubble explanations (no punitive score deduction) | M2 | ORIGINAL_REQUEST §R2 |
-| 6 | Kokugo Mini-Games | Kanji radical assembly (偏旁部首拼装) + Star stream kanji slash | M3 | ORIGINAL_REQUEST §R3 |
-| 7 | Sansu Mini-Games | Kuku multiplication combo + Starship pan balance scale (星舰天平) | M3 | ORIGINAL_REQUEST §R3 |
-| 8 | Rika Mini-Games | Interactive sandbox experiments (Celestial orbits, Lever balance physics, Electric circuits) | M3 | ORIGINAL_REQUEST §R3 |
-| 9 | Shakai Mini-Games | 47 Prefectures map puzzle & regional specialty treasure hunt | M3 | ORIGINAL_REQUEST §R3 |
-| 10| Eigo & Seikatsu Mini-Games | Scene contextual vocabulary matching and drag-and-drop category sorting | M3 | ORIGINAL_REQUEST §R3 |
-| 11| Hitbox & Touch/Click Ergonomics | Min 56px touch target padding, mobile/desktop viewport scaling | M3 | ORIGINAL_REQUEST §R3 |
-| 12| MEXT Curriculum & 1026 Kanji DAG Validation | Verification and enhancement of 1026 Kanji & 6-subject DAG topology (zero cycles, zero deadlocks) | M4 | ORIGINAL_REQUEST §R4 |
-| 13| Graph Evolution & Dynamic Smoothing | Fracture detection, bottleneck repair, and adaptive DAG evolution algorithms | M4 | ORIGINAL_REQUEST §R4 |
-| 14| Full E2E Integration & Verification | Comprehensive test suite (Tiers 1-5), browser workflow validation, and zero JS error check | M5 | ORIGINAL_REQUEST Acceptance Criteria |
+3. **学習指導要領と知識グラフ**
+   - 学年・教科・学習目標・ゲーム種類を厳密に対応させます。
+   - 1,026字の漢字データ、47都道府県、教科別単元を検証します。
+   - 知識グラフは有向非巡回グラフとして管理し、循環、不正参照、孤立を検出します。
 
-## Code Layout
-```
-d:/Japanese PSES/
-├── .agents/
-│   ├── agents/
-│   │   ├── product_manager_agent/
-│   │   │   └── agent.md
-│   │   ├── director_agent/
-│   │   │   └── agent.md
-│   │   ├── game_designer_agent/
-│   │   │   └── agent.md
-│   │   ├── graph_evolution_agent/
-│   │   │   └── agent.md
-│   │   ├── qa_player_agent/
-│   │   │   └── agent.md
-│   │   └── bug_repair_agent/
-│   │       └── agent.md
-│   └── orchestrator/
-├── css/
-│   └── style.css
-├── data/
-│   ├── kanji_1026.json
-│   ├── subjects_curriculum.json
-│   └── prefectures_47.json
-├── js/
-│   ├── AudioSynthesizer.js
-│   ├── FXSystem.js
-│   ├── ErrorGuidanceSystem.js
-│   ├── CurriculumData.js
-│   ├── GraphEngine.js
-│   ├── MiniGameSystem.js
-│   ├── AgentIntegration.js
-│   ├── AgentQADiagnostics.js
-│   ├── ErrorInterceptor.js
-│   ├── EconomySystem.js
-│   └── app.js
-├── tests/
-│   ├── test_e2e_runner.js
-│   ├── test_audio_fx.js
-│   ├── test_games.js
-│   ├── test_curriculum_dag.js
-│   └── test_agents.js
-├── index.html
-├── ORIGINAL_REQUEST.md
-├── PROJECT.md
-└── TEST_READY.md
-```
+4. **全教科学習ゲーム**
+   - 国語：漢字の読み、部首・漢字パーツ、語彙。
+   - 算数：数と計算、測定、図形、データ活用、文章題。
+   - 理科：生命、物質、エネルギー、地球・天体の観察と実験。
+   - 社会：地域、都道府県、産業、歴史、政治、国際理解。
+   - 生活：学校、家庭、季節、地域、安全、分類。
+   - 外国語／英語：語彙、会話、英検3級・2級、短文・長文読解。
 
-## Milestones
-| # | Name | Scope | Dependencies | Status |
-|---|------|-------|-------------|--------|
-| M1 | Multi-Agent Teamwork & PM Agent | `.agents/agents/` PM agent definition, agent alignment, `AgentIntegration.js` & `AgentQADiagnostics.js` PM coordination | none | DONE |
-| M2 | Audio-Visual FX & Friendly Error Feedback | Web Audio API procedural sound engine, canvas/CSS particle system, screen shake, and 3-tier friendly error guidance | none | DONE |
-| M3 | 6-Subject Mini-Games Variety & Interactivity | Kokugo (Radical Assembly), Sansu (Kuku & Starship Balance), Rika (Celestial/Lever/Circuit sandbox), Shakai (47 Prefectures & Specialties), Eigo/Seikatsu (Matching & Sorting), 56px Hitboxes | M2 | DONE |
-| M4 | Knowledge Graph DAG & Evolution Engine | 1026 Kanji + 6-subject curriculum DAG integrity validation, cycle/deadlock tests, graph evolution agent auto-smoothing | none | DONE |
-| M5 | E2E Testing Track & Final Verification | Comprehensive E2E test suite (Tiers 1-5), zero-error browser integration, Reviewer/Challenger/Auditor gates | M1, M2, M3, M4 | DONE |
+## 画面構成
 
-## Interface Contracts
-### AudioSynthesizer ↔ MiniGameSystem & UI
-```javascript
-window.audioSynth = {
-  playPositive(grade = 1, combo = 1), // Chord/arpeggio ascending
-  playCombo(count = 1),               // Glissando with frequency pitch shift
-  playGentleError(),                  // Soft cartoon wobble (F3 -> Eb3)
-  playButtonTap(),                    // Crisp subtle pop
-  playFanfare(),                      // Major pentatonic celebration
-  setMuted(boolean),
-  isMuted()
-};
-```
+- 最上部の学年メニューはクリックしたときだけ展開します。
+- 学年を選ぶまで教科は選択できません。
+- 1〜2年生は国語・算数・生活、3〜6年生は国語・算数・理科・社会・外国語／英語を表示します。
+- 教科の「プレイ」からゲーム種類を選びます。
+- ホーム画面には下部のゲームショートカットやエージェント状態を表示しません。
+- 選択中の学年、教科、テーマ、選択肢は色と枠線で明確に強調します。
 
-### FXSystem ↔ MiniGameSystem & UI
-```javascript
-window.fxSystem = {
-  createBurst(x, y, type = 'star', count = 25), // 'star' | 'coin' | 'confetti' | 'spark'
-  triggerShake(intensity = 'light', durationMs = 300), // 'light' | 'medium' | 'bounce'
-  showClueHighlight(elementOrSelector),
-  showMascotGuidance(message, targetElement, mascot = 'pico')
-};
-```
+## 品質基準
 
-### MiniGameSystem ↔ CurriculumData & Galaxy Engine
-```javascript
-window.miniGameSystem = {
-  startMiniGame(nodeId, containerElement, onCompleteCallback),
-  registerGame(subject, gameType, gameClass),
-  exitGame(results)
-};
-```
+- 普通の問題セッションは問題プールから重複なしで10問を抽出します。
+- 英語の各難易度プールは200問以上を維持します。
+- 問題文に答えや絵文字による手掛かりを含めません。
+- 失敗、時間切れ、0点では報酬や次ステージ解放を行いません。
+- クリア結果には次のステージへ進む操作を表示します。
+- 全テストと実ブラウザー確認を通過した変更だけを公開します。
 
-### AgentIntegration ↔ Director & PM Agent
-```javascript
-window.agentIntegration = {
-  triggerPMReview(curriculumNode, playerHistory),
-  broadcastAgentEvent(eventType, payload),
-  mutateCurriculumDAG(mutationAction)
-};
-```
+## 主な契約
+
+- `PM_SPEC_v1`：製品要件
+- `DESIGNER_OUTPUT_v1`：ゲーム設計結果
+- `QA_BUG_REPORT_v1`：不具合報告
+- `REPAIR_PATCH_v1`：修復内容
+- `GRAPH_MUTATION_v1`：知識グラフ変更指示
+
+これらはプログラム間のスキーマ名であるため、日本語文書内でも原名を維持します。

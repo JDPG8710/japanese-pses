@@ -3,7 +3,7 @@
  * 
  * 1. お子さまのユーザー名ログインとプロファイル切り替え
  * 2. ユーザーごとの独立したスターコイン・習熟度・学習元帳
- * 3. 単元・関卡の重複挑戦サポート（初回クリアのみポイント加算）
+ * 3. 単元・ステージの再挑戦に対応（初回クリアのみポイント加算）
  */
 
 import { FULL_CURRICULUM_DAG } from './CurriculumData.js';
@@ -110,8 +110,8 @@ export const SHOP_CATALOG = {
         },
         {
           id: 'badge_kuku_master',
-          title: '九九星際レジェンド (算数)',
-          description: '九九星際連々をノーミス高速クリアした学習者に授与。',
+          title: '九九銀河レジェンド（算数）',
+          description: '九九銀河マッチングをノーミスで素早くクリアした学習者に授与。',
           price: 300,
           icon: '⚡',
           type: 'BADGE'
@@ -148,7 +148,7 @@ export const SHOP_CATALOG = {
         },
         {
           id: 'item_hint_radar',
-          title: '星際ヒントレーダー',
+          title: '銀河ヒントレーダー',
           description: 'ミニゲーム中に正解の選択肢・配置場所を即座に1回強調表示。',
           price: 100,
           icon: '📡',
@@ -171,7 +171,7 @@ export class EconomyManager {
       if (saved) {
         try {
           const data = JSON.parse(saved);
-          this.currentUser = data.currentUser || 'ひなた (Hinata)';
+          this.currentUser = data.currentUser === 'ひなた (Hinata)' ? 'ひなた' : (data.currentUser || 'ひなた');
           this.users = data.users || {};
           if (!this.users[this.currentUser]) {
             this.initNewUser(this.currentUser);
@@ -183,7 +183,7 @@ export class EconomyManager {
       }
     }
 
-    this.currentUser = 'ひなた (Hinata)';
+    this.currentUser = 'ひなた';
     this.users = {};
     this.initNewUser(this.currentUser);
     this.saveState();

@@ -82,7 +82,7 @@ export async function loadCurriculumFromJSON() {
       }
       if (Array.isArray(masterJson.nodes) && masterJson.nodes.length > 0) {
         const validation = validateCurriculumNodeSchema(masterJson.nodes);
-        if (!validation.valid) throw new Error(`课程主数据校验失败: ${validation.errors.join(', ')}`);
+        if (!validation.valid) throw new Error(`統合カリキュラムデータの検証に失敗しました: ${validation.errors.join(', ')}`);
         FULL_CURRICULUM_DAG = masterJson.nodes;
         graphEngineInstance.buildGraph(FULL_CURRICULUM_DAG);
         console.log(`[CurriculumLoader] 総合 subjects_curriculum.json より全 ${FULL_CURRICULUM_DAG.length} 件の単元ノードをロード完了。`);
@@ -119,7 +119,7 @@ export async function loadCurriculumFromJSON() {
 
     if (aggregatedNodes.length > 0) {
       const validation = validateCurriculumNodeSchema(aggregatedNodes);
-      if (!validation.valid) throw new Error(`分科课程数据校验失败: ${validation.errors.join(', ')}`);
+      if (!validation.valid) throw new Error(`教科別カリキュラムデータの検証に失敗しました: ${validation.errors.join(', ')}`);
       FULL_CURRICULUM_DAG = aggregatedNodes;
       graphEngineInstance.buildGraph(FULL_CURRICULUM_DAG);
       console.log(`[CurriculumLoader] 個別教科 JSON より全 ${aggregatedNodes.length} 件の単元ノードをロード完了。`);
@@ -129,10 +129,9 @@ export async function loadCurriculumFromJSON() {
     console.warn('[CurriculumLoader] fetch 失敗、ビルトインフォールバックを使用:', e);
   }
 
-  // Fail closed: incomplete or mismatched fallback content must never be shown
-  // as another grade or subject's curriculum.
+  // 不完全または不一致の代替データを、別学年・別教科として表示しない。
   if (FULL_CURRICULUM_DAG.length === 0) {
-    console.error('[CurriculumLoader] 有効な完全课程数据がありません。安全のため空图谱を返します。');
+    console.error('[CurriculumLoader] 有効な完全カリキュラムデータがありません。安全のため空の知識グラフを返します。');
     FULL_CURRICULUM_DAG = [];
     graphEngineInstance.buildGraph(FULL_CURRICULUM_DAG);
   }

@@ -1,11 +1,11 @@
 /**
- * ErrorInterceptor.js - 客户端全方位异常拦截器与遥测系统
+ * ErrorInterceptor.js - クライアント例外監視・動作記録システム
  * 
- * 1. 运行时 JS 错误 (window.onerror, unhandledrejection)
- * 2. WebGL 渲染崩溃与上下文丢失 (webglcontextlost)
- * 3. 页面卡顿与掉帧监控 (FPS < 15 持续 > 3s)
- * 4. UI 响应死锁 Watchdog (点击星图节点后 2s 内无响应)
- * 5. 用户最近行为回放队列 (最近 5 次交互坐标与元素)
+ * 1. 実行時 JavaScript エラー (window.onerror, unhandledrejection)
+ * 2. WebGL の描画停止とコンテキスト喪失 (webglcontextlost)
+ * 3. 画面停止とフレーム低下の監視 (FPS < 15 が3秒超)
+ * 4. UI 応答停止の監視 (星図ノード選択後2秒以内に反応がない場合)
+ * 5. 直近5件の利用者操作を記録
  */
 
 export class ErrorInterceptor {
@@ -15,13 +15,13 @@ export class ErrorInterceptor {
     this.recentActions = [];
     this.maxActions = 5;
 
-    // 性能监控状态
+    // 性能監視の状態
     this.fpsHistory = [];
     this.currentFps = 60;
     this.lowFpsDurationMs = 0;
     this.lastFrameTime = performance.now();
 
-    // UI 死锁 Watchdog
+    // UI 応答停止の監視
     this.pendingNodeClick = null;
     this.clickWatchdogTimer = null;
 
@@ -31,7 +31,7 @@ export class ErrorInterceptor {
     this.initDeadlockWatchdog();
   }
 
-  // 1. 用户操作行为轨迹录制 (最近 5 次)
+  // 1. 直近5件の利用者操作を記録
   initActionTracker() {
     window.addEventListener(
       'pointerdown',
@@ -54,9 +54,9 @@ export class ErrorInterceptor {
     );
   }
 
-  // 2. 全局 JS 异常与 Promise Rejection 捕获
+  // 2. 全体の JavaScript 例外と Promise 拒否を捕捉
   initGlobalErrorHandlers() {
-    // 监听运行时脚本错误
+    // 実行時スクリプトエラーを監視
     window.onerror = (message, source, lineno, colno, error) => {
       const errorLog = this.buildErrorPayload({
         category: 'RUNTIME_JS_ERROR',
@@ -67,7 +67,7 @@ export class ErrorInterceptor {
       return false;
     };
 
-    // 监听未捕获的 Promise Rejection
+    // 未処理の Promise 拒否を監視
     window.addEventListener('unhandledrejection', (event) => {
       const errorLog = this.buildErrorPayload({
         category: 'UNHANDLED_PROMISE_REJECTION',
@@ -78,25 +78,25 @@ export class ErrorInterceptor {
     });
   }
 
-  // 3. WebGL 上下文丢失监听
+  // 3. WebGL コンテキスト喪失を監視
   bindWebGLCanvas(canvasElement) {
     if (!canvasElement) return;
     canvasElement.addEventListener('webglcontextlost', (event) => {
-      event.preventDefault(); // 阻止默认退出
+      event.preventDefault(); // ブラウザーの既定終了処理を抑止
       const errorLog = this.buildErrorPayload({
         category: 'WEBGL_CONTEXT_LOST',
-        message: 'WebGL 渲染上下文发生丢失崩溃 (Context Lost)',
+        message: 'WebGL 描画コンテキストが失われました。',
         stackTrace: 'Canvas WebGLContextLost Event Triggered'
       });
       this.dispatchBugReport(errorLog);
     });
 
     canvasElement.addEventListener('webglcontextrestored', () => {
-      console.warn('[ErrorInterceptor] WebGL 上下文已自动恢复。');
+      console.warn('[ErrorInterceptor] WebGL コンテキストが復旧しました。');
     });
   }
 
-  // 4. FPS 性能卡顿监控 (主循环 FPS < 15 超过 3 秒)
+  // 4. FPS 低下を監視（主ループが15 FPS未満で3秒超）
   initFpsMonitor() {
     let frameCount = 0;
     let lastTime = performance.now();
@@ -115,11 +115,11 @@ export class ErrorInterceptor {
           if (this.lowFpsDurationMs >= 3000) {
             const errorLog = this.buildErrorPayload({
               category: 'PERFORMANCE_FPS_DROP',
-              message: `页面发生严重卡顿：FPS 低于 15 已持续 ${(this.lowFpsDurationMs / 1000).toFixed(1)} 秒`,
+              message: `画面の応答が大きく低下しています。15 FPS未満の状態が ${(this.lowFpsDurationMs / 1000).toFixed(1)} 秒続きました。`,
               stackTrace: `Current FPS: ${this.currentFps}, Threshold: 15 FPS, Duration: ${this.lowFpsDurationMs}ms`
             });
             this.dispatchBugReport(errorLog);
-            this.lowFpsDurationMs = 0; // 避免重复高频触发
+            this.lowFpsDurationMs = 0; // 短時間の重複通知を防ぐ
           }
         } else {
           this.lowFpsDurationMs = 0;
@@ -132,7 +132,7 @@ export class ErrorInterceptor {
     requestAnimationFrame(checkFpsLoop);
   }
 
-  // 5. UI 响应死锁 Watchdog (点击星图节点超过 2 秒无 DOM/弹窗响应)
+  // 5. UI 応答停止を監視（星図ノード選択後2秒以内に画面変化がない場合）
   initDeadlockWatchdog() {
     window.addEventListener('GALAXY_NODE_CLICK_START', (e) => {
       const nodeId = e.detail?.nodeId || 'UNKNOWN';
@@ -154,7 +154,7 @@ export class ErrorInterceptor {
           if (currentSignature === this.pendingNodeClick.initialDomSignature && !modalVisible) {
             const errorLog = this.buildErrorPayload({
               category: 'UI_DEADLOCK_HANG',
-              message: `UI 状态死锁：点击节点 [${nodeId}] 超过 2000ms 界面无任何 DOM 变化或弹窗响应`,
+              message: `UI が応答していません。ノード [${nodeId}] の選択から2000ms経過しても画面またはダイアログに変化がありません。`,
               stackTrace: `NodeClick at: ${this.pendingNodeClick.startTime}, Timeout: 2000ms, ModalVisible: false`
             });
             this.dispatchBugReport(errorLog);
@@ -180,7 +180,7 @@ export class ErrorInterceptor {
     this.currentNodeId = nodeId;
   }
 
-  // 封装统一的异常日志 JSON 格式
+  // 例外記録を共通 JSON 形式にまとめる
   buildErrorPayload({ category, message, stackTrace }) {
     const isMobile = /Mobi|Android|iPhone/i.test(navigator.userAgent) || window.innerWidth <= 768;
 
@@ -204,9 +204,9 @@ export class ErrorInterceptor {
     };
   }
 
-  // 派发 Bug 日志到全局 Agent 管道与控制台
+  // 不具合記録を全体イベントとコンソールへ送る
   dispatchBugReport(errorPayload) {
-    console.error('[ErrorInterceptor Captured Bug]', JSON.stringify(errorPayload));
+    console.error(`[ErrorInterceptor 不具合検出] ${JSON.stringify(errorPayload)}`);
     window.dispatchEvent(new CustomEvent('AGENT_BUG_CAPTURED', { detail: errorPayload }));
   }
 }

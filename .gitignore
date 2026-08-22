@@ -1,0 +1,17 @@
+node_modules/
+
+# 複数エージェントの一時実行記録
+.agents/orchestrator/
+.agents/sentinel/
+.agents/teamwork_preview_*/
+.agents/victory_auditor/
+
+# 自動生成されるテスト結果
+tests/test_results.json
+
+# ローカル作業用の一時ファイル
+test.txt
+test_b64.txt
+scripts/check.txt
+scripts/test.txt
+scripts/*.py

@@ -1,10 +1,10 @@
 /**
- * GalaxyEngine.js - 3D 银河系全大纲知识星图与3D星云图渲染引擎
+ * GalaxyEngine.js - 3D知識星図とテーマ背景の描画エンジン
  * 
- * 1. 六大 3D 星云团（Volumetric 3D Nebulae Clouds）
- * 2. 星云内知识点串联链路（Intra-Nebula Constellation Paths）
- * 3. 3D 悬浮知识点名称标签（Billboard Text Sprites）
- * 4. 核心星核、响应式视口与触控交互
+ * 1. 6教科の3D星雲
+ * 2. 星雲内の学習単元を結ぶ経路
+ * 3. 学習単元名の3Dラベル
+ * 4. 中心星、レスポンシブ表示、タッチ操作
  */
 
 import * as THREE from 'three';
@@ -19,8 +19,8 @@ export class GalaxyEngine {
     this.width = container.clientWidth || window.innerWidth;
     this.height = container.clientHeight || window.innerHeight;
     this.isMobile = window.innerWidth <= 768;
-    this.currentGradeFilter = 0; // 0 = 全学年 (All)
-    this.currentSubjectFilter = null; // null = 全教科 (All Subjects)
+    this.currentGradeFilter = 0; // 0 = 全学年
+    this.currentSubjectFilter = null; // null = 全教科
     this.backgroundTheme = 'GALAXY';
 
     this.initScene();
@@ -71,8 +71,7 @@ export class GalaxyEngine {
     });
   }
 
-  // Decorative alternatives intentionally remain procedural: no image download,
-  // instant switching, and the curriculum nodes stay interactive in every theme.
+  // 背景は外部画像を使わず手続き的に描画し、即時切り替えと全テーマでの操作を可能にする。
   setBackgroundTheme(theme = 'GALAXY') {
     const nextTheme = ['GALAXY', 'FOREST', 'CITY'].includes(theme) ? theme : 'GALAXY';
     this.backgroundTheme = nextTheme;
@@ -96,8 +95,7 @@ export class GalaxyEngine {
     if (nextTheme === 'FOREST') this.createForestBackground(this.backgroundGroup);
     if (nextTheme === 'CITY') this.createCityBackground(this.backgroundGroup);
     this.scene.add(this.backgroundGroup);
-    // The learning map itself changes form with the world: stars become
-    // curriculum trees or illuminated city landmarks, not planets on a new sky.
+    // 背景だけでなく、学習ノードも星・木・都市のランドマークへ再構成する。
     if (this.nodeGroup) this.renderNodeMeshesAndSprites();
   }
 
@@ -175,7 +173,7 @@ export class GalaxyEngine {
     return sphere;
   }
 
-  // 1. 核心星核（Galactic Nucleus - 生きる力）
+  // 1. 中心星（生きる力）
   createNucleus() {
     const nucleusGroup = new THREE.Group();
 
@@ -213,7 +211,7 @@ export class GalaxyEngine {
     this.nucleus = nucleusGroup;
   }
 
-  // 2. 六大 3D 星云团与知识点串联链路生成
+  // 2. 6教科の3D星雲と学習単元を結ぶ経路を生成
   create3DNebulaeAndCurriculumNodes() {
     const subjectKeys = Object.keys(this.subjectMetadata || SUBJECT_METADATA);
     const numArms = subjectKeys.length;
@@ -233,14 +231,14 @@ export class GalaxyEngine {
       const armBaseAngle = (armIndex / numArms) * Math.PI * 2;
       const subColor = new THREE.Color(meta.color);
 
-      // (A) 3D 体积星云粒子团 (Volumetric Nebula Cloud)
+      // (A) 立体的な星雲パーティクル
       for (let i = 0; i < particlesPerNebula; i++) {
         const progress = i / particlesPerNebula;
         const radius = 18 + progress * armMaxRadius;
         const spinAngle = progress * 3.6;
         const angle = armBaseAngle + spinAngle;
 
-        // 3D 星云弥散扩散体积
+        // 星雲の立体的な広がり
         const spread = (1 - Math.exp(-progress * 2.2)) * 26;
         const x = Math.cos(angle) * radius + (Math.random() - 0.5) * spread;
         const z = Math.sin(angle) * radius + (Math.random() - 0.5) * spread;
@@ -248,12 +246,12 @@ export class GalaxyEngine {
 
         allPositions.push(x, y, z);
 
-        // 核心至边缘由亮白渐变到深邃星云专属色
+        // 中心の白から教科ごとの星雲色へ変化
         const mixedColor = new THREE.Color(0xffffff).lerp(subColor, 0.3 + progress * 0.7);
         allColors.push(mixedColor.r, mixedColor.g, mixedColor.b);
       }
 
-      // (B) 知识点定位与年级排序
+      // (B) 学習単元を学年順に配置
       const subjectNodes = (this.nodes || FULL_CURRICULUM_DAG)
         .filter(n => n.subject === meta.name)
         .sort((a, b) => (a.grade || 0) - (b.grade || 0));
@@ -282,13 +280,13 @@ export class GalaxyEngine {
         });
       });
 
-      // (C) 绘制星云内部知识点串联光路 (Constellation Connecting Path)
+      // (C) 星雲内の学習単元を光の経路で結ぶ
       if (nodePositionsForThisSubject.length > 1) {
         const curve = new THREE.CatmullRomCurve3(nodePositionsForThisSubject, false, 'centripetal', 0.2);
         const curvePoints = curve.getPoints(60);
         const lineGeo = new THREE.BufferGeometry().setFromPoints(curvePoints);
         
-        // 柔和半透明发光星座连线
+        // やわらかい半透明の発光線
         const lineMat = new THREE.LineBasicMaterial({
           color: meta.color,
           transparent: true,
@@ -303,7 +301,7 @@ export class GalaxyEngine {
       }
     });
 
-    // 渲染 3D 星云背景粒子流
+    // 3D星雲の背景パーティクルを描画
     const armGeo = new THREE.BufferGeometry();
     armGeo.setAttribute('position', new THREE.Float32BufferAttribute(allPositions, 3));
     armGeo.setAttribute('color', new THREE.Float32BufferAttribute(allColors, 3));
@@ -324,7 +322,7 @@ export class GalaxyEngine {
     this.renderNodeMeshesAndSprites();
   }
 
-  // 3. 渲染知识星点与 3D 悬浮文字标签 (Name Sprites)
+  // 3. 学習ノードと3D文字ラベルを描画
   renderNodeMeshesAndSprites() {
     if (this.nodeGroup) {
       this.scene.remove(this.nodeGroup);
@@ -359,7 +357,7 @@ export class GalaxyEngine {
       const singleNodeGroup = new THREE.Group();
       singleNodeGroup.position.copy(node.position);
 
-      // (A) 星点球体 Mesh
+      // (A) テーマに合う学習ノードの形状
       const nodeMesh = this.createThemeNodeMesh(node);
       if (node.status === 'CLEARED' && this.backgroundTheme === 'GALAXY') {
         const ringGeo = new THREE.RingGeometry(4.0, 4.8, 24);
@@ -370,7 +368,7 @@ export class GalaxyEngine {
       }
       singleNodeGroup.add(nodeMesh);
 
-      // (B) 3D 悬浮文字标签 Sprite (在星点旁显示知识点名称)
+      // (B) 学習ノード名の3Dラベル
       const nameSprite = this.createNameSprite(node);
       nameSprite.position.set(0, this.backgroundTheme === 'GALAXY' ? 4.5 : 12.5, 0);
       singleNodeGroup.add(nameSprite);
@@ -381,22 +379,22 @@ export class GalaxyEngine {
     this.scene.add(this.nodeGroup);
   }
 
-  // 同步玩家掌握度并点亮已通关节点（未通关保持灰暗，可挑战保持脉冲）
+  // 習熟度を同期し、クリア済み・挑戦可能・未解放の表示を更新
   syncProgress(playerMasteryMap = {}) {
     this.starNodes.forEach((node) => {
       const mastery = playerMasteryMap[node.id] || 0;
       if (mastery >= 0.85) {
-        node.status = 'CLEARED'; // 点亮已通关
+        node.status = 'CLEARED'; // クリア済み
       } else {
         const prereqs = node.prerequisites || [];
         const allPrereqsMet = prereqs.every(pId => (playerMasteryMap[pId] || 0) >= 0.85);
-        node.status = (allPrereqsMet || prereqs.length === 0) ? 'AVAILABLE' : 'LOCKED'; // 可挑战 vs 灰暗
+        node.status = (allPrereqsMet || prereqs.length === 0) ? 'AVAILABLE' : 'LOCKED'; // 挑戦可能または未解放
       }
     });
     this.renderNodeMeshesAndSprites();
   }
 
-  // 单个节点通关点亮特效
+  // 単一ノードのクリア演出
   lightUpNode(nodeId) {
     const targetNode = this.starNodes.find(n => n.id === nodeId);
     if (targetNode) {
@@ -458,14 +456,14 @@ export class GalaxyEngine {
     burstAnimate();
   }
 
-  // 生成高清晰度 3D Billboard 文字精灵
+  // 読みやすい3Dビルボード文字を生成
   createNameSprite(node) {
     const canvas = document.createElement('canvas');
     canvas.width = 320;
     canvas.height = 80;
     const ctx = canvas.getContext('2d');
 
-    // 胶囊发光背景板
+    // カプセル型の発光背景
     ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
     ctx.strokeStyle = node.hexColor || '#38bdf8';
     ctx.lineWidth = 3;
@@ -495,7 +493,7 @@ export class GalaxyEngine {
     });
 
     const sprite = new THREE.Sprite(material);
-    // 移动端适当微调缩放
+    // モバイルでは表示倍率を調整
     const scaleFactor = this.isMobile ? 18 : 22;
     sprite.scale.set(scaleFactor, scaleFactor * 0.25, 1);
     return sprite;
@@ -528,7 +526,7 @@ export class GalaxyEngine {
     });
   }
 
-  // 跨学科关联光束
+  // 教科をまたぐ関連を光線で表示
   createCrossDisciplineBeam(startPos, endPos) {
     if (this.currentBeam) this.scene.remove(this.currentBeam);
 
@@ -624,13 +622,13 @@ export class GalaxyEngine {
   animate(time = 0) {
     requestAnimationFrame(this.animate.bind(this));
 
-    // 星云与旋臂自转
+    // 星雲と各教科の腕を回転
     if (this.nebulaGroup) this.nebulaGroup.rotation.y += 0.0006;
     if (this.constellationGroup) this.constellationGroup.rotation.y += 0.0006;
     if (this.nodeGroup) this.nodeGroup.rotation.y += 0.0006;
     if (this.nucleus) this.nucleus.rotation.y -= 0.0018;
 
-    // 脉冲呼吸效果
+    // 挑戦可能ノードの脈動表現
     const pulseScale = 1.0 + Math.sin(time * 0.005) * 0.22;
     if (this.nodeGroup) {
       this.nodeGroup.children.forEach((group) => {

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>日本小学校学習指導要領 · 銀河知識星図 (Galaxy Knowledge Graph)</title>
+  <title>日本小学校学習指導要領 · 銀河知識星図</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="css/style.css" />
   <!-- Three.js Import Maps -->
@@ -68,10 +68,10 @@
       <!-- 音声ミュート切り替えボタン (Mute Toggle) -->
       <button id="audio-mute-btn" class="glass-panel px-3.5 py-1.5 rounded-full hover:bg-slate-800 text-xs font-bold text-slate-200 flex items-center gap-1.5 transition border border-indigo-500/30 shadow-lg cursor-pointer" title="音声ミュート切替">
         <span id="audio-mute-icon" class="text-sm">🔊</span>
-        <span id="audio-mute-label" class="hidden sm:inline">音量 ON</span>
+        <span id="audio-mute-label" class="hidden sm:inline">音量オン</span>
       </button>
 
-      <!-- 星際ショップボタン -->
+      <!-- 銀河ショップボタン -->
       <button id="open-shop-btn" class="glass-panel px-3.5 py-1.5 rounded-full hover:bg-slate-800 text-xs font-medium flex items-center gap-1 transition">
         <span>🛒</span>
         <span class="hidden md:inline">ショップ</span>
@@ -94,30 +94,30 @@
     </nav>
   </div>
 
-  <!-- PC端：左側 教科旋臂ナビゲーション -->
+  <!-- PC：左側の教科ナビゲーション -->
   <aside id="subject-nav" style="display:none" class="fixed left-2 right-2 top-20 md:absolute md:left-6 md:right-auto md:top-1/2 md:-translate-y-1/2 z-10 glass-panel p-3 rounded-2xl shadow-2xl flex flex-row flex-wrap md:flex-col gap-2">
-    <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center mb-1">6大教科星雲</div>
+    <div class="text-[10px] font-bold text-slate-400 tracking-wider text-center mb-1">教科を選ぶ</div>
     <button data-subj="国語" class="subj-btn px-4 py-2 rounded-xl text-xs font-semibold tracking-wider transition flex items-center gap-2 cursor-pointer">
-      <span class="w-2 h-2 rounded-full bg-red-500"></span>国語 (Kokugo)
+      <span class="w-2 h-2 rounded-full bg-red-500"></span>国語
     </button>
     <button data-subj="算数" class="subj-btn px-4 py-2 rounded-xl text-xs font-semibold tracking-wider transition flex items-center gap-2 cursor-pointer">
-      <span class="w-2 h-2 rounded-full bg-blue-500"></span>算数 (Sansu)
+      <span class="w-2 h-2 rounded-full bg-blue-500"></span>算数
     </button>
     <button data-subj="理科" class="subj-btn px-4 py-2 rounded-xl text-xs font-semibold tracking-wider transition flex items-center gap-2 cursor-pointer">
-      <span class="w-2 h-2 rounded-full bg-emerald-500"></span>理科 (Rika)
+      <span class="w-2 h-2 rounded-full bg-emerald-500"></span>理科
     </button>
     <button data-subj="社会" class="subj-btn px-4 py-2 rounded-xl text-xs font-semibold tracking-wider transition flex items-center gap-2 cursor-pointer">
-      <span class="w-2 h-2 rounded-full bg-amber-500"></span>社会 (Shakai)
+      <span class="w-2 h-2 rounded-full bg-amber-500"></span>社会
     </button>
     <button data-subj="生活" class="subj-btn px-4 py-2 rounded-xl text-xs font-semibold tracking-wider transition flex items-center gap-2 cursor-pointer">
-      <span class="w-2 h-2 rounded-full bg-orange-500"></span>生活 (Seikatsu)
+      <span class="w-2 h-2 rounded-full bg-orange-500"></span>生活
     </button>
     <button data-subj="外国語・英語" class="subj-btn px-4 py-2 rounded-xl text-xs font-semibold tracking-wider transition flex items-center gap-2 cursor-pointer">
-      <span class="w-2 h-2 rounded-full bg-purple-500"></span>外国語・英語 (Eigo)
+      <span class="w-2 h-2 rounded-full bg-purple-500"></span>外国語・英語
     </button>
   </aside>
 
-  <!-- PC端：右側 知識点詳細カード (幅をw-96に拡大し関門グリッドを拡張・スクロールバー非表示) -->
+  <!-- PC：右側の学習単元カード -->
   <div id="pc-detail-card" class="hidden md:block invisible pointer-events-none absolute right-6 top-24 w-96 z-10 glass-panel p-5 rounded-3xl shadow-2xl transition-all max-h-[calc(100vh-7.5rem)] overflow-y-auto no-scrollbar">
     <div class="flex items-center justify-between mb-2.5">
       <div class="flex items-center gap-1.5">
@@ -143,29 +143,29 @@
       <div class="text-emerald-400 font-bold text-[11px]" id="formula-display">基礎 100 pt × 深度 1.0 × 連勝 1.3 = 130 pt</div>
     </div>
 
-    <!-- ステージ一覧と進捗バッジ (关卡按钮网格尺寸扩大，纯数字展示，无白色滚动条) -->
+    <!-- ステージ一覧と進捗バッジ。数字だけの見やすいボタンを使用する。 -->
     <div id="node-stages-container" class="mb-3.5">
       <div class="flex justify-between items-center text-[11px] font-bold text-slate-300 mb-2">
         <span>🎯 <ruby>関門<rt>かんもん</rt></ruby>ステージ<ruby>一覧<rt>いちらん</rt></ruby></span>
         <span id="node-stages-progress" class="text-amber-400 text-[10px] font-mono">0 / 8 クリア</span>
       </div>
       <div id="node-stages-grid" class="grid grid-cols-6 gap-1.5 max-h-48 overflow-y-auto no-scrollbar p-0.5">
-        <!-- 动态渲染关卡按钮 -->
+        <!-- ステージボタンを動的に描画 -->
       </div>
     </div>
 
     <div class="flex flex-col gap-2">
       <button id="start-game-pc-btn" class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-lg shadow-indigo-600/30 transition cursor-pointer">
-        <ruby>学習<rt>がくしゅう</rt></ruby>ステージ<ruby>開始<rt>かいし</rt></ruby> (Play)
+        <ruby>学習<rt>がくしゅう</rt></ruby>ステージを<ruby>始<rt>はじ</rt></ruby>める
       </button>
       <button id="grade-exam-btn" onclick="window.launchGradeExam()" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 text-xs font-bold shadow-lg transition cursor-pointer flex items-center justify-center gap-1.5">
         <span>🏆</span>
-        <span><ruby>学年総合<rt>がくねんそうごう</rt></ruby><ruby>大試練<rt>だいしれん</rt></ruby> (実力判定テスト)</span>
+        <span><ruby>学年総合<rt>がくねんそうごう</rt></ruby>チャレンジ（<ruby>実力<rt>じつりょく</rt></ruby>テスト）</span>
       </button>
     </div>
   </div>
 
-  <!-- モバイル端：下部ドロワー式ポップアップ -->
+  <!-- モバイル：下部ドロワー式ポップアップ -->
   <div id="mobile-sheet" class="md:hidden fixed bottom-0 left-0 right-0 z-20 glass-panel p-5 rounded-t-3xl shadow-2xl transition-transform duration-300 transform translate-y-full max-h-[80vh] overflow-y-auto no-scrollbar">
     <div class="w-10 h-1 bg-white/30 rounded-full mx-auto mb-4 cursor-pointer" onclick="closeSheet()"></div>
     <div class="flex justify-between items-start mb-2">
@@ -180,21 +180,21 @@
     </div>
     <p id="m-node-desc" class="text-xs text-slate-300 mb-3">習熟度85%到達で次の有向グラフノードが解放されます。</p>
 
-    <!-- モバイル端ステージ一覧 -->
+    <!-- モバイルのステージ一覧 -->
     <div id="m-node-stages-container" class="mb-4">
       <div class="flex justify-between items-center text-[11px] font-bold text-slate-300 mb-1.5">
         <span>🎯 関門ステージ一覧</span>
         <span id="m-node-stages-progress" class="text-amber-400 text-[10px] font-mono">0 / 8 クリア</span>
       </div>
       <div id="m-node-stages-grid" class="grid grid-cols-5 gap-1.5 max-h-36 overflow-y-auto no-scrollbar p-0.5">
-        <!-- 动态渲染关卡按钮 -->
+        <!-- ステージボタンを動的に描画 -->
       </div>
     </div>
 
     <div class="flex flex-col gap-2">
       <div class="flex gap-2">
         <button id="start-game-mobile-btn" type="button" onclick="window.closeSheet(); window.launchGame()" class="flex-1 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl text-xs font-bold shadow-lg shadow-indigo-600/30 cursor-pointer">
-          <ruby>挑戦<rt>ちょうせん</rt></ruby><ruby>開始<rt>かいし</rt></ruby> (Play)
+          <ruby>挑戦<rt>ちょうせん</rt></ruby>を<ruby>始<rt>はじ</rt></ruby>める
         </button>
         <button class="px-4 py-3 bg-white/10 rounded-xl text-xs font-semibold cursor-pointer" onclick="closeSheet()">
           閉じる
@@ -202,7 +202,7 @@
       </div>
       <button onclick="window.launchGradeExam()" class="w-full py-2.5 bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 rounded-xl text-xs font-bold shadow-lg cursor-pointer flex items-center justify-center gap-1.5">
         <span>🏆</span>
-        <span>学年総合大試練 (実力テスト)</span>
+        <span>学年総合チャレンジ（実力テスト）</span>
       </button>
     </div>
   </div>
@@ -250,14 +250,14 @@
     </div>
   </div>
 
-  <!-- 国語 漢字1026字 学年別 闖関モード選択モーダル (Kanji Challenge Mode Modal) -->
+  <!-- 国語：漢字1,026字の学年別チャレンジ選択 -->
   <div id="kanji-mode-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 hidden select-none">
     <div class="relative w-full max-w-2xl bg-slate-900 border border-slate-700 rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh]">
       <div class="flex justify-between items-center px-6 py-4 border-b border-slate-800 bg-slate-900/80">
         <div class="flex items-center gap-2">
           <span class="text-2xl">🎴</span>
           <div>
-            <h2 class="text-base font-bold text-white"><ruby>国語<rt>こくご</rt></ruby> · <ruby>小学校<rt>しょうがっこう</rt></ruby> <ruby>漢字<rt>かんじ</rt></ruby>1,026<ruby>字<rt>じ</rt></ruby> <ruby>闖関<rt>ちょうかん</rt></ruby>モード</h2>
+            <h2 class="text-base font-bold text-white"><ruby>国語<rt>こくご</rt></ruby> · <ruby>小学校<rt>しょうがっこう</rt></ruby> <ruby>漢字<rt>かんじ</rt></ruby>1,026<ruby>字<rt>じ</rt></ruby>チャレンジ</h2>
             <p class="text-[10px] text-slate-400"><ruby>文部科学省<rt>もんぶかがくしょう</rt></ruby> <ruby>学年別漢字配当表<rt>がくねんべつかんじはいとうひょう</rt></ruby>（1年〜6年）<ruby>完全網羅<rt>かんぜんもうら</rt></ruby></p>
           </div>
         </div>
@@ -276,7 +276,7 @@
               <p class="text-[11px] text-slate-300">一、右、雨、円、王、音、下、火、花、貝、学、気、金、空、日、月、犬...</p>
             </div>
             <button onclick="startKanjiStage(1)" class="mt-3 w-full py-2 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 rounded-xl text-xs font-bold text-white shadow-md transition">
-              1<ruby>年生<rt>ねんせい</rt></ruby> <ruby>配当漢字<rt>はいとうかんじ</rt></ruby> <ruby>闖関<rt>ちょうかん</rt></ruby><ruby>開始<rt>かいし</rt></ruby>
+              1<ruby>年生<rt>ねんせい</rt></ruby>の<ruby>配当漢字<rt>はいとうかんじ</rt></ruby>を<ruby>始<rt>はじ</rt></ruby>める
             </button>
           </div>
 
@@ -290,7 +290,7 @@
               <p class="text-[11px] text-slate-300">引、羽、雲、園、遠、何、科、夏、家、歌、画、回、会、海、絵、外...</p>
             </div>
             <button onclick="startKanjiStage(2)" class="mt-3 w-full py-2 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 rounded-xl text-xs font-bold text-white shadow-md transition">
-              2<ruby>年生<rt>ねんせい</rt></ruby> <ruby>配当漢字<rt>はいとうかんじ</rt></ruby> <ruby>闖関<rt>ちょうかん</rt></ruby><ruby>開始<rt>かいし</rt></ruby>
+              2<ruby>年生<rt>ねんせい</rt></ruby>の<ruby>配当漢字<rt>はいとうかんじ</rt></ruby>を<ruby>始<rt>はじ</rt></ruby>める
             </button>
           </div>
 
@@ -304,7 +304,7 @@
               <p class="text-[11px] text-slate-300">悪、安、暗、医、委、意、育、員、院、飲、運、泳、駅、央、横、屋...</p>
             </div>
             <button onclick="startKanjiStage(3)" class="mt-3 w-full py-2 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 rounded-xl text-xs font-bold text-white shadow-md transition">
-              3<ruby>年生<rt>ねんせい</rt></ruby> <ruby>配当漢字<rt>はいとうかんじ</rt></ruby> <ruby>闖関<rt>ちょうかん</rt></ruby><ruby>開始<rt>かいし</rt></ruby>
+              3<ruby>年生<rt>ねんせい</rt></ruby>の<ruby>配当漢字<rt>はいとうかんじ</rt></ruby>を<ruby>始<rt>はじ</rt></ruby>める
             </button>
           </div>
 
@@ -318,7 +318,7 @@
               <p class="text-[11px] text-slate-300">愛、案、以、衣、位、囲、胃、印、英、栄、塩、億、加、果、都道府県漢字...</p>
             </div>
             <button onclick="startKanjiStage(4)" class="mt-3 w-full py-2 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 rounded-xl text-xs font-bold text-white shadow-md transition">
-              4<ruby>年生<rt>ねんせい</rt></ruby> <ruby>配当漢字<rt>はいとうかんじ</rt></ruby> <ruby>闖関<rt>ちょうかん</rt></ruby><ruby>開始<rt>かいし</rt></ruby>
+              4<ruby>年生<rt>ねんせい</rt></ruby>の<ruby>配当漢字<rt>はいとうかんじ</rt></ruby>を<ruby>始<rt>はじ</rt></ruby>める
             </button>
           </div>
 
@@ -332,7 +332,7 @@
               <p class="text-[11px] text-slate-300">圧、移、因、永、営、衛、易、益、液、演、応、往、桜、恩、可、仮...</p>
             </div>
             <button onclick="startKanjiStage(5)" class="mt-3 w-full py-2 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 rounded-xl text-xs font-bold text-white shadow-md transition">
-              5<ruby>年生<rt>ねんせい</rt></ruby> <ruby>配当漢字<rt>はいとうかんじ</rt></ruby> <ruby>闖関<rt>ちょうかん</rt></ruby><ruby>開始<rt>かいし</rt></ruby>
+              5<ruby>年生<rt>ねんせい</rt></ruby>の<ruby>配当漢字<rt>はいとうかんじ</rt></ruby>を<ruby>始<rt>はじ</rt></ruby>める
             </button>
           </div>
 
@@ -346,7 +346,7 @@
               <p class="text-[11px] text-slate-300">異、遺、域、宇、映、延、沿、我、灰、拡、革、閣、割、株、干、巻...</p>
             </div>
             <button onclick="startKanjiStage(6)" class="mt-3 w-full py-2 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 rounded-xl text-xs font-bold text-white shadow-md transition">
-              6<ruby>年生<rt>ねんせい</rt></ruby> <ruby>配当漢字<rt>はいとうかんじ</rt></ruby> <ruby>闖関<rt>ちょうかん</rt></ruby><ruby>開始<rt>かいし</rt></ruby>
+              6<ruby>年生<rt>ねんせい</rt></ruby>の<ruby>配当漢字<rt>はいとうかんじ</rt></ruby>を<ruby>始<rt>はじ</rt></ruby>める
             </button>
           </div>
         </div>
@@ -354,13 +354,13 @@
     </div>
   </div>
 
-  <!-- 星際ショップ & 報酬元帳ポップアップ (Shop Modal) -->
+  <!-- 銀河ショップと報酬履歴 -->
   <div id="shop-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 hidden select-none">
     <div class="relative w-full max-w-2xl bg-slate-900 border border-slate-700 rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh]">
       <div class="flex justify-between items-center px-6 py-4 border-b border-slate-800 bg-slate-900/80">
         <div class="flex items-center gap-2">
           <span class="text-xl">🛒</span>
-          <h2 class="text-lg font-bold text-white"><ruby>星際<rt>せいかい</rt></ruby><ruby>知識<rt>ちしき</rt></ruby><ruby>交換<rt>こうかん</rt></ruby>ショップ & <ruby>報酬<rt>ほうしゅう</rt></ruby><ruby>元帳<rt>もとちょう</rt></ruby></h2>
+          <h2 class="text-lg font-bold text-white"><ruby>銀河<rt>ぎんが</rt></ruby><ruby>知識<rt>ちしき</rt></ruby><ruby>交換<rt>こうかん</rt></ruby>ショップ・<ruby>報酬<rt>ほうしゅう</rt></ruby><ruby>履歴<rt>りれき</rt></ruby></h2>
         </div>
         <div class="flex items-center gap-4">
           <div class="text-xs font-mono text-yellow-400 font-bold bg-yellow-400/10 px-3 py-1 rounded-full">
@@ -416,11 +416,11 @@
     let englishModeSelection = null;
     const selectedModeByNode = new Map();
 
-    // 国語 漢字1026字 闖関モード
+    // 国語：漢字1,026字の学年別チャレンジ
     const kanjiModal = document.getElementById('kanji-mode-modal');
     window.launchKanjiMode = () => {
       if (currentActiveGrade > 0) {
-        // 現在選択中の学年の配当漢字闖関ステージへダイレクト起動
+        // 選択中の学年に対応する配当漢字チャレンジを直接起動
         window.startKanjiStage(currentActiveGrade);
       } else {
         kanjiModal.classList.remove('hidden');
@@ -443,7 +443,7 @@
       requestGameStart(node, stageNum);
     };
 
-    // 学年総合大試練の起動
+    // 学年総合チャレンジの起動
     window.launchGradeExam = (grade = null) => {
       const targetGrade = grade || currentActiveGrade;
       if (!targetGrade) return;
@@ -476,7 +476,7 @@
       document.getElementById('m-node-title').innerText = node.name;
       document.getElementById('m-node-desc').innerText = node.desc;
 
-      // 關卡進度與綠色勾勾（✅）清單渲染
+      // ステージ進捗とクリア印（✅）を描画
       const maxStages = (gameModal && typeof gameModal.getMaxStagesForNode === 'function')
         ? gameModal.getMaxStagesForNode(node)
         : (node.stages || 6);
@@ -512,7 +512,7 @@
         progMobile.className = isAllCleared ? 'text-amber-300 font-bold text-[10px]' : 'text-amber-400 text-[10px] font-mono';
       }
 
-      // 判定当前选中的学年与当前知识点是否匹配
+      // 選択中の学年と現在の学習単元が一致するか確認
       const isGradeMismatch = currentActiveGrade > 0 && node.grade && node.grade !== currentActiveGrade;
       const pcPlayBtn = document.getElementById('start-game-pc-btn');
       const mobilePlayBtn = document.getElementById('start-game-mobile-btn');
@@ -532,12 +532,12 @@
         if (pcPlayBtn) {
           pcPlayBtn.disabled = false;
           pcPlayBtn.classList.remove('opacity-40', 'cursor-not-allowed', 'pointer-events-none');
-          pcPlayBtn.innerHTML = `<ruby>学習<rt>がくしゅう</rt></ruby>ステージ<ruby>開始<rt>かいし</rt></ruby> (Play)`;
+          pcPlayBtn.innerHTML = `<ruby>学習<rt>がくしゅう</rt></ruby>ステージを<ruby>始<rt>はじ</rt></ruby>める`;
         }
         if (mobilePlayBtn) {
           mobilePlayBtn.disabled = false;
           mobilePlayBtn.classList.remove('opacity-40', 'cursor-not-allowed', 'pointer-events-none');
-          mobilePlayBtn.innerHTML = `<ruby>学習<rt>がくしゅう</rt></ruby>ステージ<ruby>開始<rt>かいし</rt></ruby> (Play)`;
+          mobilePlayBtn.innerHTML = `<ruby>学習<rt>がくしゅう</rt></ruby>ステージを<ruby>始<rt>はじ</rt></ruby>める`;
         }
       }
     }
@@ -815,7 +815,7 @@
 
     function syncMuteUI(muted) {
       if (muteIcon) muteIcon.innerText = muted ? '🔇' : '🔊';
-      if (muteLabel) muteLabel.innerText = muted ? '消音中' : '音量 ON';
+      if (muteLabel) muteLabel.innerText = muted ? '消音中' : '音量オン';
       if (muteBtn) {
         muteBtn.classList.toggle('border-rose-500/50', muted);
         muteBtn.classList.toggle('text-rose-300', muted);
@@ -893,7 +893,7 @@
       if (subject === '国語') return [
         { mode: 'MIXED_CURRICULUM', label: '学年国語ミックス', desc: '漢字・ことば・文法・読解をバランスよく出題' },
         { mode: 'KANJI_READING', label: '漢字チャレンジ', desc: 'この学年の配当漢字だけを練習' },
-        { mode: 'RADICAL_BUILDER', gameType: 'RADICAL_BUILDER', label: '学年別 偏旁部首', desc: '配当漢字のパーツ合成・部首判別・構造判断に挑戦' },
+        { mode: 'RADICAL_BUILDER', gameType: 'RADICAL_BUILDER', label: '学年別 部首・漢字パーツ', desc: '配当漢字のパーツ合成・部首判別・構造判断に挑戦' },
         { mode: 'READING_QUIZ', label: 'ことば・読解', desc: '語彙、文法、段落理解を学年別に挑戦' }
       ];
       if (subject === '算数') {
@@ -921,8 +921,8 @@
         { mode: 'BASIC', label: '学年英語 BASIC', desc: '語彙・会話・文の基本' },
         { mode: 'EIKEN3', label: '英検3級', desc: '文法、会話、短文理解' },
         { mode: 'EIKEN2', label: '英検2級', desc: '語彙、論理、推論に挑戦' },
-        { mode: 'SHORT_READING', label: '短篇英語読解', desc: '人物・場所・理由・順序を読む' },
-        { mode: 'LONG_READING', label: '長篇英語読解', desc: '主旨・詳細・推論・指示語を読む' }
+        { mode: 'SHORT_READING', label: '短文英語読解', desc: '人物・場所・理由・順序を読む' },
+        { mode: 'LONG_READING', label: '長文英語読解', desc: '要旨・詳細・推論・指示語を読む' }
       ];
       return [];
     }
@@ -999,7 +999,7 @@
 
       const awardResult = economy.recordStageClear(targetNodeId, stageLevel, accuracy);
 
-      // 学年総合大試練のボーナス加算
+      // 学年総合チャレンジのボーナス加算
       if (isExam && accuracy >= 0.8) {
         economy.starCoins += 300;
         economy.ledger.unshift({
@@ -1008,7 +1008,7 @@
           type: 'EXAM_CLEAR_BONUS',
           amount: 300,
           balanceAfter: economy.starCoins,
-          description: `【学年総合大試練】実力テスト完全制覇ボーナス！`
+          description: `【学年総合チャレンジ】実力テスト完全制覇ボーナス！`
         });
         economy.saveState();
       }
@@ -1021,7 +1021,7 @@
       engine.syncProgress(economy.playerMastery);
 
       if (isExam) {
-        showAgentToast(`🎓 学年総合大試練クリア！特別ボーナス +300 ⭐ 獲得！`);
+        showAgentToast(`🎓 学年総合チャレンジをクリア！特別ボーナス +300 ⭐ 獲得！`);
       } else if (isFinalStage) {
         showAgentToast(`🏆 全ステージ制覇！トロフィー獲得！【${currentNode.name}】マスター認定！`);
       } else if (awardResult.isFirstClear) {

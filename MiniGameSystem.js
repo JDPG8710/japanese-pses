@@ -1,11 +1,11 @@
 /**
  * MiniGameSystem.js - 全教科ミニゲーム自适应システム（日本語・文部科学省学習指導要領対応）
  * 
- * 1. 国語：星流漢字・ことば斬り (KanjiSlashGame) ＆ 漢字偏旁部首拼装 (RadicalBuilderGame)
- * 2. 算数：九九星際マッチング (KukuLinkGame) ＆ 星艦天平 (PanBalanceScaleGame)
+ * 1. 国語：星流漢字・ことば斬り (KanjiSlashGame) ＆ 部首・漢字パーツ組み立て (RadicalBuilderGame)
+ * 2. 算数：九九銀河マッチング (KukuLinkGame) ＆ 宇宙船てんびん (PanBalanceScaleGame)
  * 3. 理科：天体・月相実験室 (CosmicOrbitGame), てこ物理実験室 (LeverPhysicsGame), 回路実験室 (CircuitSandboxGame)
  * 4. 社会：日本47都道府県 列島パズル ＆ 特産品・名所尋宝 (PrefectureJigsawGame)
- * 5. 英語：情景趣味配対 (ContextMatchGame)
+ * 5. 英語：場面別ペア選択 (ContextMatchGame)
  * 6. 生活：生活仕分け箱 (CategorySortGame)
  */
 
@@ -39,7 +39,7 @@ function safeSetLineDash(ctx, dash) {
 export const GAME_GRADE_SUPPORT_MAP = {
   KANJI_CHALLENGE: {
     id: 'KANJI_CHALLENGE',
-    name: '漢字闖関',
+    name: '漢字チャレンジ',
     subject: '国語',
     grades: [1, 2, 3, 4, 5, 6],
     disabledNotice: '全学年対応'
@@ -60,14 +60,14 @@ export const GAME_GRADE_SUPPORT_MAP = {
   },
   AETHER_SCALE: {
     id: 'AETHER_SCALE',
-    name: '星艦天秤',
+    name: '宇宙船てんびん',
     subject: '算数',
     grades: [1, 2, 3, 4, 5, 6],
     disabledNotice: '全学年対応'
   },
   RATIO_SCALE: {
     id: 'RATIO_SCALE',
-    name: '星艦天秤',
+    name: '宇宙船てんびん',
     subject: '算数',
     grades: [1, 2, 3, 4, 5, 6],
     disabledNotice: '全学年対応'
@@ -102,7 +102,7 @@ export const GAME_GRADE_SUPPORT_MAP = {
   },
   CONTEXT_MATCH: {
     id: 'CONTEXT_MATCH',
-    name: '英語配対',
+    name: '英語ペア',
     subject: '外国語・英語',
     grades: [3, 4, 5, 6],
     disabledNotice: '※外国語・英語は小学3年生から始まります'
@@ -122,7 +122,7 @@ export const GAME_GRADE_SUPPORT_MAP = {
   ENGLISH_CURRICULUM: { id: 'ENGLISH_CURRICULUM', name: '英語レベル別テーマ', subject: '外国語・英語', grades: [3, 4, 5, 6], disabledNotice: '外国語活動は小学3年生から' },
   GRADE_EXAM: {
     id: 'GRADE_EXAM',
-    name: '学年総合大試練',
+    name: '学年総合チャレンジ',
     subject: '全教科総合',
     grades: [1, 2, 3, 4, 5, 6],
     disabledNotice: '全学年対応'
@@ -300,7 +300,7 @@ export class MiniGameModal {
           id: `POPULAR_RADICAL_G${g}`,
           subject: '国語',
           grade: g,
-          name: `${g}年 漢字偏旁部首拼装 (部首合成)`,
+          name: `${g}年 部首・漢字パーツ組み立て`,
           desc: `小学${g}年生配当漢字の部首・かんむり・へんパーツを合体させて正しい漢字を完成させよう！`,
           bloomDepth: 1.0 + g * 0.2,
           gameType: 'RADICAL_BUILDER'
@@ -310,8 +310,8 @@ export class MiniGameModal {
           id: `POPULAR_KUKU_G${g}`,
           subject: '算数',
           grade: g,
-          name: g === 2 ? '2年 九九星際連々 (九九マッチング)' : `${g}年 わり算・計算応用 星際マッチング`,
-          desc: g === 2 ? '2〜9の段の九九暗唱。式と積を2曲がり以内の星際レーザーでつなごう！' : `小学${g}年生の計算応用。式と値を星際レーザーでつなごう！`,
+          name: g === 2 ? '2年 九九銀河マッチング' : `${g}年 わり算・計算応用 銀河マッチング`,
+          desc: g === 2 ? '2〜9の段の九九暗唱。式と積を2曲がり以内の銀河レーザーでつなごう！' : `小学${g}年生の計算応用。式と値を銀河レーザーでつなごう！`,
           bloomDepth: 1.2 + g * 0.15,
           gameType: 'KUKU_LINK',
           gameData: { rows: 4, cols: 4, timeLimit: 75, grade: g, level: level }
@@ -322,7 +322,7 @@ export class MiniGameModal {
           id: `POPULAR_SCALE_G${g}`,
           subject: '算数',
           grade: g,
-          name: g <= 2 ? `${g}年 数の合成分解・星艦天秤` : (g <= 4 ? `${g}年 小数・分数 星艦天秤` : `${g}年 割合・方程式 星艦天秤`),
+          name: g <= 2 ? `${g}年 数の合成分解・宇宙船てんびん` : (g <= 4 ? `${g}年 小数・分数 宇宙船てんびん` : `${g}年 割合・方程式 宇宙船てんびん`),
           desc: '左右の天秤におもりや結晶を配置し、力と割合の平衡を達成しよう！',
           bloomDepth: 1.0 + g * 0.25,
           gameType: 'AETHER_SCALE',
@@ -377,7 +377,7 @@ export class MiniGameModal {
           id: `POPULAR_CONTEXT_G${g}`,
           subject: '外国語・英語',
           grade: g,
-          name: `${g}年 英語情景趣味配対 (Word & Scene Match)`,
+          name: `${g}年 英語の場面別ペア選択`,
           desc: '英単語・挨拶表現とイラストや日本語の意味をエネルギーレーザーでペアマッチング！',
           bloomDepth: 1.2 + (g - 3) * 0.2,
           gameType: 'CONTEXT_MATCH',
@@ -421,7 +421,7 @@ export class MiniGameModal {
           id: `POPULAR_EXAM_G${g}`,
           subject: '全教科総合',
           grade: g,
-          name: `${g}年 学年総合大試練 (実力判定テスト)`,
+          name: `${g}年 学年総合チャレンジ（実力判定テスト）`,
           desc: `小学${g}年生の全履修教科（国・算・理・社・英・生）から横断出題！実力を試して特別スターコイン（+300pt）を獲得しよう！`,
           bloomDepth: 2.0 + g * 0.1,
           gameType: 'GRADE_EXAM',
@@ -489,7 +489,7 @@ export class MiniGameModal {
     }
   }
 
-  // 学年総合大試練モード
+  // 学年総合チャレンジモード
   openGradeExam(grade = 1) {
     if (this.modal) this.modal.classList.remove('hidden');
     this.currentLevel = 1;
@@ -499,7 +499,7 @@ export class MiniGameModal {
     const gBadge = document.getElementById('game-grade-badge');
     if (gBadge) gBadge.innerText = `小学${g}年`;
     const sBadge = document.getElementById('game-subject-badge');
-    if (sBadge) sBadge.innerText = '全教科総合大試練';
+    if (sBadge) sBadge.innerText = '全教科総合チャレンジ';
     const tEl = document.getElementById('game-title');
     if (tEl) tEl.innerText = examNode.name;
 
@@ -519,7 +519,7 @@ export class MiniGameModal {
     }
   }
 
-  // 国語 漢字1026字 学年別闖関モード
+  // 国語：漢字1,026字の学年別チャレンジ
   openKanjiGradeChallenge(grade = 1) {
     if (this.modal) this.modal.classList.remove('hidden');
 
@@ -530,7 +530,7 @@ export class MiniGameModal {
       subject: '国語',
       grade: grade,
       name: `小学${grade}年 配当漢字特訓（${count}字）`,
-      desc: `文部科学省・小学${grade}年生配当漢字（${count}字）の読み仮名・音訓マスター関卡。`,
+      desc: `文部科学省・小学${grade}年生配当漢字（${count}字）の読み仮名・音訓を学ぶステージ。`,
       bloomDepth: 1.0 + grade * 0.25,
       gameType: 'KANJI_SLASH'
     };
@@ -604,7 +604,7 @@ export class MiniGameModal {
           grade: effectiveGrade,
           level: levelNum
         });
-        if (hintEl) hintEl.innerText = '操作ヒント：式（例: 7×8）と積（56）を2曲がり以内の星際レーザーでつなげよう！';
+        if (hintEl) hintEl.innerText = '操作ヒント：式（例: 7×8）と積（56）を2曲がり以内の銀河レーザーでつなげよう！';
         break;
 
       case 'RADICAL_BUILDER':
@@ -825,7 +825,7 @@ export class MiniGameModal {
       }
 
       const isExam = node.gameType === 'GRADE_EXAM' || node.id?.includes('EXAM');
-      const examBonusHtml = isExam ? `<div class="mb-3 px-3 py-1.5 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-bold animate-pulse">🌟 学年総合大試練クリア！特別ボーナス +300 スターコイン獲得！</div>` : '';
+      const examBonusHtml = isExam ? `<div class="mb-3 px-3 py-1.5 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-bold animate-pulse">🌟 学年総合チャレンジをクリア！特別ボーナス +300 スターコイン獲得！</div>` : '';
 
       const nextBtnHtml = isLastStage
         ? `<button disabled class="px-5 py-2.5 bg-gradient-to-r from-yellow-600 to-amber-500 text-white font-bold rounded-xl shadow-lg cursor-default opacity-90">🏆 全${maxStages}ステージ完全制覇！</button>`
@@ -834,7 +834,7 @@ export class MiniGameModal {
       overlay.innerHTML = `
         <div class="w-full h-full bg-black/90 flex flex-col items-center justify-center p-6 text-center animate-fade-in">
           <div class="text-4xl mb-2">${isLastStage ? '🏆🏆🏆' : '⭐'.repeat(stars) + '☆'.repeat(3 - stars)}</div>
-          <h3 class="text-2xl font-black text-amber-400 mb-1">${isLastStage ? '🎉 全ステージ完全制覇！おめでとう！ 🎉' : (isExam ? '🎓 学年総合大試練 合格マスター！' : 'ステージクリア！')}</h3>
+          <h3 class="text-2xl font-black text-amber-400 mb-1">${isLastStage ? '🎉 全ステージ完全制覇！おめでとう！ 🎉' : (isExam ? '🎓 学年総合チャレンジ合格！' : 'ステージクリア！')}</h3>
           <p class="text-sm font-semibold text-white mb-1">[${node.name}] — Stage ${stageLevel} / ${maxStages}</p>
           <p class="text-xs text-slate-400 mb-4 max-w-md">${node.desc || ''}</p>
           ${examBonusHtml}
@@ -1149,7 +1149,7 @@ export class KanjiSlashGame {
 }
 
 // =========================================================================
-// 2. 国語：漢字偏旁部首拼装 (RadicalBuilderGame)
+// 2. 国語：部首・漢字パーツ組み立て (RadicalBuilderGame)
 // =========================================================================
 export class RadicalBuilderGame {
   constructor(canvas, gameData, onWin, grade = 2) {
@@ -1356,7 +1356,7 @@ export class RadicalBuilderGame {
     this.ctx.fillStyle = '#ffffff';
     this.ctx.font = 'bold 15px sans-serif';
     this.ctx.textAlign = 'center';
-    this.ctx.fillText(`小学${this.grade}年・偏旁部首　${this.qIndex + 1} / ${this.puzzles.length}`, w / 2, 26);
+    this.ctx.fillText(`小学${this.grade}年・部首と漢字パーツ　${this.qIndex + 1} / ${this.puzzles.length}`, w / 2, 26);
     this.ctx.fillStyle = '#bae6fd';
     this.ctx.font = 'bold 17px sans-serif';
     this.ctx.fillText(this.currentPuzzle?.prompt || `「${this.targetKanji}」の問題`, w / 2, 53);
@@ -1877,7 +1877,7 @@ export class MathCurriculumGame extends CurriculumQuizGame {
 }
 
 // =========================================================================
-// 3. 算数：星艦エネルギー天秤 (PanBalanceScaleGame)
+// 3. 算数：宇宙船エネルギーてんびん (PanBalanceScaleGame)
 // =========================================================================
 export class PanBalanceScaleGame {
   constructor(canvas, gameData, onWin) {
@@ -2001,7 +2001,7 @@ export class PanBalanceScaleGame {
     this.ctx.fillStyle = '#ffffff';
     this.ctx.font = 'bold 20px sans-serif';
     this.ctx.textAlign = 'center';
-    this.ctx.fillText(`${withKidsReading('星艦天秤', 'せいかんてんびん')}：左の結晶（${this.targetLeftWeight}g）とおもりを釣り合わせよう！`, cx, 40);
+    this.ctx.fillText(`${withKidsReading('宇宙船てんびん', 'うちゅうせんてんびん')}：左の結晶（${this.targetLeftWeight}g）とおもりを釣り合わせよう！`, cx, 40);
 
     // Base Pillar
     this.ctx.fillStyle = '#334155';
@@ -2578,7 +2578,7 @@ export class CircuitSandboxGame {
 
     this.ctx.fillStyle = '#ffffff';
     this.ctx.font = '11px sans-serif';
-    this.ctx.fillText(this.switchClosed ? 'スイッチ: 閉 [ON]' : 'スイッチ: 開 [OFF]', cx, cy - 110);
+    this.ctx.fillText(this.switchClosed ? 'スイッチ：入' : 'スイッチ：切', cx, cy - 110);
 
     // Battery on Bottom Wire
     const batY = cy + 80;
@@ -3155,7 +3155,7 @@ export class PrefectureJigsawGame {
 }
 
 // =========================================================================
-// 8. 英語：情景趣味配対 (ContextMatchGame)
+// 8. 英語：場面別ペア選択 (ContextMatchGame)
 // =========================================================================
 const ENGLISH_SESSION_SIZE = 10;
 
@@ -3407,7 +3407,7 @@ class LegacyContextMatchGame {
     this.ctx.fillStyle = '#ffffff';
     this.ctx.font = 'bold 18px sans-serif';
     this.ctx.textAlign = 'center';
-    this.ctx.fillText(`${withKidsReading('英語情景配対', 'えいごじょうけいはいたい')}：左の英語と右の日本語をタップしてつなごう！`, w / 2, 38);
+    this.ctx.fillText(`${withKidsReading('英語の場面別ペア', 'えいごのばめんべつぺあ')}：左の英語と右の日本語をタップしてつなごう！`, w / 2, 38);
 
     const leftX = 120;
     const rightX = w - 120;
@@ -3628,7 +3628,7 @@ export class CategorySortGame {
 }
 
 // =========================================================================
-// 10. 全教科総合：学年総合大試練 (GradeComprehensiveExamGame)
+// 10. 全教科総合：学年総合チャレンジ (GradeComprehensiveExamGame)
 // =========================================================================
 export class GradeComprehensiveExamGame {
   constructor(canvas, gameData, onWin, grade = 1, level = 1) {
@@ -3719,7 +3719,7 @@ export class GradeComprehensiveExamGame {
   setupQuestion() {
     if (this.qIndex >= this.questions.length) {
       this.destroy();
-      // 大試練クリア：満点スコア 350 + スター3個
+      // 総合チャレンジをクリア：満点スコア350とスター3個
       const audio = getAudioSynthesizer();
       if (audio) audio.playVictory();
       this.onWin(3, 350);
@@ -3809,7 +3809,7 @@ export class GradeComprehensiveExamGame {
     this.ctx.fillStyle = '#f59e0b';
     this.ctx.font = 'bold 13px sans-serif';
     this.ctx.textAlign = 'center';
-    this.ctx.fillText(`🌟 小学${this.grade}年 全教科総合大試練 🌟`, w / 2, 26);
+    this.ctx.fillText(`🌟 小学${this.grade}年 全教科総合チャレンジ 🌟`, w / 2, 26);
 
     // Subject badge + Question Title
     this.ctx.fillStyle = '#38bdf8';

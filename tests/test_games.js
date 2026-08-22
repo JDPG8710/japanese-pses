@@ -621,7 +621,7 @@ function register({ describe, test, it, assert, loadESModule }) {
 
       const shopRes = eco.purchaseItem('badge_kuku_master');
       assert.strictEqual(shopRes.success, true);
-      assert.strictEqual(eco.inventory[0].title, '九九星際レジェンド (算数)');
+      assert.strictEqual(eco.inventory[0].title, '九九銀河レジェンド（算数）');
     });
   });
 
@@ -677,11 +677,11 @@ function register({ describe, test, it, assert, loadESModule }) {
     test('GB3: generatePopularGameNode dynamically binds game metadata to the selected grade', () => {
       const g1Radical = modal.generatePopularGameNode('RADICAL_BUILDER', 1, 1);
       assert.strictEqual(g1Radical.grade, 1);
-      assert.strictEqual(g1Radical.name, '1年 漢字偏旁部首拼装 (部首合成)');
+      assert.strictEqual(g1Radical.name, '1年 部首・漢字パーツ組み立て');
 
       const g3Kuku = modal.generatePopularGameNode('KUKU_LINK', 3, 1);
       assert.strictEqual(g3Kuku.grade, 3);
-      assert.strictEqual(g3Kuku.name, '3年 わり算・計算応用 星際マッチング');
+      assert.strictEqual(g3Kuku.name, '3年 わり算・計算応用 銀河マッチング');
 
       const g6Lever = modal.generatePopularGameNode('LEVER_PHYSICS', 6, 1);
       assert.strictEqual(g6Lever.grade, 6);
@@ -689,7 +689,7 @@ function register({ describe, test, it, assert, loadESModule }) {
 
       const g4Context = modal.generatePopularGameNode('CONTEXT_MATCH', 4, 1);
       assert.strictEqual(g4Context.grade, 4);
-      assert.strictEqual(g4Context.name, '4年 英語情景趣味配対 (Word & Scene Match)');
+      assert.strictEqual(g4Context.name, '4年 英語の場面別ペア選択');
     });
 
     test('GB4: every registered game initializes at its first supported grade', async () => {
@@ -753,7 +753,7 @@ function register({ describe, test, it, assert, loadESModule }) {
       }
     });
 
-    test('GB8: Grade Comprehensive Exam (学年総合大試練) launches and grades across all 1-6 grades', () => {
+    test('GB8: 学年総合チャレンジが1〜6年生で起動し採点できる', () => {
       assert.ok(GAME_GRADE_SUPPORT_MAP.GRADE_EXAM, 'GRADE_EXAM must be registered in support map');
       assert.deepStrictEqual(GAME_GRADE_SUPPORT_MAP.GRADE_EXAM.grades, [1, 2, 3, 4, 5, 6]);
 

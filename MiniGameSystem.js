@@ -181,30 +181,56 @@ export class MiniGameModal {
     this.modal = modal;
   }
 
+  getMaxStagesForNode(node) {
+    if (!node) return 6;
+    if (node.stages) return Number(node.stages);
+    if (node.gameData?.stages) return Number(node.gameData.stages);
+    const subj = node.subject || '';
+    if (subj === '国語') {
+      const KANJI_COUNTS = { 1: 80, 2: 160, 3: 200, 4: 202, 5: 193, 6: 191 };
+      const cnt = KANJI_COUNTS[node.grade] || 80;
+      return Math.min(10, Math.max(4, Math.ceil(cnt / 15)));
+    }
+    if (subj.includes('英語') || subj === '外国語・英語') return 10;
+    if (subj === '算数') return 6;
+    if (subj === '理科') return 5;
+    if (subj === '社会') return 8;
+    if (subj === '生活') return 4;
+    return 6;
+  }
+
   // 知識ノードからゲームを開始
-  open(nodeInfo) {
-    this.modal.classList.remove('hidden');
+  open(nodeInfo, stageNum = 1) {
+    if (this.modal) this.modal.classList.remove('hidden');
+    this.currentLevel = stageNum;
 
     const targetNode = FULL_CURRICULUM_DAG.find(n => n.id === nodeInfo?.id) ||
                        FULL_CURRICULUM_DAG.find(n => n.subject === nodeInfo?.subject) ||
                        FULL_CURRICULUM_DAG[0];
 
     const gradeText = targetNode.grade ? `小学${targetNode.grade}年` : '全学年';
-    document.getElementById('game-grade-badge').innerText = gradeText;
-    document.getElementById('game-subject-badge').innerText = targetNode.subject || '全般';
-    document.getElementById('game-title').innerText = targetNode.name || '学習ステージ';
+    const gradeBadge = document.getElementById('game-grade-badge');
+    if (gradeBadge) gradeBadge.innerText = gradeText;
+    const subjBadge = document.getElementById('game-subject-badge');
+    if (subjBadge) subjBadge.innerText = targetNode.subject || '全般';
+    const titleEl = document.getElementById('game-title');
+    if (titleEl) titleEl.innerText = `${targetNode.name || '学習ステージ'} (Stage ${stageNum})`;
 
     const canvas = document.getElementById('game-canvas');
     const container = document.getElementById('game-stage');
-    canvas.width = container.clientWidth || 640;
-    canvas.height = container.clientHeight || 384;
+    if (canvas && container) {
+      canvas.width = container.clientWidth || 640;
+      canvas.height = container.clientHeight || 384;
+    }
 
     if (this.currentGame) {
       this.currentGame.destroy();
     }
 
     const gameType = targetNode.gameType || this.inferGameTypeBySubject(targetNode);
-    this.initGameInstance(gameType, targetNode, canvas);
+    if (canvas) {
+      this.initGameInstance(gameType, targetNode, canvas, targetNode.grade, stageNum);
+    }
   }
 
   inferGameTypeBySubject(node) {

@@ -442,6 +442,7 @@
     let currentNode = curriculumNodes[0] || { subject: '国語', name: '単元読込中', desc: '' };
     let sessionStartTime = 0;
     let currentActiveGrade = 0; // 0 = 全学年, 1〜6 = 小1〜小6
+    let currentActiveSubject = null; // null = 全教科 (ALL)
 
     // 国語 漢字1026字 闖関モード
     const kanjiModal = document.getElementById('kanji-mode-modal');
@@ -540,7 +541,9 @@
       document.getElementById('m-node-desc').innerText = node.desc;
 
       // 關卡進度與綠色勾勾（✅）清單渲染
-      const maxStages = gameModal.getMaxStagesForNode(node);
+      const maxStages = (gameModal && typeof gameModal.getMaxStagesForNode === 'function')
+        ? gameModal.getMaxStagesForNode(node)
+        : (node.stages || 6);
       let clearedCount = 0;
       let stagesHtml = '';
 
@@ -603,53 +606,153 @@
       }
     }
 
-    // 学年切り替えタブ
-    document.querySelectorAll('.grade-tab-btn').forEach((btn) => {
-      btn.addEventListener('click', (e) => {
-        document.querySelectorAll('.grade-tab-btn').forEach(b => {
+    // =========================================================================
+    // 学年・教科 選択状態管理 ＆ 右側カード・3D星図 リアルタイム連動システム
+    // =========================================================================
+    const SUBJ_STYLE_CONFIG = {
+      'ALL': {
+        inactive: 'bg-slate-800/80 border border-slate-700/80 hover:bg-slate-700/80 text-slate-300',
+        active: 'bg-slate-700 border-slate-400 text-white font-bold ring-2 ring-slate-300 shadow-lg scale-105'
+      },
+      '国語': {
+        inactive: 'bg-red-600/20 border border-red-500/40 hover:bg-red-600/40 text-red-200',
+        active: 'bg-red-600 border border-red-400 text-white font-bold ring-2 ring-red-400 shadow-lg shadow-red-600/50 scale-105'
+      },
+      '算数': {
+        inactive: 'bg-blue-600/20 border border-blue-500/40 hover:bg-blue-600/40 text-blue-200',
+        active: 'bg-blue-600 border border-blue-400 text-white font-bold ring-2 ring-blue-400 shadow-lg shadow-blue-600/50 scale-105'
+      },
+      '理科': {
+        inactive: 'bg-emerald-600/20 border border-emerald-500/40 hover:bg-emerald-600/40 text-emerald-200',
+        active: 'bg-emerald-600 border border-emerald-400 text-white font-bold ring-2 ring-emerald-400 shadow-lg shadow-emerald-600/50 scale-105'
+      },
+      '社会': {
+        inactive: 'bg-amber-600/20 border border-amber-500/40 hover:bg-amber-600/40 text-amber-200',
+        active: 'bg-amber-600 border border-amber-400 text-white font-bold ring-2 ring-amber-400 shadow-lg shadow-amber-600/50 scale-105'
+      },
+      '生活': {
+        inactive: 'bg-orange-600/20 border border-orange-500/40 hover:bg-orange-600/40 text-orange-200',
+        active: 'bg-orange-600 border border-orange-400 text-white font-bold ring-2 ring-orange-400 shadow-lg shadow-orange-600/50 scale-105'
+      },
+      '外国語・英語': {
+        inactive: 'bg-purple-600/20 border border-purple-500/40 hover:bg-purple-600/40 text-purple-200',
+        active: 'bg-purple-600 border border-purple-400 text-white font-bold ring-2 ring-purple-400 shadow-lg shadow-purple-600/50 scale-105'
+      }
+    };
+
+    function updateSubjectButtonsHighlight(activeSubj) {
+      const targetSubjKey = activeSubj || 'ALL';
+      document.querySelectorAll('.subj-btn').forEach((btn) => {
+        const s = btn.getAttribute('data-subj');
+        const isMatch = (s === targetSubjKey) || (targetSubjKey === '英語' && s === '外国語・英語');
+        const cfg = SUBJ_STYLE_CONFIG[s] || SUBJ_STYLE_CONFIG['ALL'];
+
+        if (isMatch) {
+          btn.className = `subj-btn px-4 py-2 rounded-xl text-xs font-semibold tracking-wider transition flex items-center gap-2 cursor-pointer ${cfg.active}`;
+        } else {
+          btn.className = `subj-btn px-4 py-2 rounded-xl text-xs font-semibold tracking-wider transition flex items-center gap-2 cursor-pointer ${cfg.inactive}`;
+        }
+      });
+    }
+
+    function syncCurriculumSelection(grade, subject, options = {}) {
+      if (grade !== undefined && grade !== null) currentActiveGrade = Number(grade);
+      if (subject !== undefined) currentActiveSubject = (subject === 'ALL' || subject === '' || subject === null) ? null : subject;
+
+      // 1. 学年タブUIの同期
+      document.querySelectorAll('.grade-tab-btn').forEach((b) => {
+        const g = parseInt(b.getAttribute('data-grade'), 10);
+        if (g === currentActiveGrade) {
+          b.classList.add('bg-indigo-600', 'text-white', 'font-bold');
+          b.classList.remove('text-slate-400');
+        } else {
           b.classList.remove('bg-indigo-600', 'text-white', 'font-bold');
           b.classList.add('text-slate-400');
-        });
-        e.currentTarget.classList.add('bg-indigo-600', 'text-white', 'font-bold');
-        e.currentTarget.classList.remove('text-slate-400');
+        }
+      });
 
-        const grade = parseInt(e.currentTarget.getAttribute('data-grade'), 10);
-        engine.setGradeFilter(grade);
-        syncGameButtonsWithGrade(grade);
+      // 2. 学年に応じたサイドバー教科ボタンの無効化・表示調整
+      document.querySelectorAll('.subj-btn').forEach((sbtn) => {
+        const s = sbtn.getAttribute('data-subj');
+        if (s === 'ALL') return;
 
-        // 学年に応じたサイドバー教科ボタンの表示切り替え (小1・2は生活のみ、理科・社会・英語は小3〜)
-        document.querySelectorAll('.subj-btn').forEach((sbtn) => {
-          const s = sbtn.getAttribute('data-subj');
-          if (grade === 1 || grade === 2) {
-            if (s === '理科' || s === '社会' || s === '外国語・英語' || s === '英語') {
-              sbtn.classList.add('opacity-30', 'pointer-events-none');
-              sbtn.title = '※理科・社会・英語は小学3年生から始まります';
-            } else {
-              sbtn.classList.remove('opacity-30', 'pointer-events-none');
-              sbtn.title = '';
-            }
-          } else if (grade >= 3) {
-            if (s === '生活') {
-              sbtn.classList.add('opacity-30', 'pointer-events-none');
-              sbtn.title = '※生活科は小学1〜2年生のみです';
-            } else {
-              sbtn.classList.remove('opacity-30', 'pointer-events-none');
-              sbtn.title = '';
+        if (currentActiveGrade === 1 || currentActiveGrade === 2) {
+          if (s === '理科' || s === '社会' || s === '外国語・英語' || s === '英語') {
+            sbtn.classList.add('opacity-30', 'pointer-events-none');
+            sbtn.title = '※理科・社会・英語は小学3年生から始まります';
+            if (currentActiveSubject === s || (s === '外国語・英語' && currentActiveSubject === '英語')) {
+              currentActiveSubject = '国語';
             }
           } else {
             sbtn.classList.remove('opacity-30', 'pointer-events-none');
             sbtn.title = '';
           }
-        });
-
-        const firstInGrade = curriculumNodes.find(n => {
-          if (grade === 0) return true;
-          if (grade === 1 || grade === 2) {
-            return n.grade === grade && (n.subject === '国語' || n.subject === '算数' || n.subject === '生活');
+        } else if (currentActiveGrade >= 3) {
+          if (s === '生活') {
+            sbtn.classList.add('opacity-30', 'pointer-events-none');
+            sbtn.title = '※生活科は小学1〜2年生のみです';
+            if (currentActiveSubject === '生活') {
+              currentActiveSubject = '国語';
+            }
+          } else {
+            sbtn.classList.remove('opacity-30', 'pointer-events-none');
+            sbtn.title = '';
           }
-          return n.grade === grade && (n.subject !== '生活');
-        });
-        if (firstInGrade) updateNodeCard(firstInGrade);
+        } else {
+          sbtn.classList.remove('opacity-30', 'pointer-events-none');
+          sbtn.title = '';
+        }
+      });
+
+      // 3. 教科ボタンの高亮状態を保持・更新
+      updateSubjectButtonsHighlight(currentActiveSubject);
+
+      // 4. 3D星図エンジンへの反映
+      if (engine.setGradeFilter) engine.setGradeFilter(currentActiveGrade);
+      if (engine.setSubjectFilter) engine.setSubjectFilter(currentActiveSubject);
+      syncGameButtonsWithGrade(currentActiveGrade);
+
+      // 5. 右側ゲームカードとのリアルタイム連動
+      let targetNode = null;
+      if (options.node) {
+        targetNode = options.node;
+      } else {
+        if (currentActiveSubject) {
+          // 学年と教科の両方に合致するノードを検索
+          if (currentActiveGrade > 0) {
+            targetNode = curriculumNodes.find(n => {
+              const matchSubj = n.subject === currentActiveSubject ||
+                (currentActiveSubject.includes('英語') && n.subject.includes('英語'));
+              return matchSubj && n.grade === currentActiveGrade;
+            });
+          }
+          // 見つからなければ該当教科のノード
+          if (!targetNode) {
+            targetNode = curriculumNodes.find(n =>
+              n.subject === currentActiveSubject ||
+              (currentActiveSubject.includes('英語') && n.subject.includes('英語'))
+            );
+          }
+        } else {
+          // 全教科時：学年先頭ノード
+          if (currentActiveGrade > 0) {
+            targetNode = curriculumNodes.find(n => n.grade === currentActiveGrade);
+          } else {
+            targetNode = currentNode || curriculumNodes[0];
+          }
+        }
+      }
+
+      if (targetNode) {
+        updateNodeCard(targetNode);
+      }
+    }
+
+    // 学年切り替えタブクリックイベント
+    document.querySelectorAll('.grade-tab-btn').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        const grade = parseInt(e.currentTarget.getAttribute('data-grade'), 10);
+        syncCurriculumSelection(grade, currentActiveSubject);
       });
     });
 
@@ -812,8 +915,7 @@
 
     updateEconomyUI();
     renderShopCatalog();
-    syncGameButtonsWithGrade(0);
-    updateNodeCard(currentNode);
+    syncCurriculumSelection(0, null);
 
     // 初期化時に習熟度を反映（達成済みノードは黄金点灯、未解放は暗灰色）
     engine.syncProgress(economy.playerMastery);
@@ -885,29 +987,21 @@
 
     document.querySelectorAll('.subj-btn').forEach((btn) => {
       btn.addEventListener('click', (e) => {
-        const subj = e.currentTarget.getAttribute('data-subj');
-        // Bug Fix: respect active grade filter; never auto-launch the game
-        const activeGradeBtn = document.querySelector('.grade-tab-btn.bg-indigo-600');
-        const activeGrade = activeGradeBtn ? parseInt(activeGradeBtn.getAttribute('data-grade'), 10) : 0;
-        // Find first node matching subject (and grade if a specific grade is active)
-        const node = curriculumNodes.find(n =>
-          n.subject === subj && (activeGrade === 0 || n.grade === activeGrade)
-        ) || curriculumNodes.find(n => n.subject === subj);
-        if (node) {
-          updateNodeCard(node);
-          // Also update the galaxy engine to highlight this subject
-          engine.setSubjectFilter && engine.setSubjectFilter(subj);
-        }
+        const rawSubj = e.currentTarget.getAttribute('data-subj');
+        const subj = rawSubj === 'ALL' ? null : rawSubj;
+        syncCurriculumSelection(currentActiveGrade, subj);
       });
     });
 
     window.addEventListener('GALAXY_NODE_SELECTED', (e) => {
       const node = e.detail;
-      updateNodeCard(node);
-      audioSynth.playPositive(node?.grade || 1, 1);
-      fxSystem.spawnStarBurst(window.innerWidth / 2, window.innerHeight / 2, 18, '#fbbf24');
-      const sheet = document.getElementById('mobile-sheet');
-      sheet.classList.remove('translate-y-full');
+      if (node) {
+        syncCurriculumSelection(node.grade, node.subject, { node });
+        audioSynth.playPositive(node?.grade || 1, 1);
+        fxSystem.spawnStarBurst(window.innerWidth / 2, window.innerHeight / 2, 18, '#fbbf24');
+        const sheet = document.getElementById('mobile-sheet');
+        sheet.classList.remove('translate-y-full');
+      }
     });
   </script>
 </body>

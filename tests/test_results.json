@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-08-22T09:47:27.552Z",
+  "timestamp": "2026-08-22T09:54:09.688Z",
   "summary": {
     "totalSuites": 28,
     "totalTests": 111,
@@ -169,13 +169,13 @@
         {
           "name": "LOOP1: executeMicroLoop applies 3-tier child-friendly error guidance",
           "passed": true,
-          "durationMs": 1,
+          "durationMs": 0,
           "error": null
         },
         {
           "name": "LOOP2: executeMesoLoop extracts mutation directives from dropped cohort stats",
           "passed": true,
-          "durationMs": 0,
+          "durationMs": 1,
           "error": null
         },
         {
@@ -202,7 +202,7 @@
         {
           "name": "QA2: diagnoseAndRecommendFix handles UI_DEADLOCK_HANG and resets state",
           "passed": true,
-          "durationMs": 1,
+          "durationMs": 0,
           "error": null
         },
         {
@@ -214,7 +214,7 @@
         {
           "name": "QA4: AgentQADiagnosticsEngine records and aggregates diagnostics sweep",
           "passed": true,
-          "durationMs": 0,
+          "durationMs": 1,
           "error": null
         }
       ]
@@ -224,12 +224,12 @@
       "total": 1,
       "passed": 1,
       "failed": 0,
-      "durationMs": 1,
+      "durationMs": 0,
       "tests": [
         {
           "name": "AB1: ingestObservation creates micro interventions on repeated errors",
           "passed": true,
-          "durationMs": 1,
+          "durationMs": 0,
           "error": null
         }
       ]
@@ -239,12 +239,12 @@
       "total": 2,
       "passed": 2,
       "failed": 0,
-      "durationMs": 2,
+      "durationMs": 3,
       "tests": [
         {
           "name": "A1: AudioSynthesizer initializes with mute persistence",
           "passed": true,
-          "durationMs": 0,
+          "durationMs": 1,
           "error": null
         },
         {
@@ -286,13 +286,13 @@
         {
           "name": "EG1: Tier 1, 2, and 3 error progression and reset",
           "passed": true,
-          "durationMs": 2,
+          "durationMs": 1,
           "error": null
         },
         {
           "name": "EG2: Generates valid clues and explanations for all 6 subjects",
           "passed": true,
-          "durationMs": 0,
+          "durationMs": 1,
           "error": null
         }
       ]
@@ -307,13 +307,13 @@
         {
           "name": "F12.1: MEXT 1,026 Joyo Kanji database exists with exact grade allocations",
           "passed": true,
-          "durationMs": 1,
+          "durationMs": 2,
           "error": null
         },
         {
           "name": "F12.2: 1,026 Kanji entries have complete readings, onyomi, kunyomi, and zero duplicates",
           "passed": true,
-          "durationMs": 3,
+          "durationMs": 2,
           "error": null
         },
         {
@@ -331,7 +331,7 @@
         {
           "name": "F12.5: Entry root nodes have empty prerequisites (zero deadlock) and monotonic grade flow",
           "passed": true,
-          "durationMs": 2,
+          "durationMs": 1,
           "error": null
         },
         {
@@ -343,7 +343,7 @@
         {
           "name": "F13.2: Dynamic fracture detection identifies steep pass-rate drops and cognitive cliffs",
           "passed": true,
-          "durationMs": 1,
+          "durationMs": 2,
           "error": null
         },
         {
@@ -370,7 +370,7 @@
         {
           "name": "Boundary 2.2: Orphan healing safely strips dangling references and reconnects disconnected islands",
           "passed": true,
-          "durationMs": 1,
+          "durationMs": 0,
           "error": null
         },
         {
@@ -382,7 +382,7 @@
         {
           "name": "Boundary 2.4: Empty graph and single-node graph boundary handling",
           "passed": true,
-          "durationMs": 0,
+          "durationMs": 1,
           "error": null
         }
       ]
@@ -440,12 +440,12 @@
       "total": 13,
       "passed": 13,
       "failed": 0,
-      "durationMs": 5,
+      "durationMs": 4,
       "tests": [
         {
           "name": "F6.1: Kokugo Radical Assembly combines radicals into target Kanji",
           "passed": true,
-          "durationMs": 1,
+          "durationMs": 0,
           "error": null
         },
         {
@@ -457,7 +457,7 @@
         {
           "name": "F7.1: Sansu Kuku Link 2-turn laser pathfinding connects matching pairs",
           "passed": true,
-          "durationMs": 0,
+          "durationMs": 1,
           "error": null
         },
         {
@@ -475,7 +475,7 @@
         {
           "name": "F8.2: Rika Celestial Orbits & Moon Phases angle progression",
           "passed": true,
-          "durationMs": 1,
+          "durationMs": 0,
           "error": null
         },
         {
@@ -559,13 +559,13 @@
         {
           "name": "F15.2: EconomyManager supports multi-user profile switching and state isolation",
           "passed": true,
-          "durationMs": 0,
+          "durationMs": 1,
           "error": null
         },
         {
           "name": "F15.3: First clear awards dynamic points; repeated clear updates mastery without coin inflation",
           "passed": true,
-          "durationMs": 1,
+          "durationMs": 0,
           "error": null
         },
         {
@@ -688,13 +688,13 @@
         {
           "name": "C3: Long-Ring 10-Node Cyclic Chain (N0 -> N1 -> ... -> N9 -> N0)",
           "passed": true,
-          "durationMs": 1,
+          "durationMs": 0,
           "error": null
         },
         {
           "name": "C4: Disjoint Multiple Cycles Across Independent Components",
           "passed": true,
-          "durationMs": 0,
+          "durationMs": 1,
           "error": null
         },
         {
@@ -745,25 +745,25 @@
         {
           "name": "T2: Wide Diamond / Fan-Out Fan-In DAG (1 -> 100 -> 1)",
           "passed": true,
-          "durationMs": 0,
+          "durationMs": 1,
           "error": null
         },
         {
           "name": "T3: Deep Sequential Chain (200 Nodes) Exact Ordering",
           "passed": true,
-          "durationMs": 1,
+          "durationMs": 0,
           "error": null
         },
         {
           "name": "T4: Kahn Sort Throws on Cyclic Graph Without State Corruption",
           "passed": true,
-          "durationMs": 0,
+          "durationMs": 1,
           "error": null
         },
         {
           "name": "T5: Topological Depth Monotonicity Across Edges",
           "passed": true,
-          "durationMs": 1,
+          "durationMs": 0,
           "error": null
         }
       ]
@@ -796,7 +796,7 @@
         {
           "name": "F4: Adversarial Bridge Insertion with Cyclic Prereq Triggers Complete Rollback",
           "passed": true,
-          "durationMs": 1,
+          "durationMs": 2,
           "error": null
         },
         {
@@ -814,7 +814,7 @@
         {
           "name": "F7: Safe Prerequisites Rewiring and Cyclic Edge Rejection",
           "passed": true,
-          "durationMs": 2,
+          "durationMs": 1,
           "error": null
         }
       ]
@@ -824,24 +824,24 @@
       "total": 3,
       "passed": 3,
       "failed": 0,
-      "durationMs": 1,
+      "durationMs": 2,
       "tests": [
         {
           "name": "B1: Star Topology High-Impact Bottleneck Identification",
-          "passed": true,
-          "durationMs": 0,
-          "error": null
-        },
-        {
-          "name": "B2: Linear Chain Impact Ratios Strictly Descending",
           "passed": true,
           "durationMs": 1,
           "error": null
         },
         {
-          "name": "B3: MEXT 27-Node Curriculum STEM Cross-Subject Bottleneck Verification",
+          "name": "B2: Linear Chain Impact Ratios Strictly Descending",
           "passed": true,
           "durationMs": 0,
+          "error": null
+        },
+        {
+          "name": "B3: MEXT 27-Node Curriculum STEM Cross-Subject Bottleneck Verification",
+          "passed": true,
+          "durationMs": 1,
           "error": null
         }
       ]
@@ -851,7 +851,7 @@
       "total": 3,
       "passed": 3,
       "failed": 0,
-      "durationMs": 3,
+      "durationMs": 2,
       "tests": [
         {
           "name": "A1: 100 Rapid Sequential & Concurrent Invocations Across All Sound Types",
@@ -868,7 +868,7 @@
         {
           "name": "A3: Scheduled Node Lifecycle and Stop Time Allocation",
           "passed": true,
-          "durationMs": 1,
+          "durationMs": 0,
           "error": null
         }
       ]
@@ -878,7 +878,7 @@
       "total": 3,
       "passed": 3,
       "failed": 0,
-      "durationMs": 0,
+      "durationMs": 1,
       "tests": [
         {
           "name": "G1: Exponential Ramp Target Values Strictly >= 0.0001 (Web Audio Standard Floor)",
@@ -889,7 +889,7 @@
         {
           "name": "G2: Master Volume Clamping on Boundary & Adversarial Inputs",
           "passed": true,
-          "durationMs": 0,
+          "durationMs": 1,
           "error": null
         },
         {
@@ -905,7 +905,7 @@
       "total": 3,
       "passed": 3,
       "failed": 0,
-      "durationMs": 1,
+      "durationMs": 0,
       "tests": [
         {
           "name": "M1: Mute State Toggling and Gain Synchronization",
@@ -922,7 +922,7 @@
         {
           "name": "M3: Window CustomEvent Dispatch on Mute Change",
           "passed": true,
-          "durationMs": 1,
+          "durationMs": 0,
           "error": null
         }
       ]

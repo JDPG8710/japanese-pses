@@ -21,6 +21,19 @@ function withKidsReading(kanjiTitle, hiragana, grade) {
   return `${kanjiTitle}（${hiragana}）`;
 }
 
+function safeRoundRect(ctx, x, y, w, h, r = 8) {
+  if (ctx && typeof ctx.roundRect === 'function') {
+    ctx.roundRect(x, y, w, h, r);
+  } else if (ctx && typeof ctx.rect === 'function') {
+    ctx.rect(x, y, w, h);
+  }
+}
+
+function safeSetLineDash(ctx, dash) {
+  if (ctx && typeof ctx.setLineDash === 'function') {
+    ctx.setLineDash(dash);
+  }
+}
 
 export const GAME_GRADE_SUPPORT_MAP = {
   KANJI_CHALLENGE: {
@@ -216,7 +229,7 @@ export class MiniGameModal {
     const titleEl = document.getElementById('game-title');
     if (titleEl) titleEl.innerText = `${targetNode.name || '学習ステージ'} (Stage ${stageNum})`;
 
-    const canvas = document.getElementById('game-canvas');
+    const canvas = document.getElementById('game-canvas') || (typeof document !== 'undefined' && document.createElement ? document.createElement('canvas') : null);
     const container = document.getElementById('game-stage');
     if (canvas && container) {
       canvas.width = container.clientWidth || 640;
@@ -403,7 +416,7 @@ export class MiniGameModal {
     const titleEl = document.getElementById('game-title');
     if (titleEl) titleEl.innerText = `【特訓】${matchingNode.name} (Stage ${level})`;
 
-    const canvas = document.getElementById('game-canvas');
+    const canvas = document.getElementById('game-canvas') || (typeof document !== 'undefined' && document.createElement ? document.createElement('canvas') : null);
     const container = document.getElementById('game-stage');
     if (canvas && container) {
       canvas.width = container.clientWidth || 640;
@@ -421,7 +434,7 @@ export class MiniGameModal {
 
   // 国語 漢字1026字 学年別闖関モード
   openKanjiGradeChallenge(grade = 1) {
-    this.modal.classList.remove('hidden');
+    if (this.modal) this.modal.classList.remove('hidden');
 
     const KANJI_COUNTS = { 1: 80, 2: 160, 3: 200, 4: 202, 5: 193, 6: 191 };
     const count = KANJI_COUNTS[grade] || 80;
@@ -435,97 +448,107 @@ export class MiniGameModal {
       gameType: 'KANJI_SLASH'
     };
 
-    document.getElementById('game-grade-badge').innerText = `小学${grade}年`;
-    document.getElementById('game-subject-badge').innerText = '国語 (漢字1026字)';
-    document.getElementById('game-title').innerText = virtualNode.name;
+    const gBadge = document.getElementById('game-grade-badge');
+    if (gBadge) gBadge.innerText = `小学${grade}年`;
+    const sBadge = document.getElementById('game-subject-badge');
+    if (sBadge) sBadge.innerText = '国語 (漢字1026字)';
+    const tEl = document.getElementById('game-title');
+    if (tEl) tEl.innerText = virtualNode.name;
 
-    const canvas = document.getElementById('game-canvas');
+    const canvas = document.getElementById('game-canvas') || (typeof document !== 'undefined' && document.createElement ? document.createElement('canvas') : null);
     const container = document.getElementById('game-stage');
-    canvas.width = container.clientWidth || 640;
-    canvas.height = container.clientHeight || 384;
+    if (canvas && container) {
+      canvas.width = container.clientWidth || 640;
+      canvas.height = container.clientHeight || 384;
+    }
 
     if (this.currentGame) {
       this.currentGame.destroy();
     }
 
-    this.initGameInstance('KANJI_SLASH', virtualNode, canvas, grade);
+    if (canvas) {
+      this.initGameInstance('KANJI_SLASH', virtualNode, canvas, grade);
+    }
   }
 
-  initGameInstance(gameType, targetNode, canvas, customGrade = null) {
+  initGameInstance(gameType, targetNode, canvas, customGrade = null, customLevel = 1) {
     const hintBtn = document.getElementById('game-hint-btn');
     const shuffleBtn = document.getElementById('game-shuffle-btn');
 
-    // Reset buttons
-    hintBtn.classList.add('hidden');
-    shuffleBtn.classList.add('hidden');
+    // Reset buttons safely
+    if (hintBtn) hintBtn.classList.add('hidden');
+    if (shuffleBtn) shuffleBtn.classList.add('hidden');
 
     const onWinCallback = (stars, score) => this.onGameOver(targetNode, stars, score);
+    const hintEl = document.getElementById('game-hint');
+    const effectiveGrade = customGrade || targetNode.grade || 1;
 
     switch (gameType) {
       case 'KUKU_LINK':
-        hintBtn.classList.remove('hidden');
-        shuffleBtn.classList.remove('hidden');
+        if (hintBtn) hintBtn.classList.remove('hidden');
+        if (shuffleBtn) shuffleBtn.classList.remove('hidden');
         this.currentGame = new KukuLinkGame(canvas, {
           rows: targetNode.gameData?.rows || 4,
           cols: targetNode.gameData?.cols || 4,
           timeLimit: targetNode.gameData?.timeLimit || 75,
           onWin: onWinCallback
         });
-        document.getElementById('game-hint').innerText = '操作ヒント：式（例: 7×8）と積（56）を2曲がり以内の星際レーザーでつなげよう！';
+        if (hintEl) hintEl.innerText = '操作ヒント：式（例: 7×8）と積（56）を2曲がり以内の星際レーザーでつなげよう！';
         break;
 
       case 'RADICAL_BUILDER':
-        this.currentGame = new RadicalBuilderGame(canvas, targetNode.gameData, onWinCallback, targetNode.grade || 2);
-        document.getElementById('game-hint').innerText = '操作ヒント：下の部首パーツをタップして上のスロットに合体させよう！';
+        this.currentGame = new RadicalBuilderGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade);
+        if (hintEl) hintEl.innerText = '操作ヒント：下の部首パーツをタップして上のスロットに合体させよう！';
         break;
 
       case 'AETHER_SCALE':
       case 'RATIO_SCALE':
         this.currentGame = new PanBalanceScaleGame(canvas, targetNode.gameData, onWinCallback);
-        document.getElementById('game-hint').innerText = targetNode.gameData?.hint || '操作ヒント：右側の皿におもりを置いて天秤を釣り合わせよう！';
+        if (hintEl) hintEl.innerText = targetNode.gameData?.hint || '操作ヒント：右側の皿におもりを置いて天秤を釣り合わせよう！';
         break;
 
       case 'COSMIC_ORBIT':
       case 'CELESTIAL_ORBIT':
         this.currentGame = new CosmicOrbitGame(canvas, targetNode.gameData, onWinCallback);
-        document.getElementById('game-hint').innerText = '操作ヒント：月をドラッグして、目標の月相（三日月・上弦・満月など）に合わせよう！';
+        if (hintEl) hintEl.innerText = '操作ヒント：月をドラッグして、目標の月相（三日月・上弦・満月など）に合わせよう！';
         break;
 
       case 'LEVER_PHYSICS':
         this.currentGame = new LeverPhysicsGame(canvas, targetNode.gameData, onWinCallback);
-        document.getElementById('game-hint').innerText = '操作ヒント：右側のおもりを選んで目盛りに吊るし、てこを釣り合わせよう！';
+        if (hintEl) hintEl.innerText = '操作ヒント：右側のおもりを選んで目盛りに吊るし、てこを釣り合わせよう！';
         break;
 
       case 'CIRCUIT_SANDBOX':
       case 'SCIENCE_SANDBOX':
         this.currentGame = new CircuitSandboxGame(canvas, targetNode.gameData, onWinCallback);
-        document.getElementById('game-hint').innerText = '操作ヒント：スイッチを閉じて回路を通電させ、豆電球を点灯させよう！';
+        if (hintEl) hintEl.innerText = '操作ヒント：スイッチを閉じて回路を通電させ、豆電球を点灯させよう！';
         break;
 
       case 'PREFECTURE_JIGSAW':
-        this.currentGame = new PrefectureJigsawGame(canvas, targetNode.gameData, onWinCallback);
-        document.getElementById('game-hint').innerText = '操作ヒント：都道府県ピースをマップの正しい位置にはめ込もう！';
+        this.currentGame = new PrefectureJigsawGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, customLevel);
+        if (hintEl) hintEl.innerText = '操作ヒント：都道府県ピースをマップの正しい位置にはめ込もう！';
         break;
 
       case 'CONTEXT_MATCH':
         this.currentGame = new ContextMatchGame(canvas, targetNode.gameData, onWinCallback);
-        document.getElementById('game-hint').innerText = '操作ヒント：左の英語表現と右の日本語・情景カードをタップしてペアにしよう！';
+        if (hintEl) hintEl.innerText = '操作ヒント：左の英語表現と右の日本語・情景カードをタップしてペアにしよう！';
         break;
 
       case 'CATEGORY_SORT':
         this.currentGame = new CategorySortGame(canvas, targetNode.gameData, onWinCallback);
-        document.getElementById('game-hint').innerText = '操作ヒント：下のアイテムをタップまたはドラッグして正しい仕分け箱に入れよう！';
+        if (hintEl) hintEl.innerText = '操作ヒント：下のアイテムをタップまたはドラッグして正しい仕分け箱に入れよう！';
         break;
 
       case 'KANJI_SLASH':
       default:
-        const grade = customGrade || targetNode.grade || 1;
-        this.currentGame = new KanjiSlashGame(canvas, targetNode.gameData, onWinCallback, grade);
-        document.getElementById('game-hint').innerText = `操作ヒント：小学${grade}年の漢字が落ちる前に正しい読みをタップまたはスワイプ斬撃！`;
+        this.currentGame = new KanjiSlashGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade);
+        if (hintEl) hintEl.innerText = `操作ヒント：小学${effectiveGrade}年の漢字が落ちる前に正しい読みをタップまたはスワイプ斬撃！`;
         break;
     }
 
-    this.currentGame.start();
+    if (this.currentGame && typeof this.currentGame.start === 'function') {
+      this.currentGame.start();
+    }
   }
 
   onGameOver(node, stars = 3, score = 100) {
@@ -535,19 +558,22 @@ export class MiniGameModal {
     }));
 
     const overlay = document.getElementById('game-overlay-ui');
-    overlay.style.pointerEvents = 'auto';
-    overlay.innerHTML = `
-      <div class="w-full h-full bg-black/90 flex flex-col items-center justify-center p-6 text-center animate-fade-in">
-        <div class="text-4xl mb-2">${'⭐'.repeat(stars)}${'☆'.repeat(3 - stars)}</div>
-        <h3 class="text-2xl font-black text-amber-400 mb-1">ステージクリア！単元マスター！</h3>
-        <p class="text-sm font-semibold text-white mb-1">[${node.name}]</p>
-        <p class="text-xs text-slate-400 mb-4 max-w-md">${node.desc || ''}</p>
-        <div class="flex gap-3">
-          <button id="settle-confirm-btn" class="px-6 py-2.5 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-bold rounded-xl shadow-lg transition cursor-pointer">銀河星図へ戻る</button>
+    if (overlay) {
+      overlay.style.pointerEvents = 'auto';
+      overlay.innerHTML = `
+        <div class="w-full h-full bg-black/90 flex flex-col items-center justify-center p-6 text-center animate-fade-in">
+          <div class="text-4xl mb-2">${'⭐'.repeat(stars)}${'☆'.repeat(3 - stars)}</div>
+          <h3 class="text-2xl font-black text-amber-400 mb-1">ステージクリア！単元マスター！</h3>
+          <p class="text-sm font-semibold text-white mb-1">[${node.name}]</p>
+          <p class="text-xs text-slate-400 mb-4 max-w-md">${node.desc || ''}</p>
+          <div class="flex gap-3">
+            <button id="settle-confirm-btn" class="px-6 py-2.5 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-bold rounded-xl shadow-lg transition cursor-pointer">銀河星図へ戻る</button>
+          </div>
         </div>
-      </div>
-    `;
-    document.getElementById('settle-confirm-btn').onclick = () => this.close();
+      `;
+      const confirmBtn = document.getElementById('settle-confirm-btn');
+      if (confirmBtn) confirmBtn.onclick = () => this.close();
+    }
   }
 
   close() {
@@ -568,10 +594,25 @@ let KANJI_1026_CACHE = null;
 async function fetchKanji1026() {
   if (!KANJI_1026_CACHE) {
     try {
-      const res = await fetch('./data/kanji_1026.json');
-      if (res.ok) KANJI_1026_CACHE = await res.json();
+      if (typeof window === 'undefined' && typeof process !== 'undefined') {
+        try {
+          const fs = require('fs');
+          const path = require('path');
+          const dataPath = path.resolve(__dirname, 'data', 'kanji_1026.json');
+          if (fs.existsSync(dataPath)) {
+            KANJI_1026_CACHE = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
+            return KANJI_1026_CACHE;
+          }
+        } catch (err) {
+          // ignore
+        }
+      }
+      if (typeof fetch === 'function') {
+        const res = await fetch('./data/kanji_1026.json');
+        if (res.ok) KANJI_1026_CACHE = await res.json();
+      }
     } catch (e) {
-      console.warn('kanji_1026.json load failed, using fallback:', e);
+      // Fallback
     }
   }
   return KANJI_1026_CACHE;
@@ -1012,10 +1053,10 @@ export class RadicalBuilderGame {
       this.ctx.fillStyle = text ? '#1e293b' : '#0f172a';
       this.ctx.strokeStyle = text ? '#38bdf8' : '#475569';
       this.ctx.lineWidth = 2.5;
-      if (!text) this.ctx.setLineDash([6, 6]);
+      if (!text) safeSetLineDash(this.ctx, [6, 6]);
 
       this.ctx.beginPath();
-      this.ctx.roundRect(sx - slotSize / 2, slotY - slotSize / 2, slotSize, slotSize, 14);
+      safeRoundRect(this.ctx, sx - slotSize / 2, slotY - slotSize / 2, slotSize, slotSize, 14);
       this.ctx.fill();
       this.ctx.stroke();
       this.ctx.restore();
@@ -1052,7 +1093,7 @@ export class RadicalBuilderGame {
 
       this.ctx.fillStyle = item.highlight ? '#422006' : '#1e293b';
       this.ctx.beginPath();
-      this.ctx.roundRect(item.x - item.size / 2, item.y - item.size / 2, item.size, item.size, 14);
+      safeRoundRect(this.ctx, item.x - item.size / 2, item.y - item.size / 2, item.size, item.size, 14);
       this.ctx.fill();
       this.ctx.stroke();
 
@@ -1827,10 +1868,25 @@ let PREFECTURES_47_CACHE = null;
 async function fetchPrefectures47() {
   if (!PREFECTURES_47_CACHE) {
     try {
-      const res = await fetch('./data/prefectures_47.json');
-      if (res.ok) PREFECTURES_47_CACHE = await res.json();
+      if (typeof window === 'undefined' && typeof process !== 'undefined') {
+        try {
+          const fs = require('fs');
+          const path = require('path');
+          const dataPath = path.resolve(__dirname, 'data', 'prefectures_47.json');
+          if (fs.existsSync(dataPath)) {
+            PREFECTURES_47_CACHE = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
+            return PREFECTURES_47_CACHE;
+          }
+        } catch (err) {
+          // ignore
+        }
+      }
+      if (typeof fetch === 'function') {
+        const res = await fetch('./data/prefectures_47.json');
+        if (res.ok) PREFECTURES_47_CACHE = await res.json();
+      }
     } catch (e) {
-      console.warn('prefectures_47.json load failed, using fallback:', e);
+      // Fallback
     }
   }
   return PREFECTURES_47_CACHE;

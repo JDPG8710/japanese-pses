@@ -158,13 +158,19 @@ class MockCanvasRenderingContext2D {
   lineTo(x, y) { this.calls.push({ method: 'lineTo', args: [x, y] }); }
   arc(x, y, r, sa, ea) { this.calls.push({ method: 'arc', args: [x, y, r, sa, ea] }); }
   rect(x, y, w, h) { this.calls.push({ method: 'rect', args: [x, y, w, h] }); }
+  roundRect(x, y, w, h, r) { this.calls.push({ method: 'roundRect', args: [x, y, w, h, r] }); }
+  setLineDash(segments) { this.calls.push({ method: 'setLineDash', args: [segments] }); }
+  getLineDash() { return []; }
+  createLinearGradient() { return { addColorStop: () => {} }; }
+  createRadialGradient() { return { addColorStop: () => {} }; }
   fill() { this.calls.push({ method: 'fill' }); }
   stroke() { this.calls.push({ method: 'stroke' }); }
   clearRect(x, y, w, h) { this.calls.push({ method: 'clearRect', args: [x, y, w, h] }); }
   fillRect(x, y, w, h) { this.calls.push({ method: 'fillRect', args: [x, y, w, h] }); }
+  strokeRect(x, y, w, h) { this.calls.push({ method: 'strokeRect', args: [x, y, w, h] }); }
   fillText(text, x, y) { this.calls.push({ method: 'fillText', args: [text, x, y] }); }
   strokeText(text, x, y) { this.calls.push({ method: 'strokeText', args: [text, x, y] }); }
-  measureText(text) { return { width: text.length * 8 }; }
+  measureText(text) { return { width: (text ? String(text).length : 1) * 8 }; }
 }
 
 class MockHTMLCanvasElement {

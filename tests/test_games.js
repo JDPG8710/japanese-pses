@@ -691,6 +691,39 @@ function register({ describe, test, it, assert, loadESModule }) {
       assert.strictEqual(g4Context.grade, 4);
       assert.strictEqual(g4Context.name, '4年 英語情景趣味配対 (Word & Scene Match)');
     });
+
+    test('GB4: All 10 popular games can initialize and start without errors', async () => {
+      const gameTypes = Object.keys(GAME_GRADE_SUPPORT_MAP);
+      for (const gt of gameTypes) {
+        if (gt === 'KANJI_CHALLENGE') continue;
+        const node = modal.generatePopularGameNode(gt, 2, 1);
+        const canvas = document.createElement('canvas');
+        modal.initGameInstance(gt, node, canvas, 2, 1);
+        assert.ok(modal.currentGame, `Game instance for ${gt} must be created`);
+        if (modal.currentGame && typeof modal.currentGame.destroy === 'function') {
+          modal.currentGame.destroy();
+        }
+      }
+    });
+
+    test('GB5: All 27 MEXT curriculum DAG nodes can open and infer correct game types', () => {
+      const loaderFn = loadESModule || require('./test_e2e_runner.js').loadESModule;
+      const { FULL_CURRICULUM_DAG } = loaderFn(path.join(rootDir, 'CurriculumData.js'));
+      for (const node of FULL_CURRICULUM_DAG) {
+        const gameType = node.gameType || modal.inferGameTypeBySubject(node);
+        assert.ok(gameType, `Node ${node.id} must map to a valid gameType`);
+        const maxStages = modal.getMaxStagesForNode(node);
+        assert.isAtLeast(maxStages, 4, `Node ${node.id} should have at least 4 stages`);
+      }
+    });
+
+    test('GB6: Kanji grade challenge mode works for all grades 1 through 6', () => {
+      for (let g = 1; g <= 6; g++) {
+        modal.openKanjiGradeChallenge(g);
+        assert.ok(modal.currentGame, `KanjiSlashGame must be created for Grade ${g}`);
+        if (modal.currentGame?.destroy) modal.currentGame.destroy();
+      }
+    });
   });
 }
 

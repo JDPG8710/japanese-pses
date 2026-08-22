@@ -32,17 +32,28 @@ body, html {
 
 /* Glassmorphism Panels */
 .glass-panel {
-  background: rgba(15, 23, 42, 0.85);
+  /* Nearly opaque panels keep labels legible on every selectable backdrop. */
+  background: rgba(8, 15, 30, 0.94);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(226, 232, 240, 0.38);
 }
 
 .glass-panel-subtle {
-  background: rgba(15, 23, 42, 0.6);
+  background: rgba(8, 15, 30, 0.88);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(226, 232, 240, 0.28);
+}
+
+/* Canvas games must not inherit a bright/complex scene through transparency. */
+#game-canvas {
+  background: #08111f;
+}
+
+#game-modal .text-slate-400,
+#game-modal .text-slate-300 {
+  color: #cbd5e1;
 }
 
 /* Custom Scrollbars */
@@ -60,6 +71,25 @@ body, html {
 }
 .custom-scroll::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.4);
+}
+
+/* Hide scrollbar completely while maintaining scrollability */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Top grade selector: visible toggle button with a click-only dropdown */
+#grade-tabs-container {
+  pointer-events: auto;
+}
+
+#grade-tabs {
+  max-height: min(70vh, 28rem);
+  overflow-y: auto;
 }
 
 /* ==========================================================================
@@ -206,9 +236,25 @@ body, html {
 /* Child-Friendly Ergonomics: Touch Target Scaling */
 @media (max-width: 768px) {
   button, .subj-btn, .grade-tab-btn {
-    min-height: 40px;
+    min-height: 56px;
     touch-action: manipulation;
   }
+
+  #subject-nav {
+    position: fixed !important;
+    left: 8px !important;
+    right: 8px !important;
+    top: 112px !important;
+    transform: none !important;
+    flex-direction: row !important;
+    gap: 6px !important;
+    padding: 6px !important;
+    overflow-x: auto;
+    max-width: calc(100vw - 16px);
+  }
+
+  #subject-nav-heading { display: none; }
+  #subject-nav .subj-btn { flex: 0 0 auto; padding: 6px 10px; }
   
   #guidance-bubble {
     right: 12px;

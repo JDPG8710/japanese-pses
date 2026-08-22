@@ -21,10 +21,12 @@ export class GalaxyEngine {
     this.isMobile = window.innerWidth <= 768;
     this.currentGradeFilter = 0; // 0 = 全学年 (All)
     this.currentSubjectFilter = null; // null = 全教科 (All Subjects)
+    this.backgroundTheme = 'GALAXY';
 
     this.initScene();
     this.createNucleus();
     this.create3DNebulaeAndCurriculumNodes();
+    this.setBackgroundTheme(this.backgroundTheme);
     this.setupInteractions();
     this.setupResponsive();
     this.animate();
@@ -37,6 +39,7 @@ export class GalaxyEngine {
     if (this.constellationGroup) this.scene.remove(this.constellationGroup);
     if (this.nodeGroup) this.scene.remove(this.nodeGroup);
     this.create3DNebulaeAndCurriculumNodes();
+    this.nebulaGroup.visible = this.backgroundTheme === 'GALAXY';
   }
 
   initScene() {
@@ -58,6 +61,118 @@ export class GalaxyEngine {
     this.controls.maxDistance = 800;
     this.controls.minDistance = 30;
     this.controls.maxPolarAngle = Math.PI / 2 + 0.1;
+  }
+
+  disposeObject(group) {
+    group?.traverse((object) => {
+      object.geometry?.dispose?.();
+      if (Array.isArray(object.material)) object.material.forEach(material => material.dispose?.());
+      else object.material?.dispose?.();
+    });
+  }
+
+  // Decorative alternatives intentionally remain procedural: no image download,
+  // instant switching, and the curriculum nodes stay interactive in every theme.
+  setBackgroundTheme(theme = 'GALAXY') {
+    const nextTheme = ['GALAXY', 'FOREST', 'CITY'].includes(theme) ? theme : 'GALAXY';
+    this.backgroundTheme = nextTheme;
+    if (this.backgroundGroup) {
+      this.scene.remove(this.backgroundGroup);
+      this.disposeObject(this.backgroundGroup);
+    }
+    this.backgroundGroup = new THREE.Group();
+    this.nebulaGroup.visible = nextTheme === 'GALAXY';
+    this.constellationGroup.visible = true;
+
+    const presets = {
+      GALAXY: { color: 0x020208, fog: 0x020208, density: 0.0012 },
+      FOREST: { color: 0x061b19, fog: 0x061b19, density: 0.0022 },
+      CITY: { color: 0x070b1e, fog: 0x070b1e, density: 0.0018 }
+    };
+    const preset = presets[nextTheme];
+    this.scene.background = new THREE.Color(preset.color);
+    this.scene.fog = new THREE.FogExp2(preset.fog, preset.density);
+
+    if (nextTheme === 'FOREST') this.createForestBackground(this.backgroundGroup);
+    if (nextTheme === 'CITY') this.createCityBackground(this.backgroundGroup);
+    this.scene.add(this.backgroundGroup);
+    // The learning map itself changes form with the world: stars become
+    // curriculum trees or illuminated city landmarks, not planets on a new sky.
+    if (this.nodeGroup) this.renderNodeMeshesAndSprites();
+  }
+
+  createForestBackground(group) {
+    const trunkMat = new THREE.MeshBasicMaterial({ color: 0x5b341b });
+    const foliageMats = [0x0f766e, 0x15803d, 0x166534].map(color => new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.9 }));
+    const ground = new THREE.Mesh(new THREE.CircleGeometry(480, 48), new THREE.MeshBasicMaterial({ color: 0x052e27, transparent: true, opacity: 0.95 }));
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = -48;
+    group.add(ground);
+    for (let i = 0; i < 58; i++) {
+      const x = (Math.random() - 0.5) * 680;
+      const z = -140 - Math.random() * 340;
+      const height = 35 + Math.random() * 75;
+      const tree = new THREE.Group();
+      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(2.4, 3.6, height * 0.38, 7), trunkMat);
+      trunk.position.y = -38 + height * 0.19;
+      tree.add(trunk);
+      const crown = new THREE.Mesh(new THREE.ConeGeometry(height * 0.22, height * 0.72, 9), foliageMats[i % foliageMats.length]);
+      crown.position.y = -38 + height * 0.68;
+      tree.add(crown);
+      tree.position.set(x, 0, z);
+      group.add(tree);
+    }
+    const moon = new THREE.Mesh(new THREE.SphereGeometry(30, 20, 20), new THREE.MeshBasicMaterial({ color: 0xe0f2fe }));
+    moon.position.set(-180, 180, -350);
+    group.add(moon);
+  }
+
+  createCityBackground(group) {
+    const ground = new THREE.Mesh(new THREE.PlaneGeometry(1000, 1000), new THREE.MeshBasicMaterial({ color: 0x0b1026, transparent: true, opacity: 0.95 }));
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = -50;
+    group.add(ground);
+    const colors = [0x0f2b55, 0x1d2d6b, 0x2b1d5a, 0x123e5a];
+    for (let i = 0; i < 64; i++) {
+      const width = 14 + Math.random() * 28;
+      const height = 35 + Math.random() * 130;
+      const depth = 14 + Math.random() * 28;
+      const building = new THREE.Mesh(new THREE.BoxGeometry(width, height, depth), new THREE.MeshBasicMaterial({ color: colors[i % colors.length] }));
+      building.position.set((Math.random() - 0.5) * 620, -50 + height / 2, -100 - Math.random() * 380);
+      group.add(building);
+      const beacon = new THREE.Mesh(new THREE.SphereGeometry(1.8, 8, 8), new THREE.MeshBasicMaterial({ color: i % 2 ? 0x67e8f9 : 0xfbbf24 }));
+      beacon.position.set(building.position.x, building.position.y + height / 2 + 2, building.position.z);
+      group.add(beacon);
+    }
+  }
+
+  createThemeNodeMesh(node) {
+    const statusColor = node.status === 'LOCKED' ? 0x64748b : (node.status === 'CLEARED' ? 0xfacc15 : 0x38bdf8);
+    if (this.backgroundTheme === 'FOREST') {
+      const tree = new THREE.Group();
+      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 1.1, 4, 7), new THREE.MeshBasicMaterial({ color: 0x7c3f1d }));
+      trunk.position.y = 1.6;
+      const crown = new THREE.Mesh(new THREE.ConeGeometry(3.6, 7.5, 9), new THREE.MeshBasicMaterial({ color: statusColor, transparent: true, opacity: node.status === 'LOCKED' ? 0.55 : 0.95 }));
+      crown.position.y = 6.1;
+      tree.add(trunk, crown);
+      tree.userData = { nodeInfo: node, isPulse: node.status === 'AVAILABLE' };
+      return tree;
+    }
+    if (this.backgroundTheme === 'CITY') {
+      const landmark = new THREE.Group();
+      const tower = new THREE.Mesh(new THREE.BoxGeometry(4.8, 9, 4.8), new THREE.MeshBasicMaterial({ color: statusColor, transparent: true, opacity: node.status === 'LOCKED' ? 0.5 : 0.95 }));
+      tower.position.y = 4.5;
+      const beacon = new THREE.Mesh(new THREE.SphereGeometry(1.2, 10, 10), new THREE.MeshBasicMaterial({ color: node.status === 'CLEARED' ? 0xfef08a : 0xffffff }));
+      beacon.position.y = 10.2;
+      landmark.add(tower, beacon);
+      landmark.userData = { nodeInfo: node, isPulse: node.status === 'AVAILABLE' };
+      return landmark;
+    }
+    const geometry = new THREE.SphereGeometry(node.status === 'CLEARED' ? 3.0 : (node.status === 'AVAILABLE' ? 2.6 : 1.8), 16, 16);
+    const material = new THREE.MeshBasicMaterial({ color: statusColor, transparent: node.status === 'LOCKED', opacity: node.status === 'LOCKED' ? 0.5 : 1 });
+    const sphere = new THREE.Mesh(geometry, material);
+    sphere.userData = { nodeInfo: node, isPulse: node.status === 'AVAILABLE' };
+    return sphere;
   }
 
   // 1. 核心星核（Galactic Nucleus - 生きる力）
@@ -245,34 +360,19 @@ export class GalaxyEngine {
       singleNodeGroup.position.copy(node.position);
 
       // (A) 星点球体 Mesh
-      let nodeMesh;
-      if (node.status === 'LOCKED') {
-        const geo = new THREE.SphereGeometry(1.8, 12, 12);
-        const mat = new THREE.MeshBasicMaterial({ color: 0x475569, transparent: true, opacity: 0.5 });
-        nodeMesh = new THREE.Mesh(geo, mat);
-      } else if (node.status === 'AVAILABLE') {
-        const geo = new THREE.SphereGeometry(2.6, 16, 16);
-        const mat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
-        nodeMesh = new THREE.Mesh(geo, mat);
-        nodeMesh.userData = { isPulse: true };
-      } else {
-        const geo = new THREE.SphereGeometry(3.0, 16, 16);
-        const mat = new THREE.MeshBasicMaterial({ color: 0xffd700 });
-        nodeMesh = new THREE.Mesh(geo, mat);
-
+      const nodeMesh = this.createThemeNodeMesh(node);
+      if (node.status === 'CLEARED' && this.backgroundTheme === 'GALAXY') {
         const ringGeo = new THREE.RingGeometry(4.0, 4.8, 24);
         const ringMat = new THREE.MeshBasicMaterial({ color: 0xffe066, side: THREE.DoubleSide });
         const ring = new THREE.Mesh(ringGeo, ringMat);
         ring.rotation.x = Math.PI / 3;
         nodeMesh.add(ring);
       }
-
-      nodeMesh.userData = { nodeInfo: node };
       singleNodeGroup.add(nodeMesh);
 
       // (B) 3D 悬浮文字标签 Sprite (在星点旁显示知识点名称)
       const nameSprite = this.createNameSprite(node);
-      nameSprite.position.set(0, 4.5, 0); // 悬浮在星点上方
+      nameSprite.position.set(0, this.backgroundTheme === 'GALAXY' ? 4.5 : 12.5, 0);
       singleNodeGroup.add(nameSprite);
 
       this.nodeGroup.add(singleNodeGroup);
@@ -459,7 +559,7 @@ export class GalaxyEngine {
     this.mouse = new THREE.Vector2();
 
     const onPointerDown = (event) => {
-      if (event.target.closest('#pc-detail-card') || event.target.closest('#mobile-sheet') || event.target.closest('aside') || event.target.closest('#shop-modal') || event.target.closest('#grade-tabs')) {
+      if (event.target.closest('#pc-detail-card') || event.target.closest('#mobile-sheet') || event.target.closest('aside') || event.target.closest('#shop-modal') || event.target.closest('#grade-tabs-container')) {
         return;
       }
 

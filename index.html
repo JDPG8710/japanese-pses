@@ -59,12 +59,6 @@
         <span><ruby>漢字<rt>かんじ</rt></ruby>1026<ruby>字<rt>じ</rt></ruby> <ruby>闖関<rt>ちょうかん</rt></ruby></span>
       </button>
 
-      <!-- AI Agent 観測ステータス -->
-      <div id="agent-status-badge" class="glass-panel px-3 py-1.5 rounded-full hidden md:flex items-center gap-1.5 text-xs text-indigo-300 border border-indigo-500/30">
-        <span class="w-2 h-2 rounded-full bg-indigo-400 animate-ping"></span>
-        <span>AI Agent:</span> 観測・適応中
-      </div>
-
       <!-- 連勝ステータス -->
       <div class="glass-panel px-3 py-1.5 rounded-full flex items-center gap-1.5 text-xs text-amber-300">
         <span>🔥</span>
@@ -91,21 +85,20 @@
     </div>
   </header>
 
-  <!-- 学年切り替えタブ (Grade Tabs) -->
-  <nav id="grade-tabs" class="absolute top-18 left-1/2 -translate-x-1/2 z-10 glass-panel px-2 py-1 rounded-2xl flex items-center gap-1 text-xs shadow-2xl">
-    <button data-grade="0" class="grade-tab-btn active px-3 py-1 rounded-xl bg-indigo-600 text-white font-bold transition">全学年</button>
-    <button data-grade="1" class="grade-tab-btn px-3 py-1 rounded-xl text-slate-400 hover:text-white transition">小1</button>
-    <button data-grade="2" class="grade-tab-btn px-3 py-1 rounded-xl text-slate-400 hover:text-white transition">小2</button>
-    <button data-grade="3" class="grade-tab-btn px-3 py-1 rounded-xl text-slate-400 hover:text-white transition">小3</button>
-    <button data-grade="4" class="grade-tab-btn px-3 py-1 rounded-xl text-slate-400 hover:text-white transition">小4</button>
-    <button data-grade="5" class="grade-tab-btn px-3 py-1 rounded-xl text-slate-400 hover:text-white transition">小5</button>
-    <button data-grade="6" class="grade-tab-btn px-3 py-1 rounded-xl text-slate-400 hover:text-white transition">小6</button>
-  </nav>
-
-  <!-- Agent 介入通知トースト (Toast) -->
-  <div id="agent-toast" class="fixed top-28 left-1/2 -translate-x-1/2 z-40 glass-panel px-5 py-2.5 rounded-full border border-indigo-500/40 text-xs text-indigo-200 shadow-2xl flex items-center gap-2 opacity-0 -translate-y-4 transition-all duration-300 pointer-events-none">
-    <span class="text-base">🤖</span>
-    <span id="agent-toast-text">AI Agent が学習データを解析し星図を自己適応中...</span>
+  <!-- 最上部：クリックして展開する学年メニュー -->
+  <div id="grade-tabs-container" class="fixed top-2 left-1/2 -translate-x-1/2 z-30">
+    <button id="grade-menu-toggle" type="button" aria-expanded="false" aria-controls="grade-tabs" class="glass-panel min-h-11 px-5 py-2 rounded-2xl text-sm font-bold text-white border border-indigo-400/50 shadow-2xl flex items-center gap-2">
+      <span id="grade-menu-label">学年を選ぶ</span><span aria-hidden="true">▼</span>
+    </button>
+    <nav id="grade-tabs" class="hidden absolute top-full left-1/2 -translate-x-1/2 mt-2 glass-panel p-2 rounded-2xl grid grid-cols-4 gap-1.5 text-xs shadow-2xl border border-indigo-500/40 min-w-72">
+        <button data-grade="0" class="grade-tab-btn active px-3.5 py-1.5 rounded-xl bg-indigo-600 text-white font-bold transition cursor-pointer">全学年</button>
+        <button data-grade="1" class="grade-tab-btn px-3.5 py-1.5 rounded-xl text-slate-400 hover:text-white transition cursor-pointer">小1</button>
+        <button data-grade="2" class="grade-tab-btn px-3.5 py-1.5 rounded-xl text-slate-400 hover:text-white transition cursor-pointer">小2</button>
+        <button data-grade="3" class="grade-tab-btn px-3.5 py-1.5 rounded-xl text-slate-400 hover:text-white transition cursor-pointer">小3</button>
+        <button data-grade="4" class="grade-tab-btn px-3.5 py-1.5 rounded-xl text-slate-400 hover:text-white transition cursor-pointer">小4</button>
+        <button data-grade="5" class="grade-tab-btn px-3.5 py-1.5 rounded-xl text-slate-400 hover:text-white transition cursor-pointer">小5</button>
+        <button data-grade="6" class="grade-tab-btn px-3.5 py-1.5 rounded-xl text-slate-400 hover:text-white transition cursor-pointer">小6</button>
+    </nav>
   </div>
 
   <!-- PC端：左側 教科旋臂ナビゲーション -->
@@ -134,46 +127,9 @@
     </button>
   </aside>
 
-  <!-- 左下：人気ミニゲーム特訓クイックバー -->
-  <div class="absolute left-6 bottom-6 z-10 hidden sm:flex items-center gap-1.5 glass-panel p-2 rounded-2xl shadow-2xl overflow-x-auto max-w-[calc(100vw-350px)] custom-scroll">
-    <div class="text-[10px] font-bold text-amber-400 px-2 flex items-center gap-1 whitespace-nowrap">
-      <span>✨</span><span><ruby>特訓<rt>とっくん</rt></ruby>:</span>
-    </div>
-    <button id="quick-btn-KANJI" data-game-type="KANJI_CHALLENGE" onclick="launchKanjiMode()" class="quick-game-btn px-2.5 py-1.5 rounded-xl bg-red-500/30 hover:bg-red-500/50 border border-red-500/50 text-xs font-bold text-red-200 transition whitespace-nowrap cursor-pointer">
-      🎴 <ruby>漢字<rt>かんじ</rt></ruby><ruby>闖関<rt>ちょうかん</rt></ruby>
-    </button>
-    <button id="quick-btn-RADICAL" data-game-type="RADICAL_BUILDER" onclick="launchPopular('RADICAL_BUILDER')" class="quick-game-btn px-2.5 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/40 border border-rose-500/40 text-xs font-bold text-rose-300 transition whitespace-nowrap cursor-pointer">
-      🧩 <ruby>部首合体<rt>ぶしゅがったい</rt></ruby>
-    </button>
-    <button id="quick-btn-KUKU" data-game-type="KUKU_LINK" onclick="launchPopular('KUKU_LINK')" class="quick-game-btn px-2.5 py-1.5 rounded-xl bg-blue-500/20 hover:bg-blue-500/40 border border-blue-500/40 text-xs font-bold text-blue-300 transition whitespace-nowrap cursor-pointer">
-      ⚡ <ruby>九九<rt>くく</rt></ruby><ruby>連々<rt>れんれん</rt></ruby>
-    </button>
-    <button id="quick-btn-SCALE" data-game-type="AETHER_SCALE" onclick="launchPopular('AETHER_SCALE')" class="quick-game-btn px-2.5 py-1.5 rounded-xl bg-sky-500/20 hover:bg-sky-500/40 border border-sky-500/40 text-xs font-bold text-sky-300 transition whitespace-nowrap cursor-pointer">
-      ⚖️ <ruby>星艦天秤<rt>せいかんてんびん</rt></ruby>
-    </button>
-    <button id="quick-btn-ORBIT" data-game-type="COSMIC_ORBIT" onclick="launchPopular('COSMIC_ORBIT')" class="quick-game-btn px-2.5 py-1.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/40 border border-cyan-500/40 text-xs font-bold text-cyan-300 transition whitespace-nowrap cursor-pointer">
-      🔭 <ruby>天体月相<rt>てんたいげっそう</rt></ruby>
-    </button>
-    <button id="quick-btn-LEVER" data-game-type="LEVER_PHYSICS" onclick="launchPopular('LEVER_PHYSICS')" class="quick-game-btn px-2.5 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/40 border border-emerald-500/40 text-xs font-bold text-emerald-300 transition whitespace-nowrap cursor-pointer">
-      🏗️ てこ<ruby>実験<rt>じっけん</rt></ruby>
-    </button>
-    <button id="quick-btn-CIRCUIT" data-game-type="CIRCUIT_SANDBOX" onclick="launchPopular('CIRCUIT_SANDBOX')" class="quick-game-btn px-2.5 py-1.5 rounded-xl bg-teal-500/20 hover:bg-teal-500/40 border border-teal-500/40 text-xs font-bold text-teal-300 transition whitespace-nowrap cursor-pointer">
-      💡 <ruby>回路実験<rt>かいろじっけん</rt></ruby>
-    </button>
-    <button id="quick-btn-JIGSAW" data-game-type="PREFECTURE_JIGSAW" onclick="launchPopular('PREFECTURE_JIGSAW')" class="quick-game-btn px-2.5 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/40 border border-amber-500/40 text-xs font-bold text-amber-300 transition whitespace-nowrap cursor-pointer">
-      🗾 <ruby>列島<rt>れっとう</rt></ruby>パズル
-    </button>
-    <button id="quick-btn-CONTEXT" data-game-type="CONTEXT_MATCH" onclick="launchPopular('CONTEXT_MATCH')" class="quick-game-btn px-2.5 py-1.5 rounded-xl bg-purple-500/20 hover:bg-purple-500/40 border border-purple-500/40 text-xs font-bold text-purple-300 transition whitespace-nowrap cursor-pointer">
-      🔤 <ruby>英語配対<rt>えいごはいたい</rt></ruby>
-    </button>
-    <button id="quick-btn-SORT" data-game-type="CATEGORY_SORT" onclick="launchPopular('CATEGORY_SORT')" class="quick-game-btn px-2.5 py-1.5 rounded-xl bg-orange-500/20 hover:bg-orange-500/40 border border-orange-500/40 text-xs font-bold text-orange-300 transition whitespace-nowrap cursor-pointer">
-      📦 <ruby>生活仕分け<rt>せいかつしわけ</rt></ruby>
-    </button>
-  </div>
-
-  <!-- PC端：右側 知識点詳細カード -->
-  <div id="pc-detail-card" class="hidden md:block absolute right-8 top-28 w-88 z-10 glass-panel p-6 rounded-3xl shadow-2xl transition-all">
-    <div class="flex items-center justify-between mb-3">
+  <!-- PC端：右側 知識点詳細カード (幅をw-96に拡大し関門グリッドを拡張・スクロールバー非表示) -->
+  <div id="pc-detail-card" class="hidden md:block absolute right-6 top-24 w-96 z-10 glass-panel p-5 rounded-3xl shadow-2xl transition-all max-h-[calc(100vh-7.5rem)] overflow-y-auto no-scrollbar">
+    <div class="flex items-center justify-between mb-2.5">
       <div class="flex items-center gap-1.5">
         <span id="node-grade-tag" class="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">小学1年</span>
         <span id="node-tag" class="text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-500/30 text-indigo-300 border border-indigo-500/30">国語</span>
@@ -183,13 +139,13 @@
         挑戦可能
       </span>
     </div>
-    <h2 id="node-title" class="text-lg font-bold text-white mb-1.5 leading-snug">1年 ひらがな・カタカナ・音読</h2>
-    <p id="node-desc" class="text-xs text-slate-300 leading-relaxed mb-4">
+    <h2 id="node-title" class="text-base font-bold text-white mb-1 leading-snug">1年 ひらがな・カタカナ・音読</h2>
+    <p id="node-desc" class="text-[11px] text-slate-300 leading-relaxed mb-3 line-clamp-3">
       清音・濁音・半濁音・拗音の読み書きと、正しい姿勢での声に出した音読。
     </p>
 
     <!-- スコアと認知深度計算 -->
-    <div class="p-3 rounded-2xl bg-white/5 border border-white/10 mb-3 text-xs font-mono">
+    <div class="p-2.5 rounded-xl bg-white/5 border border-white/10 mb-3 text-xs font-mono">
       <div class="flex justify-between text-[10px] text-slate-400 mb-1 font-sans">
         <span>Bloom 認知深度: <b id="bloom-depth-val" class="text-indigo-300 font-mono">1.0</b></span>
         <span>クリア報酬: <b class="text-amber-400">初回のみ加算</b></span>
@@ -197,26 +153,30 @@
       <div class="text-emerald-400 font-bold text-[11px]" id="formula-display">基礎 100 pt × 深度 1.0 × 連勝 1.3 = 130 pt</div>
     </div>
 
-    <!-- ステージ一覧と進捗バッジ (クリア済みは✅を表示) -->
-    <div id="node-stages-container" class="mb-4">
-      <div class="flex justify-between items-center text-[11px] font-bold text-slate-300 mb-1.5">
+    <!-- ステージ一覧と進捗バッジ (关卡按钮网格尺寸扩大，纯数字展示，无白色滚动条) -->
+    <div id="node-stages-container" class="mb-3.5">
+      <div class="flex justify-between items-center text-[11px] font-bold text-slate-300 mb-2">
         <span>🎯 <ruby>関門<rt>かんもん</rt></ruby>ステージ<ruby>一覧<rt>いちらん</rt></ruby></span>
         <span id="node-stages-progress" class="text-amber-400 text-[10px] font-mono">0 / 8 クリア</span>
       </div>
-      <div id="node-stages-grid" class="grid grid-cols-4 gap-1.5 max-h-28 overflow-y-auto pr-1">
+      <div id="node-stages-grid" class="grid grid-cols-6 gap-1.5 max-h-48 overflow-y-auto no-scrollbar p-0.5">
         <!-- 动态渲染关卡按钮 -->
       </div>
     </div>
 
-    <div class="flex items-center justify-between gap-3">
-      <button id="start-game-pc-btn" class="flex-1 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-lg shadow-indigo-600/30 transition">
+    <div class="flex flex-col gap-2">
+      <button id="start-game-pc-btn" class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-lg shadow-indigo-600/30 transition cursor-pointer">
         <ruby>学習<rt>がくしゅう</rt></ruby>ステージ<ruby>開始<rt>かいし</rt></ruby> (Play)
+      </button>
+      <button id="grade-exam-btn" onclick="window.launchGradeExam()" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 text-xs font-bold shadow-lg transition cursor-pointer flex items-center justify-center gap-1.5">
+        <span>🏆</span>
+        <span><ruby>学年総合<rt>がくねんそうごう</rt></ruby><ruby>大試練<rt>だいしれん</rt></ruby> (実力判定テスト)</span>
       </button>
     </div>
   </div>
 
   <!-- モバイル端：下部ドロワー式ポップアップ -->
-  <div id="mobile-sheet" class="md:hidden fixed bottom-0 left-0 right-0 z-20 glass-panel p-5 rounded-t-3xl shadow-2xl transition-transform duration-300 transform translate-y-full max-h-[80vh] overflow-y-auto">
+  <div id="mobile-sheet" class="md:hidden fixed bottom-0 left-0 right-0 z-20 glass-panel p-5 rounded-t-3xl shadow-2xl transition-transform duration-300 transform translate-y-full max-h-[80vh] overflow-y-auto no-scrollbar">
     <div class="w-10 h-1 bg-white/30 rounded-full mx-auto mb-4 cursor-pointer" onclick="closeSheet()"></div>
     <div class="flex justify-between items-start mb-2">
       <div>
@@ -236,17 +196,23 @@
         <span>🎯 関門ステージ一覧</span>
         <span id="m-node-stages-progress" class="text-amber-400 text-[10px] font-mono">0 / 8 クリア</span>
       </div>
-      <div id="m-node-stages-grid" class="grid grid-cols-4 gap-1.5 max-h-28 overflow-y-auto pr-1">
+      <div id="m-node-stages-grid" class="grid grid-cols-5 gap-1.5 max-h-36 overflow-y-auto no-scrollbar p-0.5">
         <!-- 动态渲染关卡按钮 -->
       </div>
     </div>
 
-    <div class="flex gap-2">
-      <button id="start-game-mobile-btn" class="flex-1 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl text-xs font-bold shadow-lg shadow-indigo-600/30">
-        <ruby>挑戦<rt>ちょうせん</rt></ruby><ruby>開始<rt>かいし</rt></ruby> (Play)
-      </button>
-      <button class="px-4 py-3 bg-white/10 rounded-xl text-xs font-semibold" onclick="closeSheet()">
-        閉じる
+    <div class="flex flex-col gap-2">
+      <div class="flex gap-2">
+        <button id="start-game-mobile-btn" class="flex-1 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl text-xs font-bold shadow-lg shadow-indigo-600/30 cursor-pointer">
+          <ruby>挑戦<rt>ちょうせん</rt></ruby><ruby>開始<rt>かいし</rt></ruby> (Play)
+        </button>
+        <button class="px-4 py-3 bg-white/10 rounded-xl text-xs font-semibold cursor-pointer" onclick="closeSheet()">
+          閉じる
+        </button>
+      </div>
+      <button onclick="window.launchGradeExam()" class="w-full py-2.5 bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 rounded-xl text-xs font-bold shadow-lg cursor-pointer flex items-center justify-center gap-1.5">
+        <span>🏆</span>
+        <span>学年総合大試練 (実力テスト)</span>
       </button>
     </div>
   </div>
@@ -412,7 +378,7 @@
 
   <script type="module">
     import { GalaxyEngine } from './GalaxyEngine.js?v=2';
-    import { MiniGameModal, GAME_GRADE_SUPPORT_MAP } from './MiniGameSystem.js?v=2';
+    import { MiniGameModal } from './MiniGameSystem.js?v=2';
     import { EconomyManager, SHOP_CATALOG } from './EconomySystem.js?v=2';
     import { AntigravityAgentBrain, createObservationPayload } from './AgentIntegration.js?v=2';
     import { FULL_CURRICULUM_DAG, SUBJECT_METADATA, GRADES, loadCurriculumFromJSON, graphEngineInstance } from './CurriculumData.js?v=2';
@@ -463,17 +429,6 @@
       gameModal.openKanjiGradeChallenge(grade);
     };
 
-    // 人気ゲームクイック起動 (選択学年への動的バインド & 非対応ガード)
-    window.launchPopular = (gameType) => {
-      const info = GAME_GRADE_SUPPORT_MAP[gameType];
-      if (currentActiveGrade > 0 && info && info.grades && !info.grades.includes(currentActiveGrade)) {
-        showAgentToast(`⚠️ 【${info.name}】は小学${currentActiveGrade}年生には未対応です（対象: 小学${info.grades.join('・')}年生）`);
-        return;
-      }
-      sessionStartTime = Date.now();
-      gameModal.openPopularGame(gameType, 1, currentActiveGrade > 0 ? currentActiveGrade : null);
-    };
-
     window.launchStage = (nodeId, stageNum) => {
       const node = curriculumNodes.find(n => n.id === nodeId) || currentNode;
       if (!node) return;
@@ -482,32 +437,19 @@
       gameModal.open(node, stageNum);
     };
 
-    // 学年に応じた特訓ゲームボタン・モードの有効/無効同期
+    // 学年総合大試練の起動
+    window.launchGradeExam = (grade = null) => {
+      const targetGrade = grade || (currentActiveGrade > 0 ? currentActiveGrade : (currentNode?.grade || 1));
+      sessionStartTime = Date.now();
+      window.closeSheet();
+      gameModal.openGradeExam(targetGrade);
+    };
+
+    // 学年に応じたゲームUIの同期
     function syncGameButtonsWithGrade(grade) {
       currentActiveGrade = grade;
 
-      // 1. 特訓クイックバーのボタン有効/無効化とツールチップ更新
-      document.querySelectorAll('.quick-game-btn').forEach((btn) => {
-        const gameType = btn.getAttribute('data-game-type');
-        const info = GAME_GRADE_SUPPORT_MAP[gameType];
-        const isSupported = !grade || grade === 0 || (info && info.grades && info.grades.includes(grade));
-
-        if (isSupported) {
-          btn.disabled = false;
-          btn.classList.remove('opacity-25', 'grayscale', 'cursor-not-allowed', 'pointer-events-none');
-          btn.classList.add('cursor-pointer');
-          const gTitle = grade > 0 ? `小学${grade}年版でプレイ` : '全学年モードでプレイ';
-          btn.title = `${info ? info.name : ''}（${gTitle}）`;
-        } else {
-          btn.disabled = true;
-          btn.classList.add('opacity-25', 'grayscale', 'cursor-not-allowed', 'pointer-events-none');
-          btn.classList.remove('cursor-pointer');
-          const notice = info ? info.disabledNotice : `※小学${grade}年には対応していません`;
-          btn.title = `${info ? info.name : ''}: ${notice} (対象: 小学${info ? info.grades.join('・') : ''}年生)`;
-        }
-      });
-
-      // 2. 漢字モードボタンの表示同期
+      // 1. 漢字モードボタンの表示同期
       const kanjiBtn = document.getElementById('open-kanji-mode-btn');
       if (kanjiBtn) {
         if (grade > 0) {
@@ -517,7 +459,7 @@
         }
       }
 
-      // 3. 右側カードのゲーム開始ボタンの状態同期
+      // 2. 右側カードのゲーム開始ボタンの状態同期
       updateNodeCard(currentNode);
     }
 
@@ -551,8 +493,8 @@
         const isCleared = economy.isStageCleared(node.id, s);
         if (isCleared) clearedCount++;
         stagesHtml += isCleared
-          ? `<button onclick="window.launchStage('${node.id}', ${s})" class="py-1 px-1.5 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-bold flex items-center justify-center gap-0.5 hover:bg-emerald-500/30 transition cursor-pointer" title="クリア達成済み！">✅ 第${s}関</button>`
-          : `<button onclick="window.launchStage('${node.id}', ${s})" class="py-1 px-1.5 rounded-lg bg-slate-800/90 text-slate-300 border border-slate-700/60 text-[10px] font-medium flex items-center justify-center hover:bg-slate-700 hover:text-white transition cursor-pointer">第${s}関</button>`;
+          ? `<button onclick="window.launchStage('${node.id}', ${s})" class="py-1.5 px-2 rounded-xl bg-emerald-500/25 text-emerald-300 border border-emerald-500/50 text-xs font-bold flex items-center justify-center gap-0.5 hover:bg-emerald-500/40 transition cursor-pointer shadow-sm" title="ステージ ${s} クリア達成済み！">✅ ${s}</button>`
+          : `<button onclick="window.launchStage('${node.id}', ${s})" class="py-1.5 px-2 rounded-xl bg-slate-800/90 text-slate-200 border border-slate-700/80 text-xs font-semibold flex items-center justify-center hover:bg-slate-700 hover:text-white transition cursor-pointer shadow-sm" title="ステージ ${s} 未クリア">${s}</button>`;
       }
 
       const isAllCleared = clearedCount >= maxStages;
@@ -748,22 +690,40 @@
       }
     }
 
-    // 学年切り替えタブクリックイベント
+    // 学年メニュー：クリック時のみ展開し、選択後は自動的に閉じる
+    const gradeMenuContainer = document.getElementById('grade-tabs-container');
+    const gradeMenuToggle = document.getElementById('grade-menu-toggle');
+    const gradeMenu = document.getElementById('grade-tabs');
+    const gradeMenuLabel = document.getElementById('grade-menu-label');
+
+    const closeGradeMenu = () => {
+      gradeMenu.classList.add('hidden');
+      gradeMenuToggle.setAttribute('aria-expanded', 'false');
+    };
+
+    gradeMenuToggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const shouldOpen = gradeMenu.classList.contains('hidden');
+      gradeMenu.classList.toggle('hidden');
+      gradeMenuToggle.setAttribute('aria-expanded', String(shouldOpen));
+    });
+
+    gradeMenu.addEventListener('click', (e) => e.stopPropagation());
+    document.addEventListener('click', (e) => {
+      if (!gradeMenuContainer.contains(e.target)) closeGradeMenu();
+    });
+
     document.querySelectorAll('.grade-tab-btn').forEach((btn) => {
       btn.addEventListener('click', (e) => {
         const grade = parseInt(e.currentTarget.getAttribute('data-grade'), 10);
         syncCurriculumSelection(grade, currentActiveSubject);
+        gradeMenuLabel.textContent = grade === 0 ? '全学年' : `小学${grade}年`;
+        closeGradeMenu();
       });
     });
 
-    function showAgentToast(msg) {
-      const toast = document.getElementById('agent-toast');
-      document.getElementById('agent-toast-text').innerText = msg;
-      toast.classList.remove('opacity-0', '-translate-y-4');
-      setTimeout(() => {
-        toast.classList.add('opacity-0', '-translate-y-4');
-      }, 4500);
-    }
+    // Agent は裏側で学習状態を観測するが、画面上には通知を表示しない。
+    function showAgentToast() {}
 
     window.addEventListener('AGENT_MICRO_INTERVENTION', (e) => {
       showAgentToast(`🤖 Agent リアルタイム補助：${e.detail.hintMessage}`);
@@ -952,7 +912,24 @@
       // 1. 経済システムで関門ステージクリア記録 & スコア加算 & 習熟度更新
       const stageLevel = e.detail?.level || 1;
       const isFinalStage = e.detail?.isFinalStage || false;
+      const isExam = targetNodeId?.includes('EXAM') || e.detail?.subject === '全教科総合';
+
       const awardResult = economy.recordStageClear(targetNodeId, stageLevel, accuracy);
+
+      // 学年総合大試練のボーナス加算
+      if (isExam && accuracy >= 0.8) {
+        economy.starCoins += 300;
+        economy.ledger.unshift({
+          transactionId: `TX-EXAM-${Date.now()}`,
+          timestamp: new Date().toISOString(),
+          type: 'EXAM_CLEAR_BONUS',
+          amount: 300,
+          balanceAfter: economy.starCoins,
+          description: `【学年総合大試練】実力テスト完全制覇ボーナス！`
+        });
+        economy.saveState();
+      }
+
       updateEconomyUI();
       updateNodeCard(currentNode);
 
@@ -960,7 +937,9 @@
       engine.lightUpNode(targetNodeId);
       engine.syncProgress(economy.playerMastery);
 
-      if (isFinalStage) {
+      if (isExam) {
+        showAgentToast(`🎓 学年総合大試練クリア！特別ボーナス +300 ⭐ 獲得！`);
+      } else if (isFinalStage) {
         showAgentToast(`🏆 全ステージ制覇！トロフィー獲得！【${currentNode.name}】マスター認定！`);
       } else if (awardResult.isFirstClear) {
         showAgentToast(`🎉 第${stageLevel}関クリア！ +${awardResult.pointsEarned} ⭐ 獲得！【${currentNode.name}】が前進しました！`);

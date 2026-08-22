@@ -1,11 +1,13 @@
 /** Programmatic question-bank scale, curriculum coverage and randomness tests. */
 
+const fs = require('fs');
 const path = require('path');
 
 function register({ describe, test, assert, loadESModule }) {
   const rootDir = path.resolve(__dirname, '..');
   const loader = loadESModule || require('./test_e2e_runner.js').loadESModule;
   const games = loader(path.join(rootDir, 'MiniGameSystem.js'));
+  const radicalBank = loader(path.join(rootDir, 'RadicalQuestionBank.js'));
 
   const MATH_THEME_BASELINE = {
     1: [/100/, /たし算|加/, /ひき算|減/, /比較|大小/, /形|かたち/, /長さ/, /時刻|時間/],
@@ -49,6 +51,61 @@ function register({ describe, test, assert, loadESModule }) {
     if (typeof game.getSessionQuestions === 'function') return game.getSessionQuestions();
     return game.sessionQuestions || game.questionSet || game.questions || null;
   }
+
+  describe('Grade-aligned radical and component bank', () => {
+    test('RB1: every grade has 12 valid assigned-kanji puzzles across three question types', () => {
+      const kanjiDb = JSON.parse(fs.readFileSync(path.join(rootDir, 'data', 'kanji_1026.json'), 'utf8'));
+      for (let grade = 1; grade <= 6; grade++) {
+        const bank = radicalBank.RADICAL_PUZZLES_BY_GRADE[grade];
+        const allowed = new Set(kanjiDb.grades[grade].kanjiList.map(entry => entry.k));
+        assert.strictEqual(bank.length, 12, `Grade ${grade} radical bank must contain 12 puzzles`);
+        assert.deepStrictEqual(new Set(bank.map(puzzle => puzzle.type)), new Set(['ASSEMBLY', 'RADICAL_CHOICE', 'STRUCTURE_CHOICE']), `Grade ${grade} must cover all three radical question types`);
+        bank.forEach((puzzle, index) => {
+          assert.ok(allowed.has(puzzle.target), `Grade ${grade} puzzle ${index} uses out-of-grade kanji ${puzzle.target}`);
+          assert.ok(puzzle.prompt && puzzle.reading && puzzle.hint, `Grade ${grade} puzzle ${index} must have complete display text`);
+          assert.ok(Array.isArray(puzzle.parts) && puzzle.parts.length > 0, `Grade ${grade} puzzle ${index} requires answer parts`);
+          assert.ok(Array.isArray(puzzle.options) && puzzle.options.length >= 4, `Grade ${grade} puzzle ${index} requires usable options`);
+          const rendered = JSON.stringify(puzzle);
+          assert.strictEqual(/undefined|null|NaN/.test(rendered), false, `Grade ${grade} puzzle ${index} contains an invalid display value`);
+          puzzle.parts.forEach(part => assert.ok(puzzle.options.includes(part), `Grade ${grade} puzzle ${index} omits required part ${part}`));
+        });
+      }
+    });
+
+    test('RB2: RadicalBuilder rejects generic quiz records and always creates a safe random 10-puzzle session', () => {
+      for (let grade = 1; grade <= 6; grade++) {
+        const game = new games.RadicalBuilderGame(makeCanvas(), {
+          questions: [{ prompt: 'generic quiz', correct: 'x', options: ['x', 'y', 'z', 'w'] }]
+        }, () => {}, grade, 1);
+        assert.strictEqual(game.puzzles.length, 10, `Grade ${grade} must start with ten radical puzzles`);
+        game.puzzles.forEach((puzzle, index) => {
+          assert.ok(puzzle.target && puzzle.parts.length, `Grade ${grade} puzzle ${index} must be radical-shaped data`);
+          assert.strictEqual(/undefined|null|NaN/.test(JSON.stringify(puzzle)), false, `Grade ${grade} puzzle ${index} must be render-safe`);
+        });
+      }
+    });
+
+    test('RB3: selected answers become explicit interaction state in radical and shared quiz games', () => {
+      global.HTMLElement = global.HTMLElement || function HTMLElement() {};
+      const canvas = makeCanvas();
+      canvas.getBoundingClientRect = () => ({ left: 0, top: 0, width: 640, height: 480 });
+      const radical = new games.RadicalBuilderGame(canvas, {}, () => {}, 3, 1);
+      radical.running = true;
+      radical.setupPuzzle();
+      const requiredTile = radical.palette.find(tile => tile.text === radical.requiredParts[0]);
+      radical.handlePointer({ clientX: requiredTile.x, clientY: requiredTile.y });
+      assert.strictEqual(requiredTile.used, true, 'radical tile must retain a selected state for highlighting');
+
+      const quiz = new games.CurriculumQuizGame(canvas, {}, () => {}, 3, 1, '国語');
+      quiz.running = true;
+      const layout = quiz.getOptionLayout();
+      quiz.handlePointer({ clientX: layout.x + 20, clientY: layout.startY + 20 });
+      assert.ok(quiz.selectedOption, 'shared curriculum quiz must retain the selected option');
+      assert.strictEqual(quiz.locked, true, 'selected quiz option must remain visible during feedback');
+      radical.destroy();
+      quiz.destroy();
+    });
+  });
 
   describe('Math curriculum procedural engine', () => {
     test('QB1: MathCurriculumGame is a dedicated exported engine', () => {

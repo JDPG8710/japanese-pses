@@ -14,6 +14,7 @@ import { KukuLinkGame } from './KukuLinkGame.js';
 import { getAudioSynthesizer } from './AudioSynthesizer.js';
 import { getFXSystem } from './FXSystem.js';
 import { getErrorGuidanceSystem } from './ErrorGuidanceSystem.js';
+import { getRadicalPuzzlesForGrade } from './RadicalQuestionBank.js';
 
 /** Canvas cannot render HTML ruby. Grades 1-2, or unknown grade -> append hiragana after the title. */
 function withKidsReading(kanjiTitle, hiragana, grade) {
@@ -229,6 +230,15 @@ export class MiniGameModal {
   open(nodeInfo, stageNum = 1) {
     if (this.modal) this.modal.classList.remove('hidden');
     this.currentLevel = Number(stageNum) || 1;
+    const scoreEl = document.getElementById('game-score');
+    if (scoreEl) scoreEl.innerText = '0';
+    const timerEl = document.getElementById('game-timer');
+    if (timerEl) timerEl.innerText = '⏱ 60s';
+    const overlayEl = document.getElementById('game-overlay-ui');
+    if (overlayEl) {
+      overlayEl.innerHTML = '';
+      overlayEl.style.pointerEvents = 'none';
+    }
 
     const targetNode = (nodeInfo && typeof nodeInfo === 'object' && (nodeInfo.name || nodeInfo.id))
       ? nodeInfo
@@ -599,7 +609,7 @@ export class MiniGameModal {
 
       case 'RADICAL_BUILDER':
         this.currentGame = new RadicalBuilderGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum);
-        if (hintEl) hintEl.innerText = '操作ヒント：下の部首パーツをタップして上のスロットに合体させよう！';
+        if (hintEl) hintEl.innerText = '操作ヒント：学年配当漢字のパーツ合成・部首・組み立て方から、正しいカードを選ぼう！';
         break;
 
       case 'AETHER_SCALE':
@@ -673,7 +683,9 @@ export class MiniGameModal {
         } else {
           this.currentGame = new CurriculumQuizGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum, '国語');
         }
-        if (hintEl) hintEl.innerText = '操作ヒント：10問の国語問題に順番に答えよう！';
+        if (hintEl) hintEl.innerText = selectedMode === 'RADICAL_BUILDER'
+          ? '操作ヒント：学年配当漢字のパーツ合成・部首・組み立て方から、正しいカードを選ぼう！'
+          : '操作ヒント：10問の国語問題に順番に答えよう！';
         break;
 
       case 'MATH_CURRICULUM':
@@ -747,7 +759,7 @@ export class MiniGameModal {
       case 'KANJI_SLASH':
         if (selectedMode === 'RADICAL_BUILDER') {
           this.currentGame = new RadicalBuilderGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum);
-          if (hintEl) hintEl.innerText = '操作ヒント：部首パーツを選んで漢字を完成させよう！';
+          if (hintEl) hintEl.innerText = '操作ヒント：学年配当漢字のパーツ合成・部首・組み立て方から、正しいカードを選ぼう！';
         } else if (selectedMode && !['KANJI_SLASH', 'KANJI_CHALLENGE'].includes(selectedMode)) {
           this.currentGame = new CurriculumQuizGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum, '国語');
           if (hintEl) hintEl.innerText = '操作ヒント：この学年の国語テーマ10問に答えよう！';
@@ -1144,27 +1156,49 @@ export class RadicalBuilderGame {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
     this.onWin = onWin;
-    this.grade = grade || 2;
+    this.grade = Math.max(1, Math.min(6, Number(grade) || 2));
     this.score = 0;
     this.combo = 0;
     this.running = false;
     this.qIndex = 0;
 
-    this.defaultPuzzles = [
-      { target: '清', reading: 'せい・きよい', parts: ['氵', '青'], options: ['氵', '木', '青', '日', '言'], hint: '水（さんずい）と青で清らか' },
-      { target: '休', reading: 'きゅう・やすむ', parts: ['亻', '木'], options: ['亻', '言', '木', '口', '日'], hint: '人（にんべん）が木によりそって休む' },
-      { target: '語', reading: 'ご・かたる', parts: ['言', '吾'], options: ['言', '氵', '吾', '心', '口'], hint: 'ごんべんと吾で言葉の語' },
-      { target: '明', reading: 'めい・あかるい', parts: ['日', '月'], options: ['日', '月', '木', '火', '禾'], hint: '日（太陽）と月で明るい' },
-      { target: '秋', reading: 'しゅう・あき', parts: ['禾', '火'], options: ['禾', '火', '木', '日', '土'], hint: '禾（のぎへん）と火で実りの秋' },
-      { target: '花', reading: 'か・はな', parts: ['艹', '化'], options: ['艹', '化', '木', '水', '人'], hint: 'くさかんむりと化けるで花' }
-    ];
-
-    this.puzzles = gameData?.questions || this.defaultPuzzles;
+    const suppliedPuzzles = Array.isArray(gameData?.questions)
+      ? gameData.questions.map((puzzle, index) => this.normalizePuzzle(puzzle, index)).filter(Boolean)
+      : [];
+    const gradePuzzles = getRadicalPuzzlesForGrade(this.grade);
+    this.puzzles = shuffleCopy(suppliedPuzzles.length >= 10 ? suppliedPuzzles : gradePuzzles).slice(0, 10);
     this.placedParts = [];
     this.palette = [];
     this.animFuse = 0;
+    this.locked = false;
+    this.answerState = null;
+    this.feedback = '';
 
     this.boundPointer = this.handlePointer.bind(this);
+  }
+
+  normalizePuzzle(puzzle, index = 0) {
+    if (!puzzle || typeof puzzle !== 'object') return null;
+    const target = String(puzzle.target || '').trim();
+    const parts = (puzzle.parts || puzzle.radicals || []).map(part => String(part || '').trim()).filter(Boolean);
+    if (!target || parts.length === 0) return null;
+    const options = (Array.isArray(puzzle.options) ? puzzle.options : parts)
+      .map(option => String(option || '').trim())
+      .filter(Boolean);
+    parts.forEach(part => {
+      const needed = parts.filter(value => value === part).length;
+      while (options.filter(value => value === part).length < needed) options.push(part);
+    });
+    return {
+      id: String(puzzle.id || `RADICAL_CUSTOM_${index + 1}`),
+      type: String(puzzle.type || 'ASSEMBLY'),
+      target,
+      reading: String(puzzle.reading || ''),
+      prompt: String(puzzle.prompt || `「${target}」を正しいパーツで組み立てよう`),
+      parts,
+      options: options.slice(0, 6),
+      hint: String(puzzle.hint || `${parts.join(' ＋ ')} を選びます。`)
+    };
   }
 
   start() {
@@ -1172,6 +1206,9 @@ export class RadicalBuilderGame {
     this.score = 0;
     this.combo = 0;
     this.qIndex = 0;
+    this.locked = false;
+    this.answerState = null;
+    this.feedback = '';
     this.setupPuzzle();
     this.canvas.addEventListener('pointerdown', this.boundPointer);
     this.loop();
@@ -1187,8 +1224,11 @@ export class RadicalBuilderGame {
     const p = this.puzzles[this.qIndex];
     this.currentPuzzle = p;
     this.placedParts = [];
-    this.targetKanji = p.target;
-    this.requiredParts = p.parts || p.radicals || ['氵', '青'];
+    this.locked = false;
+    this.answerState = null;
+    this.feedback = '';
+    this.targetKanji = String(p.target);
+    this.requiredParts = [...p.parts];
 
     const opts = p.options || [...this.requiredParts, '木', '日'];
     const shuffled = [...opts].sort(() => Math.random() - 0.5);
@@ -1210,6 +1250,7 @@ export class RadicalBuilderGame {
   }
 
   handlePointer(e) {
+    if (!this.running || this.locked) return;
     const rect = this.canvas.getBoundingClientRect();
     const x = (e.clientX - rect.left) * (this.canvas.width / rect.width);
     const y = (e.clientY - rect.top) * (this.canvas.height / rect.height);
@@ -1231,6 +1272,9 @@ export class RadicalBuilderGame {
           const sortedReq = [...this.requiredParts].sort().join('');
 
           if (sortedPlaced === sortedReq) {
+            this.locked = true;
+            this.answerState = 'correct';
+            this.feedback = `正解！「${this.targetKanji}」`;
             this.combo++;
             audio.playPositive(this.grade, this.combo);
             fx.spawnStarBurst(this.canvas.width / 2, this.canvas.height / 2, 35, '#fbbf24');
@@ -1245,8 +1289,11 @@ export class RadicalBuilderGame {
             setTimeout(() => {
               this.qIndex++;
               this.setupPuzzle();
-            }, 600);
+            }, 750);
           } else {
+            this.locked = true;
+            this.answerState = 'incorrect';
+            this.feedback = 'もう一度。黄色のパーツを見てみよう。';
             this.combo = 0;
             const res = guidance.registerError({
               subject: '国語',
@@ -1258,18 +1305,22 @@ export class RadicalBuilderGame {
               targetElement: this.canvas
             });
 
-            if (res.tier >= 2) {
-              this.palette.forEach(p => {
-                if (this.requiredParts.includes(p.text)) p.highlight = true;
-              });
-            }
+            this.palette.forEach(p => {
+              if (this.requiredParts.includes(p.text)) p.highlight = true;
+            });
 
             fx.triggerScreenShake(this.canvas, 'bounce', 250);
             setTimeout(() => {
               // Return pieces
               this.placedParts = [];
-              this.palette.forEach(p => p.used = false);
-            }, 500);
+              this.palette.forEach(p => {
+                p.used = false;
+                p.highlight = false;
+              });
+              this.answerState = null;
+              this.feedback = '';
+              this.locked = false;
+            }, 850);
           }
         }
         return;
@@ -1303,14 +1354,23 @@ export class RadicalBuilderGame {
 
     // お題・ヒント表示
     this.ctx.fillStyle = '#ffffff';
-    this.ctx.font = 'bold 20px sans-serif';
+    this.ctx.font = 'bold 15px sans-serif';
     this.ctx.textAlign = 'center';
-    this.ctx.fillText(`${withKidsReading('目標漢字', 'もくひょうかんじ', this.grade)}：【 ${this.targetKanji} 】を部首合体で作ろう！`, w / 2, 40);
+    this.ctx.fillText(`小学${this.grade}年・偏旁部首　${this.qIndex + 1} / ${this.puzzles.length}`, w / 2, 26);
+    this.ctx.fillStyle = '#bae6fd';
+    this.ctx.font = 'bold 17px sans-serif';
+    this.ctx.fillText(this.currentPuzzle?.prompt || `「${this.targetKanji}」の問題`, w / 2, 53);
 
     if (this.currentPuzzle?.hint) {
-      this.ctx.fillStyle = '#94a3b8';
+      this.ctx.fillStyle = '#cbd5e1';
       this.ctx.font = '13px sans-serif';
-      this.ctx.fillText(`ヒント：${this.currentPuzzle.hint}`, w / 2, 68);
+      this.ctx.fillText(`読み：${this.currentPuzzle.reading || '―'}　ヒント：${this.currentPuzzle.hint}`, w / 2, 77);
+    }
+
+    if (this.feedback) {
+      this.ctx.fillStyle = this.answerState === 'correct' ? '#6ee7b7' : '#fda4af';
+      this.ctx.font = 'bold 14px sans-serif';
+      this.ctx.fillText(this.feedback, w / 2, 101);
     }
 
     // スロット（合体エリア）描画
@@ -1338,7 +1398,7 @@ export class RadicalBuilderGame {
 
       if (text) {
         this.ctx.fillStyle = '#38bdf8';
-        this.ctx.font = 'bold 30px sans-serif';
+        this.ctx.font = text.length > 2 ? 'bold 12px sans-serif' : 'bold 30px sans-serif';
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
         this.ctx.fillText(text, sx, slotY);
@@ -1347,36 +1407,57 @@ export class RadicalBuilderGame {
         this.ctx.font = '11px sans-serif';
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
-        this.ctx.fillText(`パーツ${i + 1}`, sx, slotY);
+        this.ctx.fillText(this.currentPuzzle?.type === 'ASSEMBLY' ? `パーツ${i + 1}` : '答え', sx, slotY);
       }
     }
 
     // 部首トレイパレット描画
     this.palette.forEach(item => {
-      if (item.used) return;
-
       this.ctx.save();
-      if (item.highlight) {
+      const selectedCorrect = item.used && (this.answerState === 'correct' || (this.answerState === 'incorrect' && this.requiredParts.includes(item.text)));
+      const selectedWrong = item.used && this.answerState === 'incorrect' && !this.requiredParts.includes(item.text);
+      const selectedPending = item.used && !this.answerState;
+      if (item.highlight && !item.used) {
         this.ctx.shadowColor = '#fbbf24';
         this.ctx.shadowBlur = 12;
         this.ctx.strokeStyle = '#fbbf24';
         this.ctx.lineWidth = 3;
+      } else if (selectedCorrect) {
+        this.ctx.shadowColor = '#34d399';
+        this.ctx.shadowBlur = 14;
+        this.ctx.strokeStyle = '#a7f3d0';
+        this.ctx.lineWidth = 4;
+      } else if (selectedWrong) {
+        this.ctx.shadowColor = '#fb7185';
+        this.ctx.shadowBlur = 14;
+        this.ctx.strokeStyle = '#fecdd3';
+        this.ctx.lineWidth = 4;
+      } else if (selectedPending) {
+        this.ctx.shadowColor = '#38bdf8';
+        this.ctx.shadowBlur = 14;
+        this.ctx.strokeStyle = '#ffffff';
+        this.ctx.lineWidth = 4;
       } else {
         this.ctx.strokeStyle = '#64748b';
         this.ctx.lineWidth = 2;
       }
 
-      this.ctx.fillStyle = item.highlight ? '#422006' : '#1e293b';
+      this.ctx.fillStyle = selectedCorrect ? '#047857' : (selectedWrong ? '#9f1239' : (selectedPending ? '#0369a1' : (item.highlight ? '#422006' : '#1e293b')));
       this.ctx.beginPath();
       safeRoundRect(this.ctx, item.x - item.size / 2, item.y - item.size / 2, item.size, item.size, 14);
       this.ctx.fill();
       this.ctx.stroke();
 
       this.ctx.fillStyle = '#f8fafc';
-      this.ctx.font = 'bold 26px sans-serif';
+      this.ctx.font = item.text.length > 2 ? 'bold 11px sans-serif' : 'bold 26px sans-serif';
       this.ctx.textAlign = 'center';
       this.ctx.textBaseline = 'middle';
       this.ctx.fillText(item.text, item.x, item.y);
+      if (item.used) {
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.font = 'bold 12px sans-serif';
+        this.ctx.fillText('✓', item.x + item.size / 2 - 9, item.y - item.size / 2 + 12);
+      }
       this.ctx.restore();
     });
 
@@ -1548,6 +1629,8 @@ export class CurriculumQuizGame {
     this.correctCount = 0;
     this.locked = false;
     this.feedback = '';
+    this.selectedOption = null;
+    this.selectionCorrect = null;
     this.running = false;
     this.boundPointer = this.handlePointer.bind(this);
   }
@@ -1582,6 +1665,8 @@ export class CurriculumQuizGame {
       if (this.locked || x < layout.x || x > layout.x + layout.w || y < optionY || y > optionY + layout.optionH) return;
       this.locked = true;
       const correct = option === question.correct;
+      this.selectedOption = option;
+      this.selectionCorrect = correct;
       const audio = getAudioSynthesizer();
       const fx = getFXSystem();
       const guidance = getErrorGuidanceSystem();
@@ -1597,7 +1682,7 @@ export class CurriculumQuizGame {
         guidance.registerError({ subject: this.subject, questionId: question.id, targetElement: this.canvas, customExplanation: question.explanation || this.feedback });
         fx.triggerScreenShake(this.canvas, 'bounce', 180);
       }
-      setTimeout(() => this.advance(), 550);
+      setTimeout(() => this.advance(), 700);
     });
   }
 
@@ -1605,6 +1690,8 @@ export class CurriculumQuizGame {
     if (!this.running) return;
     this.qIndex++;
     this.feedback = '';
+    this.selectedOption = null;
+    this.selectionCorrect = null;
     this.locked = false;
     if (this.qIndex >= this.questions.length) {
       const accuracy = this.correctCount / this.questions.length;
@@ -1651,16 +1738,28 @@ export class CurriculumQuizGame {
     const layout = this.getOptionLayout();
     question.options.forEach((option, index) => {
       const optionY = layout.startY + index * (layout.optionH + layout.gap);
-      this.ctx.fillStyle = '#172554';
-      this.ctx.strokeStyle = '#60a5fa';
-      this.ctx.lineWidth = 2;
+      const isSelected = option === this.selectedOption;
+      const isCorrectReveal = this.locked && option === question.correct;
+      const isWrongSelected = isSelected && this.selectionCorrect === false;
+      this.ctx.fillStyle = isCorrectReveal ? '#065f46' : (isWrongSelected ? '#9f1239' : (isSelected ? '#075985' : '#172554'));
+      this.ctx.strokeStyle = isCorrectReveal ? '#6ee7b7' : (isWrongSelected ? '#fda4af' : (isSelected ? '#ffffff' : '#60a5fa'));
+      this.ctx.lineWidth = isSelected || isCorrectReveal ? 4 : 2;
+      if (isSelected) {
+        this.ctx.shadowColor = isWrongSelected ? '#fb7185' : '#38bdf8';
+        this.ctx.shadowBlur = 14;
+      }
       this.ctx.beginPath();
       safeRoundRect(this.ctx, layout.x, optionY, layout.w, layout.optionH, 12);
       this.ctx.fill();
       this.ctx.stroke();
       this.drawWrappedText(`${String.fromCharCode(65 + index)}. ${option}`, layout.x + 8, optionY + 2, layout.w - 16, layout.optionH - 4, option.length > 30 ? 12 : 14, '#ffffff');
+      this.ctx.shadowBlur = 0;
     });
-    if (this.feedback) this.ctx.fillText(this.feedback, w / 2, 146);
+    if (this.feedback) {
+      this.ctx.fillStyle = this.selectionCorrect ? '#6ee7b7' : '#fda4af';
+      this.ctx.font = 'bold 13px sans-serif';
+      this.ctx.fillText(this.feedback, w / 2, 146);
+    }
     requestAnimationFrame(() => this.loop());
   }
 
@@ -2652,6 +2751,8 @@ export class PrefectureJigsawGame {
 
     this.selectedPref = null;
     this.selectedOption = null;
+    this.selectionCorrect = null;
+    this.locked = false;
     this.placedCount = 0;
     this.boundPointer = this.handlePointer.bind(this);
   }
@@ -2677,6 +2778,8 @@ export class PrefectureJigsawGame {
     this.running = true;
     this.selectedPref = null;
     this.selectedOption = null;
+    this.selectionCorrect = null;
+    this.locked = false;
     this.placedCount = 0;
 
     const stages = this.getStagesForCurrentMode();
@@ -2747,6 +2850,7 @@ export class PrefectureJigsawGame {
   }
 
   handlePointer(e) {
+    if (!this.running || this.locked) return;
     const rect = this.canvas.getBoundingClientRect();
     const x = (e.clientX - rect.left) * (this.canvas.width / rect.width);
     const y = (e.clientY - rect.top) * (this.canvas.height / rect.height);
@@ -2832,6 +2936,9 @@ export class PrefectureJigsawGame {
         const oy = startY + i * 50;
 
         if (x >= 40 && x <= 40 + optW && y >= oy && y <= oy + optH) {
+          this.locked = true;
+          this.selectedOption = optText;
+          this.selectionCorrect = optText === this.currentQuiz.correct;
           if (optText === this.currentQuiz.correct) {
             audio.playPositive(this.grade, 1);
             fx.spawnStarBurst(w / 2, oy + optH / 2, 30, '#4ade80');
@@ -2851,6 +2958,11 @@ export class PrefectureJigsawGame {
               targetElement: this.canvas
             });
             fx.triggerScreenShake(this.canvas, 'wobble', 250);
+            setTimeout(() => {
+              this.locked = false;
+              this.selectedOption = null;
+              this.selectionCorrect = null;
+            }, 800);
           }
           return;
         }
@@ -3008,13 +3120,21 @@ export class PrefectureJigsawGame {
       this.shuffledOptions?.forEach((optText, i) => {
         const oy = startY + i * 50;
 
-        this.ctx.fillStyle = '#1e293b';
-        this.ctx.strokeStyle = '#38bdf8';
-        this.ctx.lineWidth = 1.5;
+        const isSelected = optText === this.selectedOption;
+        const isCorrectReveal = this.locked && optText === stage.correct;
+        const isWrongSelected = isSelected && this.selectionCorrect === false;
+        this.ctx.fillStyle = isCorrectReveal ? '#065f46' : (isWrongSelected ? '#9f1239' : (isSelected ? '#075985' : '#1e293b'));
+        this.ctx.strokeStyle = isCorrectReveal ? '#6ee7b7' : (isWrongSelected ? '#fda4af' : (isSelected ? '#ffffff' : '#38bdf8'));
+        this.ctx.lineWidth = isSelected || isCorrectReveal ? 4 : 1.5;
+        if (isSelected) {
+          this.ctx.shadowColor = isWrongSelected ? '#fb7185' : '#38bdf8';
+          this.ctx.shadowBlur = 14;
+        }
         this.ctx.beginPath();
         this.ctx.roundRect(40, oy, optW, optH, 10);
         this.ctx.fill();
         this.ctx.stroke();
+        this.ctx.shadowBlur = 0;
 
         this.ctx.fillStyle = '#ffffff';
         this.ctx.font = 'bold 13px sans-serif';
@@ -3294,15 +3414,22 @@ class LegacyContextMatchGame {
 
     this.pairs.forEach((p, idx) => {
       const cy = 90 + idx * 60;
+      const isSelected = this.selectedLeft?.id === p.id;
 
       // Left Card
-      this.ctx.fillStyle = p.matched ? '#064e3b' : (this.selectedLeft?.id === p.id ? '#1e3a8a' : '#1e293b');
-      this.ctx.strokeStyle = p.matched ? '#10b981' : (this.selectedLeft?.id === p.id ? '#38bdf8' : '#475569');
-      this.ctx.lineWidth = 2;
+      this.ctx.save();
+      this.ctx.fillStyle = p.matched ? '#064e3b' : (isSelected ? '#075985' : '#1e293b');
+      this.ctx.strokeStyle = p.matched ? '#10b981' : (isSelected ? '#ffffff' : '#475569');
+      this.ctx.lineWidth = isSelected ? 4 : 2;
+      if (isSelected) {
+        this.ctx.shadowColor = '#38bdf8';
+        this.ctx.shadowBlur = 16;
+      }
       this.ctx.beginPath();
       this.ctx.roundRect(leftX - 85, cy - 22, 170, 44, 12);
       this.ctx.fill();
       this.ctx.stroke();
+      this.ctx.restore();
 
       this.ctx.fillStyle = '#f8fafc';
       this.ctx.font = 'bold 13px sans-serif';
@@ -3470,13 +3597,19 @@ export class CategorySortGame {
       const iy = h - 60;
       const isSel = this.selectedItem === it;
 
-      this.ctx.fillStyle = isSel ? '#1e3a8a' : '#1e293b';
-      this.ctx.strokeStyle = isSel ? '#38bdf8' : '#64748b';
-      this.ctx.lineWidth = 2;
+      this.ctx.save();
+      this.ctx.fillStyle = isSel ? '#075985' : '#1e293b';
+      this.ctx.strokeStyle = isSel ? '#ffffff' : '#64748b';
+      this.ctx.lineWidth = isSel ? 4 : 2;
+      if (isSel) {
+        this.ctx.shadowColor = '#38bdf8';
+        this.ctx.shadowBlur = 16;
+      }
       this.ctx.beginPath();
       this.ctx.roundRect(ix - 55, iy - 25, 110, 50, 12);
       this.ctx.fill();
       this.ctx.stroke();
+      this.ctx.restore();
 
       this.ctx.fillStyle = '#ffffff';
       this.ctx.font = 'bold 10px sans-serif';
@@ -3508,6 +3641,9 @@ export class GradeComprehensiveExamGame {
     this.combo = 0;
     this.running = false;
     this.qIndex = 0;
+    this.locked = false;
+    this.selectedOption = null;
+    this.selectionCorrect = null;
     this.boundPointer = this.handlePointer.bind(this);
 
     // 文部科学省各学年カリキュラム準拠の全教科総合横断問題バンク（各学年6問：国・算・理・社・英・生）
@@ -3572,6 +3708,9 @@ export class GradeComprehensiveExamGame {
     this.score = 0;
     this.combo = 0;
     this.qIndex = 0;
+    this.locked = false;
+    this.selectedOption = null;
+    this.selectionCorrect = null;
     this.setupQuestion();
     this.canvas.addEventListener('pointerdown', this.boundPointer);
     this.loop();
@@ -3588,9 +3727,13 @@ export class GradeComprehensiveExamGame {
     }
     const cur = this.questions[this.qIndex];
     this.shuffledOptions = [...cur.options].sort(() => Math.random() - 0.5);
+    this.locked = false;
+    this.selectedOption = null;
+    this.selectionCorrect = null;
   }
 
   handlePointer(e) {
+    if (!this.running || this.locked) return;
     const rect = this.canvas.getBoundingClientRect();
     const x = (e.clientX - rect.left) * (this.canvas.width / rect.width);
     const y = (e.clientY - rect.top) * (this.canvas.height / rect.height);
@@ -3611,6 +3754,9 @@ export class GradeComprehensiveExamGame {
       const ox = (w - optW) / 2;
 
       if (x >= ox && x <= ox + optW && y >= oy && y <= oy + optH) {
+        this.locked = true;
+        this.selectedOption = optText;
+        this.selectionCorrect = optText === curQ.correct;
         if (optText === curQ.correct) {
           this.combo++;
           this.score += 50 * this.combo;
@@ -3627,7 +3773,7 @@ export class GradeComprehensiveExamGame {
           setTimeout(() => {
             this.qIndex++;
             this.setupQuestion();
-          }, 500);
+          }, 700);
         } else {
           this.combo = 0;
           if (audio) audio.playGentleError();
@@ -3639,6 +3785,11 @@ export class GradeComprehensiveExamGame {
             });
           }
           if (fx) fx.triggerScreenShake(this.canvas, 'bounce', 250);
+          setTimeout(() => {
+            this.locked = false;
+            this.selectedOption = null;
+            this.selectionCorrect = null;
+          }, 800);
         }
         return;
       }
@@ -3679,9 +3830,16 @@ export class GradeComprehensiveExamGame {
       const oy = startY + i * 54;
       const ox = (w - optW) / 2;
 
-      this.ctx.fillStyle = '#1e293b';
-      this.ctx.strokeStyle = '#38bdf8';
-      this.ctx.lineWidth = 1.5;
+      const isSelected = optText === this.selectedOption;
+      const isCorrectReveal = this.locked && optText === curQ.correct;
+      const isWrongSelected = isSelected && this.selectionCorrect === false;
+      this.ctx.fillStyle = isCorrectReveal ? '#065f46' : (isWrongSelected ? '#9f1239' : (isSelected ? '#075985' : '#1e293b'));
+      this.ctx.strokeStyle = isCorrectReveal ? '#6ee7b7' : (isWrongSelected ? '#fda4af' : (isSelected ? '#ffffff' : '#38bdf8'));
+      this.ctx.lineWidth = isSelected || isCorrectReveal ? 4 : 1.5;
+      if (isSelected) {
+        this.ctx.shadowColor = isWrongSelected ? '#fb7185' : '#38bdf8';
+        this.ctx.shadowBlur = 14;
+      }
       this.ctx.beginPath();
       safeRoundRect(this.ctx, ox, oy, optW, optH, 12);
       this.ctx.fill();
@@ -3692,6 +3850,7 @@ export class GradeComprehensiveExamGame {
       this.ctx.textAlign = 'center';
       this.ctx.textBaseline = 'middle';
       this.ctx.fillText(optText, w / 2, oy + optH / 2);
+      this.ctx.shadowBlur = 0;
     });
 
     requestAnimationFrame(() => this.loop());

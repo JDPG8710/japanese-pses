@@ -1,12 +1,12 @@
 {
-  "timestamp": "2026-08-22T14:30:24.940Z",
+  "timestamp": "2026-08-22T14:54:46.513Z",
   "summary": {
-    "totalSuites": 35,
-    "totalTests": 137,
-    "passed": 137,
+    "totalSuites": 36,
+    "totalTests": 140,
+    "passed": 140,
     "failed": 0,
     "successRate": 1,
-    "totalDurationMs": 355
+    "totalDurationMs": 332
   },
   "suites": [
     {
@@ -19,13 +19,13 @@
         {
           "name": "M1: Agent definition exists and has YAML frontmatter for product_manager_agent",
           "passed": true,
-          "durationMs": 1,
+          "durationMs": 0,
           "error": null
         },
         {
           "name": "M1: Agent definition exists and has YAML frontmatter for director_agent",
           "passed": true,
-          "durationMs": 0,
+          "durationMs": 1,
           "error": null
         },
         {
@@ -175,13 +175,13 @@
         {
           "name": "LOOP2: executeMesoLoop extracts mutation directives from dropped cohort stats",
           "passed": true,
-          "durationMs": 0,
+          "durationMs": 1,
           "error": null
         },
         {
           "name": "LOOP3: executeMacroLoop produces macro rebalance metrics",
           "passed": true,
-          "durationMs": 2,
+          "durationMs": 1,
           "error": null
         }
       ]
@@ -191,12 +191,12 @@
       "total": 4,
       "passed": 4,
       "failed": 0,
-      "durationMs": 0,
+      "durationMs": 1,
       "tests": [
         {
           "name": "QA1: diagnoseAndRecommendFix handles UI_OVERFLOW and generates valid REPAIR_PATCH_v1",
           "passed": true,
-          "durationMs": 0,
+          "durationMs": 1,
           "error": null
         },
         {
@@ -224,12 +224,12 @@
       "total": 1,
       "passed": 1,
       "failed": 0,
-      "durationMs": 0,
+      "durationMs": 1,
       "tests": [
         {
           "name": "AB1: ingestObservation creates micro interventions on repeated errors",
           "passed": true,
-          "durationMs": 0,
+          "durationMs": 1,
           "error": null
         }
       ]
@@ -239,7 +239,7 @@
       "total": 2,
       "passed": 2,
       "failed": 0,
-      "durationMs": 3,
+      "durationMs": 2,
       "tests": [
         {
           "name": "A1: AudioSynthesizer initializes with mute persistence",
@@ -250,7 +250,7 @@
         {
           "name": "A2: AudioSynthesizer plays chords without throwing errors in headless environment",
           "passed": true,
-          "durationMs": 3,
+          "durationMs": 2,
           "error": null
         }
       ]
@@ -260,7 +260,7 @@
       "total": 2,
       "passed": 2,
       "failed": 0,
-      "durationMs": 3,
+      "durationMs": 2,
       "tests": [
         {
           "name": "FX1: Particle2D and FloatingText2D update and decay correctly",
@@ -271,7 +271,7 @@
         {
           "name": "FX2: FXSystem spawns particle bursts and floating text",
           "passed": true,
-          "durationMs": 2,
+          "durationMs": 1,
           "error": null
         }
       ]
@@ -302,7 +302,7 @@
       "total": 8,
       "passed": 8,
       "failed": 0,
-      "durationMs": 21,
+      "durationMs": 18,
       "tests": [
         {
           "name": "F12.1: MEXT 1,026 Joyo Kanji database exists with exact grade allocations",
@@ -313,7 +313,7 @@
         {
           "name": "F12.2: 1,026 Kanji entries have complete readings, onyomi, kunyomi, and zero duplicates",
           "passed": true,
-          "durationMs": 5,
+          "durationMs": 3,
           "error": null
         },
         {
@@ -331,19 +331,19 @@
         {
           "name": "F12.5: Entry root nodes have empty prerequisites (zero deadlock) and monotonic grade flow",
           "passed": true,
-          "durationMs": 2,
+          "durationMs": 1,
           "error": null
         },
         {
           "name": "F13.1: STEM Cross-Subject prerequisites are correctly wired and topological sort succeeds",
           "passed": true,
-          "durationMs": 2,
+          "durationMs": 3,
           "error": null
         },
         {
           "name": "F13.2: Dynamic fracture detection identifies steep pass-rate drops and cognitive cliffs",
           "passed": true,
-          "durationMs": 3,
+          "durationMs": 2,
           "error": null
         },
         {
@@ -364,13 +364,13 @@
         {
           "name": "Boundary 2.1: Rejection of cyclic edge additions with rollback preserving DAG acyclicity",
           "passed": true,
-          "durationMs": 2,
+          "durationMs": 1,
           "error": null
         },
         {
           "name": "Boundary 2.2: Orphan healing safely strips dangling references and reconnects disconnected islands",
           "passed": true,
-          "durationMs": 0,
+          "durationMs": 1,
           "error": null
         },
         {
@@ -403,13 +403,13 @@
         {
           "name": "Pairwise 3.2: AI Agent Mutation Directive processing executes atomic operations with validation",
           "passed": true,
-          "durationMs": 1,
+          "durationMs": 2,
           "error": null
         },
         {
           "name": "Pairwise 3.3: Curriculum Unlock Filter accurately unlocks nodes as player achieves 85% mastery",
           "passed": true,
-          "durationMs": 2,
+          "durationMs": 1,
           "error": null
         }
       ]
@@ -419,12 +419,12 @@
       "total": 2,
       "passed": 2,
       "failed": 0,
-      "durationMs": 4,
+      "durationMs": 5,
       "tests": [
         {
           "name": "Scenario 4.1: Full 1-6 Grade Japanese Elementary Curriculum Progression Playthrough",
           "passed": true,
-          "durationMs": 1,
+          "durationMs": 2,
           "error": null
         },
         {
@@ -440,7 +440,7 @@
       "total": 13,
       "passed": 13,
       "failed": 0,
-      "durationMs": 7,
+      "durationMs": 8,
       "tests": [
         {
           "name": "F6.1: Kokugo Radical Assembly combines radicals into target Kanji",
@@ -451,13 +451,13 @@
         {
           "name": "F6.2: Kokugo Kanji Slash hit collision detection with expanded child hitbox (+25px)",
           "passed": true,
-          "durationMs": 0,
+          "durationMs": 1,
           "error": null
         },
         {
           "name": "F7.1: Sansu Kuku Link 2-turn laser pathfinding connects matching pairs",
           "passed": true,
-          "durationMs": 1,
+          "durationMs": 0,
           "error": null
         },
         {
@@ -517,7 +517,7 @@
         {
           "name": "F15.5: Stage-level Clear Tracking, Green Checkmark (✅) Status & Node Trophy Clear Screen",
           "passed": true,
-          "durationMs": 2,
+          "durationMs": 3,
           "error": null
         }
       ]
@@ -527,7 +527,7 @@
       "total": 2,
       "passed": 2,
       "failed": 0,
-      "durationMs": 0,
+      "durationMs": 1,
       "tests": [
         {
           "name": "F11.1: Interactive elements meet or exceed 56px minimum touch hitbox target",
@@ -538,7 +538,7 @@
         {
           "name": "F11.2: Touch event debouncing blocks accidental double-tap within 250ms",
           "passed": true,
-          "durationMs": 0,
+          "durationMs": 1,
           "error": null
         }
       ]
@@ -559,13 +559,13 @@
         {
           "name": "F15.2: EconomyManager supports multi-user profile switching and state isolation",
           "passed": true,
-          "durationMs": 1,
+          "durationMs": 0,
           "error": null
         },
         {
           "name": "F15.3: First clear awards dynamic points; repeated clear updates mastery without coin inflation",
           "passed": true,
-          "durationMs": 0,
+          "durationMs": 1,
           "error": null
         },
         {
@@ -586,13 +586,13 @@
         {
           "name": "B1: Dynamic points formula clamps extreme streak (50 streak capped at 2.0x)",
           "passed": true,
-          "durationMs": 0,
+          "durationMs": 1,
           "error": null
         },
         {
           "name": "B2: 0.0 accuracy yields 0 points safely",
           "passed": true,
-          "durationMs": 1,
+          "durationMs": 0,
           "error": null
         },
         {
@@ -614,12 +614,12 @@
       "total": 1,
       "passed": 1,
       "failed": 0,
-      "durationMs": 0,
+      "durationMs": 1,
       "tests": [
         {
           "name": "C1: Complete Game Cycle — Play -> Score -> Award -> Unlock -> Shop",
           "passed": true,
-          "durationMs": 0,
+          "durationMs": 1,
           "error": null
         }
       ]
@@ -644,7 +644,7 @@
       "total": 8,
       "passed": 8,
       "failed": 0,
-      "durationMs": 68,
+      "durationMs": 67,
       "tests": [
         {
           "name": "GB1: GAME_GRADE_SUPPORT_MAP defines accurate MEXT grade support for all 10 games",
@@ -679,13 +679,13 @@
         {
           "name": "GB6: Kanji grade challenge mode works for all grades 1 through 6",
           "passed": true,
-          "durationMs": 34,
+          "durationMs": 32,
           "error": null
         },
         {
           "name": "GB7: Right-side Game Card Linkage & Direct Stage Launching for all 6 subjects across all grades",
           "passed": true,
-          "durationMs": 16,
+          "durationMs": 17,
           "error": null
         },
         {
@@ -701,7 +701,7 @@
       "total": 5,
       "passed": 5,
       "failed": 0,
-      "durationMs": 5,
+      "durationMs": 4,
       "tests": [
         {
           "name": "CT1: all and only the 27 curriculum nodes use their exact approved gameType",
@@ -718,7 +718,7 @@
         {
           "name": "CT3: every routed gameType is registered and explicitly supports its node grade",
           "passed": true,
-          "durationMs": 2,
+          "durationMs": 1,
           "error": null
         },
         {
@@ -740,12 +740,12 @@
       "total": 2,
       "passed": 2,
       "failed": 0,
-      "durationMs": 1,
+      "durationMs": 0,
       "tests": [
         {
           "name": "CT6: zero-star/zero-score result must not dispatch GAME_CLEAR_SUCCESS",
           "passed": true,
-          "durationMs": 1,
+          "durationMs": 0,
           "error": null
         },
         {
@@ -757,11 +757,38 @@
       ]
     },
     {
+      "name": "Grade-aligned radical and component bank",
+      "total": 3,
+      "passed": 3,
+      "failed": 0,
+      "durationMs": 6,
+      "tests": [
+        {
+          "name": "RB1: every grade has 12 valid assigned-kanji puzzles across three question types",
+          "passed": true,
+          "durationMs": 4,
+          "error": null
+        },
+        {
+          "name": "RB2: RadicalBuilder rejects generic quiz records and always creates a safe random 10-puzzle session",
+          "passed": true,
+          "durationMs": 1,
+          "error": null
+        },
+        {
+          "name": "RB3: selected answers become explicit interaction state in radical and shared quiz games",
+          "passed": true,
+          "durationMs": 1,
+          "error": null
+        }
+      ]
+    },
+    {
       "name": "Math curriculum procedural engine",
       "total": 4,
       "passed": 4,
       "failed": 0,
-      "durationMs": 74,
+      "durationMs": 62,
       "tests": [
         {
           "name": "QB1: MathCurriculumGame is a dedicated exported engine",
@@ -772,19 +799,19 @@
         {
           "name": "QB2: Grades 1-6 each survive 1,000 generated questions with valid unique options",
           "passed": true,
-          "durationMs": 42,
+          "durationMs": 34,
           "error": null
         },
         {
           "name": "QB3: every grade covers every frozen math theme family",
           "passed": true,
-          "durationMs": 27,
+          "durationMs": 24,
           "error": null
         },
         {
           "name": "QB4: an actual math session exposes exactly 10 non-repeating questions",
           "passed": true,
-          "durationMs": 5,
+          "durationMs": 4,
           "error": null
         }
       ]
@@ -794,18 +821,18 @@
       "total": 2,
       "passed": 2,
       "failed": 0,
-      "durationMs": 106,
+      "durationMs": 97,
       "tests": [
         {
           "name": "QB5: every English mode has at least 200 structurally unique records",
           "passed": true,
-          "durationMs": 9,
+          "durationMs": 7,
           "error": null
         },
         {
           "name": "QB6: every English mode draws exactly 10 unique questions per session",
           "passed": true,
-          "durationMs": 97,
+          "durationMs": 90,
           "error": null
         }
       ]
@@ -815,12 +842,12 @@
       "total": 2,
       "passed": 2,
       "failed": 0,
-      "durationMs": 6,
+      "durationMs": 5,
       "tests": [
         {
           "name": "QB7: science/life pools cover every approved grade and can form 10-question sessions",
           "passed": true,
-          "durationMs": 2,
+          "durationMs": 1,
           "error": null
         },
         {
@@ -841,13 +868,13 @@
         {
           "name": "CS1: all social stems, answers and options contain zero Extended_Pictographic characters",
           "passed": true,
-          "durationMs": 3,
+          "durationMs": 2,
           "error": null
         },
         {
           "name": "CS2: social question stems do not contain their semantic correct answer",
           "passed": true,
-          "durationMs": 2,
+          "durationMs": 3,
           "error": null
         }
       ]
@@ -890,7 +917,7 @@
       "total": 9,
       "passed": 9,
       "failed": 0,
-      "durationMs": 7,
+      "durationMs": 5,
       "tests": [
         {
           "name": "C1: Self-Loop Detection (Node A -> Node A)",
@@ -931,7 +958,7 @@
         {
           "name": "C7: Deep Linear Chain (500 Nodes) Without Recursion Overflow",
           "passed": true,
-          "durationMs": 3,
+          "durationMs": 2,
           "error": null
         },
         {
@@ -943,7 +970,7 @@
         {
           "name": "C9: Duplicate Prerequisite Edge Resilience",
           "passed": true,
-          "durationMs": 1,
+          "durationMs": 0,
           "error": null
         }
       ]
@@ -1009,7 +1036,7 @@
         {
           "name": "F3: Bridge Node Scaffolding Insertion & Topological Rewiring",
           "passed": true,
-          "durationMs": 2,
+          "durationMs": 1,
           "error": null
         },
         {
@@ -1021,19 +1048,19 @@
         {
           "name": "F5: Consecutive Multi-Bridge Chaining on Same Target",
           "passed": true,
-          "durationMs": 1,
+          "durationMs": 2,
           "error": null
         },
         {
           "name": "F6: Bridge ID Collision Handling",
           "passed": true,
-          "durationMs": 1,
+          "durationMs": 0,
           "error": null
         },
         {
           "name": "F7: Safe Prerequisites Rewiring and Cyclic Edge Rejection",
           "passed": true,
-          "durationMs": 1,
+          "durationMs": 2,
           "error": null
         }
       ]
@@ -1048,7 +1075,7 @@
         {
           "name": "B1: Star Topology High-Impact Bottleneck Identification",
           "passed": true,
-          "durationMs": 1,
+          "durationMs": 0,
           "error": null
         },
         {
@@ -1060,7 +1087,7 @@
         {
           "name": "B3: MEXT 27-Node Curriculum STEM Cross-Subject Bottleneck Verification",
           "passed": true,
-          "durationMs": 0,
+          "durationMs": 1,
           "error": null
         }
       ]
@@ -1070,7 +1097,7 @@
       "total": 3,
       "passed": 3,
       "failed": 0,
-      "durationMs": 3,
+      "durationMs": 2,
       "tests": [
         {
           "name": "A1: 100 Rapid Sequential & Concurrent Invocations Across All Sound Types",
@@ -1081,7 +1108,7 @@
         {
           "name": "A2: Extreme Combo Pitch Shift Clamping (Combo 1 to 500)",
           "passed": true,
-          "durationMs": 1,
+          "durationMs": 0,
           "error": null
         },
         {
@@ -1102,7 +1129,7 @@
         {
           "name": "G1: Exponential Ramp Target Values Strictly >= 0.0001 (Web Audio Standard Floor)",
           "passed": true,
-          "durationMs": 0,
+          "durationMs": 1,
           "error": null
         },
         {
@@ -1114,7 +1141,7 @@
         {
           "name": "G3: Zero Allocation & Node Creation When Muted",
           "passed": true,
-          "durationMs": 1,
+          "durationMs": 0,
           "error": null
         }
       ]
@@ -1147,5 +1174,5 @@
       ]
     }
   ],
-  "tapOutput": "TAP version 13\n1..137\nok 1 - Agent Definitions & Markdown Specifications > M1: Agent definition exists and has YAML frontmatter for product_manager_agent\nok 2 - Agent Definitions & Markdown Specifications > M1: Agent definition exists and has YAML frontmatter for director_agent\nok 3 - Agent Definitions & Markdown Specifications > M1: Agent definition exists and has YAML frontmatter for game_designer_agent\nok 4 - Agent Definitions & Markdown Specifications > M1: Agent definition exists and has YAML frontmatter for graph_evolution_agent\nok 5 - Agent Definitions & Markdown Specifications > M1: Agent definition exists and has YAML frontmatter for qa_player_agent\nok 6 - Agent Definitions & Markdown Specifications > M1: Agent definition exists and has YAML frontmatter for bug_repair_agent\nok 7 - Agent Definitions & Markdown Specifications > M2: product_manager_agent defines developmental psychology and Flow state targets\nok 8 - Agent Communication Schema Validation (SCHEMAS & validateSchema) > S1: Valid PM_SPEC_v1 payload passes validation\nok 9 - Agent Communication Schema Validation (SCHEMAS & validateSchema) > S2: Invalid PM_SPEC_v1 missing required fields fails validation\nok 10 - Agent Communication Schema Validation (SCHEMAS & validateSchema) > S3: Valid DESIGNER_OUTPUT_v1 passes validation\nok 11 - Agent Communication Schema Validation (SCHEMAS & validateSchema) > S4: Valid QA_BUG_REPORT_v1 and REPAIR_PATCH_v1 pass validation\nok 12 - Agent Communication Schema Validation (SCHEMAS & validateSchema) > S5: Valid GRAPH_MUTATION_v1 passes validation\nok 13 - Product Manager Agent Brain (PMAgentBrain) > PM1: getDevelopmentalPsychologyMatrix respects grade constraints\nok 14 - Product Manager Agent Brain (PMAgentBrain) > PM2: analyzeFlowState accurately classifies optimal channel, drop-off, and boredom\nok 15 - Product Manager Agent Brain (PMAgentBrain) > PM3: generatePMSpec outputs validated PM_SPEC_v1\nok 16 - Product Manager Agent Brain (PMAgentBrain) > PM4: calculateDynamicPoints calculates dynamic score with Bloom depth and streak\nok 17 - Director Orchestrator Agent (DirectorOrchestrator) > DIR1: All 6 agents are registered in DirectorOrchestrator\nok 18 - Director Orchestrator Agent (DirectorOrchestrator) > DIR2: verifyDAGAcyclicity detects valid DAG vs cyclic graph\nok 19 - Director Orchestrator Agent (DirectorOrchestrator) > DIR3: authorizeGraphMutation rejects invalid DAGs and accepts valid mutations\nok 20 - AgentSelfLoopPipeline (Micro, Meso, Macro) > LOOP1: executeMicroLoop applies 3-tier child-friendly error guidance\nok 21 - AgentSelfLoopPipeline (Micro, Meso, Macro) > LOOP2: executeMesoLoop extracts mutation directives from dropped cohort stats\nok 22 - AgentSelfLoopPipeline (Micro, Meso, Macro) > LOOP3: executeMacroLoop produces macro rebalance metrics\nok 23 - AgentQADiagnostics Engine & Root-Cause Classification > QA1: diagnoseAndRecommendFix handles UI_OVERFLOW and generates valid REPAIR_PATCH_v1\nok 24 - AgentQADiagnostics Engine & Root-Cause Classification > QA2: diagnoseAndRecommendFix handles UI_DEADLOCK_HANG and resets state\nok 25 - AgentQADiagnostics Engine & Root-Cause Classification > QA3: diagnoseAndRecommendFix handles WEBGL_CONTEXT_LOST and downscales rendering\nok 26 - AgentQADiagnostics Engine & Root-Cause Classification > QA4: AgentQADiagnosticsEngine records and aggregates diagnostics sweep\nok 27 - AntigravityAgentBrain End-to-End Runtime Integration > AB1: ingestObservation creates micro interventions on repeated errors\nok 28 - AudioSynthesizer Procedural Sound Synthesis > A1: AudioSynthesizer initializes with mute persistence\nok 29 - AudioSynthesizer Procedural Sound Synthesis > A2: AudioSynthesizer plays chords without throwing errors in headless environment\nok 30 - FXSystem Particle Explosions & Screen Shake > FX1: Particle2D and FloatingText2D update and decay correctly\nok 31 - FXSystem Particle Explosions & Screen Shake > FX2: FXSystem spawns particle bursts and floating text\nok 32 - ErrorGuidanceSystem 3-Tier Scaffolding > EG1: Tier 1, 2, and 3 error progression and reset\nok 33 - ErrorGuidanceSystem 3-Tier Scaffolding > EG2: Generates valid clues and explanations for all 6 subjects\nok 34 - Tier 1: MEXT Curriculum Data Integrity & 6-Subject DAG Topology (F12 & F13) > F12.1: MEXT 1,026 Joyo Kanji database exists with exact grade allocations\nok 35 - Tier 1: MEXT Curriculum Data Integrity & 6-Subject DAG Topology (F12 & F13) > F12.2: 1,026 Kanji entries have complete readings, onyomi, kunyomi, and zero duplicates\nok 36 - Tier 1: MEXT Curriculum Data Integrity & 6-Subject DAG Topology (F12 & F13) > F12.3: 47 Prefectures database has all 8 regions, capitals, coordinates, specialties & trivia\nok 37 - Tier 1: MEXT Curriculum Data Integrity & 6-Subject DAG Topology (F12 & F13) > F12.4: 6-Subject DAG topology has 27 core nodes with zero cycles and full acyclicity\nok 38 - Tier 1: MEXT Curriculum Data Integrity & 6-Subject DAG Topology (F12 & F13) > F12.5: Entry root nodes have empty prerequisites (zero deadlock) and monotonic grade flow\nok 39 - Tier 1: MEXT Curriculum Data Integrity & 6-Subject DAG Topology (F12 & F13) > F13.1: STEM Cross-Subject prerequisites are correctly wired and topological sort succeeds\nok 40 - Tier 1: MEXT Curriculum Data Integrity & 6-Subject DAG Topology (F12 & F13) > F13.2: Dynamic fracture detection identifies steep pass-rate drops and cognitive cliffs\nok 41 - Tier 1: MEXT Curriculum Data Integrity & 6-Subject DAG Topology (F12 & F13) > F13.3: Bottleneck detection computes articulation points and downstream blast radius\nok 42 - Tier 2: Graph Engine Boundary & Edge Anomaly Handling > Boundary 2.1: Rejection of cyclic edge additions with rollback preserving DAG acyclicity\nok 43 - Tier 2: Graph Engine Boundary & Edge Anomaly Handling > Boundary 2.2: Orphan healing safely strips dangling references and reconnects disconnected islands\nok 44 - Tier 2: Graph Engine Boundary & Edge Anomaly Handling > Boundary 2.3: Detection of abnormal Bloom depth cognitive jumps between direct edges\nok 45 - Tier 2: Graph Engine Boundary & Edge Anomaly Handling > Boundary 2.4: Empty graph and single-node graph boundary handling\nok 46 - Tier 3: Graph Engine & System Pairwise Integrations > Pairwise 3.1: Bridge Node Insertion re-wires edges, inserts scaffolding, and preserves zero cycles\nok 47 - Tier 3: Graph Engine & System Pairwise Integrations > Pairwise 3.2: AI Agent Mutation Directive processing executes atomic operations with validation\nok 48 - Tier 3: Graph Engine & System Pairwise Integrations > Pairwise 3.3: Curriculum Unlock Filter accurately unlocks nodes as player achieves 85% mastery\nok 49 - Tier 4: Real-World Elementary Playthrough & DAG Evolution Scenarios > Scenario 4.1: Full 1-6 Grade Japanese Elementary Curriculum Progression Playthrough\nok 50 - Tier 4: Real-World Elementary Playthrough & DAG Evolution Scenarios > Scenario 4.2: Dynamic Cognitive Fracture Detection, Bridge Insertion & Auto-Healing Lifecycle\nok 51 - Tier 1: 6-Subject Mini-Game Mechanics & Polish > F6.1: Kokugo Radical Assembly combines radicals into target Kanji\nok 52 - Tier 1: 6-Subject Mini-Game Mechanics & Polish > F6.2: Kokugo Kanji Slash hit collision detection with expanded child hitbox (+25px)\nok 53 - Tier 1: 6-Subject Mini-Game Mechanics & Polish > F7.1: Sansu Kuku Link 2-turn laser pathfinding connects matching pairs\nok 54 - Tier 1: 6-Subject Mini-Game Mechanics & Polish > F7.2: Sansu Starship Pan Balance Scale calculates mass equilibrium and tilt angle\nok 55 - Tier 1: 6-Subject Mini-Game Mechanics & Polish > F8.1: Rika Cosmic Lever Physics calculates moment equilibrium ($W_1 L_1 = W_2 L_2$)\nok 56 - Tier 1: 6-Subject Mini-Game Mechanics & Polish > F8.2: Rika Celestial Orbits & Moon Phases angle progression\nok 57 - Tier 1: 6-Subject Mini-Game Mechanics & Polish > F8.3: Rika Electric Circuit Sandbox simulates series battery voltage and light bulb brightness\nok 58 - Tier 1: 6-Subject Mini-Game Mechanics & Polish > F9.1: Shakai 47 Prefectures & Regional Specialties matching\nok 59 - Tier 1: 6-Subject Mini-Game Mechanics & Polish > F9.2: Shakai 4-Grade Curriculum Consistency — Grade 3 (Map Symbols), Grade 4 (47 Prefectures & 8 Regions), Grade 5 (Industry & Climate), Grade 6 (History & Constitution)\nok 60 - Tier 1: 6-Subject Mini-Game Mechanics & Polish > F10.1: Eigo & Seikatsu category sorting classification\nok 61 - Tier 1: 6-Subject Mini-Game Mechanics & Polish > F6.3: Kanji Grade-wide Stage Partitioning covers all 80 Grade 1 Kanji across 8 stages without omission\nok 62 - Tier 1: 6-Subject Mini-Game Mechanics & Polish > F10.2: English Context Match 10 progressive themed stages with full thematic coverage\nok 63 - Tier 1: 6-Subject Mini-Game Mechanics & Polish > F15.5: Stage-level Clear Tracking, Green Checkmark (✅) Status & Node Trophy Clear Screen\nok 64 - Tier 1: Hitbox Ergonomics & Debouncing > F11.1: Interactive elements meet or exceed 56px minimum touch hitbox target\nok 65 - Tier 1: Hitbox Ergonomics & Debouncing > F11.2: Touch event debouncing blocks accidental double-tap within 250ms\nok 66 - Tier 1: Multi-User Economy, Token Ledger & Dynamic Points > F15.1: Dynamic score calculation formula: round(B * C_depth * A_score * S_multi)\nok 67 - Tier 1: Multi-User Economy, Token Ledger & Dynamic Points > F15.2: EconomyManager supports multi-user profile switching and state isolation\nok 68 - Tier 1: Multi-User Economy, Token Ledger & Dynamic Points > F15.3: First clear awards dynamic points; repeated clear updates mastery without coin inflation\nok 69 - Tier 1: Multi-User Economy, Token Ledger & Dynamic Points > F15.4: Shop Catalog validation and purchase deduction in ledger\nok 70 - Tier 2: Mini-Game & Economy Boundary Cases > B1: Dynamic points formula clamps extreme streak (50 streak capped at 2.0x)\nok 71 - Tier 2: Mini-Game & Economy Boundary Cases > B2: 0.0 accuracy yields 0 points safely\nok 72 - Tier 2: Mini-Game & Economy Boundary Cases > B3: Shop purchase with insufficient balance rejected without balance deduction\nok 73 - Tier 2: Mini-Game & Economy Boundary Cases > B4: Lever physics rejects distance 0 as fulcrum pivot\nok 74 - Tier 3: Game Flow to Economy Integration > C1: Complete Game Cycle — Play -> Score -> Award -> Unlock -> Shop\nok 75 - Tier 4: Grade 2 Student \"れん (Ren)\" Kuku Multiplication & Shop Journey > S1: Student \"れん\" solves 4 Kuku pairs, achieves 4-combo, earns points, buys badge\nok 76 - Tier 1: Grade-to-Game Dynamic Curriculum Binding & Support Matrix > GB1: GAME_GRADE_SUPPORT_MAP defines accurate MEXT grade support for all 10 games\nok 77 - Tier 1: Grade-to-Game Dynamic Curriculum Binding & Support Matrix > GB2: isGameSupportedForGrade correctly identifies valid vs non-operable disabled states\nok 78 - Tier 1: Grade-to-Game Dynamic Curriculum Binding & Support Matrix > GB3: generatePopularGameNode dynamically binds game metadata to the selected grade\nok 79 - Tier 1: Grade-to-Game Dynamic Curriculum Binding & Support Matrix > GB4: every registered game initializes at its first supported grade\nok 80 - Tier 1: Grade-to-Game Dynamic Curriculum Binding & Support Matrix > GB5: All 27 MEXT curriculum DAG nodes can open and infer correct game types\nok 81 - Tier 1: Grade-to-Game Dynamic Curriculum Binding & Support Matrix > GB6: Kanji grade challenge mode works for all grades 1 through 6\nok 82 - Tier 1: Grade-to-Game Dynamic Curriculum Binding & Support Matrix > GB7: Right-side Game Card Linkage & Direct Stage Launching for all 6 subjects across all grades\nok 83 - Tier 1: Grade-to-Game Dynamic Curriculum Binding & Support Matrix > GB8: Grade Comprehensive Exam (学年総合大試練) launches and grades across all 1-6 grades\nok 84 - Curriculum Traceability: frozen 27-node routing contract > CT1: all and only the 27 curriculum nodes use their exact approved gameType\nok 85 - Curriculum Traceability: frozen 27-node routing contract > CT2: grade-visible subjects exactly match the elementary curriculum\nok 86 - Curriculum Traceability: frozen 27-node routing contract > CT3: every routed gameType is registered and explicitly supports its node grade\nok 87 - Curriculum Traceability: frozen 27-node routing contract > CT4: unknown game types fail closed\nok 88 - Curriculum Traceability: frozen 27-node routing contract > CT5: Grade 3-6 math stays on MATH_CURRICULUM for 1,000 route resolutions per grade\nok 89 - Progress and failure safety contract > CT6: zero-star/zero-score result must not dispatch GAME_CLEAR_SUCCESS\nok 90 - Progress and failure safety contract > CT7: zero-accuracy attempt must not mark a stage clear, unlock mastery, or award coins\nok 91 - Math curriculum procedural engine > QB1: MathCurriculumGame is a dedicated exported engine\nok 92 - Math curriculum procedural engine > QB2: Grades 1-6 each survive 1,000 generated questions with valid unique options\nok 93 - Math curriculum procedural engine > QB3: every grade covers every frozen math theme family\nok 94 - Math curriculum procedural engine > QB4: an actual math session exposes exactly 10 non-repeating questions\nok 95 - English five-mode banks > QB5: every English mode has at least 200 structurally unique records\nok 96 - English five-mode banks > QB6: every English mode draws exactly 10 unique questions per session\nok 97 - Science and life curriculum randomness > QB7: science/life pools cover every approved grade and can form 10-question sessions\nok 98 - Science and life curriculum randomness > QB8: repeated science/life sessions change order while each session remains unique\nok 99 - Social studies content safety > CS1: all social stems, answers and options contain zero Extended_Pictographic characters\nok 100 - Social studies content safety > CS2: social question stems do not contain their semantic correct answer\nok 101 - Home-page static anti-regression contract > CS3: no bottom quick-game launcher is present\nok 102 - Home-page static anti-regression contract > CS4: no visible Agent status, Agent button, or Agent toast exists in homepage markup\nok 103 - Home-page static anti-regression contract > CS5: grade selection is collapsed initially and appears before the subject selector\nok 104 - Home-page static anti-regression contract > CS6: subject visibility logic contains the exact lower/upper grade split\nok 105 - GraphEngine: Adversarial Cycle Detection (DFS 3-Color) > C1: Self-Loop Detection (Node A -> Node A)\nok 106 - GraphEngine: Adversarial Cycle Detection (DFS 3-Color) > C2: Direct 2-Node Reciprocal Cycle (A -> B -> A)\nok 107 - GraphEngine: Adversarial Cycle Detection (DFS 3-Color) > C3: Long-Ring 10-Node Cyclic Chain (N0 -> N1 -> ... -> N9 -> N0)\nok 108 - GraphEngine: Adversarial Cycle Detection (DFS 3-Color) > C4: Disjoint Multiple Cycles Across Independent Components\nok 109 - GraphEngine: Adversarial Cycle Detection (DFS 3-Color) > C5: Figure-8 / Interlocking Twin Cycles Sharing Pivot Node\nok 110 - GraphEngine: Adversarial Cycle Detection (DFS 3-Color) > C6: Large Dense Random DAG (50 Nodes, 150 Edges) + Single Back-Edge Stress\nok 111 - GraphEngine: Adversarial Cycle Detection (DFS 3-Color) > C7: Deep Linear Chain (500 Nodes) Without Recursion Overflow\nok 112 - GraphEngine: Adversarial Cycle Detection (DFS 3-Color) > C8: Boundary Graphs (Empty, Single Isolated, 100 Isolated Nodes)\nok 113 - GraphEngine: Adversarial Cycle Detection (DFS 3-Color) > C9: Duplicate Prerequisite Edge Resilience\nok 114 - GraphEngine: Topological Sorting (Kahn's Algorithm) > T1: Strict Topological Invariant on MEXT 27-Node Curriculum\nok 115 - GraphEngine: Topological Sorting (Kahn's Algorithm) > T2: Wide Diamond / Fan-Out Fan-In DAG (1 -> 100 -> 1)\nok 116 - GraphEngine: Topological Sorting (Kahn's Algorithm) > T3: Deep Sequential Chain (200 Nodes) Exact Ordering\nok 117 - GraphEngine: Topological Sorting (Kahn's Algorithm) > T4: Kahn Sort Throws on Cyclic Graph Without State Corruption\nok 118 - GraphEngine: Topological Sorting (Kahn's Algorithm) > T5: Topological Depth Monotonicity Across Edges\nok 119 - GraphEngine: Cognitive Fracture Scaffolding & Rollback > F1: Multi-Tier Pass Rate Threshold Classification (0.35 Boundary)\nok 120 - GraphEngine: Cognitive Fracture Scaffolding & Rollback > F2: Non-Existent Node Resilience in Telemetry\nok 121 - GraphEngine: Cognitive Fracture Scaffolding & Rollback > F3: Bridge Node Scaffolding Insertion & Topological Rewiring\nok 122 - GraphEngine: Cognitive Fracture Scaffolding & Rollback > F4: Adversarial Bridge Insertion with Cyclic Prereq Triggers Complete Rollback\nok 123 - GraphEngine: Cognitive Fracture Scaffolding & Rollback > F5: Consecutive Multi-Bridge Chaining on Same Target\nok 124 - GraphEngine: Cognitive Fracture Scaffolding & Rollback > F6: Bridge ID Collision Handling\nok 125 - GraphEngine: Cognitive Fracture Scaffolding & Rollback > F7: Safe Prerequisites Rewiring and Cyclic Edge Rejection\nok 126 - GraphEngine: Bottleneck Articulation Point Calculation > B1: Star Topology High-Impact Bottleneck Identification\nok 127 - GraphEngine: Bottleneck Articulation Point Calculation > B2: Linear Chain Impact Ratios Strictly Descending\nok 128 - GraphEngine: Bottleneck Articulation Point Calculation > B3: MEXT 27-Node Curriculum STEM Cross-Subject Bottleneck Verification\nok 129 - AudioSynthesizer: Rapid-Fire 100-Note Trigger & Concurrency Stress > A1: 100 Rapid Sequential & Concurrent Invocations Across All Sound Types\nok 130 - AudioSynthesizer: Rapid-Fire 100-Note Trigger & Concurrency Stress > A2: Extreme Combo Pitch Shift Clamping (Combo 1 to 500)\nok 131 - AudioSynthesizer: Rapid-Fire 100-Note Trigger & Concurrency Stress > A3: Scheduled Node Lifecycle and Stop Time Allocation\nok 132 - AudioSynthesizer: Gain Clamping & Exponential Ramp Safety > G1: Exponential Ramp Target Values Strictly >= 0.0001 (Web Audio Standard Floor)\nok 133 - AudioSynthesizer: Gain Clamping & Exponential Ramp Safety > G2: Master Volume Clamping on Boundary & Adversarial Inputs\nok 134 - AudioSynthesizer: Gain Clamping & Exponential Ramp Safety > G3: Zero Allocation & Node Creation When Muted\nok 135 - AudioSynthesizer: Mute State Persistence & Event Lifecycle > M1: Mute State Toggling and Gain Synchronization\nok 136 - AudioSynthesizer: Mute State Persistence & Event Lifecycle > M2: LocalStorage Persistence across Synthesizer Instances\nok 137 - AudioSynthesizer: Mute State Persistence & Event Lifecycle > M3: Window CustomEvent Dispatch on Mute Change"
+  "tapOutput": "TAP version 13\n1..140\nok 1 - Agent Definitions & Markdown Specifications > M1: Agent definition exists and has YAML frontmatter for product_manager_agent\nok 2 - Agent Definitions & Markdown Specifications > M1: Agent definition exists and has YAML frontmatter for director_agent\nok 3 - Agent Definitions & Markdown Specifications > M1: Agent definition exists and has YAML frontmatter for game_designer_agent\nok 4 - Agent Definitions & Markdown Specifications > M1: Agent definition exists and has YAML frontmatter for graph_evolution_agent\nok 5 - Agent Definitions & Markdown Specifications > M1: Agent definition exists and has YAML frontmatter for qa_player_agent\nok 6 - Agent Definitions & Markdown Specifications > M1: Agent definition exists and has YAML frontmatter for bug_repair_agent\nok 7 - Agent Definitions & Markdown Specifications > M2: product_manager_agent defines developmental psychology and Flow state targets\nok 8 - Agent Communication Schema Validation (SCHEMAS & validateSchema) > S1: Valid PM_SPEC_v1 payload passes validation\nok 9 - Agent Communication Schema Validation (SCHEMAS & validateSchema) > S2: Invalid PM_SPEC_v1 missing required fields fails validation\nok 10 - Agent Communication Schema Validation (SCHEMAS & validateSchema) > S3: Valid DESIGNER_OUTPUT_v1 passes validation\nok 11 - Agent Communication Schema Validation (SCHEMAS & validateSchema) > S4: Valid QA_BUG_REPORT_v1 and REPAIR_PATCH_v1 pass validation\nok 12 - Agent Communication Schema Validation (SCHEMAS & validateSchema) > S5: Valid GRAPH_MUTATION_v1 passes validation\nok 13 - Product Manager Agent Brain (PMAgentBrain) > PM1: getDevelopmentalPsychologyMatrix respects grade constraints\nok 14 - Product Manager Agent Brain (PMAgentBrain) > PM2: analyzeFlowState accurately classifies optimal channel, drop-off, and boredom\nok 15 - Product Manager Agent Brain (PMAgentBrain) > PM3: generatePMSpec outputs validated PM_SPEC_v1\nok 16 - Product Manager Agent Brain (PMAgentBrain) > PM4: calculateDynamicPoints calculates dynamic score with Bloom depth and streak\nok 17 - Director Orchestrator Agent (DirectorOrchestrator) > DIR1: All 6 agents are registered in DirectorOrchestrator\nok 18 - Director Orchestrator Agent (DirectorOrchestrator) > DIR2: verifyDAGAcyclicity detects valid DAG vs cyclic graph\nok 19 - Director Orchestrator Agent (DirectorOrchestrator) > DIR3: authorizeGraphMutation rejects invalid DAGs and accepts valid mutations\nok 20 - AgentSelfLoopPipeline (Micro, Meso, Macro) > LOOP1: executeMicroLoop applies 3-tier child-friendly error guidance\nok 21 - AgentSelfLoopPipeline (Micro, Meso, Macro) > LOOP2: executeMesoLoop extracts mutation directives from dropped cohort stats\nok 22 - AgentSelfLoopPipeline (Micro, Meso, Macro) > LOOP3: executeMacroLoop produces macro rebalance metrics\nok 23 - AgentQADiagnostics Engine & Root-Cause Classification > QA1: diagnoseAndRecommendFix handles UI_OVERFLOW and generates valid REPAIR_PATCH_v1\nok 24 - AgentQADiagnostics Engine & Root-Cause Classification > QA2: diagnoseAndRecommendFix handles UI_DEADLOCK_HANG and resets state\nok 25 - AgentQADiagnostics Engine & Root-Cause Classification > QA3: diagnoseAndRecommendFix handles WEBGL_CONTEXT_LOST and downscales rendering\nok 26 - AgentQADiagnostics Engine & Root-Cause Classification > QA4: AgentQADiagnosticsEngine records and aggregates diagnostics sweep\nok 27 - AntigravityAgentBrain End-to-End Runtime Integration > AB1: ingestObservation creates micro interventions on repeated errors\nok 28 - AudioSynthesizer Procedural Sound Synthesis > A1: AudioSynthesizer initializes with mute persistence\nok 29 - AudioSynthesizer Procedural Sound Synthesis > A2: AudioSynthesizer plays chords without throwing errors in headless environment\nok 30 - FXSystem Particle Explosions & Screen Shake > FX1: Particle2D and FloatingText2D update and decay correctly\nok 31 - FXSystem Particle Explosions & Screen Shake > FX2: FXSystem spawns particle bursts and floating text\nok 32 - ErrorGuidanceSystem 3-Tier Scaffolding > EG1: Tier 1, 2, and 3 error progression and reset\nok 33 - ErrorGuidanceSystem 3-Tier Scaffolding > EG2: Generates valid clues and explanations for all 6 subjects\nok 34 - Tier 1: MEXT Curriculum Data Integrity & 6-Subject DAG Topology (F12 & F13) > F12.1: MEXT 1,026 Joyo Kanji database exists with exact grade allocations\nok 35 - Tier 1: MEXT Curriculum Data Integrity & 6-Subject DAG Topology (F12 & F13) > F12.2: 1,026 Kanji entries have complete readings, onyomi, kunyomi, and zero duplicates\nok 36 - Tier 1: MEXT Curriculum Data Integrity & 6-Subject DAG Topology (F12 & F13) > F12.3: 47 Prefectures database has all 8 regions, capitals, coordinates, specialties & trivia\nok 37 - Tier 1: MEXT Curriculum Data Integrity & 6-Subject DAG Topology (F12 & F13) > F12.4: 6-Subject DAG topology has 27 core nodes with zero cycles and full acyclicity\nok 38 - Tier 1: MEXT Curriculum Data Integrity & 6-Subject DAG Topology (F12 & F13) > F12.5: Entry root nodes have empty prerequisites (zero deadlock) and monotonic grade flow\nok 39 - Tier 1: MEXT Curriculum Data Integrity & 6-Subject DAG Topology (F12 & F13) > F13.1: STEM Cross-Subject prerequisites are correctly wired and topological sort succeeds\nok 40 - Tier 1: MEXT Curriculum Data Integrity & 6-Subject DAG Topology (F12 & F13) > F13.2: Dynamic fracture detection identifies steep pass-rate drops and cognitive cliffs\nok 41 - Tier 1: MEXT Curriculum Data Integrity & 6-Subject DAG Topology (F12 & F13) > F13.3: Bottleneck detection computes articulation points and downstream blast radius\nok 42 - Tier 2: Graph Engine Boundary & Edge Anomaly Handling > Boundary 2.1: Rejection of cyclic edge additions with rollback preserving DAG acyclicity\nok 43 - Tier 2: Graph Engine Boundary & Edge Anomaly Handling > Boundary 2.2: Orphan healing safely strips dangling references and reconnects disconnected islands\nok 44 - Tier 2: Graph Engine Boundary & Edge Anomaly Handling > Boundary 2.3: Detection of abnormal Bloom depth cognitive jumps between direct edges\nok 45 - Tier 2: Graph Engine Boundary & Edge Anomaly Handling > Boundary 2.4: Empty graph and single-node graph boundary handling\nok 46 - Tier 3: Graph Engine & System Pairwise Integrations > Pairwise 3.1: Bridge Node Insertion re-wires edges, inserts scaffolding, and preserves zero cycles\nok 47 - Tier 3: Graph Engine & System Pairwise Integrations > Pairwise 3.2: AI Agent Mutation Directive processing executes atomic operations with validation\nok 48 - Tier 3: Graph Engine & System Pairwise Integrations > Pairwise 3.3: Curriculum Unlock Filter accurately unlocks nodes as player achieves 85% mastery\nok 49 - Tier 4: Real-World Elementary Playthrough & DAG Evolution Scenarios > Scenario 4.1: Full 1-6 Grade Japanese Elementary Curriculum Progression Playthrough\nok 50 - Tier 4: Real-World Elementary Playthrough & DAG Evolution Scenarios > Scenario 4.2: Dynamic Cognitive Fracture Detection, Bridge Insertion & Auto-Healing Lifecycle\nok 51 - Tier 1: 6-Subject Mini-Game Mechanics & Polish > F6.1: Kokugo Radical Assembly combines radicals into target Kanji\nok 52 - Tier 1: 6-Subject Mini-Game Mechanics & Polish > F6.2: Kokugo Kanji Slash hit collision detection with expanded child hitbox (+25px)\nok 53 - Tier 1: 6-Subject Mini-Game Mechanics & Polish > F7.1: Sansu Kuku Link 2-turn laser pathfinding connects matching pairs\nok 54 - Tier 1: 6-Subject Mini-Game Mechanics & Polish > F7.2: Sansu Starship Pan Balance Scale calculates mass equilibrium and tilt angle\nok 55 - Tier 1: 6-Subject Mini-Game Mechanics & Polish > F8.1: Rika Cosmic Lever Physics calculates moment equilibrium ($W_1 L_1 = W_2 L_2$)\nok 56 - Tier 1: 6-Subject Mini-Game Mechanics & Polish > F8.2: Rika Celestial Orbits & Moon Phases angle progression\nok 57 - Tier 1: 6-Subject Mini-Game Mechanics & Polish > F8.3: Rika Electric Circuit Sandbox simulates series battery voltage and light bulb brightness\nok 58 - Tier 1: 6-Subject Mini-Game Mechanics & Polish > F9.1: Shakai 47 Prefectures & Regional Specialties matching\nok 59 - Tier 1: 6-Subject Mini-Game Mechanics & Polish > F9.2: Shakai 4-Grade Curriculum Consistency — Grade 3 (Map Symbols), Grade 4 (47 Prefectures & 8 Regions), Grade 5 (Industry & Climate), Grade 6 (History & Constitution)\nok 60 - Tier 1: 6-Subject Mini-Game Mechanics & Polish > F10.1: Eigo & Seikatsu category sorting classification\nok 61 - Tier 1: 6-Subject Mini-Game Mechanics & Polish > F6.3: Kanji Grade-wide Stage Partitioning covers all 80 Grade 1 Kanji across 8 stages without omission\nok 62 - Tier 1: 6-Subject Mini-Game Mechanics & Polish > F10.2: English Context Match 10 progressive themed stages with full thematic coverage\nok 63 - Tier 1: 6-Subject Mini-Game Mechanics & Polish > F15.5: Stage-level Clear Tracking, Green Checkmark (✅) Status & Node Trophy Clear Screen\nok 64 - Tier 1: Hitbox Ergonomics & Debouncing > F11.1: Interactive elements meet or exceed 56px minimum touch hitbox target\nok 65 - Tier 1: Hitbox Ergonomics & Debouncing > F11.2: Touch event debouncing blocks accidental double-tap within 250ms\nok 66 - Tier 1: Multi-User Economy, Token Ledger & Dynamic Points > F15.1: Dynamic score calculation formula: round(B * C_depth * A_score * S_multi)\nok 67 - Tier 1: Multi-User Economy, Token Ledger & Dynamic Points > F15.2: EconomyManager supports multi-user profile switching and state isolation\nok 68 - Tier 1: Multi-User Economy, Token Ledger & Dynamic Points > F15.3: First clear awards dynamic points; repeated clear updates mastery without coin inflation\nok 69 - Tier 1: Multi-User Economy, Token Ledger & Dynamic Points > F15.4: Shop Catalog validation and purchase deduction in ledger\nok 70 - Tier 2: Mini-Game & Economy Boundary Cases > B1: Dynamic points formula clamps extreme streak (50 streak capped at 2.0x)\nok 71 - Tier 2: Mini-Game & Economy Boundary Cases > B2: 0.0 accuracy yields 0 points safely\nok 72 - Tier 2: Mini-Game & Economy Boundary Cases > B3: Shop purchase with insufficient balance rejected without balance deduction\nok 73 - Tier 2: Mini-Game & Economy Boundary Cases > B4: Lever physics rejects distance 0 as fulcrum pivot\nok 74 - Tier 3: Game Flow to Economy Integration > C1: Complete Game Cycle — Play -> Score -> Award -> Unlock -> Shop\nok 75 - Tier 4: Grade 2 Student \"れん (Ren)\" Kuku Multiplication & Shop Journey > S1: Student \"れん\" solves 4 Kuku pairs, achieves 4-combo, earns points, buys badge\nok 76 - Tier 1: Grade-to-Game Dynamic Curriculum Binding & Support Matrix > GB1: GAME_GRADE_SUPPORT_MAP defines accurate MEXT grade support for all 10 games\nok 77 - Tier 1: Grade-to-Game Dynamic Curriculum Binding & Support Matrix > GB2: isGameSupportedForGrade correctly identifies valid vs non-operable disabled states\nok 78 - Tier 1: Grade-to-Game Dynamic Curriculum Binding & Support Matrix > GB3: generatePopularGameNode dynamically binds game metadata to the selected grade\nok 79 - Tier 1: Grade-to-Game Dynamic Curriculum Binding & Support Matrix > GB4: every registered game initializes at its first supported grade\nok 80 - Tier 1: Grade-to-Game Dynamic Curriculum Binding & Support Matrix > GB5: All 27 MEXT curriculum DAG nodes can open and infer correct game types\nok 81 - Tier 1: Grade-to-Game Dynamic Curriculum Binding & Support Matrix > GB6: Kanji grade challenge mode works for all grades 1 through 6\nok 82 - Tier 1: Grade-to-Game Dynamic Curriculum Binding & Support Matrix > GB7: Right-side Game Card Linkage & Direct Stage Launching for all 6 subjects across all grades\nok 83 - Tier 1: Grade-to-Game Dynamic Curriculum Binding & Support Matrix > GB8: Grade Comprehensive Exam (学年総合大試練) launches and grades across all 1-6 grades\nok 84 - Curriculum Traceability: frozen 27-node routing contract > CT1: all and only the 27 curriculum nodes use their exact approved gameType\nok 85 - Curriculum Traceability: frozen 27-node routing contract > CT2: grade-visible subjects exactly match the elementary curriculum\nok 86 - Curriculum Traceability: frozen 27-node routing contract > CT3: every routed gameType is registered and explicitly supports its node grade\nok 87 - Curriculum Traceability: frozen 27-node routing contract > CT4: unknown game types fail closed\nok 88 - Curriculum Traceability: frozen 27-node routing contract > CT5: Grade 3-6 math stays on MATH_CURRICULUM for 1,000 route resolutions per grade\nok 89 - Progress and failure safety contract > CT6: zero-star/zero-score result must not dispatch GAME_CLEAR_SUCCESS\nok 90 - Progress and failure safety contract > CT7: zero-accuracy attempt must not mark a stage clear, unlock mastery, or award coins\nok 91 - Grade-aligned radical and component bank > RB1: every grade has 12 valid assigned-kanji puzzles across three question types\nok 92 - Grade-aligned radical and component bank > RB2: RadicalBuilder rejects generic quiz records and always creates a safe random 10-puzzle session\nok 93 - Grade-aligned radical and component bank > RB3: selected answers become explicit interaction state in radical and shared quiz games\nok 94 - Math curriculum procedural engine > QB1: MathCurriculumGame is a dedicated exported engine\nok 95 - Math curriculum procedural engine > QB2: Grades 1-6 each survive 1,000 generated questions with valid unique options\nok 96 - Math curriculum procedural engine > QB3: every grade covers every frozen math theme family\nok 97 - Math curriculum procedural engine > QB4: an actual math session exposes exactly 10 non-repeating questions\nok 98 - English five-mode banks > QB5: every English mode has at least 200 structurally unique records\nok 99 - English five-mode banks > QB6: every English mode draws exactly 10 unique questions per session\nok 100 - Science and life curriculum randomness > QB7: science/life pools cover every approved grade and can form 10-question sessions\nok 101 - Science and life curriculum randomness > QB8: repeated science/life sessions change order while each session remains unique\nok 102 - Social studies content safety > CS1: all social stems, answers and options contain zero Extended_Pictographic characters\nok 103 - Social studies content safety > CS2: social question stems do not contain their semantic correct answer\nok 104 - Home-page static anti-regression contract > CS3: no bottom quick-game launcher is present\nok 105 - Home-page static anti-regression contract > CS4: no visible Agent status, Agent button, or Agent toast exists in homepage markup\nok 106 - Home-page static anti-regression contract > CS5: grade selection is collapsed initially and appears before the subject selector\nok 107 - Home-page static anti-regression contract > CS6: subject visibility logic contains the exact lower/upper grade split\nok 108 - GraphEngine: Adversarial Cycle Detection (DFS 3-Color) > C1: Self-Loop Detection (Node A -> Node A)\nok 109 - GraphEngine: Adversarial Cycle Detection (DFS 3-Color) > C2: Direct 2-Node Reciprocal Cycle (A -> B -> A)\nok 110 - GraphEngine: Adversarial Cycle Detection (DFS 3-Color) > C3: Long-Ring 10-Node Cyclic Chain (N0 -> N1 -> ... -> N9 -> N0)\nok 111 - GraphEngine: Adversarial Cycle Detection (DFS 3-Color) > C4: Disjoint Multiple Cycles Across Independent Components\nok 112 - GraphEngine: Adversarial Cycle Detection (DFS 3-Color) > C5: Figure-8 / Interlocking Twin Cycles Sharing Pivot Node\nok 113 - GraphEngine: Adversarial Cycle Detection (DFS 3-Color) > C6: Large Dense Random DAG (50 Nodes, 150 Edges) + Single Back-Edge Stress\nok 114 - GraphEngine: Adversarial Cycle Detection (DFS 3-Color) > C7: Deep Linear Chain (500 Nodes) Without Recursion Overflow\nok 115 - GraphEngine: Adversarial Cycle Detection (DFS 3-Color) > C8: Boundary Graphs (Empty, Single Isolated, 100 Isolated Nodes)\nok 116 - GraphEngine: Adversarial Cycle Detection (DFS 3-Color) > C9: Duplicate Prerequisite Edge Resilience\nok 117 - GraphEngine: Topological Sorting (Kahn's Algorithm) > T1: Strict Topological Invariant on MEXT 27-Node Curriculum\nok 118 - GraphEngine: Topological Sorting (Kahn's Algorithm) > T2: Wide Diamond / Fan-Out Fan-In DAG (1 -> 100 -> 1)\nok 119 - GraphEngine: Topological Sorting (Kahn's Algorithm) > T3: Deep Sequential Chain (200 Nodes) Exact Ordering\nok 120 - GraphEngine: Topological Sorting (Kahn's Algorithm) > T4: Kahn Sort Throws on Cyclic Graph Without State Corruption\nok 121 - GraphEngine: Topological Sorting (Kahn's Algorithm) > T5: Topological Depth Monotonicity Across Edges\nok 122 - GraphEngine: Cognitive Fracture Scaffolding & Rollback > F1: Multi-Tier Pass Rate Threshold Classification (0.35 Boundary)\nok 123 - GraphEngine: Cognitive Fracture Scaffolding & Rollback > F2: Non-Existent Node Resilience in Telemetry\nok 124 - GraphEngine: Cognitive Fracture Scaffolding & Rollback > F3: Bridge Node Scaffolding Insertion & Topological Rewiring\nok 125 - GraphEngine: Cognitive Fracture Scaffolding & Rollback > F4: Adversarial Bridge Insertion with Cyclic Prereq Triggers Complete Rollback\nok 126 - GraphEngine: Cognitive Fracture Scaffolding & Rollback > F5: Consecutive Multi-Bridge Chaining on Same Target\nok 127 - GraphEngine: Cognitive Fracture Scaffolding & Rollback > F6: Bridge ID Collision Handling\nok 128 - GraphEngine: Cognitive Fracture Scaffolding & Rollback > F7: Safe Prerequisites Rewiring and Cyclic Edge Rejection\nok 129 - GraphEngine: Bottleneck Articulation Point Calculation > B1: Star Topology High-Impact Bottleneck Identification\nok 130 - GraphEngine: Bottleneck Articulation Point Calculation > B2: Linear Chain Impact Ratios Strictly Descending\nok 131 - GraphEngine: Bottleneck Articulation Point Calculation > B3: MEXT 27-Node Curriculum STEM Cross-Subject Bottleneck Verification\nok 132 - AudioSynthesizer: Rapid-Fire 100-Note Trigger & Concurrency Stress > A1: 100 Rapid Sequential & Concurrent Invocations Across All Sound Types\nok 133 - AudioSynthesizer: Rapid-Fire 100-Note Trigger & Concurrency Stress > A2: Extreme Combo Pitch Shift Clamping (Combo 1 to 500)\nok 134 - AudioSynthesizer: Rapid-Fire 100-Note Trigger & Concurrency Stress > A3: Scheduled Node Lifecycle and Stop Time Allocation\nok 135 - AudioSynthesizer: Gain Clamping & Exponential Ramp Safety > G1: Exponential Ramp Target Values Strictly >= 0.0001 (Web Audio Standard Floor)\nok 136 - AudioSynthesizer: Gain Clamping & Exponential Ramp Safety > G2: Master Volume Clamping on Boundary & Adversarial Inputs\nok 137 - AudioSynthesizer: Gain Clamping & Exponential Ramp Safety > G3: Zero Allocation & Node Creation When Muted\nok 138 - AudioSynthesizer: Mute State Persistence & Event Lifecycle > M1: Mute State Toggling and Gain Synchronization\nok 139 - AudioSynthesizer: Mute State Persistence & Event Lifecycle > M2: LocalStorage Persistence across Synthesizer Instances\nok 140 - AudioSynthesizer: Mute State Persistence & Event Lifecycle > M3: Window CustomEvent Dispatch on Mute Change"
 }

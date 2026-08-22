@@ -1,0 +1,59 @@
+{
+  "subject": "社会",
+  "subjectId": "shakai",
+  "description": "小学校3〜6年 社会科 学習指導要領（地域・47都道府県・国土産業・歴史・公民憲法）",
+  "nodes": [
+    {
+      "id": "SHAKAI_G3_MAP_SYMBOLS",
+      "subject": "社会",
+      "grade": 3,
+      "name": "3年 地図記号・方位・消防と警察",
+      "desc": "東西南北の方位、小中学校・消防署・警察署の地図記号、まちの安全と暮らし。",
+      "bloomDepth": 1.1,
+      "prerequisites": [],
+      "mextRef": "MEXT-SHAKAI-G3-01",
+      "learningObjectives": ["方位（東西南北）の理解", "主要な地図記号（学校・市役所・警察署・消防署・寺・神社）の認識", "地域の安全を守る人々の働き"],
+      "gameType": "PREFECTURE_JIGSAW",
+      "gameData": { "mode": "MAP_SYMBOLS", "region": "LOCAL" }
+    },
+    {
+      "id": "SHAKAI_G4_PREFECTURES_47",
+      "subject": "社会",
+      "grade": 4,
+      "name": "4年 日本47都道府県・ゴミ処理・防災",
+      "desc": "47都道府県の名称・位置・特産品、浄水場と清掃工場の仕組み、自然災害への備え。",
+      "bloomDepth": 1.7,
+      "prerequisites": ["SHAKAI_G3_MAP_SYMBOLS"],
+      "mextRef": "MEXT-SHAKAI-G4-01",
+      "learningObjectives": ["日本の47都道府県の名称・位置・県庁所在地・地方区分", "都道府県の特産物と地理的特色", "ライフラインと防災体制"],
+      "gameType": "PREFECTURE_JIGSAW",
+      "gameData": { "mode": "PREFECTURES", "region": "ALL_JAPAN" }
+    },
+    {
+      "id": "SHAKAI_G5_INDUSTRY_BELT",
+      "subject": "社会",
+      "grade": 5,
+      "name": "5年 日本の国土・米作り・太平洋ベルト",
+      "desc": "中京・阪神・京浜・瀬戸内などの工業地帯、米作りと畜産、食料自給率と貿易。",
+      "bloomDepth": 2.1,
+      "prerequisites": ["SHAKAI_G4_PREFECTURES_47"],
+      "mextRef": "MEXT-SHAKAI-G5-01",
+      "learningObjectives": ["日本の農業（米作り・促成栽培・抑制栽培）と食料自給率", "太平洋ベルトをはじめとする工業地帯・工業地域の特色", "日本の貿易と国土の環境保全"],
+      "gameType": "PREFECTURE_JIGSAW",
+      "gameData": { "mode": "INDUSTRY", "region": "PACIFIC_BELT" }
+    },
+    {
+      "id": "SHAKAI_G6_HISTORY_CONSTITUTION",
+      "subject": "社会",
+      "grade": 6,
+      "name": "6年 日本の歴史（古代〜現代）・日本国憲法",
+      "desc": "歴史の大きな流れ（縄文・戦国・明治〜）、憲法三原則（主権在民・人権・平和）、三権分立。",
+      "bloomDepth": 2.5,
+      "prerequisites": ["SHAKAI_G5_INDUSTRY_BELT"],
+      "mextRef": "MEXT-SHAKAI-G6-01",
+      "learningObjectives": ["日本の歴史の大きな流れ（縄文・弥生〜戦国・江戸〜近代・現代）", "日本国憲法の三大原則（国民主権・基本的人権の尊重・平和主義）", "三権分立（国会・内閣・裁判所）と民主政治"],
+      "gameType": "PREFECTURE_JIGSAW",
+      "gameData": { "mode": "HISTORY_CIVICS", "region": "JAPAN" }
+    }
+  ]
+}

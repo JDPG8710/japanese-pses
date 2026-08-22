@@ -1,0 +1,57 @@
+{
+  "subject": "生活",
+  "subjectId": "seikatsu",
+  "description": "小学校1〜2年 生活科 学習指導要領（学校・地域・自然観察・栽培・自立）",
+  "nodes": [
+    {
+      "id": "SEIKATSU_G1_SCHOOL_LIFE",
+      "subject": "生活",
+      "grade": 1,
+      "name": "1年 がっこうたんけん・あさがお栽培",
+      "desc": "学校の施設や先生・友達との関わり、通学路の交通安全、アサガオの種まきと観察。",
+      "bloomDepth": 1.0,
+      "prerequisites": [],
+      "mextRef": "MEXT-SEIKATSU-G1-01",
+      "learningObjectives": ["学校施設の場所と使い方、友達・先生への挨拶", "通学路の安全な歩行ルール", "アサガオの栽培と生命への愛着"],
+      "gameType": "CATEGORY_SORT",
+      "gameData": {
+        "mode": "SCHOOL_SAFETY_GROWTH",
+        "categories": [
+          { "id": "morning", "title": "あさの じゅんび" },
+          { "id": "safety", "title": "あんぜんな こうどう" }
+        ],
+        "items": [
+          { "text": "ランドセルを せおう", "category": "morning" },
+          { "text": "みぎ・ひだりを よくみる", "category": "safety" },
+          { "text": "おはようと あいさつする", "category": "morning" },
+          { "text": "てを あげて おうだんほどうを わたる", "category": "safety" }
+        ]
+      }
+    },
+    {
+      "id": "SEIKATSU_G2_TOWN_TOMATO",
+      "subject": "生活",
+      "grade": 2,
+      "name": "2年 まちたんけん・野菜栽培・自分の成長",
+      "desc": "図書館・駅などの公共施設の使い方、ミニトマトの世話、家族への感謝と成長の記録。",
+      "bloomDepth": 1.3,
+      "prerequisites": ["SEIKATSU_G1_SCHOOL_LIFE"],
+      "mextRef": "MEXT-SEIKATSU-G2-01",
+      "learningObjectives": ["地域の公共施設（図書館・公民館・駅）のマナーと利用法", "ミニトマトや夏野菜の継続的な世話と収穫", "自分の成長の振り返りと周囲への感謝"],
+      "gameType": "CATEGORY_SORT",
+      "gameData": {
+        "mode": "TOWN_PLANT_CARE",
+        "categories": [
+          { "id": "library_rules", "title": "としょかんの マナー" },
+          { "id": "tomato_care", "title": "ミニトマトの おせわ" }
+        ],
+        "items": [
+          { "text": "しずかに 本をよむ", "category": "library_rules" },
+          { "text": "まいにち 水をあげる", "category": "tomato_care" },
+          { "text": "本を もとのばしょに もどす", "category": "library_rules" },
+          { "text": "めかき（わき芽つみ）をする", "category": "tomato_care" }
+        ]
+      }
+    }
+  ]
+}

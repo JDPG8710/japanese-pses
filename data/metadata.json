@@ -1,0 +1,18 @@
+{
+  "grades": [
+    { "id": 1, "name": "小学1年生", "alias": "1年" },
+    { "id": 2, "name": "小学2年生", "alias": "2年" },
+    { "id": 3, "name": "小学3年生", "alias": "3年" },
+    { "id": 4, "name": "小学4年生", "alias": "4年" },
+    { "id": 5, "name": "小学5年生", "alias": "5年" },
+    { "id": 6, "name": "小学6年生", "alias": "6年" }
+  ],
+  "subjects": {
+    "kokugo": { "id": "kokugo", "name": "国語", "nameEn": "Japanese", "color": 15073331, "hex": "#e60033", "dataFile": "./data/kokugo.json", "grades": [1, 2, 3, 4, 5, 6] },
+    "sansu": { "id": "sansu", "name": "算数", "nameEn": "Math", "color": 21925, "hex": "#0055a5", "dataFile": "./data/sansu.json", "grades": [1, 2, 3, 4, 5, 6] },
+    "rika": { "id": "rika", "name": "理科", "nameEn": "Science", "color": 43360, "hex": "#00a960", "dataFile": "./data/rika.json", "grades": [3, 4, 5, 6] },
+    "shakai": { "id": "shakai", "name": "社会", "nameEn": "Social Studies", "color": 16759040, "hex": "#ffb900", "dataFile": "./data/shakai.json", "grades": [3, 4, 5, 6] },
+    "seikatsu": { "id": "seikatsu", "name": "生活", "nameEn": "Life Skills", "color": 15953955, "hex": "#f37023", "dataFile": "./data/seikatsu.json", "grades": [1, 2] },
+    "eigo": { "id": "eigo", "name": "外国語・英語", "nameEn": "English", "color": 9058790, "hex": "#8a39e6", "dataFile": "./data/eigo.json", "grades": [3, 4, 5, 6] }
+  }
+}

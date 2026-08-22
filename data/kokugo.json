@@ -1,0 +1,147 @@
+{
+  "subject": "国語",
+  "subjectId": "kokugo",
+  "description": "小学校1〜6年 国語科 学習指導要領（ひらがな・配当漢字1026字・部首・ことわざ・敬語・論理的文章）",
+  "nodes": [
+    {
+      "id": "KOKUGO_G1_KANA",
+      "subject": "国語",
+      "grade": 1,
+      "name": "1年 ひらがな・カタカナ・音読",
+      "desc": "清音・濁音・半濁音・拗音の読み書きと、正しい姿勢での声に出した音読。",
+      "bloomDepth": 1.0,
+      "prerequisites": [],
+      "mextRef": "MEXT-KOKUGO-G1-01",
+      "learningObjectives": ["ひらがな五十音の正確な読み書き", "カタカナの識別", "助詞を含む基礎短文の音読"],
+      "gameType": "KANJI_SLASH",
+      "gameData": {
+        "mode": "KANA_BASICS",
+        "questions": [
+          { "kanji": "あさ", "correct": "朝", "options": ["朝", "夜", "昼", "夕"] },
+          { "kanji": "とり", "correct": "鳥", "options": ["鳥", "魚", "犬", "猫"] },
+          { "kanji": "き", "correct": "木", "options": ["木", "本", "林", "森"] }
+        ]
+      }
+    },
+    {
+      "id": "KOKUGO_G1_KANJI_80",
+      "subject": "国語",
+      "grade": 1,
+      "name": "1年 配当漢字（80字）・助詞",
+      "desc": "「日・月・火・水・木・金・土・山・川」等の筆順と、助詞「は・を・へ」の正しい使い方。",
+      "bloomDepth": 1.1,
+      "prerequisites": ["KOKUGO_G1_KANA"],
+      "mextRef": "MEXT-KOKUGO-G1-02",
+      "learningObjectives": ["1年生配当漢字80字の筆順と音訓", "助詞（は・を・へ・が・に）の役割理解"],
+      "gameType": "KANJI_SLASH",
+      "gameData": {
+        "mode": "KANJI_PARTICLES",
+        "questions": [
+          { "kanji": "がっこう（　）いく", "correct": "へ", "options": ["へ", "は", "を", "に"] },
+          { "kanji": "ごはん（　）たべる", "correct": "を", "options": ["を", "は", "へ", "が"] },
+          { "kanji": "わたし（　）がくせい", "correct": "は", "options": ["は", "を", "へ", "も"] }
+        ]
+      }
+    },
+    {
+      "id": "KOKUGO_G2_RADICAL_160",
+      "subject": "国語",
+      "grade": 2,
+      "name": "2年 漢字（160字）・部首と主述",
+      "desc": "「さんずい・きへん・にんべん」などの部首の理解と、主語・述語の係り受け。",
+      "bloomDepth": 1.3,
+      "prerequisites": ["KOKUGO_G1_KANJI_80"],
+      "mextRef": "MEXT-KOKUGO-G2-01",
+      "learningObjectives": ["2年生配当漢字160字の習得", "へんやつくり等部首の構造理解", "文の主語・述語関係の把握"],
+      "gameType": "RADICAL_BUILDER",
+      "gameData": {
+        "mode": "RADICAL_ASSEMBLY",
+        "questions": [
+          { "target": "清", "radicals": ["氵", "青"], "options": ["氵", "木", "青", "日"], "hint": "水（さんずい）と青で清らか" },
+          { "target": "休", "radicals": ["亻", "木"], "options": ["亻", "言", "木", "口"], "hint": "人（にんべん）が木によりそって休む" },
+          { "target": "語", "radicals": ["言", "吾"], "options": ["言", "氵", "吾", "心"], "hint": "ごんべんと吾で言葉の語" }
+        ]
+      }
+    },
+    {
+      "id": "KOKUGO_G3_ROMAJI_PROVERB",
+      "subject": "国語",
+      "grade": 3,
+      "name": "3年 ローマ字・国語辞典・ことわざ",
+      "desc": "訓令式・ヘボン式ローマ字、国語辞典の五十音順引き、及び有名なことわざ・故事成語。",
+      "bloomDepth": 1.6,
+      "prerequisites": ["KOKUGO_G2_RADICAL_160"],
+      "mextRef": "MEXT-KOKUGO-G3-01",
+      "learningObjectives": ["ローマ字の読み書き", "国語辞典の活用方法", "日常で使われることわざ・慣用表現の理解"],
+      "gameType": "KANJI_SLASH",
+      "gameData": {
+        "mode": "ROMAJI_PROVERB",
+        "questions": [
+          { "kanji": "「SAKURA」の読み", "correct": "さくら", "options": ["さくら", "すみれ", "すいか", "さかな"] },
+          { "kanji": "犬も歩けば", "correct": "棒に当たる", "options": ["棒に当たる", "猫に小判", "猿も木から", "井の中の蛙"] },
+          { "kanji": "石の上にも", "correct": "三年", "options": ["三年", "十年", "一日", "百日"] }
+        ]
+      }
+    },
+    {
+      "id": "KOKUGO_G4_CONJUNCTIONS",
+      "subject": "国語",
+      "grade": 4,
+      "name": "4年 接続語・慣用句・段落構成",
+      "desc": "「しかし・だから・なぜなら」などの接続詞と、身体を使った慣用句・要約力。",
+      "bloomDepth": 1.9,
+      "prerequisites": ["KOKUGO_G3_ROMAJI_PROVERB"],
+      "mextRef": "MEXT-KOKUGO-G4-01",
+      "learningObjectives": ["段落相互の関係を結ぶ接続語の使い分け", "身体部位を使った慣用句の語彙拡充", "文章の要点要約"],
+      "gameType": "KANJI_SLASH",
+      "gameData": {
+        "mode": "CONJUNCTIONS_IDIOMS",
+        "questions": [
+          { "kanji": "雨が降った（　）傘をさした", "correct": "だから", "options": ["だから", "しかし", "なぜなら", "または"] },
+          { "kanji": "耳を", "correct": "傾ける", "options": ["傾ける", "折る", "立てる", "結ぶ"] },
+          { "kanji": "手を", "correct": "焼く", "options": ["焼く", "洗う", "打つ", "引く"] }
+        ]
+      }
+    },
+    {
+      "id": "KOKUGO_G5_KEIGO_CLASSICS",
+      "subject": "国語",
+      "grade": 5,
+      "name": "5年 敬語（尊敬・謙譲・丁寧）・古典入門",
+      "desc": "尊敬語・謙譲語・丁寧語の使い分けと、竹取物語・平家物語などの古文リズム。",
+      "bloomDepth": 2.2,
+      "prerequisites": ["KOKUGO_G4_CONJUNCTIONS"],
+      "mextRef": "MEXT-KOKUGO-G5-01",
+      "learningObjectives": ["相手と自分の立場に応じた敬語（尊敬・謙譲・丁寧）の識別", "古典文学の音読と伝統的言語文化の理解"],
+      "gameType": "KANJI_SLASH",
+      "gameData": {
+        "mode": "KEIGO_CLASSICS",
+        "questions": [
+          { "kanji": "先生が「言う」の尊敬語", "correct": "おっしゃる", "options": ["おっしゃる", "申す", "申し上げる", "言われる"] },
+          { "kanji": "自分が「行く」の謙譲語", "correct": "参る（うかがう）", "options": ["参る（うかがう）", "いらっしゃる", "おいでになる", "行かれる"] },
+          { "kanji": "客に料理を「食べる」", "correct": "召し上がる", "options": ["召し上がる", "いただく", "食す", "食べる"] }
+        ]
+      }
+    },
+    {
+      "id": "KOKUGO_G6_LOGIC_ESSAY",
+      "subject": "国語",
+      "grade": 6,
+      "name": "6年 同音異義語・対義語・論理的文章構成",
+      "desc": "文脈に応じた同音異義語の書き分け、熟語の構成（主述・修飾・対立）と意見文推敲。",
+      "bloomDepth": 2.5,
+      "prerequisites": ["KOKUGO_G5_KEIGO_CLASSICS"],
+      "mextRef": "MEXT-KOKUGO-G6-01",
+      "learningObjectives": ["文脈に応じた同音異義語の使い分け", "対義語・類義語の理解と豊かな語彙力", "根拠と主張を明確にした論理的文章構成"],
+      "gameType": "KANJI_SLASH",
+      "gameData": {
+        "mode": "LOGIC_ESSAY",
+        "questions": [
+          { "kanji": "将来を「〇そう」する", "correct": "構想", "options": ["構想", "感想", "快走", "改装"] },
+          { "kanji": "「絶対」の対義語", "correct": "相対", "options": ["相対", "確実", "永久", "有限"] },
+          { "kanji": "「原因」の対義語", "correct": "結果", "options": ["結果", "理由", "経過", "結論"] }
+        ]
+      }
+    }
+  ]
+}

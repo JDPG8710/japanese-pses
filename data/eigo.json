@@ -1,0 +1,91 @@
+{
+  "subject": "外国語・英語",
+  "subjectId": "eigo",
+  "description": "小学校3〜6年 外国語活動・外国語科 学習指導要領（コミュニケーション・4技能・国際理解）",
+  "nodes": [
+    {
+      "id": "EIGO_G3_GREETING_COLOR",
+      "subject": "外国語・英語",
+      "grade": 3,
+      "name": "3年 挨拶・数・色・好きなもの",
+      "desc": "Alphabet A-Z 大文字の認識、1-20の数字、感情や好みの表現 (Hello / I like blue)。",
+      "bloomDepth": 1.1,
+      "prerequisites": [],
+      "mextRef": "MEXT-EIGO-G3-01",
+      "learningObjectives": ["英語の簡単な挨拶（Hello, Good morning, Thank you）", "1から20の数字と色の表現", "好きなものを伝える（I like ...）"],
+      "gameType": "CONTEXT_MATCH",
+      "gameData": {
+        "mode": "GREETINGS_COLORS",
+        "pairs": [
+          { "japanese": "こんにちは", "english": "Hello" },
+          { "japanese": "あか（赤色）", "english": "Red" },
+          { "japanese": "すうじの 7", "english": "Seven" },
+          { "japanese": "ありがとう", "english": "Thank you" }
+        ]
+      }
+    },
+    {
+      "id": "EIGO_G4_TIME_DAYS",
+      "subject": "外国語・英語",
+      "grade": 4,
+      "name": "4年 アルファベット小文字・時刻・曜日",
+      "desc": "Alphabet a-z 小文字、曜日 (Sunday-Saturday)、時刻 (What time is it? It is 3 oclock)。",
+      "bloomDepth": 1.4,
+      "prerequisites": ["EIGO_G3_GREETING_COLOR"],
+      "mextRef": "MEXT-EIGO-G4-01",
+      "learningObjectives": ["アルファベット小文字（a〜z）の識別", "曜日（Sunday〜Saturday）の表現", "時刻を尋ねて答える（What time is it? It's ... o'clock.）"],
+      "gameType": "CONTEXT_MATCH",
+      "gameData": {
+        "mode": "TIME_DAYS_STATIONERY",
+        "pairs": [
+          { "japanese": "月曜日", "english": "Monday" },
+          { "japanese": "いま 3時です", "english": "It is 3:00" },
+          { "japanese": "えんぴつ", "english": "Pencil" },
+          { "japanese": "金曜日", "english": "Friday" }
+        ]
+      }
+    },
+    {
+      "id": "EIGO_G5_DAILY_ROUTINE",
+      "subject": "外国語・英語",
+      "grade": 5,
+      "name": "5年 自己紹介・時間割・日常の動作",
+      "desc": "My name is... I want to study... などの基本構文と教科名 (Math, Science, Music)。",
+      "bloomDepth": 1.9,
+      "prerequisites": ["EIGO_G4_TIME_DAYS"],
+      "mextRef": "MEXT-EIGO-G5-01",
+      "learningObjectives": ["自分の日課や得意なことを伝える（I get up at 7. I am good at Math.）", "学校の教科（Math, Science, Social Studies, Music）", "値段を尋ねる（How much is it?）"],
+      "gameType": "CONTEXT_MATCH",
+      "gameData": {
+        "mode": "DAILY_ROUTINES_SUBJECTS",
+        "pairs": [
+          { "japanese": "ぼくは算数が得意です", "english": "I am good at Math" },
+          { "japanese": "朝ごはんを 7時に食べます", "english": "I eat breakfast at 7:00" },
+          { "japanese": "いくらですか？", "english": "How much is it?" },
+          { "japanese": "理科が好きです", "english": "I like Science" }
+        ]
+      }
+    },
+    {
+      "id": "EIGO_G6_DREAMS_CULTURE",
+      "subject": "外国語・英語",
+      "grade": 6,
+      "name": "6年 日本文化紹介・将来の夢・思い出",
+      "desc": "日本の行事や文化 (origami, sushi)、将来の職業 (I want to be an astronaut) と過去形。",
+      "bloomDepth": 2.3,
+      "prerequisites": ["EIGO_G5_DAILY_ROUTINE"],
+      "mextRef": "MEXT-EIGO-G6-01",
+      "learningObjectives": ["将来の夢やなりたい職業を表現する（I want to be an astronaut.）", "過去の思い出を伝える（I enjoyed summer vacation.）", "日本の伝統文化を平易な英語で紹介する"],
+      "gameType": "CONTEXT_MATCH",
+      "gameData": {
+        "mode": "DREAMS_CULTURE_MEMORIES",
+        "pairs": [
+          { "japanese": "宇宙飛行士になりたい", "english": "I want to be an astronaut" },
+          { "japanese": "夏休みを楽しみました", "english": "I enjoyed summer vacation" },
+          { "japanese": "日本には折り紙があります", "english": "We have origami in Japan" },
+          { "japanese": "医者になりたい", "english": "I want to be a doctor" }
+        ]
+      }
+    }
+  ]
+}

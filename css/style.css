@@ -1,0 +1,218 @@
+/**
+ * style.css - Japanese PSES Galaxy Engine Stylesheet
+ * Audio, FX, Screen Shake, Error Guidance Scaffolding & Child-Friendly UI Animations
+ */
+
+/* Root & Base Settings */
+:root {
+  --primary-glow: rgba(99, 102, 241, 0.4);
+  --amber-glow: rgba(245, 158, 11, 0.4);
+  --success-glow: rgba(16, 185, 129, 0.4);
+  --error-glow: rgba(239, 68, 68, 0.4);
+}
+
+body, html {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #020208;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+#canvas-container {
+  position: absolute;
+  inset: 0;
+  touch-action: none;
+  z-index: 1;
+}
+
+/* Glassmorphism Panels */
+.glass-panel {
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.glass-panel-subtle {
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Custom Scrollbars */
+.custom-scroll::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.custom-scroll::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.5);
+  border-radius: 4px;
+}
+.custom-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 4px;
+}
+.custom-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+/* ==========================================================================
+   Screen Shake & Motion Feedback Animations
+   ========================================================================== */
+
+/* 1. Gentle Cartoon Wobble (For Tier 1 Pedagogical Error Feedback) */
+@keyframes cartoon-wobble {
+  0% { transform: translateX(0) rotate(0deg); }
+  15% { transform: translateX(-6px) rotate(-3deg) scale(0.98); }
+  30% { transform: translateX(6px) rotate(2.5deg) scale(1.02); }
+  45% { transform: translateX(-5px) rotate(-2deg); }
+  60% { transform: translateX(4px) rotate(1.2deg); }
+  75% { transform: translateX(-2px) rotate(-0.5deg); }
+  100% { transform: translateX(0) rotate(0deg) scale(1.0); }
+}
+
+.animate-cartoon-wobble {
+  animation: cartoon-wobble 0.42s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+/* 2. Screen Shake Light (Canvas or HUD elements) */
+@keyframes screen-shake-light {
+  0%, 100% { transform: translate(0, 0); }
+  20% { transform: translate(-2px, 1px); }
+  40% { transform: translate(2px, -2px); }
+  60% { transform: translate(-1px, 2px); }
+  80% { transform: translate(1px, -1px); }
+}
+
+.animate-screen-shake-light {
+  animation: screen-shake-light 0.22s ease-in-out both;
+}
+
+/* 3. Screen Shake Medium */
+@keyframes screen-shake-medium {
+  0%, 100% { transform: translate(0, 0); }
+  15% { transform: translate(-5px, 3px); }
+  30% { transform: translate(4px, -4px); }
+  45% { transform: translate(-4px, 2px); }
+  60% { transform: translate(3px, -2px); }
+  75% { transform: translate(-2px, 1px); }
+  90% { transform: translate(1px, -1px); }
+}
+
+.animate-screen-shake-medium {
+  animation: screen-shake-medium 0.32s ease-in-out both;
+}
+
+/* 4. Screen Shake Heavy (Boss / Big Victory events) */
+@keyframes screen-shake-heavy {
+  0%, 100% { transform: translate(0, 0); }
+  10% { transform: translate(-9px, 5px) rotate(-1deg); }
+  25% { transform: translate(8px, -7px) rotate(1deg); }
+  40% { transform: translate(-7px, 6px); }
+  55% { transform: translate(6px, -4px); }
+  70% { transform: translate(-4px, 3px); }
+  85% { transform: translate(2px, -2px); }
+}
+
+.animate-screen-shake-heavy {
+  animation: screen-shake-heavy 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+/* ==========================================================================
+   Tier 2 Clue Pulsing & Visual Scaffolding Glows
+   ========================================================================== */
+
+@keyframes clue-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.8), inset 0 0 10px rgba(245, 158, 11, 0.4);
+    border-color: rgba(245, 158, 11, 1);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 0 12px rgba(245, 158, 11, 0), inset 0 0 18px rgba(245, 158, 11, 0.7);
+    border-color: rgba(251, 191, 36, 1);
+    transform: scale(1.05);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0), inset 0 0 10px rgba(245, 158, 11, 0.4);
+    border-color: rgba(245, 158, 11, 0.8);
+    transform: scale(1);
+  }
+}
+
+.animate-clue-pulse {
+  animation: clue-pulse 1.2s ease-in-out infinite;
+}
+
+/* Gentle Floating Bounce for Mascot & Badges */
+@keyframes bounce-gentle {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.animate-bounce-gentle {
+  animation: bounce-gentle 2.4s ease-in-out infinite;
+}
+
+/* Cosmic Shimmer Glow */
+@keyframes cosmic-shimmer {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.shimmer-gradient {
+  background: linear-gradient(90deg, #6366f1, #a855f7, #ec4899, #f59e0b, #6366f1);
+  background-size: 300% 300%;
+  animation: cosmic-shimmer 6s ease infinite;
+}
+
+/* Global FX Fullscreen Canvas Overlay */
+#global-fx-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 999;
+}
+
+/* Mascot Speech Bubble Container */
+#guidance-bubble {
+  filter: drop-shadow(0 15px 25px rgba(0, 0, 0, 0.6));
+}
+
+/* Mute Button Active States */
+#audio-mute-btn {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+#audio-mute-btn:hover {
+  transform: scale(1.06);
+}
+#audio-mute-btn:active {
+  transform: scale(0.94);
+}
+
+/* Child-Friendly Ergonomics: Touch Target Scaling */
+@media (max-width: 768px) {
+  button, .subj-btn, .grade-tab-btn {
+    min-height: 40px;
+    touch-action: manipulation;
+  }
+  
+  #guidance-bubble {
+    right: 12px;
+    bottom: 16px;
+    max-width: calc(100vw - 24px);
+  }
+}

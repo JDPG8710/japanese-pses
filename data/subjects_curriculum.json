@@ -1,0 +1,508 @@
+{
+  "title": "文部科学省 小学校学習指導要領 6教科 総合カリキュラム知識グラフ（DAG）",
+  "version": "2026.08.v4",
+  "author": "MEXT Curriculum Knowledge Graph Working Group",
+  "totalNodes": 27,
+  "totalSubjects": 6,
+  "grades": [
+    { "id": 1, "name": "小学1年生", "alias": "1年" },
+    { "id": 2, "name": "小学2年生", "alias": "2年" },
+    { "id": 3, "name": "小学3年生", "alias": "3年" },
+    { "id": 4, "name": "小学4年生", "alias": "4年" },
+    { "id": 5, "name": "小学5年生", "alias": "5年" },
+    { "id": 6, "name": "小学6年生", "alias": "6年" }
+  ],
+  "subjects": {
+    "kokugo": { "id": "kokugo", "name": "国語", "nameEn": "Japanese", "color": 15073331, "hex": "#e60033", "grades": [1, 2, 3, 4, 5, 6], "nodeCount": 7 },
+    "sansu": { "id": "sansu", "name": "算数", "nameEn": "Math", "color": 21925, "hex": "#0055a5", "grades": [1, 2, 3, 4, 5, 6], "nodeCount": 6 },
+    "rika": { "id": "rika", "name": "理科", "nameEn": "Science", "color": 43360, "hex": "#00a960", "grades": [3, 4, 5, 6], "nodeCount": 4 },
+    "shakai": { "id": "shakai", "name": "社会", "nameEn": "Social Studies", "color": 16759040, "hex": "#ffb900", "grades": [3, 4, 5, 6], "nodeCount": 4 },
+    "seikatsu": { "id": "seikatsu", "name": "生活", "nameEn": "Life Skills", "color": 15953955, "hex": "#f37023", "grades": [1, 2], "nodeCount": 2 },
+    "eigo": { "id": "eigo", "name": "外国語・英語", "nameEn": "English", "color": 9058790, "hex": "#8a39e6", "grades": [3, 4, 5, 6], "nodeCount": 4 }
+  },
+  "nodes": [
+    {
+      "id": "KOKUGO_G1_KANA",
+      "subject": "国語",
+      "subjectId": "kokugo",
+      "grade": 1,
+      "name": "1年 ひらがな・カタカナ・音読",
+      "desc": "清音・濁音・半濁音・拗音の読み書きと、正しい姿勢での声に出した音読。",
+      "bloomDepth": 1.0,
+      "prerequisites": [],
+      "mextRef": "MEXT-KOKUGO-G1-01",
+      "learningObjectives": ["ひらがな五十音の正確な読み書き", "カタカナの識別", "助詞を含む基礎短文の音読"],
+      "gameType": "KANJI_SLASH",
+      "gameData": {
+        "mode": "KANA_BASICS",
+        "questions": [
+          { "kanji": "あさ", "correct": "朝", "options": ["朝", "夜", "昼", "夕"] },
+          { "kanji": "とり", "correct": "鳥", "options": ["鳥", "魚", "犬", "猫"] },
+          { "kanji": "き", "correct": "木", "options": ["木", "本", "林", "森"] }
+        ]
+      }
+    },
+    {
+      "id": "KOKUGO_G1_KANJI_80",
+      "subject": "国語",
+      "subjectId": "kokugo",
+      "grade": 1,
+      "name": "1年 配当漢字（80字）・助詞",
+      "desc": "「日・月・火・水・木・金・土・山・川」等の筆順と、助詞「は・を・へ」の正しい使い方。",
+      "bloomDepth": 1.1,
+      "prerequisites": ["KOKUGO_G1_KANA"],
+      "mextRef": "MEXT-KOKUGO-G1-02",
+      "learningObjectives": ["1年生配当漢字80字の筆順と音訓", "助詞（は・を・へ・が・に）の役割理解"],
+      "gameType": "KANJI_SLASH",
+      "gameData": {
+        "mode": "KANJI_PARTICLES",
+        "questions": [
+          { "kanji": "がっこう（　）いく", "correct": "へ", "options": ["へ", "は", "を", "に"] },
+          { "kanji": "ごはん（　）たべる", "correct": "を", "options": ["を", "は", "へ", "が"] },
+          { "kanji": "わたし（　）がくせい", "correct": "は", "options": ["は", "を", "へ", "も"] }
+        ]
+      }
+    },
+    {
+      "id": "KOKUGO_G2_RADICAL_160",
+      "subject": "国語",
+      "subjectId": "kokugo",
+      "grade": 2,
+      "name": "2年 漢字（160字）・部首と主述",
+      "desc": "「さんずい・きへん・にんべん」などの部首の理解と、主語・述語の係り受け。",
+      "bloomDepth": 1.3,
+      "prerequisites": ["KOKUGO_G1_KANJI_80"],
+      "mextRef": "MEXT-KOKUGO-G2-01",
+      "learningObjectives": ["2年生配当漢字160字の習得", "へんやつくり等部首の構造理解", "文の主語・述語関係の把握"],
+      "gameType": "RADICAL_BUILDER",
+      "gameData": {
+        "mode": "RADICAL_ASSEMBLY",
+        "questions": [
+          { "target": "清", "radicals": ["氵", "青"], "options": ["氵", "木", "青", "日"], "hint": "水（さんずい）と青で清らか" },
+          { "target": "休", "radicals": ["亻", "木"], "options": ["亻", "言", "木", "口"], "hint": "人（にんべん）が木によりそって休む" },
+          { "target": "語", "radicals": ["言", "吾"], "options": ["言", "氵", "吾", "心"], "hint": "ごんべんと吾で言葉の語" }
+        ]
+      }
+    },
+    {
+      "id": "KOKUGO_G3_ROMAJI_PROVERB",
+      "subject": "国語",
+      "subjectId": "kokugo",
+      "grade": 3,
+      "name": "3年 ローマ字・国語辞典・ことわざ",
+      "desc": "訓令式・ヘボン式ローマ字、国語辞典の五十音順引き、及び有名なことわざ・故事成語。",
+      "bloomDepth": 1.6,
+      "prerequisites": ["KOKUGO_G2_RADICAL_160"],
+      "mextRef": "MEXT-KOKUGO-G3-01",
+      "learningObjectives": ["ローマ字の読み書き", "国語辞典の活用方法", "日常で使われることわざ・慣用表現の理解"],
+      "gameType": "KANJI_SLASH",
+      "gameData": {
+        "mode": "ROMAJI_PROVERB",
+        "questions": [
+          { "kanji": "「SAKURA」の読み", "correct": "さくら", "options": ["さくら", "すみれ", "すいか", "さかな"] },
+          { "kanji": "犬も歩けば", "correct": "棒に当たる", "options": ["棒に当たる", "猫に小判", "猿も木から", "井の中の蛙"] },
+          { "kanji": "石の上にも", "correct": "三年", "options": ["三年", "十年", "一日", "百日"] }
+        ]
+      }
+    },
+    {
+      "id": "KOKUGO_G4_CONJUNCTIONS",
+      "subject": "国語",
+      "subjectId": "kokugo",
+      "grade": 4,
+      "name": "4年 接続語・慣用句・段落構成",
+      "desc": "「しかし・だから・なぜなら」などの接続詞と、身体を使った慣用句・要約力。",
+      "bloomDepth": 1.9,
+      "prerequisites": ["KOKUGO_G3_ROMAJI_PROVERB"],
+      "mextRef": "MEXT-KOKUGO-G4-01",
+      "learningObjectives": ["段落相互の関係を結ぶ接続語の使い分け", "身体部位を使った慣用句の語彙拡充", "文章の要点要約"],
+      "gameType": "KANJI_SLASH",
+      "gameData": {
+        "mode": "CONJUNCTIONS_IDIOMS",
+        "questions": [
+          { "kanji": "雨が降った（　）傘をさした", "correct": "だから", "options": ["だから", "しかし", "なぜなら", "または"] },
+          { "kanji": "耳を", "correct": "傾ける", "options": ["傾ける", "折る", "立てる", "結ぶ"] },
+          { "kanji": "手を", "correct": "焼く", "options": ["焼く", "洗う", "打つ", "引く"] }
+        ]
+      }
+    },
+    {
+      "id": "KOKUGO_G5_KEIGO_CLASSICS",
+      "subject": "国語",
+      "subjectId": "kokugo",
+      "grade": 5,
+      "name": "5年 敬語（尊敬・謙譲・丁寧）・古典入門",
+      "desc": "尊敬語・謙譲語・丁寧語の使い分けと、竹取物語・平家物語などの古文リズム。",
+      "bloomDepth": 2.2,
+      "prerequisites": ["KOKUGO_G4_CONJUNCTIONS"],
+      "mextRef": "MEXT-KOKUGO-G5-01",
+      "learningObjectives": ["相手と自分の立場に応じた敬語（尊敬・謙譲・丁寧）の識別", "古典文学の音読と伝統的言語文化の理解"],
+      "gameType": "KANJI_SLASH",
+      "gameData": {
+        "mode": "KEIGO_CLASSICS",
+        "questions": [
+          { "kanji": "先生が「言う」の尊敬語", "correct": "おっしゃる", "options": ["おっしゃる", "申す", "申し上げる", "言われる"] },
+          { "kanji": "自分が「行く」の謙譲語", "correct": "参る（うかがう）", "options": ["参る（うかがう）", "いらっしゃる", "おいでになる", "行かれる"] },
+          { "kanji": "客に料理を「食べる」", "correct": "召し上がる", "options": ["召し上がる", "いただく", "食す", "食べる"] }
+        ]
+      }
+    },
+    {
+      "id": "KOKUGO_G6_LOGIC_ESSAY",
+      "subject": "国語",
+      "subjectId": "kokugo",
+      "grade": 6,
+      "name": "6年 同音異義語・対義語・論理的文章構成",
+      "desc": "文脈に応じた同音異義語の書き分け、熟語の構成（主述・修飾・対立）と意見文推敲。",
+      "bloomDepth": 2.5,
+      "prerequisites": ["KOKUGO_G5_KEIGO_CLASSICS"],
+      "mextRef": "MEXT-KOKUGO-G6-01",
+      "learningObjectives": ["文脈に応じた同音異義語の使い分け", "対義語・類義語の理解と豊かな語彙力", "根拠と主張を明確にした論理的文章構成"],
+      "gameType": "KANJI_SLASH",
+      "gameData": {
+        "mode": "LOGIC_ESSAY",
+        "questions": [
+          { "kanji": "将来を「〇そう」する", "correct": "構想", "options": ["構想", "感想", "快走", "改装"] },
+          { "kanji": "「絶対」の対義語", "correct": "相対", "options": ["相対", "確実", "永久", "有限"] },
+          { "kanji": "「原因」の対義語", "correct": "結果", "options": ["結果", "理由", "経過", "結論"] }
+        ]
+      }
+    },
+    {
+      "id": "MATH_G1_ADD_SUB",
+      "subject": "算数",
+      "subjectId": "sansu",
+      "grade": 1,
+      "name": "1年 数の合成分解・くり上がり加減",
+      "desc": "10の補数づくり（7+3, 6+4）と繰り上がり・繰り下がりの計算の基礎。",
+      "bloomDepth": 1.0,
+      "prerequisites": [],
+      "mextRef": "MEXT-MATH-G1-01",
+      "learningObjectives": ["10までの数の合成・分解", "繰り上がりのあるたし算・繰り下がりのあるひき算"],
+      "gameType": "AETHER_SCALE",
+      "gameData": { "targetRatio": 50, "leftWeights": [10], "targetValue": 10, "hint": "10の半分（50%）に合わせよう！" }
+    },
+    {
+      "id": "MATH_G2_KUKU_LINK",
+      "subject": "算数",
+      "subjectId": "sansu",
+      "grade": 2,
+      "name": "2年 かけ算九九星際マッチング",
+      "desc": "2の段〜9の段の九九暗唱（算式と積の照合）と星際レーザー連線。",
+      "bloomDepth": 1.3,
+      "prerequisites": ["MATH_G1_ADD_SUB"],
+      "mextRef": "MEXT-MATH-G2-01",
+      "learningObjectives": ["かけ算九九（1〜9の段）の完全定着", "九九の構成原理（いくつ分）の理解"],
+      "gameType": "KUKU_LINK",
+      "gameData": { "rows": 4, "cols": 4, "timeLimit": 75, "minMatches": 8 }
+    },
+    {
+      "id": "MATH_G3_DIV_FRACTION",
+      "subject": "算数",
+      "subjectId": "sansu",
+      "grade": 3,
+      "name": "3年 わり算・分数小数・重さと円",
+      "desc": "等分除・包含除、単位分数、コンパスによる円と球の作図、g/kgの単位換算。",
+      "bloomDepth": 1.5,
+      "prerequisites": ["MATH_G2_KUKU_LINK"],
+      "mextRef": "MEXT-MATH-G3-01",
+      "learningObjectives": ["わり算の意味（等分除・包含除）とあまりの処理", "単位分数の概念（1/2, 1/3, 1/4）", "重さ（g, kg, t）と円の性質"],
+      "gameType": "AETHER_SCALE",
+      "gameData": { "targetRatio": 75, "leftWeights": [30], "rightWeights": [10, 10, 10, 10], "hint": "3/4（75%）に合わせよう！" }
+    },
+    {
+      "id": "MATH_G4_AREA_DECIMAL",
+      "subject": "算数",
+      "subjectId": "sansu",
+      "grade": 4,
+      "name": "4年 面積公式・概数・小数の乗除",
+      "desc": "長方形・正方形の面積（cm²/m²）、四捨五入、折れ線グラフと小数の筆算。",
+      "bloomDepth": 1.8,
+      "prerequisites": ["MATH_G3_DIV_FRACTION"],
+      "mextRef": "MEXT-MATH-G4-01",
+      "learningObjectives": ["長方形・正方形の面積公式（縦×横）", "小数のたし算・ひき算・かけ算・わり算", "概数と四捨五入の範囲"],
+      "gameType": "AETHER_SCALE",
+      "gameData": { "targetRatio": 40, "leftWeights": [20], "rightWeights": [50], "hint": "2/5（40%）に合わせよう！" }
+    },
+    {
+      "id": "MATH_G5_RATIO",
+      "subject": "算数",
+      "subjectId": "sansu",
+      "grade": 5,
+      "name": "5年 割合・百分率・倍数約数・体積",
+      "desc": "比べられる量＝もとにする量×割合、最大公約数・最小公倍数、直方体の体積。",
+      "bloomDepth": 2.3,
+      "prerequisites": ["MATH_G4_AREA_DECIMAL"],
+      "mextRef": "MEXT-MATH-G5-01",
+      "learningObjectives": ["割合（百分率・歩合）の三用法", "最大公約数・最小公倍数", "直方体・立方体の体積公式"],
+      "gameType": "AETHER_SCALE",
+      "gameData": { "targetRatio": 65, "leftWeights": [65], "rightWeights": [100], "hint": "6割5分（65%）に合わせよう！" }
+    },
+    {
+      "id": "MATH_G6_PROPORTION_SPEED",
+      "subject": "算数",
+      "subjectId": "sansu",
+      "grade": 6,
+      "name": "6年 比と比の値・速さ・比例反比例",
+      "desc": "比の簡単化（a:b）、速さ＝道のり÷時間、対称な図形、円の面積公式（πr²）。",
+      "bloomDepth": 2.5,
+      "prerequisites": ["MATH_G5_RATIO"],
+      "mextRef": "MEXT-MATH-G6-01",
+      "learningObjectives": ["比の意味と等しい比の性質", "速さ・道のり・時間の関係", "比例・反比例の式とグラフ", "円の面積公式"],
+      "gameType": "AETHER_SCALE",
+      "gameData": { "targetRatio": 80, "leftWeights": [80], "rightWeights": [100], "hint": "4:5の比率（80%）に合わせよう！" }
+    },
+    {
+      "id": "RIKA_G3_MAGNET_INSECT",
+      "subject": "理科",
+      "subjectId": "rika",
+      "grade": 3,
+      "name": "3年 磁石の極・光と音・昆虫の変態",
+      "desc": "N極とS極の引き合い・退け合い、虫眼鏡での集光、モンシロチョウの育ち方。",
+      "bloomDepth": 1.2,
+      "prerequisites": [],
+      "mextRef": "MEXT-RIKA-G3-01",
+      "learningObjectives": ["磁石の性質（N極・S極の引き合いと退け合い）", "光の直進・集光と温度変化", "昆虫の完全変態（卵・幼虫・蛹・成虫）"],
+      "gameType": "SCIENCE_SANDBOX",
+      "gameData": { "experiment": "MAGNETIC_POLES", "targetLeft": 30, "armLeft": 2, "targetRight": 20, "correctSlot": 3 }
+    },
+    {
+      "id": "RIKA_G4_AIR_ASTRONOMY",
+      "subject": "理科",
+      "subjectId": "rika",
+      "grade": 4,
+      "name": "4年 空気と水の体積・月と星・骨と筋肉",
+      "desc": "空気の圧縮性、月や星座の日周運動、ヒトの骨格と筋肉の伸縮メカニズム。",
+      "bloomDepth": 1.6,
+      "prerequisites": ["RIKA_G3_MAGNET_INSECT"],
+      "mextRef": "MEXT-RIKA-G4-01",
+      "learningObjectives": ["閉じ込めた空気と水の体積変化の違い", "月と星の動き（東から西への日周運動）", "ヒトの骨と筋肉の連動"],
+      "gameType": "COSMIC_ORBIT",
+      "gameData": { "experiment": "CELESTIAL_ORBIT", "targetLeft": 40, "armLeft": 2, "targetRight": 20, "correctSlot": 4 }
+    },
+    {
+      "id": "RIKA_G5_ELECTROMAGNET",
+      "subject": "理科",
+      "subjectId": "rika",
+      "grade": 5,
+      "name": "5年 電磁石の強さ・水溶液溶解・受粉",
+      "desc": "電流と巻き数による電磁石の磁力、ものの溶け方と再結晶、植物の受粉と結実。",
+      "bloomDepth": 2.0,
+      "prerequisites": ["RIKA_G4_AIR_ASTRONOMY", "MATH_G4_AREA_DECIMAL"],
+      "mextRef": "MEXT-RIKA-G5-01",
+      "learningObjectives": ["電流の強さとコイルの巻き数による電磁石の磁力変化", "温度による溶解度の違いと再結晶", "花のつくりと受粉・受精"],
+      "gameType": "CIRCUIT_SANDBOX",
+      "gameData": { "experiment": "ELECTROMAGNET_CIRCUIT", "targetLeft": 50, "armLeft": 2, "targetRight": 25, "correctSlot": 4 }
+    },
+    {
+      "id": "RIKA_G6_LEVER_AQUEOUS",
+      "subject": "理科",
+      "subjectId": "rika",
+      "grade": 6,
+      "name": "6年 てこの規則性・水溶液の性質・光合成",
+      "desc": "支点・力点・作用点と力のモーメント平衡、リトマス紙による酸・アルカリ判別。",
+      "bloomDepth": 2.5,
+      "prerequisites": ["RIKA_G5_ELECTROMAGNET", "MATH_G5_RATIO"],
+      "mextRef": "MEXT-RIKA-G6-01",
+      "learningObjectives": ["てこの規則性（支点・力点・作用点と力のモーメント W1×L1 = W2×L2）", "水溶液の液性（酸性・中性・アルカリ性）と指示薬", "植物の光合成と呼吸"],
+      "gameType": "LEVER_PHYSICS",
+      "gameData": { "experiment": "LEVER_MOMENT", "targetLeft": 50, "armLeft": 2, "targetRight": 20, "correctSlot": 5 }
+    },
+    {
+      "id": "SHAKAI_G3_MAP_SYMBOLS",
+      "subject": "社会",
+      "subjectId": "shakai",
+      "grade": 3,
+      "name": "3年 地図記号・方位・消防と警察",
+      "desc": "東西南北の方位、小中学校・消防署・警察署の地図記号、まちの安全と暮らし。",
+      "bloomDepth": 1.1,
+      "prerequisites": [],
+      "mextRef": "MEXT-SHAKAI-G3-01",
+      "learningObjectives": ["方位（東西南北）の理解", "主要な地図記号（学校・市役所・警察署・消防署・寺・神社）の認識", "地域の安全を守る人々の働き"],
+      "gameType": "PREFECTURE_JIGSAW",
+      "gameData": { "mode": "MAP_SYMBOLS", "region": "LOCAL" }
+    },
+    {
+      "id": "SHAKAI_G4_PREFECTURES_47",
+      "subject": "社会",
+      "subjectId": "shakai",
+      "grade": 4,
+      "name": "4年 日本47都道府県・ゴミ処理・防災",
+      "desc": "47都道府県の名称・位置・特産品、浄水場と清掃工場の仕組み、自然災害への備え。",
+      "bloomDepth": 1.7,
+      "prerequisites": ["SHAKAI_G3_MAP_SYMBOLS"],
+      "mextRef": "MEXT-SHAKAI-G4-01",
+      "learningObjectives": ["日本の47都道府県の名称・位置・県庁所在地・地方区分", "都道府県の特産物と地理的特色", "ライフラインと防災体制"],
+      "gameType": "PREFECTURE_JIGSAW",
+      "gameData": { "mode": "PREFECTURES", "region": "ALL_JAPAN" }
+    },
+    {
+      "id": "SHAKAI_G5_INDUSTRY_BELT",
+      "subject": "社会",
+      "subjectId": "shakai",
+      "grade": 5,
+      "name": "5年 日本の国土・米作り・太平洋ベルト",
+      "desc": "中京・阪神・京浜・瀬戸内などの工業地帯、米作りと畜産、食料自給率と貿易。",
+      "bloomDepth": 2.1,
+      "prerequisites": ["SHAKAI_G4_PREFECTURES_47"],
+      "mextRef": "MEXT-SHAKAI-G5-01",
+      "learningObjectives": ["日本の農業（米作り・促成栽培・抑制栽培）と食料自給率", "太平洋ベルトをはじめとする工業地帯・工業地域の特色", "日本の貿易と国土の環境保全"],
+      "gameType": "PREFECTURE_JIGSAW",
+      "gameData": { "mode": "INDUSTRY", "region": "PACIFIC_BELT" }
+    },
+    {
+      "id": "SHAKAI_G6_HISTORY_CONSTITUTION",
+      "subject": "社会",
+      "subjectId": "shakai",
+      "grade": 6,
+      "name": "6年 日本の歴史（古代〜現代）・日本国憲法",
+      "desc": "歴史の大きな流れ（縄文・戦国・明治〜）、憲法三原則（主権在民・人権・平和）、三権分立。",
+      "bloomDepth": 2.5,
+      "prerequisites": ["SHAKAI_G5_INDUSTRY_BELT"],
+      "mextRef": "MEXT-SHAKAI-G6-01",
+      "learningObjectives": ["日本の歴史の大きな流れ（縄文・弥生〜戦国・江戸〜近代・現代）", "日本国憲法の三大原則（国民主権・基本的人権の尊重・平和主義）", "三権分立（国会・内閣・裁判所）と民主政治"],
+      "gameType": "PREFECTURE_JIGSAW",
+      "gameData": { "mode": "HISTORY_CIVICS", "region": "JAPAN" }
+    },
+    {
+      "id": "SEIKATSU_G1_SCHOOL_LIFE",
+      "subject": "生活",
+      "subjectId": "seikatsu",
+      "grade": 1,
+      "name": "1年 がっこうたんけん・あさがお栽培",
+      "desc": "学校の施設や先生・友達との関わり、通学路の交通安全、アサガオの種まきと観察。",
+      "bloomDepth": 1.0,
+      "prerequisites": [],
+      "mextRef": "MEXT-SEIKATSU-G1-01",
+      "learningObjectives": ["学校施設の場所と使い方、友達・先生への挨拶", "通学路の安全な歩行ルール", "アサガオの栽培と生命への愛着"],
+      "gameType": "CATEGORY_SORT",
+      "gameData": {
+        "mode": "SCHOOL_SAFETY_GROWTH",
+        "categories": [
+          { "id": "morning", "title": "あさの じゅんび" },
+          { "id": "safety", "title": "あんぜんな こうどう" }
+        ],
+        "items": [
+          { "text": "ランドセルを せおう", "category": "morning" },
+          { "text": "みぎ・ひだりを よくみる", "category": "safety" },
+          { "text": "おはようと あいさつする", "category": "morning" },
+          { "text": "てを あげて おうだんほどうを わたる", "category": "safety" }
+        ]
+      }
+    },
+    {
+      "id": "SEIKATSU_G2_TOWN_TOMATO",
+      "subject": "生活",
+      "subjectId": "seikatsu",
+      "grade": 2,
+      "name": "2年 まちたんけん・野菜栽培・自分の成長",
+      "desc": "図書館・駅などの公共施設の使い方、ミニトマトの世話、家族への感謝と成長の記録。",
+      "bloomDepth": 1.3,
+      "prerequisites": ["SEIKATSU_G1_SCHOOL_LIFE"],
+      "mextRef": "MEXT-SEIKATSU-G2-01",
+      "learningObjectives": ["地域の公共施設（図書館・公民館・駅）のマナーと利用法", "ミニトマトや夏野菜の継続的な世話と収穫", "自分の成長の振り返りと周囲への感謝"],
+      "gameType": "CATEGORY_SORT",
+      "gameData": {
+        "mode": "TOWN_PLANT_CARE",
+        "categories": [
+          { "id": "library_rules", "title": "としょかんの マナー" },
+          { "id": "tomato_care", "title": "ミニトマトの おせわ" }
+        ],
+        "items": [
+          { "text": "しずかに 本をよむ", "category": "library_rules" },
+          { "text": "まいにち 水をあげる", "category": "tomato_care" },
+          { "text": "本を もとのばしょに もどす", "category": "library_rules" },
+          { "text": "めかき（わき芽つみ）をする", "category": "tomato_care" }
+        ]
+      }
+    },
+    {
+      "id": "EIGO_G3_GREETING_COLOR",
+      "subject": "外国語・英語",
+      "subjectId": "eigo",
+      "grade": 3,
+      "name": "3年 挨拶・数・色・好きなもの",
+      "desc": "Alphabet A-Z 大文字の認識、1-20の数字、感情や好みの表現 (Hello / I like blue)。",
+      "bloomDepth": 1.1,
+      "prerequisites": [],
+      "mextRef": "MEXT-EIGO-G3-01",
+      "learningObjectives": ["英語の簡単な挨拶（Hello, Good morning, Thank you）", "1から20の数字と色の表現", "好きなものを伝える（I like ...）"],
+      "gameType": "CONTEXT_MATCH",
+      "gameData": {
+        "mode": "GREETINGS_COLORS",
+        "pairs": [
+          { "japanese": "こんにちは", "english": "Hello" },
+          { "japanese": "あか（赤色）", "english": "Red" },
+          { "japanese": "すうじの 7", "english": "Seven" },
+          { "japanese": "ありがとう", "english": "Thank you" }
+        ]
+      }
+    },
+    {
+      "id": "EIGO_G4_TIME_DAYS",
+      "subject": "外国語・英語",
+      "subjectId": "eigo",
+      "grade": 4,
+      "name": "4年 アルファベット小文字・時刻・曜日",
+      "desc": "Alphabet a-z 小文字、曜日 (Sunday-Saturday)、時刻 (What time is it? It is 3 oclock)。",
+      "bloomDepth": 1.4,
+      "prerequisites": ["EIGO_G3_GREETING_COLOR"],
+      "mextRef": "MEXT-EIGO-G4-01",
+      "learningObjectives": ["アルファベット小文字（a〜z）の識別", "曜日（Sunday〜Saturday）の表現", "時刻を尋ねて答える（What time is it? It's ... o'clock.）"],
+      "gameType": "CONTEXT_MATCH",
+      "gameData": {
+        "mode": "TIME_DAYS_STATIONERY",
+        "pairs": [
+          { "japanese": "月曜日", "english": "Monday" },
+          { "japanese": "いま 3時です", "english": "It is 3:00" },
+          { "japanese": "えんぴつ", "english": "Pencil" },
+          { "japanese": "金曜日", "english": "Friday" }
+        ]
+      }
+    },
+    {
+      "id": "EIGO_G5_DAILY_ROUTINE",
+      "subject": "外国語・英語",
+      "subjectId": "eigo",
+      "grade": 5,
+      "name": "5年 自己紹介・時間割・日常の動作",
+      "desc": "My name is... I want to study... などの基本構文と教科名 (Math, Science, Music)。",
+      "bloomDepth": 1.9,
+      "prerequisites": ["EIGO_G4_TIME_DAYS"],
+      "mextRef": "MEXT-EIGO-G5-01",
+      "learningObjectives": ["自分の日課や得意なことを伝える（I get up at 7. I am good at Math.）", "学校の教科（Math, Science, Social Studies, Music）", "値段を尋ねる（How much is it?）"],
+      "gameType": "CONTEXT_MATCH",
+      "gameData": {
+        "mode": "DAILY_ROUTINES_SUBJECTS",
+        "pairs": [
+          { "japanese": "ぼくは算数が得意です", "english": "I am good at Math" },
+          { "japanese": "朝ごはんを 7時に食べます", "english": "I eat breakfast at 7:00" },
+          { "japanese": "いくらですか？", "english": "How much is it?" },
+          { "japanese": "理科が好きです", "english": "I like Science" }
+        ]
+      }
+    },
+    {
+      "id": "EIGO_G6_DREAMS_CULTURE",
+      "subject": "外国語・英語",
+      "subjectId": "eigo",
+      "grade": 6,
+      "name": "6年 日本文化紹介・将来の夢・思い出",
+      "desc": "日本の行事や文化 (origami, sushi)、将来の職業 (I want to be an astronaut) と過去形。",
+      "bloomDepth": 2.3,
+      "prerequisites": ["EIGO_G5_DAILY_ROUTINE"],
+      "mextRef": "MEXT-EIGO-G6-01",
+      "learningObjectives": ["将来の夢やなりたい職業を表現する（I want to be an astronaut.）", "過去の思い出を伝える（I enjoyed summer vacation.）", "日本の伝統文化を平易な英語で紹介する"],
+      "gameType": "CONTEXT_MATCH",
+      "gameData": {
+        "mode": "DREAMS_CULTURE_MEMORIES",
+        "pairs": [
+          { "japanese": "宇宙飛行士になりたい", "english": "I want to be an astronaut" },
+          { "japanese": "夏休みを楽しみました", "english": "I enjoyed summer vacation" },
+          { "japanese": "日本には折り紙があります", "english": "We have origami in Japan" },
+          { "japanese": "医者になりたい", "english": "I want to be a doctor" }
+        ]
+      }
+    }
+  ]
+}

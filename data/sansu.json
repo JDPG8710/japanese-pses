@@ -1,0 +1,85 @@
+{
+  "subject": "算数",
+  "subjectId": "sansu",
+  "description": "小学校1〜6年 算数科 学習指導要領（数と計算・九九・図形・割合・比・速さ）",
+  "nodes": [
+    {
+      "id": "MATH_G1_ADD_SUB",
+      "subject": "算数",
+      "grade": 1,
+      "name": "1年 数の合成分解・くり上がり加減",
+      "desc": "10の補数づくり（7+3, 6+4）と繰り上がり・繰り下がりの計算の基礎。",
+      "bloomDepth": 1.0,
+      "prerequisites": [],
+      "mextRef": "MEXT-MATH-G1-01",
+      "learningObjectives": ["10までの数の合成・分解", "繰り上がりのあるたし算・繰り下がりのあるひき算"],
+      "gameType": "AETHER_SCALE",
+      "gameData": { "targetRatio": 50, "leftWeights": [10], "targetValue": 10, "hint": "10の半分（50%）に合わせよう！" }
+    },
+    {
+      "id": "MATH_G2_KUKU_LINK",
+      "subject": "算数",
+      "grade": 2,
+      "name": "2年 かけ算九九星際マッチング",
+      "desc": "2の段〜9の段の九九暗唱（算式と積の照合）と星際レーザー連線。",
+      "bloomDepth": 1.3,
+      "prerequisites": ["MATH_G1_ADD_SUB"],
+      "mextRef": "MEXT-MATH-G2-01",
+      "learningObjectives": ["かけ算九九（1〜9の段）の完全定着", "九九の構成原理（いくつ分）の理解"],
+      "gameType": "KUKU_LINK",
+      "gameData": { "rows": 4, "cols": 4, "timeLimit": 75, "minMatches": 8 }
+    },
+    {
+      "id": "MATH_G3_DIV_FRACTION",
+      "subject": "算数",
+      "grade": 3,
+      "name": "3年 わり算・分数小数・重さと円",
+      "desc": "等分除・包含除、単位分数、コンパスによる円と球の作図、g/kgの単位換算。",
+      "bloomDepth": 1.5,
+      "prerequisites": ["MATH_G2_KUKU_LINK"],
+      "mextRef": "MEXT-MATH-G3-01",
+      "learningObjectives": ["わり算の意味（等分除・包含除）とあまりの処理", "単位分数の概念（1/2, 1/3, 1/4）", "重さ（g, kg, t）と円の性質"],
+      "gameType": "AETHER_SCALE",
+      "gameData": { "targetRatio": 75, "leftWeights": [30], "rightWeights": [10, 10, 10, 10], "hint": "3/4（75%）に合わせよう！" }
+    },
+    {
+      "id": "MATH_G4_AREA_DECIMAL",
+      "subject": "算数",
+      "grade": 4,
+      "name": "4年 面積公式・概数・小数の乗除",
+      "desc": "長方形・正方形の面積（cm²/m²）、四捨五入、折れ線グラフと小数の筆算。",
+      "bloomDepth": 1.8,
+      "prerequisites": ["MATH_G3_DIV_FRACTION"],
+      "mextRef": "MEXT-MATH-G4-01",
+      "learningObjectives": ["長方形・正方形の面積公式（縦×横）", "小数のたし算・ひき算・かけ算・わり算", "概数と四捨五入の範囲"],
+      "gameType": "AETHER_SCALE",
+      "gameData": { "targetRatio": 40, "leftWeights": [20], "rightWeights": [50], "hint": "2/5（40%）に合わせよう！" }
+    },
+    {
+      "id": "MATH_G5_RATIO",
+      "subject": "算数",
+      "grade": 5,
+      "name": "5年 割合・百分率・倍数約数・体積",
+      "desc": "比べられる量＝もとにする量×割合、最大公約数・最小公倍数、直方体の体積。",
+      "bloomDepth": 2.3,
+      "prerequisites": ["MATH_G4_AREA_DECIMAL"],
+      "mextRef": "MEXT-MATH-G5-01",
+      "learningObjectives": ["割合（百分率・歩合）の三用法", "最大公約数・最小公倍数", "直方体・立方体の体積公式"],
+      "gameType": "AETHER_SCALE",
+      "gameData": { "targetRatio": 65, "leftWeights": [65], "rightWeights": [100], "hint": "6割5分（65%）に合わせよう！" }
+    },
+    {
+      "id": "MATH_G6_PROPORTION_SPEED",
+      "subject": "算数",
+      "grade": 6,
+      "name": "6年 比と比の値・速さ・比例反比例",
+      "desc": "比の簡単化（a:b）、速さ＝道のり÷時間、対称な図形、円の面積公式（πr²）。",
+      "bloomDepth": 2.5,
+      "prerequisites": ["MATH_G5_RATIO"],
+      "mextRef": "MEXT-MATH-G6-01",
+      "learningObjectives": ["比の意味と等しい比の性質", "速さ・道のり・時間の関係", "比例・反比例の式とグラフ", "円の面積公式"],
+      "gameType": "AETHER_SCALE",
+      "gameData": { "targetRatio": 80, "leftWeights": [80], "rightWeights": [100], "hint": "4:5の比率（80%）に合わせよう！" }
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "name": "japanese-pses",
+  "version": "1.0.0",
+  "private": true,
+  "description": "日本の小学生向け・全教科対応の星図学習ゲーム",
+  "scripts": {
+    "build": "node scripts/build-static.cjs",
+    "test": "node tests/test_e2e_runner.js",
+    "check": "npm test && npm run build",
+    "deploy": "npm run build && wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4.125.0"
+  }
+}

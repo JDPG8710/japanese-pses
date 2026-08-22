@@ -1,4 +1,5 @@
 node_modules/
+dist/
 
 # 複数エージェントの一時実行記録
 .agents/orchestrator/

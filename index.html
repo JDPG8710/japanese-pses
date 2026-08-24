@@ -43,7 +43,7 @@
       <!-- ユーザー名ログイン & プロファイル切り替えボタン -->
       <button id="user-profile-btn" class="glass-panel px-3.5 py-1.5 rounded-full hover:bg-slate-800 text-xs font-bold text-amber-300 flex items-center gap-2 transition border border-amber-500/40 shadow-lg shadow-amber-500/10">
         <span class="text-base">👦</span>
-        <span id="current-user-name">ひなた</span>
+        <span id="current-user-name">学習者</span>
         <span class="text-[10px] text-slate-300 bg-slate-800 px-1.5 py-0.5 rounded">Profile</span>
       </button>
 
@@ -224,6 +224,13 @@
       </div>
 
       <div id="profile-total-progress" class="mb-4 rounded-2xl border border-indigo-400/30 bg-indigo-500/10 p-4 text-sm text-white"></div>
+      <div id="profile-learner-summary" class="mb-4 rounded-2xl border border-cyan-400/30 bg-cyan-500/10 p-4">
+        <p class="text-[10px] font-black tracking-[0.2em] text-cyan-300">LEARNER</p>
+        <div class="mt-1 flex flex-wrap items-end justify-between gap-2">
+          <strong id="profile-learner-name" class="text-lg text-white">学習者</strong>
+          <span id="profile-learner-details" class="text-xs font-bold text-cyan-100"></span>
+        </div>
+      </div>
       <div id="profile-grade-progress" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4"></div>
       <div id="profile-certificate-panel" class="mb-5 rounded-2xl border border-amber-400/30 bg-amber-500/10 p-4"></div>
 
@@ -233,7 +240,7 @@
         <div class="space-y-3 mb-5">
         <div>
           <label class="text-[11px] font-bold text-slate-400">おなまえ（ひらがな・漢字など）</label>
-          <input id="user-name-input" type="text" placeholder="例: ひなた, さくら, たいよう" class="w-full mt-1 px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white font-bold text-sm focus:outline-none focus:border-amber-500" />
+          <input id="user-name-input" type="text" placeholder="例: さくら, たいよう" class="w-full mt-1 px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white font-bold text-sm focus:outline-none focus:border-amber-500" />
         </div>
         <div class="flex gap-2">
           <button id="user-login-confirm" class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-bold text-xs shadow-lg transition">ログイン・決定</button>
@@ -458,6 +465,7 @@
     import { getErrorGuidanceSystem } from './js/ErrorGuidanceSystem.js';
     import { AuthManager } from './src/auth/AuthManager.js';
     import { StorageAdapter } from './src/storage/StorageAdapter.js';
+    import { LearnerProfileModal, isLearnerProfileComplete, learnerGenderLabel } from './src/profile/LearnerProfile.js';
     import { calculateGradeProgress, createGraduationCertificate, ELEMENTARY_GRADUATION_ACHIEVEMENT_ID } from './ProgressionSystem.js';
 
     const storageAdapter = new StorageAdapter({ apiBase: '/api' });
@@ -467,6 +475,28 @@
     const accessSession = await authManager.initialize();
     const localStorageUserId = accessSession.mode === 'guest' ? 'guest-local' : (accessSession.user?.id || 'local-offline');
     storageAdapter.setUser(localStorageUserId, { cloudEnabled: accessSession.mode === 'authenticated' });
+    let synchronizedState = accessSession.mode === 'authenticated'
+      ? await storageAdapter.syncNow('login').catch(() => null)
+      : await storageAdapter.getLocalSnapshot();
+    const learnerProfileModal = new LearnerProfileModal();
+    let learnerProfile = await learnerProfileModal.collect({
+      existingProfile: synchronizedState?.profile,
+      suggestedName: accessSession.mode === 'authenticated' ? accessSession.user?.displayName : ''
+    });
+    if (!isLearnerProfileComplete(synchronizedState?.profile)) {
+      await storageAdapter.saveProfile({
+        ...(synchronizedState?.profile || {}),
+        user_id: localStorageUserId,
+        display_name: learnerProfile.name,
+        learner_name: learnerProfile.name,
+        learner_age: learnerProfile.age,
+        learner_gender: learnerProfile.gender,
+        learner_profile_completed: true
+      });
+      synchronizedState = accessSession.mode === 'authenticated'
+        ? await storageAdapter.syncNow('learner-profile-onboarding').catch(() => storageAdapter.getLocalSnapshot())
+        : await storageAdapter.getLocalSnapshot();
+    }
 
     // 1. 各教科の独立 JSON データを動的ロード
     const curriculumNodes = await loadCurriculumFromJSON({ cacheAdapter: storageAdapter });
@@ -475,13 +505,10 @@
     const fxSystem = getFXSystem();
     const errorGuidance = getErrorGuidanceSystem({ audio: audioSynth, fx: fxSystem });
 
-    const economy = new EconomyManager();
-    if (accessSession.user?.displayName && accessSession.mode === 'authenticated') {
-      economy.loginUser(accessSession.user.displayName);
-    }
-    const synchronizedState = accessSession.mode === 'authenticated'
-      ? await storageAdapter.syncNow('login').catch(() => null)
-      : await storageAdapter.getLocalSnapshot();
+    const economy = new EconomyManager(learnerProfile.name);
+    economy.loginUser(learnerProfile.name);
+    economy.activeUser.age = learnerProfile.age;
+    economy.activeUser.gender = learnerProfile.gender;
     if (synchronizedState?.profile?.star_coins != null) economy.starCoins = Number(synchronizedState.profile.star_coins);
     if (synchronizedState?.profile?.cleared_nodes) economy.activeUser.clearedNodes = synchronizedState.profile.cleared_nodes;
     if (synchronizedState?.profile?.cleared_stages) economy.activeUser.clearedStages = synchronizedState.profile.cleared_stages;
@@ -962,6 +989,10 @@
       return {
         user_id: localStorageUserId,
         display_name: economy.currentUser,
+        learner_name: learnerProfile.name,
+        learner_age: learnerProfile.age,
+        learner_gender: learnerProfile.gender,
+        learner_profile_completed: true,
         star_coins: economy.starCoins,
         cleared_nodes: economy.clearedNodes,
         cleared_stages: economy.clearedStages,
@@ -1009,6 +1040,9 @@
       const completionRate = totalStages > 0 ? Math.round((clearedStages / totalStages) * 100) : 0;
       const completedGrades = progress.filter(item => item.completed).length;
       const independentResultCounts = getIndependentResultCounts();
+
+      document.getElementById('profile-learner-name').textContent = learnerProfile.name;
+      document.getElementById('profile-learner-details').textContent = `${learnerProfile.age}歳 · ${learnerGenderLabel(learnerProfile.gender)}`;
 
       document.getElementById('profile-total-progress').innerHTML = `
         <div class="flex items-center justify-between gap-3"><strong class="text-base">全学年の学習進捗</strong><span class="font-black text-indigo-200">${completionRate}%</span></div>

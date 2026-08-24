@@ -160,8 +160,9 @@ export const SHOP_CATALOG = {
 };
 
 export class EconomyManager {
-  constructor() {
+  constructor(defaultUserName = '学習者') {
     this.storageKey = 'GALAXY_ECONOMY_MULTIUSER_V1';
+    this.defaultUserName = String(defaultUserName || '').trim() || '学習者';
     this.loadState();
   }
 
@@ -171,7 +172,7 @@ export class EconomyManager {
       if (saved) {
         try {
           const data = JSON.parse(saved);
-          this.currentUser = data.currentUser === 'ひなた (Hinata)' ? 'ひなた' : (data.currentUser || 'ひなた');
+          this.currentUser = data.currentUser || this.defaultUserName;
           this.users = data.users || {};
           if (!this.users[this.currentUser]) {
             this.initNewUser(this.currentUser);
@@ -183,7 +184,7 @@ export class EconomyManager {
       }
     }
 
-    this.currentUser = 'ひなた';
+    this.currentUser = this.defaultUserName;
     this.users = {};
     this.initNewUser(this.currentUser);
     this.saveState();

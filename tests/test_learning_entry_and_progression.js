@@ -5,6 +5,36 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
   const root = path.resolve(__dirname, '..');
 
   describe('学習入口と全学年 Profile', () => {
+    test('初回アクセスで名前・年齢・性別を入力し、既定のひなたを表示しない', () => {
+      const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+      for (const field of ['learner_name', 'learner_age', 'learner_gender', 'learner_profile_completed']) {
+        assert.ok(html.includes(field), `${field} をプロフィールへ保存してください`);
+      }
+      assert.ok(html.includes('new LearnerProfileModal()'), '認証後に学習者プロフィール入力を実行してください');
+      assert.ok(html.includes('profile-learner-summary'), 'Profileで入力内容を確認できるようにしてください');
+      assert.ok(!html.includes('id="current-user-name">ひなた</span>'), '既定名ひなたを表示しないでください');
+    });
+
+    test('学習者プロフィールは有効な名前・5〜15歳・性別項目を検証する', () => {
+      const profile = loadESModule(path.join(root, 'src/profile/LearnerProfile.js'));
+      const valid = profile.validateLearnerProfile({ name: 'あおい', age: '9', gender: 'female' });
+      assert.strictEqual(valid.valid, true);
+      assert.deepStrictEqual(valid.profile, { name: 'あおい', age: 9, gender: 'female' });
+      assert.strictEqual(profile.validateLearnerProfile({ name: '', age: 9, gender: 'female' }).valid, false);
+      assert.strictEqual(profile.validateLearnerProfile({ name: 'あおい', age: 4, gender: 'female' }).valid, false);
+      assert.strictEqual(profile.validateLearnerProfile({ name: 'あおい', age: 9, gender: '' }).valid, false);
+      assert.strictEqual(profile.validateLearnerProfile({ name: 'あ'.repeat(21), age: 9, gender: 'female' }).valid, false);
+      assert.strictEqual(profile.isLearnerProfileComplete(null), false, '新規利用者のnullプロフィールを安全に扱ってください');
+    });
+
+    test('新しい端末では入力した名前をEconomyの初期利用者にする', () => {
+      global.localStorage.clear();
+      const { EconomyManager } = loadESModule(path.join(root, 'EconomySystem.js'));
+      const economy = new EconomyManager('みなと');
+      assert.strictEqual(economy.currentUser, 'みなと');
+      assert.strictEqual(economy.activeUser.name, 'みなと');
+    });
+
     test('認証後に学年優先・ゲーム優先の2つの入口を必ず表示する', () => {
       const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
       const auth = fs.readFileSync(path.join(root, 'src/auth/AuthManager.js'), 'utf8');

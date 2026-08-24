@@ -13,7 +13,8 @@ export class GuestTrialManager extends EventTarget {
     fetchImpl = globalThis.fetch?.bind(globalThis),
     now = () => Date.now(),
     setIntervalImpl = (callback, delay) => globalThis.setInterval(callback, delay),
-    clearIntervalImpl = timerId => globalThis.clearInterval(timerId)
+    clearIntervalImpl = timerId => globalThis.clearInterval(timerId),
+    isGameStageVisible = defaultGameStageVisible
   } = {}) {
     super();
     this.apiBase = apiBase.replace(/\/$/, '');
@@ -22,6 +23,7 @@ export class GuestTrialManager extends EventTarget {
     this.now = now;
     this.setIntervalImpl = setIntervalImpl;
     this.clearIntervalImpl = clearIntervalImpl;
+    this.isGameStageVisibleImpl = isGameStageVisible;
     this.timer = null;
     this.heartbeatTimer = null;
     this.fingerprintHash = null;
@@ -120,17 +122,24 @@ export class GuestTrialManager extends EventTarget {
       if (this.isActivelyPlaying()) void this.reportUsage(true);
     }, HEARTBEAT_INTERVAL_MS);
     this.tick();
+    // 前回のタブがゲーム中に閉じられても、星図へ戻った時点でサーバー側の活動フラグを必ず停止する。
+    void this.reportUsage(false);
     return { mode: 'guest', remainingMs: this.remainingMs, periodEndsAt: this.periodEndsAt };
   }
 
+  isGameStageVisible() {
+    try { return Boolean(this.isGameStageVisibleImpl?.()); } catch { return false; }
+  }
+
   isActivelyPlaying() {
-    return Boolean(this.started && !this.expired && this.gameActive && this.pageVisible);
+    return Boolean(this.started && !this.expired && this.gameActive && this.pageVisible && this.isGameStageVisible());
   }
 
   setGameActive(active) {
-    if (!this.started || this.expired || this.gameActive === Boolean(active)) return;
+    const next = Boolean(active) && this.isGameStageVisible();
+    if (!this.started || this.expired || this.gameActive === next) return;
     this.accountLocalUsage();
-    this.gameActive = Boolean(active);
+    this.gameActive = next;
     this.lastLocalTickAt = this.now();
     void this.reportUsage(this.isActivelyPlaying());
   }
@@ -163,9 +172,15 @@ export class GuestTrialManager extends EventTarget {
 
   tick() {
     if (!this.started || this.expired) return;
+    // イベントが欠落しても、ゲーム画面が閉じていれば次のtickで強制停止する。
+    if (this.gameActive && !this.isGameStageVisible()) this.setGameActive(false);
     this.accountLocalUsage();
     const label = typeof document !== 'undefined' ? document.getElementById('guest-trial-countdown') : null;
-    if (label) label.textContent = `ゲスト残り（プレイ中のみ） ${formatGuestRemaining(this.remainingMs)}`;
+    if (label) {
+      const stateLabel = this.isActivelyPlaying() ? 'プレイ中のみ消費' : '星図では停止中';
+      label.textContent = `ゲスト残り（${stateLabel}） ${formatGuestRemaining(this.remainingMs)}`;
+      label.dataset.playState = this.isActivelyPlaying() ? 'active' : 'paused';
+    }
     if (this.remainingMs <= 0) void this.expire({ reason: 'QUOTA_EXHAUSTED' });
     else if (this.periodEndsAt <= this.now()) void this.expire({ reason: 'PERIOD_ENDED' });
   }
@@ -180,7 +195,7 @@ export class GuestTrialManager extends EventTarget {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         keepalive,
-        body: JSON.stringify({ fingerprintHash: this.fingerprintHash, active: Boolean(active), usedMs: Math.ceil(this.usedMs) })
+        body: JSON.stringify({ fingerprintHash: this.fingerprintHash, active: Boolean(active) && this.isGameStageVisible() && this.pageVisible, usedMs: Math.ceil(this.usedMs) })
       });
       const result = await readJsonResponse(response);
       if (!response.ok && result.status !== 'EXPIRED') return result;
@@ -286,6 +301,15 @@ function localRecordResponse(local) {
 
 function clamp(value, minimum, maximum) {
   return Math.min(maximum, Math.max(minimum, Number.isFinite(value) ? value : minimum));
+}
+
+function defaultGameStageVisible() {
+  if (typeof document === 'undefined') return true;
+  const modal = document.getElementById('game-modal');
+  if (!modal || modal.classList?.contains('hidden')) return false;
+  if (modal.getAttribute?.('aria-hidden') === 'true') return false;
+  const style = typeof globalThis.getComputedStyle === 'function' ? globalThis.getComputedStyle(modal) : null;
+  return !style || (style.display !== 'none' && style.visibility !== 'hidden');
 }
 
 async function readJsonResponse(response) {

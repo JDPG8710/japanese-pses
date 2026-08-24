@@ -164,12 +164,14 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
     test('ブラウザー側もゲーム実行中だけ残り時間を減らす', () => {
       const { GuestTrialManager } = loadESModule(path.join(root, 'src/auth/GuestTrialManager.js'));
       let now = 10_000;
+      let stageVisible = true;
       const manager = new GuestTrialManager({
         storage: { saveGuestTracker: async () => {}, getGuestTracker: async () => null },
         fetchImpl: null,
         now: () => now,
         setIntervalImpl: () => 1,
-        clearIntervalImpl: () => {}
+        clearIntervalImpl: () => {},
+        isGameStageVisible: () => stageVisible
       });
       manager.fingerprintHash = 'c'.repeat(64);
       manager.resume({ usedMs: 0, remainingMs: 7_200_000, periodStartedAt: now, periodEndsAt: now + 604_800_000 });
@@ -183,7 +185,31 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
       now += 60_000;
       manager.tick();
       assert.equal(manager.usedMs, 2_000, 'ゲーム停止中の1分を消費しないでください');
+
+      stageVisible = false;
+      manager.setGameActive(true);
+      now += 60_000;
+      manager.tick();
+      assert.equal(manager.usedMs, 2_000, '星図・学科選択画面では活動イベントを受けても消費しないでください');
+
+      stageVisible = true;
+      manager.setGameActive(true);
+      now += 1_000;
+      manager.tick();
+      stageVisible = false;
+      now += 60_000;
+      manager.tick();
+      assert.equal(manager.usedMs, 3_000, 'ゲーム画面を閉じた後の時間を消費しないでください');
       manager.destroy();
+    });
+
+    test('星図画面はゲスト活動を明示停止し、ゲーム画面の可視性を二重確認する', () => {
+      const html = read('index.html');
+      const manager = read('src/auth/GuestTrialManager.js');
+      assert.ok(html.includes("phase: 'GALAXY_SELECTION'"));
+      assert.ok(manager.includes('defaultGameStageVisible'));
+      assert.ok(manager.includes('this.isGameStageVisible()'));
+      assert.ok(manager.includes("'星図では停止中'"));
     });
 
     test('Wrangler はD1を唯一のクラウドデータストアとして束縛し、秘密値を平文で持たない', () => {

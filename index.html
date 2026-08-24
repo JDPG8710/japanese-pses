@@ -465,7 +465,7 @@
   </div>
 
   <script type="module">
-    import { GalaxyEngine } from './GalaxyEngine.js?v=2';
+    import { GalaxyEngine } from './GalaxyEngine.js?v=6';
     import { MiniGameModal, GAME_GRADE_SUPPORT_MAP } from './MiniGameSystem.js?v=3';
     import { EconomyManager, SHOP_CATALOG } from './EconomySystem.js?v=3';
     import { AntigravityAgentBrain, createObservationPayload } from './AgentIntegration.js?v=2';
@@ -475,7 +475,7 @@
     import { getAudioSynthesizer } from './js/AudioSynthesizer.js';
     import { getFXSystem } from './js/FXSystem.js';
     import { getErrorGuidanceSystem } from './js/ErrorGuidanceSystem.js';
-    import { AuthManager } from './src/auth/AuthManager.js';
+    import { AuthManager } from './src/auth/AuthManager.js?v=2';
     import { StorageAdapter } from './src/storage/StorageAdapter.js';
     import { LearnerProfileModal, isLearnerProfileComplete, learnerGenderLabel } from './src/profile/LearnerProfile.js';
     import { calculateGradeProgress, createGraduationCertificate, ELEMENTARY_GRADUATION_ACHIEVEMENT_ID } from './ProgressionSystem.js';
@@ -873,6 +873,7 @@
 
     function showLearningModeModal() {
       resetLearningModeModal();
+      window.dispatchEvent(new CustomEvent('GAME_PLAY_STATE_CHANGED', { detail: { active: false, phase: 'GALAXY_SELECTION' } }));
       learningModeModal.classList.remove('hidden');
       learningModeModal.classList.add('flex');
     }

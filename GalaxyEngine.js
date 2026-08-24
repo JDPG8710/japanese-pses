@@ -82,6 +82,7 @@ export class GalaxyEngine {
     }
     this.backgroundGroup = new THREE.Group();
     this.nebulaGroup.visible = nextTheme === 'GALAXY';
+    if (this.nucleus) this.nucleus.visible = nextTheme === 'GALAXY';
     this.constellationGroup.visible = true;
 
     const presets = {
@@ -167,43 +168,126 @@ export class GalaxyEngine {
       landmark.userData = { nodeInfo: node, isPulse: node.status === 'AVAILABLE' };
       return landmark;
     }
-    const geometry = new THREE.SphereGeometry(node.status === 'CLEARED' ? 3.0 : (node.status === 'AVAILABLE' ? 2.6 : 1.8), 16, 16);
-    const material = new THREE.MeshBasicMaterial({ color: statusColor, transparent: node.status === 'LOCKED', opacity: node.status === 'LOCKED' ? 0.5 : 1 });
-    const sphere = new THREE.Mesh(geometry, material);
-    sphere.userData = { nodeInfo: node, isPulse: node.status === 'AVAILABLE' };
-    return sphere;
+    const radius = node.status === 'CLEARED' ? 8.2 : (node.status === 'AVAILABLE' ? 7.4 : 6.2);
+    const planet = new THREE.Group();
+    planet.userData = { nodeInfo: node, isPulse: node.status === 'AVAILABLE', interactiveRadius: radius * 1.9 };
+
+    const surface = new THREE.Mesh(
+      new THREE.SphereGeometry(radius, 28, 28),
+      new THREE.MeshBasicMaterial({ color: statusColor, transparent: node.status === 'LOCKED', opacity: node.status === 'LOCKED' ? 0.72 : 1, depthTest: false, depthWrite: false })
+    );
+    surface.renderOrder = 30;
+    surface.userData.visualPlanet = true;
+    planet.add(surface);
+
+    const atmosphere = new THREE.Mesh(
+      new THREE.SphereGeometry(radius * 1.18, 24, 24),
+      new THREE.MeshBasicMaterial({ color: node.baseColor || statusColor, transparent: true, opacity: node.status === 'LOCKED' ? 0.28 : 0.36, blending: THREE.AdditiveBlending, side: THREE.BackSide, depthTest: false, depthWrite: false })
+    );
+    atmosphere.renderOrder = 29;
+    atmosphere.userData.atmosphere = true;
+    planet.add(atmosphere);
+
+    const orbitRing = new THREE.Mesh(
+      new THREE.TorusGeometry(radius * 1.33, Math.max(0.18, radius * 0.055), 10, 48),
+      new THREE.MeshBasicMaterial({ color: node.status === 'CLEARED' ? 0xfde68a : (node.baseColor || statusColor), transparent: true, opacity: node.status === 'LOCKED' ? 0.46 : 0.76, blending: THREE.AdditiveBlending, depthTest: false, depthWrite: false })
+    );
+    orbitRing.renderOrder = 31;
+    orbitRing.rotation.x = Math.PI / 2.8;
+    orbitRing.userData.orbitRing = true;
+    planet.add(orbitRing);
+
+    // 透明な大判ヒット球を追加し、小さな画面でも指で確実に選択できるようにする。
+    const hitSurface = new THREE.Mesh(
+      new THREE.SphereGeometry(Math.max(14, radius * 1.9), 12, 12),
+      new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false, colorWrite: false })
+    );
+    hitSurface.userData.nodeInfo = node;
+    hitSurface.userData.isInteractionHitSurface = true;
+    planet.add(hitSurface);
+    return planet;
   }
 
-  // 1. 中心星（生きる力）
+  // 1. 銀河中心：巨大ブラックホール、光子リング、降着円盤、双極ジェット
   createNucleus() {
     const nucleusGroup = new THREE.Group();
 
-    const coreGeo = new THREE.SphereGeometry(9, 32, 32);
-    const coreMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-    const coreMesh = new THREE.Mesh(coreGeo, coreMat);
-    nucleusGroup.add(coreMesh);
+    const shadow = new THREE.Mesh(
+      new THREE.SphereGeometry(24, 64, 64),
+      new THREE.MeshBasicMaterial({ color: 0x000000 })
+    );
+    shadow.renderOrder = 20;
+    nucleusGroup.add(shadow);
 
-    const pointLight = new THREE.PointLight(0xffeedd, 3.5, 400, 0.5);
+    const lensingHalo = new THREE.Mesh(
+      new THREE.SphereGeometry(29, 48, 48),
+      new THREE.MeshBasicMaterial({ color: 0x6d28d9, transparent: true, opacity: 0.24, side: THREE.BackSide, blending: THREE.AdditiveBlending, depthWrite: false })
+    );
+    nucleusGroup.add(lensingHalo);
+
+    const photonRing = new THREE.Mesh(
+      new THREE.TorusGeometry(27.5, 2.5, 24, 160),
+      new THREE.MeshBasicMaterial({ color: 0xfff3b0, transparent: true, opacity: 0.96, blending: THREE.AdditiveBlending, depthWrite: false })
+    );
+    photonRing.rotation.x = Math.PI / 2.25;
+    nucleusGroup.add(photonRing);
+    this.blackHolePhotonRing = photonRing;
+
+    const makeAccretionDisk = (innerRadius, outerRadius, opacity, tilt, phase = 0) => {
+      const geometry = new THREE.RingGeometry(innerRadius, outerRadius, 192, 8);
+      const positions = geometry.attributes.position;
+      const colors = [];
+      const palette = [0x22d3ee, 0x8b5cf6, 0xec4899, 0xfb7185, 0xfbbf24, 0xfef3c7].map(value => new THREE.Color(value));
+      for (let i = 0; i < positions.count; i++) {
+        const x = positions.getX(i);
+        const y = positions.getY(i);
+        const angle = (Math.atan2(y, x) + Math.PI * 2 + phase) % (Math.PI * 2);
+        const colorIndex = Math.floor((angle / (Math.PI * 2)) * palette.length) % palette.length;
+        const color = palette[colorIndex].clone().lerp(palette[(colorIndex + 1) % palette.length], (angle / (Math.PI * 2) * palette.length) % 1);
+        colors.push(color.r, color.g, color.b);
+      }
+      geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+      const disk = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, opacity, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false }));
+      disk.rotation.x = tilt;
+      return disk;
+    };
+
+    const hotDisk = makeAccretionDisk(29, 72, 0.76, Math.PI / 2.18);
+    const outerDisk = makeAccretionDisk(38, 92, 0.28, Math.PI / 2.35, 1.4);
+    nucleusGroup.add(outerDisk, hotDisk);
+    this.blackHoleDisks = [hotDisk, outerDisk];
+
+    const jetMaterial = new THREE.MeshBasicMaterial({ color: 0x67e8f9, transparent: true, opacity: 0.22, blending: THREE.AdditiveBlending, depthWrite: false });
+    const upperJet = new THREE.Mesh(new THREE.ConeGeometry(8, 120, 24, 1, true), jetMaterial);
+    upperJet.position.y = 72;
+    const lowerJet = upperJet.clone();
+    lowerJet.rotation.z = Math.PI;
+    lowerJet.position.y = -72;
+    nucleusGroup.add(upperJet, lowerJet);
+    this.blackHoleJets = [upperJet, lowerJet];
+
+    const pointLight = new THREE.PointLight(0xa78bfa, 4.2, 520, 0.7);
     nucleusGroup.add(pointLight);
 
     const glowGeo = new THREE.BufferGeometry();
-    const glowCount = 800;
+    const glowCount = this.isMobile ? 700 : 1400;
     const glowPositions = new Float32Array(glowCount * 3);
     for (let i = 0; i < glowCount; i++) {
-      const radius = 5 + Math.random() * 24;
+      const radius = 31 + Math.pow(Math.random(), 0.72) * 72;
       const theta = Math.random() * Math.PI * 2;
       const phi = Math.acos(Math.random() * 2 - 1);
       glowPositions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
-      glowPositions[i * 3 + 1] = (radius * Math.sin(phi) * Math.sin(theta)) * 0.4;
+      glowPositions[i * 3 + 1] = (Math.random() - 0.5) * 9;
       glowPositions[i * 3 + 2] = radius * Math.cos(phi);
     }
     glowGeo.setAttribute('position', new THREE.BufferAttribute(glowPositions, 3));
     const glowMat = new THREE.PointsMaterial({
-      color: 0xffe6aa,
-      size: 4.5,
+      color: 0xf9a8d4,
+      size: 3.8,
       blending: THREE.AdditiveBlending,
       transparent: true,
-      opacity: 0.85
+      opacity: 0.72,
+      depthWrite: false
     });
     this.nucleusParticles = new THREE.Points(glowGeo, glowMat);
     nucleusGroup.add(this.nucleusParticles);
@@ -216,16 +300,22 @@ export class GalaxyEngine {
   create3DNebulaeAndCurriculumNodes() {
     const subjectKeys = Object.keys(this.subjectMetadata || SUBJECT_METADATA);
     const numArms = subjectKeys.length;
-    const particlesPerNebula = 1200;
+    const particlesPerNebula = this.isMobile ? 1050 : 1850;
     const armMaxRadius = 270;
 
     const allPositions = [];
     const allColors = [];
+    const dustPositions = [];
+    const dustColors = [];
+    const sparkPositions = [];
+    const sparkColors = [];
     this.starNodes = [];
     this.constellationLines = [];
 
     this.nebulaGroup = new THREE.Group();
     this.constellationGroup = new THREE.Group();
+    this.nebulaRibbons = [];
+    const spectralPalette = [0xff2d95, 0xff7a18, 0xffd84d, 0x3df5c8, 0x28b8ff, 0x7c5cff, 0xd946ef];
 
     subjectKeys.forEach((subjKey, armIndex) => {
       const meta = (this.subjectMetadata || SUBJECT_METADATA)[subjKey];
@@ -240,7 +330,7 @@ export class GalaxyEngine {
         const angle = armBaseAngle + spinAngle;
 
         // 星雲の立体的な広がり
-        const spread = (1 - Math.exp(-progress * 2.2)) * 26;
+        const spread = (1 - Math.exp(-progress * 2.2)) * 32;
         const x = Math.cos(angle) * radius + (Math.random() - 0.5) * spread;
         const z = Math.sin(angle) * radius + (Math.random() - 0.5) * spread;
         const y = (Math.random() - 0.5) * spread * 0.7 * (1 - progress * 0.4);
@@ -248,8 +338,44 @@ export class GalaxyEngine {
         allPositions.push(x, y, z);
 
         // 中心の白から教科ごとの星雲色へ変化
-        const mixedColor = new THREE.Color(0xffffff).lerp(subColor, 0.3 + progress * 0.7);
+        const accentColor = new THREE.Color(spectralPalette[(armIndex + Math.floor(progress * 4)) % spectralPalette.length]);
+        const mixedColor = new THREE.Color(0xffffff)
+          .lerp(subColor, 0.28 + progress * 0.62)
+          .lerp(accentColor, 0.12 + Math.random() * 0.24);
         allColors.push(mixedColor.r, mixedColor.g, mixedColor.b);
+
+        const dustSpread = spread * 2.35 + 18;
+        dustPositions.push(
+          Math.cos(angle) * radius + (Math.random() - 0.5) * dustSpread,
+          (Math.random() - 0.5) * dustSpread * 0.34,
+          Math.sin(angle) * radius + (Math.random() - 0.5) * dustSpread
+        );
+        const dustColor = subColor.clone().lerp(accentColor, 0.46).multiplyScalar(0.72 + Math.random() * 0.34);
+        dustColors.push(dustColor.r, dustColor.g, dustColor.b);
+
+        if (i % 7 === 0) {
+          sparkPositions.push(x, y + (Math.random() - 0.5) * 5, z);
+          const sparkColor = new THREE.Color(0xffffff).lerp(accentColor, 0.42);
+          sparkColors.push(sparkColor.r, sparkColor.g, sparkColor.b);
+        }
+      }
+
+      // 各教科の腕に複数の発光リボンを重ね、色が流れる渦状腕を作る。
+      for (let ribbonIndex = 0; ribbonIndex < 3; ribbonIndex++) {
+        const ribbonPoints = [];
+        for (let segment = 0; segment <= 90; segment++) {
+          const progress = segment / 90;
+          const radius = 19 + progress * armMaxRadius;
+          const angle = armBaseAngle + progress * 3.6 + (ribbonIndex - 1) * 0.025;
+          ribbonPoints.push(new THREE.Vector3(Math.cos(angle) * radius, (ribbonIndex - 1) * 4.5, Math.sin(angle) * radius));
+        }
+        const ribbon = new THREE.Line(
+          new THREE.BufferGeometry().setFromPoints(ribbonPoints),
+          new THREE.LineBasicMaterial({ color: ribbonIndex === 1 ? meta.color : spectralPalette[(armIndex + ribbonIndex) % spectralPalette.length], transparent: true, opacity: ribbonIndex === 1 ? 0.62 : 0.26, blending: THREE.AdditiveBlending, depthWrite: false })
+        );
+        ribbon.userData = { baseOpacity: ribbon.material.opacity, phase: armIndex * 0.8 + ribbonIndex };
+        this.nebulaRibbons.push(ribbon);
+        this.nebulaGroup.add(ribbon);
       }
 
       // (B) 学習単元を学年順に配置
@@ -308,15 +434,28 @@ export class GalaxyEngine {
     armGeo.setAttribute('color', new THREE.Float32BufferAttribute(allColors, 3));
 
     const armMat = new THREE.PointsMaterial({
-      size: 2.8,
+      size: this.isMobile ? 3.2 : 3.65,
       vertexColors: true,
       blending: THREE.AdditiveBlending,
       transparent: true,
-      opacity: 0.85
+      opacity: 0.92,
+      depthWrite: false
     });
 
     this.armsPoints = new THREE.Points(armGeo, armMat);
     this.nebulaGroup.add(this.armsPoints);
+
+    const dustGeo = new THREE.BufferGeometry();
+    dustGeo.setAttribute('position', new THREE.Float32BufferAttribute(dustPositions, 3));
+    dustGeo.setAttribute('color', new THREE.Float32BufferAttribute(dustColors, 3));
+    this.nebulaDustPoints = new THREE.Points(dustGeo, new THREE.PointsMaterial({ size: this.isMobile ? 6.2 : 8.4, vertexColors: true, blending: THREE.AdditiveBlending, transparent: true, opacity: 0.16, depthWrite: false }));
+    this.nebulaGroup.add(this.nebulaDustPoints);
+
+    const sparkGeo = new THREE.BufferGeometry();
+    sparkGeo.setAttribute('position', new THREE.Float32BufferAttribute(sparkPositions, 3));
+    sparkGeo.setAttribute('color', new THREE.Float32BufferAttribute(sparkColors, 3));
+    this.nebulaSparkPoints = new THREE.Points(sparkGeo, new THREE.PointsMaterial({ size: this.isMobile ? 4.5 : 5.8, vertexColors: true, blending: THREE.AdditiveBlending, transparent: true, opacity: 0.82, depthWrite: false }));
+    this.nebulaGroup.add(this.nebulaSparkPoints);
     this.scene.add(this.nebulaGroup);
     this.scene.add(this.constellationGroup);
 
@@ -356,7 +495,9 @@ export class GalaxyEngine {
       }
 
       const singleNodeGroup = new THREE.Group();
-      singleNodeGroup.position.copy(node.position);
+      singleNodeGroup.position.copy(this.currentGradeFilter > 0 ? this.getSubjectSelectionPosition(node) : node.position);
+      singleNodeGroup.userData.selectionBaseY = singleNodeGroup.position.y;
+      singleNodeGroup.userData.floatPhase = this.starNodes.indexOf(node) * 0.78;
 
       // (A) テーマに合う学習ノードの形状
       const nodeMesh = this.createThemeNodeMesh(node);
@@ -371,13 +512,23 @@ export class GalaxyEngine {
 
       // (B) 学習ノード名の3Dラベル
       const nameSprite = this.createNameSprite(node);
-      nameSprite.position.set(0, this.backgroundTheme === 'GALAXY' ? 4.5 : 12.5, 0);
+      nameSprite.position.set(0, this.backgroundTheme === 'GALAXY' ? 12.8 : 12.5, 0);
       singleNodeGroup.add(nameSprite);
 
       this.nodeGroup.add(singleNodeGroup);
     });
 
     this.scene.add(this.nodeGroup);
+  }
+
+  // 学年選択後は各教科をブラックホール外周の安定軌道へ配置し、回転中でも画面外へ逃がさない。
+  getSubjectSelectionPosition(node) {
+    const subjectEntries = Object.values(this.subjectMetadata || SUBJECT_METADATA);
+    const subjectIndex = Math.max(0, subjectEntries.findIndex(meta => meta.name === node.subject || (meta.name?.includes('英語') && node.subject?.includes('英語'))));
+    const angle = -Math.PI / 2 + (subjectIndex / Math.max(1, subjectEntries.length)) * Math.PI * 2;
+    const radiusX = this.isMobile ? 64 : 158;
+    const radiusY = this.isMobile ? 76 : 108;
+    return new THREE.Vector3(Math.cos(angle) * radiusX, 16 + Math.sin(angle) * radiusY, 34);
   }
 
   // 習熟度を同期し、クリア済み・挑戦可能・未解放の表示を更新
@@ -495,7 +646,7 @@ export class GalaxyEngine {
 
     const sprite = new THREE.Sprite(material);
     // モバイルでは表示倍率を調整
-    const scaleFactor = this.isMobile ? 18 : 22;
+    const scaleFactor = this.isMobile ? 24 : 28;
     sprite.scale.set(scaleFactor, scaleFactor * 0.25, 1);
     return sprite;
   }
@@ -554,7 +705,7 @@ export class GalaxyEngine {
 
   setupInteractions() {
     this.raycaster = new THREE.Raycaster();
-    this.raycaster.params.Points.threshold = this.isMobile ? 8.0 : 4.0;
+    this.raycaster.params.Points.threshold = this.isMobile ? 14.0 : 8.0;
     this.mouse = new THREE.Vector2();
 
     const onPointerDown = (event) => {
@@ -624,18 +775,49 @@ export class GalaxyEngine {
     requestAnimationFrame(this.animate.bind(this));
 
     // 星雲と各教科の腕を回転
-    if (this.nebulaGroup) this.nebulaGroup.rotation.y += 0.0006;
+    if (this.nebulaGroup) this.nebulaGroup.rotation.y += 0.00072;
     if (this.constellationGroup) this.constellationGroup.rotation.y += 0.0006;
-    if (this.nodeGroup) this.nodeGroup.rotation.y += 0.0006;
-    if (this.nucleus) this.nucleus.rotation.y -= 0.0018;
+    if (this.nodeGroup && this.currentGradeFilter === 0) this.nodeGroup.rotation.y += 0.0006;
+    if (this.nucleus) this.nucleus.rotation.y -= 0.0011;
+    if (this.armsPoints?.material) {
+      this.armsPoints.material.size = (this.isMobile ? 3.2 : 3.65) + Math.sin(time * 0.0016) * 0.48;
+      this.armsPoints.material.opacity = 0.84 + Math.sin(time * 0.0011) * 0.08;
+    }
+    if (this.nebulaDustPoints) {
+      this.nebulaDustPoints.rotation.y -= 0.00034;
+      this.nebulaDustPoints.material.opacity = 0.13 + (Math.sin(time * 0.00075) + 1) * 0.035;
+    }
+    if (this.nebulaSparkPoints) {
+      this.nebulaSparkPoints.rotation.y += 0.00046;
+      this.nebulaSparkPoints.material.opacity = 0.68 + (Math.sin(time * 0.0023) + 1) * 0.14;
+    }
+    this.nebulaRibbons?.forEach((ribbon) => {
+      ribbon.material.opacity = ribbon.userData.baseOpacity * (0.72 + (Math.sin(time * 0.0014 + ribbon.userData.phase) + 1) * 0.22);
+    });
+    this.blackHoleDisks?.forEach((disk, index) => { disk.rotation.z += index === 0 ? 0.0042 : -0.0018; });
+    if (this.blackHolePhotonRing) {
+      const ringPulse = 1 + Math.sin(time * 0.003) * 0.055;
+      this.blackHolePhotonRing.scale.set(ringPulse, ringPulse, ringPulse);
+    }
+    if (this.nucleusParticles) this.nucleusParticles.rotation.y += 0.0026;
+    this.blackHoleJets?.forEach((jet, index) => { jet.material.opacity = 0.15 + (Math.sin(time * 0.002 + index * Math.PI) + 1) * 0.07; });
 
     // 挑戦可能ノードの脈動表現
     const pulseScale = 1.0 + Math.sin(time * 0.005) * 0.22;
     if (this.nodeGroup) {
       this.nodeGroup.children.forEach((group) => {
         const mesh = group.children[0];
+        if (this.currentGradeFilter > 0 && Number.isFinite(group.userData.selectionBaseY)) {
+          group.position.y = group.userData.selectionBaseY + Math.sin(time * 0.0022 + group.userData.floatPhase) * 3.2;
+        }
         if (mesh && mesh.userData?.nodeInfo?.status === 'AVAILABLE') {
           mesh.scale.set(pulseScale, pulseScale, pulseScale);
+        }
+        if (mesh?.children) {
+          mesh.children.forEach((child) => {
+            if (child.userData?.visualPlanet) child.rotation.y += 0.004;
+            if (child.userData?.orbitRing) child.rotation.z += 0.006;
+          });
         }
       });
     }

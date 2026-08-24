@@ -77,6 +77,19 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
       assert.ok(html.includes('cleared_stages: economy.clearedStages'), 'クリア関門をクラウド同期してください');
       assert.ok(html.includes('独立ゲームのクリア記録'), 'ゲーム優先モードの結果も Profile に表示してください');
     });
+
+    test('銀河テーマは多層6色渦状腕・巨大ブラックホール・大判学科惑星を描画する', () => {
+      const galaxy = fs.readFileSync(path.join(root, 'GalaxyEngine.js'), 'utf8');
+      const build = fs.readFileSync(path.join(root, 'scripts', 'build.mjs'), 'utf8');
+      assert.ok(galaxy.includes('spectralPalette'), '6本の渦状腕に補助色パレットが必要です');
+      assert.ok(galaxy.includes('nebulaDustPoints') && galaxy.includes('nebulaSparkPoints') && galaxy.includes('nebulaRibbons'), '星雲はダスト・星・発光リボンの多層構成にしてください');
+      assert.ok(galaxy.includes('blackHolePhotonRing') && galaxy.includes('blackHoleDisks') && galaxy.includes('blackHoleJets'), '中心に光子リング・降着円盤・双極ジェットを持つブラックホールが必要です');
+      assert.ok(galaxy.includes('new THREE.SphereGeometry(24, 64, 64)'), '事象の地平面を十分大きく描画してください');
+      assert.ok(galaxy.includes("node.status === 'CLEARED' ? 8.2 : (node.status === 'AVAILABLE' ? 7.4 : 6.2)"), '学科惑星を従来より大きくしてください');
+      assert.ok(galaxy.includes('isInteractionHitSurface') && galaxy.includes('Math.max(14, radius * 1.9)'), 'タッチ用の大判ヒット領域が必要です');
+      assert.ok(galaxy.includes('getSubjectSelectionPosition(node)'), '学年選択後は学科惑星を画面内の安定軌道へ配置してください');
+      assert.ok(build.includes("createHash('sha256')") && build.includes("slice(0, 12)"), '同日中の再配信でも新しい静的資産を取得できる内容ハッシュが必要です');
+    });
   });
 
   describe('小学校課程修了証', () => {

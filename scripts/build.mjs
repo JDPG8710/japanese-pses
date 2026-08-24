@@ -1,4 +1,5 @@
 import { cp, mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -24,10 +25,18 @@ for (const directory of ['css', 'js', 'src']) {
   await cp(path.join(root, directory), path.join(output, directory), { recursive: true });
 }
 
-const indexPath = path.join(output, 'index.html');
-const sourceIndex = await readFile(indexPath, 'utf8');
-const releaseId = '20260824';
-await writeFile(indexPath, sourceIndex.replace(/\?v=\d+/g, `?v=${releaseId}`), 'utf8');
+const releaseHash = createHash('sha256');
+const releaseFiles = (await collectFiles(output)).sort();
+for (const file of releaseFiles) {
+  releaseHash.update(path.relative(output, file).replaceAll('\\', '/'));
+  releaseHash.update(await readFile(file));
+}
+const releaseId = releaseHash.digest('hex').slice(0, 12);
+const versionedFiles = releaseFiles.filter(file => ['.html', '.js'].includes(path.extname(file)));
+for (const file of versionedFiles) {
+  const source = await readFile(file, 'utf8');
+  await writeFile(file, source.replace(/\?v=[A-Za-z0-9._-]+/g, `?v=${releaseId}`), 'utf8');
+}
 
 const files = await collectFiles(output);
 const totalBytes = (await Promise.all(files.map(file => stat(file)))).reduce((sum, info) => sum + info.size, 0);

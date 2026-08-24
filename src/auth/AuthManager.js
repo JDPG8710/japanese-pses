@@ -1,5 +1,5 @@
 import { LoginModal } from './LoginModal.js';
-import { GuestTrialManager } from './GuestTrialManager.js';
+import { GuestTrialManager } from './GuestTrialManager.js?v=2';
 import { isLocalDevelopmentHost } from '../runtime/LocalEnvironment.js';
 
 export class AuthManager extends EventTarget {

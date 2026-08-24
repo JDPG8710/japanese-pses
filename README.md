@@ -51,6 +51,17 @@ powershell -ExecutionPolicy Bypass -File .\scripts\start-lan-server.ps1
 node tests/test_e2e_runner.js
 ```
 
+## Cloudflareへビルド・公開
+
+本番では認証APIと静的ゲームを同じWorkerから配信し、教材JSONは非公開R2バケットから `/api/game-data/` 経由で読み込みます。`data/` はローカル開発と移行元として保持されますが、静的成果物には含まれません。
+
+```powershell
+npm install
+npm run deploy
+```
+
+このコマンドは全テスト、`dist/` 再構築、全教材JSONのR2アップロード、Worker配備を順番に実行します。OAuth JSONや秘密値は `secrets/`、`.dev.vars`、Cloudflare Worker Secretsだけに保存し、GitHubへコミットしません。
+
 個別の検証方法と対象範囲は [TEST_INFRA.md](TEST_INFRA.md) と [TEST_READY.md](TEST_READY.md) を参照してください。
 
 ## 主な構成

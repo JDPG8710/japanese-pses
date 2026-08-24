@@ -1,4 +1,6 @@
 node_modules/
+dist/
+secrets/
 .wrangler/
 .dev.vars
 .env

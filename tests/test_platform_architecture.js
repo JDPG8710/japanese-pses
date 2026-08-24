@@ -10,7 +10,7 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
       const worker = read('worker/index.js');
       for (const route of [
         '/api/auth/turnstile-verify', '/api/auth/google', '/api/auth/apple',
-        '/api/guest/start', '/api/guest/status', '/api/star-graph', '/api/state'
+        '/api/guest/start', '/api/guest/status', '/api/game-data', '/api/star-graph', '/api/state'
       ]) assert.ok(worker.includes(route), `${route} が必要です`);
       assert.ok(worker.includes('https://challenges.cloudflare.com/turnstile/v0/siteverify'));
       assert.ok(worker.includes('GUEST_TTL_SECONDS'));
@@ -24,6 +24,8 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
       assert.ok(config.includes('binding = "SESSION_KV"'));
       assert.ok(config.includes('binding = "GUEST_KV"'));
       assert.ok(config.includes('binding = "GAME_DATA_R2"'));
+      assert.ok(config.includes('directory = "./dist"'));
+      assert.ok(config.includes('run_worker_first = ["/api/*"]'));
       for (const secret of ['TURNSTILE_SECRET_KEY =', 'GOOGLE_CLIENT_SECRET =', 'APPLE_CLIENT_SECRET =', 'JWT_SECRET =', 'FINGERPRINT_PEPPER =']) {
         assert.ok(!config.includes(secret), `${secret} を設定ファイルへ書かないでください`);
       }
@@ -38,6 +40,26 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
         method: 'POST', headers: { 'content-type': 'application/json' }, body: '{'
       }), { APP_ORIGIN: 'https://app.example.test' }, {});
       assert.equal(invalid.status, 400);
+    });
+
+    test('教材APIはR2オブジェクトをETag付きで配信する', async () => {
+      const worker = loadESModule(path.join(root, 'worker/index.js')).default;
+      const env = {
+        APP_ORIGIN: 'https://app.example.test',
+        GAME_DATA_R2: {
+          get: async key => key === 'game-data/metadata.json'
+            ? { body: JSON.stringify({ grades: [] }), httpEtag: '"content-v1"', httpMetadata: { contentType: 'application/json; charset=utf-8' } }
+            : null
+        }
+      };
+      const response = await worker.fetch(new Request('https://app.example.test/api/game-data/metadata.json'), env, {});
+      assert.equal(response.status, 200);
+      assert.equal(response.headers.get('etag'), '"content-v1"');
+      assert.deepEqual(await response.json(), { grades: [] });
+      const unchanged = await worker.fetch(new Request('https://app.example.test/api/game-data/metadata.json', {
+        headers: { 'if-none-match': '"content-v1"' }
+      }), env, {});
+      assert.equal(unchanged.status, 304);
     });
   });
 
@@ -90,6 +112,15 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
       const userA = await storage.getLocalSnapshot();
       assert.equal(userA.nodeProgress.length, 1);
       assert.equal(userA.nodeProgress[0].mastery_score, 0.9);
+    });
+
+    test('R2教材はIndexedDB互換キャッシュへ保存できる', async () => {
+      const { StorageAdapter } = loadESModule(path.join(root, 'src/storage/StorageAdapter.js'));
+      const storage = new StorageAdapter({ fetchImpl: null });
+      await storage.cacheContent('metadata.json', { grades: [1, 2, 3] }, '"v1"');
+      const cached = await storage.getCachedContent('metadata.json');
+      assert.deepEqual(cached.data.grades, [1, 2, 3]);
+      assert.equal(cached.etag, '"v1"');
     });
   });
 

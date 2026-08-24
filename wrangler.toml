@@ -1,14 +1,25 @@
-name = "japanese-pses-edge"
+name = "japanese-pses"
 main = "worker/index.js"
-compatibility_date = "2026-08-01"
+compatibility_date = "2026-08-24"
+compatibility_flags = ["nodejs_compat"]
+
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+run_worker_first = ["/api/*"]
 
 [vars]
-APP_ORIGIN = "https://YOUR_PUBLIC_DOMAIN.example"
-API_ORIGIN = "https://YOUR_WORKER_DOMAIN.example"
+APP_ORIGIN = "https://japanese-pses.j565718319.workers.dev"
+API_ORIGIN = "https://japanese-pses.j565718319.workers.dev"
 DEV_ORIGINS = "http://localhost:4173,http://127.0.0.1:4173"
-TURNSTILE_HOSTNAME = "YOUR_PUBLIC_DOMAIN.example"
-GOOGLE_CLIENT_ID = "REPLACE_WITH_GOOGLE_CLIENT_ID"
+TURNSTILE_HOSTNAME = "japanese-pses.j565718319.workers.dev"
+GOOGLE_CLIENT_ID = "406705820118-aa4p2gkig81k4fn9ofh4igs0v6lku7ep.apps.googleusercontent.com"
 APPLE_CLIENT_ID = "REPLACE_WITH_APPLE_SERVICES_ID"
+
+[observability]
+enabled = true
+head_sampling_rate = 1
 
 [[kv_namespaces]]
 binding = "SESSION_KV"

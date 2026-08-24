@@ -9,6 +9,11 @@ const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7;
 const OAUTH_TTL_SECONDS = 10 * 60;
 const GUEST_TTL_SECONDS = 60 * 60 * 24 * 30;
 const GUEST_DURATION_MS = 10 * 60 * 1000;
+const GAME_DATA_FILES = [
+  'eigo.json', 'kanji_1026.json', 'kokugo.json', 'metadata.json',
+  'prefectures_47.json', 'rika.json', 'sansu.json', 'seikatsu.json',
+  'shakai.json', 'subjects_curriculum.json', 'manifest.json'
+];
 
 export default {
   async fetch(request, env, ctx) {
@@ -26,7 +31,7 @@ async function routeRequest(request, env) {
   const url = new URL(request.url);
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: corsHeaders(request, env) });
 
-  if (url.pathname === '/api/health') return json({ ok: true, service: 'japanese-pses-edge' }, 200, request, env);
+  if (url.pathname === '/api/health') return json({ ok: true, service: 'japanese-pses' }, 200, request, env);
   if (url.pathname === '/api/auth/turnstile-verify' && request.method === 'POST') return handleTurnstile(request, env);
   if (url.pathname === '/api/auth/google') return handleOAuth('google', request, env);
   if (url.pathname === '/api/auth/apple') return handleOAuth('apple', request, env);
@@ -34,6 +39,7 @@ async function routeRequest(request, env) {
   if (url.pathname === '/api/auth/logout' && request.method === 'POST') return handleLogout(request, env);
   if (url.pathname === '/api/guest/start' && request.method === 'POST') return handleGuestStart(request, env);
   if (url.pathname === '/api/guest/status' && request.method === 'POST') return handleGuestStatus(request, env);
+  if ((url.pathname === '/api/game-data' || url.pathname.startsWith('/api/game-data/')) && request.method === 'GET') return handleGameData(request, env);
   if (url.pathname === '/api/star-graph' && request.method === 'GET') return handleStarGraph(request, env);
   if (url.pathname === '/api/state' && request.method === 'GET') return handleStateRead(request, env);
   if (url.pathname === '/api/state' && request.method === 'PUT') return handleStateWrite(request, env);
@@ -228,12 +234,33 @@ function guestStatus(record) {
 }
 
 async function handleStarGraph(request, env) {
-  const object = await env.GAME_DATA_R2.get('star_graph.json');
+  const object = await env.GAME_DATA_R2.get('game-data/subjects_curriculum.json')
+    || await env.GAME_DATA_R2.get('star_graph.json');
   if (!object) return json({ error: 'STAR_GRAPH_NOT_FOUND' }, 404, request, env);
+  return r2JsonResponse(object, request, env, 300);
+}
+
+async function handleGameData(request, env) {
+  const url = new URL(request.url);
+  const encodedName = url.pathname === '/api/game-data'
+    ? 'manifest.json'
+    : url.pathname.slice('/api/game-data/'.length);
+  let fileName;
+  try { fileName = decodeURIComponent(encodedName); } catch { throw new HttpError(400, 'INVALID_GAME_DATA_FILE'); }
+  if (!GAME_DATA_FILES.includes(fileName)) return json({ error: 'GAME_DATA_NOT_FOUND' }, 404, request, env);
+  const object = await env.GAME_DATA_R2.get(`game-data/${fileName}`);
+  if (!object) return json({ error: 'GAME_DATA_NOT_FOUND' }, 404, request, env);
+  return r2JsonResponse(object, request, env, fileName === 'manifest.json' ? 60 : 300);
+}
+
+function r2JsonResponse(object, request, env, maxAge) {
   const headers = corsHeaders(request, env);
-  headers.set('content-type', 'application/json; charset=utf-8');
+  headers.set('content-type', object.httpMetadata?.contentType || 'application/json; charset=utf-8');
   if (object.httpEtag) headers.set('etag', object.httpEtag);
-  headers.set('cache-control', 'public, max-age=300, stale-while-revalidate=86400');
+  headers.set('cache-control', `public, max-age=${maxAge}, stale-while-revalidate=86400`);
+  if (object.httpEtag && request.headers.get('if-none-match') === object.httpEtag) {
+    return new Response(null, { status: 304, headers });
+  }
   return new Response(object.body, { headers });
 }
 
@@ -297,7 +324,7 @@ function corsHeaders(request, env) {
   const allowed = new Set([env.APP_ORIGIN, ...(env.DEV_ORIGINS || 'http://localhost:4173,http://127.0.0.1:4173').split(',')].filter(Boolean));
   if (origin && allowed.has(origin)) { headers.set('access-control-allow-origin', origin); headers.set('access-control-allow-credentials', 'true'); headers.set('vary', 'Origin'); }
   headers.set('access-control-allow-methods', 'GET,POST,PUT,OPTIONS');
-  headers.set('access-control-allow-headers', 'content-type,authorization,if-match');
+  headers.set('access-control-allow-headers', 'content-type,authorization,if-match,if-none-match');
   return headers;
 }
 

@@ -30,6 +30,7 @@ export let SUBJECT_METADATA = {
 
 export let FULL_CURRICULUM_DAG = [];
 export let graphEngineInstance = new GraphEngine();
+let contentCacheAdapter = null;
 
 export const CURRICULUM_GAME_TYPES_BY_SUBJECT = {
   '国語': 'KOKUGO_CURRICULUM',
@@ -67,23 +68,10 @@ export function validateCurriculumNodeSchema(nodes = []) {
  * 統合 JSON (subjects_curriculum.json) または個別教科 JSON を動的ロードして DAG を構築
  */
 export async function loadCurriculumFromJSON({ cacheAdapter = null } = {}) {
+  contentCacheAdapter = cacheAdapter || contentCacheAdapter;
   try {
-    // 本番は R2 の star_graph.json を優先し、失敗時は IndexedDB キャッシュ、同梱JSONの順で復旧する。
-    const isLocal = isLocalDevelopmentHost();
-    let masterJson = null;
-    if (!isLocal && typeof fetch === 'function') {
-      const cloudRes = await fetch('/api/star-graph', { credentials: 'include' }).catch(() => null);
-      if (cloudRes?.ok) {
-        masterJson = await cloudRes.json();
-        await cacheAdapter?.cacheStarGraph?.(masterJson, cloudRes.headers.get('etag'));
-      } else {
-        masterJson = (await cacheAdapter?.getCachedStarGraph?.())?.graph || null;
-      }
-    }
-    if (!masterJson) {
-      const masterRes = await fetch('./data/subjects_curriculum.json').catch(() => null);
-      if (masterRes?.ok) masterJson = await masterRes.json();
-    }
+    // 本番はR2、障害時はIndexedDB、ローカル開発は同梱JSONの順で復旧する。
+    const masterJson = await loadGameDataFile('subjects_curriculum.json');
     if (masterJson) {
       if (masterJson.grades) GRADES = masterJson.grades;
       if (masterJson.subjects) {
@@ -105,9 +93,8 @@ export async function loadCurriculumFromJSON({ cacheAdapter = null } = {}) {
     }
 
     // プラン B: 個別 JSON からの並列ロード
-    const metaRes = await fetch('./data/metadata.json').catch(() => null);
-    if (metaRes && metaRes.ok) {
-      const metaJson = await metaRes.json();
+    const metaJson = await loadGameDataFile('metadata.json');
+    if (metaJson) {
       if (metaJson.grades) GRADES = metaJson.grades;
       if (metaJson.subjects) SUBJECT_METADATA = metaJson.subjects;
     }
@@ -117,9 +104,9 @@ export async function loadCurriculumFromJSON({ cacheAdapter = null } = {}) {
       const subj = SUBJECT_METADATA[key];
       const filePath = subj.dataFile || `./data/${key}.json`;
       try {
-        const res = await fetch(filePath);
-        if (res.ok) {
-          const data = await res.json();
+        const fileName = filePath.split('/').pop() || `${key}.json`;
+        const data = await loadGameDataFile(fileName, filePath);
+        if (data) {
           return (data.nodes || []).map(node => ({ ...node, subjectId: node.subjectId || data.subjectId || key }));
         }
       } catch (err) {
@@ -157,10 +144,7 @@ export async function loadCurriculumFromJSON({ cacheAdapter = null } = {}) {
  */
 export async function loadKanjiDatabase() {
   try {
-    const res = await fetch('./data/kanji_1026.json');
-    if (res.ok) {
-      return await res.json();
-    }
+    return await loadGameDataFile('kanji_1026.json');
   } catch (e) {
     console.warn('[CurriculumLoader] kanji_1026.json のロード失敗:', e);
   }
@@ -172,14 +156,44 @@ export async function loadKanjiDatabase() {
  */
 export async function loadPrefecturesDatabase() {
   try {
-    const res = await fetch('./data/prefectures_47.json');
-    if (res.ok) {
-      return await res.json();
-    }
+    return await loadGameDataFile('prefectures_47.json');
   } catch (e) {
     console.warn('[CurriculumLoader] prefectures_47.json のロード失敗:', e);
   }
   return null;
+}
+
+/** R2教材API、IndexedDB、ローカルJSONを同じ契約で読み込む。 */
+export async function loadGameDataFile(fileName, localPath = `./data/${fileName}`) {
+  if (!/^[a-z0-9_\-]+\.json$/i.test(fileName)) throw new TypeError('安全でない教材ファイル名です');
+  const isLocal = isLocalDevelopmentHost();
+  const hasBrowserOrigin = typeof globalThis.location?.origin === 'string';
+  const cached = await contentCacheAdapter?.getCachedContent?.(fileName).catch(() => null);
+
+  if (!isLocal && hasBrowserOrigin && typeof fetch === 'function') {
+    try {
+      const headers = cached?.etag ? { 'if-none-match': cached.etag } : undefined;
+      const response = await fetch(`/api/game-data/${encodeURIComponent(fileName)}`, {
+        credentials: 'same-origin',
+        headers
+      });
+      if (response.status === 304 && cached?.data) return cached.data;
+      if (response.ok) {
+        const data = await response.json();
+        await contentCacheAdapter?.cacheContent?.(fileName, data, response.headers.get('etag'));
+        return data;
+      }
+    } catch (error) {
+      console.warn(`[CurriculumLoader] R2教材 ${fileName} の取得に失敗しました:`, error);
+    }
+    if (cached?.data) return cached.data;
+  }
+
+  if (hasBrowserOrigin && typeof fetch === 'function') {
+    const response = await fetch(localPath).catch(() => null);
+    if (response?.ok) return response.json();
+  }
+  return cached?.data || null;
 }
 
 /**

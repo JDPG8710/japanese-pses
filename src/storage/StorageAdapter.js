@@ -1,7 +1,7 @@
 import { isLocalDevelopmentHost } from '../runtime/LocalEnvironment.js';
 
 const DB_NAME = 'japanese-pses-learning';
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 const SYNC_INTERVAL_MS = 60_000;
 
 export class StorageAdapter extends EventTarget {
@@ -12,7 +12,13 @@ export class StorageAdapter extends EventTarget {
     this.cloudEnabled = Boolean(userId);
     this.fetchImpl = fetchImpl;
     this.db = null;
-    this.memory = { user_profile: new Map(), node_progress: new Map(), guest_tracker: new Map(), star_graph_cache: new Map() };
+    this.memory = {
+      user_profile: new Map(),
+      node_progress: new Map(),
+      guest_tracker: new Map(),
+      star_graph_cache: new Map(),
+      content_cache: new Map()
+    };
     this.syncTimer = null;
     this.syncInFlight = null;
     this.dirty = false;
@@ -60,6 +66,21 @@ export class StorageAdapter extends EventTarget {
 
   async cacheStarGraph(graph, etag = null) {
     return this.put('star_graph_cache', { cache_key: 'star_graph.json', graph, etag, updated_at: Date.now() });
+  }
+
+  async getCachedContent(fileName) {
+    if (!isSafeContentFileName(fileName)) throw new TypeError('安全でない教材ファイル名です');
+    return this.get('content_cache', fileName);
+  }
+
+  async cacheContent(fileName, data, etag = null) {
+    if (!isSafeContentFileName(fileName)) throw new TypeError('安全でない教材ファイル名です');
+    return this.put('content_cache', {
+      content_key: fileName,
+      data,
+      etag,
+      updated_at: Date.now()
+    });
   }
 
   async getLocalSnapshot() {
@@ -132,7 +153,13 @@ export class StorageAdapter extends EventTarget {
   }
 
   async put(store, value) {
-    const keyPath = { user_profile: 'user_id', node_progress: 'progress_key', guest_tracker: 'fingerprint_hash', star_graph_cache: 'cache_key' }[store];
+    const keyPath = {
+      user_profile: 'user_id',
+      node_progress: 'progress_key',
+      guest_tracker: 'fingerprint_hash',
+      star_graph_cache: 'cache_key',
+      content_cache: 'content_key'
+    }[store];
     if (!this.db) { this.memory[store].set(value[keyPath], structuredCloneSafe(value)); return value; }
     await idbRequest(this.db.transaction(store, 'readwrite').objectStore(store).put(value));
     return value;
@@ -167,6 +194,7 @@ function openDatabase() {
       if (!db.objectStoreNames.contains('node_progress')) db.createObjectStore('node_progress', { keyPath: 'progress_key' });
       if (!db.objectStoreNames.contains('guest_tracker')) db.createObjectStore('guest_tracker', { keyPath: 'fingerprint_hash' });
       if (!db.objectStoreNames.contains('star_graph_cache')) db.createObjectStore('star_graph_cache', { keyPath: 'cache_key' });
+      if (!db.objectStoreNames.contains('content_cache')) db.createObjectStore('content_cache', { keyPath: 'content_key' });
     };
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
@@ -176,3 +204,4 @@ function openDatabase() {
 
 function idbRequest(request) { return new Promise((resolve, reject) => { request.onsuccess = () => resolve(request.result ?? null); request.onerror = () => reject(request.error); }); }
 function structuredCloneSafe(value) { return typeof structuredClone === 'function' ? structuredClone(value) : JSON.parse(JSON.stringify(value)); }
+function isSafeContentFileName(fileName) { return typeof fileName === 'string' && /^[a-z0-9_\-]+\.json$/i.test(fileName); }

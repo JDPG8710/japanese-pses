@@ -9,7 +9,7 @@
  * 6. 生活：生活仕分け箱 (CategorySortGame)
  */
 
-import { FULL_CURRICULUM_DAG } from './CurriculumData.js';
+import { FULL_CURRICULUM_DAG, loadKanjiDatabase, loadPrefecturesDatabase } from './CurriculumData.js';
 import { KukuLinkGame } from './KukuLinkGame.js';
 import { getAudioSynthesizer } from './AudioSynthesizer.js';
 import { getFXSystem } from './FXSystem.js';
@@ -949,8 +949,7 @@ async function fetchKanji1026() {
         }
       }
       if (typeof fetch === 'function') {
-        const res = await fetch('./data/kanji_1026.json');
-        if (res.ok) KANJI_1026_CACHE = await res.json();
+        KANJI_1026_CACHE = await loadKanjiDatabase();
       }
     } catch (e) {
       // Fallback
@@ -2698,8 +2697,7 @@ async function fetchPrefectures47() {
         }
       }
       if (typeof fetch === 'function') {
-        const res = await fetch('./data/prefectures_47.json');
-        if (res.ok) PREFECTURES_47_CACHE = await res.json();
+        PREFECTURES_47_CACHE = await loadPrefecturesDatabase();
       }
     } catch (e) {
       // Fallback

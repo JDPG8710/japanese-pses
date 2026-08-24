@@ -1,3 +1,5 @@
+import { isLocalDevelopmentHost } from '../runtime/LocalEnvironment.js';
+
 const DB_NAME = 'japanese-pses-learning';
 const DB_VERSION = 3;
 const SYNC_INTERVAL_MS = 60_000;
@@ -14,7 +16,7 @@ export class StorageAdapter extends EventTarget {
     this.syncTimer = null;
     this.syncInFlight = null;
     this.dirty = false;
-    this.localMode = isLocalDevelopment();
+    this.localMode = isLocalDevelopmentHost();
     this.onOnline = () => this.syncNow('network-restored').catch(() => {});
   }
 
@@ -174,4 +176,3 @@ function openDatabase() {
 
 function idbRequest(request) { return new Promise((resolve, reject) => { request.onsuccess = () => resolve(request.result ?? null); request.onerror = () => reject(request.error); }); }
 function structuredCloneSafe(value) { return typeof structuredClone === 'function' ? structuredClone(value) : JSON.parse(JSON.stringify(value)); }
-function isLocalDevelopment() { return typeof location !== 'undefined' && ['localhost', '127.0.0.1', '::1'].includes(location.hostname); }

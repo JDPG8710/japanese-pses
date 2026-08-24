@@ -14,8 +14,25 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
       ]) assert.ok(html.includes(`id="${id}"`), `${id} が必要です`);
       assert.ok(html.includes('showLearningModeModal();'), '初期化後に入口モーダルを表示する必要があります');
       assert.ok(html.includes('GAME_GRADE_SUPPORT_MAP'), 'ゲームと対応学年は共通マップから生成してください');
-      assert.ok(auth.includes("['localhost', '127.0.0.1', '::1'].includes(location.hostname)"), 'ローカル環境は認証を迂回してください');
+      assert.ok(auth.includes('isLocalDevelopmentHost(location.hostname)'), 'ローカル環境は共通判定で認証を迂回してください');
       assert.ok(auth.includes('await this.modal.show('), '本番の未認証アクセスではログイン画面を表示してください');
+    });
+
+    test('ループバックと主要なプライベートLANアドレスはローカル免認証として扱う', () => {
+      const { isLocalDevelopmentHost } = loadESModule(path.join(root, 'src/runtime/LocalEnvironment.js'));
+      for (const hostname of ['localhost', '127.0.0.1', '::1', '192.168.1.8', '10.0.0.5', '172.16.0.2', '172.31.255.254']) {
+        assert.strictEqual(isLocalDevelopmentHost(hostname), true, `${hostname} はローカル環境です`);
+      }
+      for (const hostname of ['example.com', '8.8.8.8', '172.32.0.1', '192.167.1.8']) {
+        assert.strictEqual(isLocalDevelopmentHost(hostname), false, `${hostname} はローカル環境ではありません`);
+      }
+    });
+
+    test('LAN起動スクリプトは4173番を全インターフェースで公開する', () => {
+      const script = fs.readFileSync(path.join(root, 'scripts/start-lan-server.ps1'), 'utf8');
+      assert.ok(script.includes('[int]$Port = 4173'));
+      assert.ok(script.includes('--bind 0.0.0.0'));
+      assert.ok(script.includes('Get-NetFirewallApplicationFilter'));
     });
 
     test('Profile は6学年ごとの総関門数・クリア数と卒業証を表示する', () => {

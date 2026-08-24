@@ -8,6 +8,7 @@
  */
 
 import { GraphEngine } from './GraphEngine.js';
+import { isLocalDevelopmentHost } from './src/runtime/LocalEnvironment.js';
 
 export let GRADES = [
   { id: 1, name: '小学1年生', alias: '1年' },
@@ -68,7 +69,7 @@ export function validateCurriculumNodeSchema(nodes = []) {
 export async function loadCurriculumFromJSON({ cacheAdapter = null } = {}) {
   try {
     // 本番は R2 の star_graph.json を優先し、失敗時は IndexedDB キャッシュ、同梱JSONの順で復旧する。
-    const isLocal = typeof location !== 'undefined' && ['localhost', '127.0.0.1', '::1'].includes(location.hostname);
+    const isLocal = isLocalDevelopmentHost();
     let masterJson = null;
     if (!isLocal && typeof fetch === 'function') {
       const cloudRes = await fetch('/api/star-graph', { credentials: 'include' }).catch(() => null);

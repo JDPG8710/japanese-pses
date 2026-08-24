@@ -1,5 +1,6 @@
 import { LoginModal } from './LoginModal.js';
 import { GuestTrialManager } from './GuestTrialManager.js';
+import { isLocalDevelopmentHost } from '../runtime/LocalEnvironment.js';
 
 export class AuthManager extends EventTarget {
   constructor({ apiBase = '/api', turnstileSiteKey, storage, fetchImpl = globalThis.fetch?.bind(globalThis) } = {}) {
@@ -7,7 +8,7 @@ export class AuthManager extends EventTarget {
     this.apiBase = apiBase.replace(/\/$/, '');
     this.storage = storage;
     this.fetchImpl = fetchImpl;
-    this.localMode = ['localhost', '127.0.0.1', '::1'].includes(location.hostname);
+    this.localMode = isLocalDevelopmentHost(location.hostname);
     this.modal = this.localMode ? null : new LoginModal({ siteKey: turnstileSiteKey });
     this.guest = new GuestTrialManager({ apiBase: this.apiBase, storage, fetchImpl });
     this.guest.addEventListener('expired', () => this.blockExpiredGuest());

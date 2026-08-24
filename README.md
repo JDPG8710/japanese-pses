@@ -28,10 +28,20 @@ npx serve .
 または次のコマンドを使用します。
 
 ```powershell
-python -m http.server 8080
+python -m http.server 4173 --bind 127.0.0.1
 ```
 
 表示された URL をブラウザーで開いてください。
+
+### 同じLANのスマートフォン・タブレットから開く
+
+Windows では次のスクリプトを実行すると、サーバーが全ネットワークインターフェースで待ち受け、利用可能なLAN用URLを表示します。
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\start-lan-server.ps1
+```
+
+手動で起動する場合は `python -m http.server 4173 --bind 0.0.0.0` を使用します。同じWi-Fi／LAN上の端末から `http://<このPCのIPv4アドレス>:4173/` を開いてください。プライベートLANアドレス（`10.x.x.x`、`172.16〜31.x.x`、`192.168.x.x`）ではローカルオフラインモードとなり、OAuth／Turnstile ログインは要求されません。Windows Defender Firewall の確認が表示された場合は、現在利用中のネットワークで Python の通信を許可してください。
 
 ## テスト
 

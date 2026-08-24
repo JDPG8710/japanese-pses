@@ -152,6 +152,40 @@ function register({ describe, test, assert, loadESModule }) {
       assert.strictEqual(economy.playerMastery[nodeId] || 0, 0, '0-accuracy attempt must not unlock mastery');
       assert.strictEqual(economy.starCoins, beforeCoins, '0-accuracy attempt must not award coins');
     });
+
+    test('CT8: every game uses the modal countdown and timeout produces a failed result', () => {
+      let now = 10_000;
+      let scheduledTick = null;
+      let timeoutResult = null;
+      const modal = new MiniGameModal({
+        now: () => now,
+        setIntervalImpl: callback => { scheduledTick = callback; return 99; },
+        clearIntervalImpl: () => {}
+      });
+      const node = {
+        id: 'MATH_G3_DIV_FRACTION', subject: '算数', grade: 3,
+        name: 'Countdown contract', gameType: 'MATH_CURRICULUM', gameData: { timeLimit: 2 }
+      };
+      modal.currentGame = {
+        running: true,
+        correctCount: 1,
+        questions: [{}, {}, {}],
+        destroy() { this.running = false; }
+      };
+      modal.stageSettled = false;
+      modal.onGameOver = (_node, stars, score, result) => { timeoutResult = { stars, score, result }; };
+      modal.startStageCountdown(node);
+      assert.strictEqual(typeof scheduledTick, 'function');
+      assert.strictEqual(modal.currentGame.timeLeft, 2);
+      now += 2_001;
+      scheduledTick();
+      assert.strictEqual(modal.currentGame.timeLeft, 0);
+      assert.strictEqual(modal.currentGame.running, false);
+      assert.strictEqual(timeoutResult.stars, 0);
+      assert.strictEqual(timeoutResult.score, 0);
+      assert.strictEqual(timeoutResult.result.reason, 'TIME_UP');
+      assert.strictEqual(timeoutResult.result.cleared, false);
+    });
   });
 }
 

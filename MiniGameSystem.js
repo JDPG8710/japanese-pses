@@ -140,7 +140,18 @@ if (typeof window !== 'undefined') {
 export class MiniGameModal {
   static GAME_GRADE_SUPPORT_MAP = GAME_GRADE_SUPPORT_MAP;
 
-  constructor() {
+  constructor({
+    now = () => Date.now(),
+    setIntervalImpl = (callback, delay) => globalThis.setInterval(callback, delay),
+    clearIntervalImpl = timerId => globalThis.clearInterval(timerId)
+  } = {}) {
+    this.now = now;
+    this.setIntervalImpl = setIntervalImpl;
+    this.clearIntervalImpl = clearIntervalImpl;
+    this.stageTimerId = null;
+    this.stageDeadline = 0;
+    this.stageTimeLimit = 0;
+    this.stageSettled = false;
     this.createModalDOM();
     this.currentGame = null;
     this.boundCanvasResize = () => this.handleCanvasResize();
@@ -178,7 +189,7 @@ export class MiniGameModal {
             <div class="flex items-center gap-2 sm:gap-3 flex-shrink-0">
               <button id="game-hint-btn" class="hidden px-2.5 py-1 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 text-xs font-bold border border-sky-500/30 transition cursor-pointer min-h-[36px]">💡 ヒント</button>
               <button id="game-shuffle-btn" class="hidden px-2.5 py-1 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 text-xs font-bold border border-purple-500/30 transition cursor-pointer min-h-[36px]">🌀 シャッフル</button>
-              <div id="game-timer" class="text-xs sm:text-sm font-mono text-amber-400 font-bold bg-amber-400/10 px-2.5 sm:px-3 py-1 rounded-full whitespace-nowrap">⏱ 60s</div>
+              <div id="game-timer" role="timer" aria-live="polite" class="text-xs sm:text-sm font-mono text-amber-400 font-bold bg-amber-400/10 border border-amber-400/30 px-2.5 sm:px-3 py-1 rounded-full whitespace-nowrap">⏱ 1:00</div>
               <button id="game-close-btn" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition cursor-pointer" title="閉じる">✕</button>
             </div>
           </div>
@@ -254,14 +265,81 @@ export class MiniGameModal {
     if (this.currentGame && typeof this.currentGame.render === 'function') this.currentGame.render();
   }
 
+  resolveStageTimeLimit(node, game = this.currentGame) {
+    const configured = Number(node?.gameData?.timeLimit);
+    if (Number.isFinite(configured) && configured > 0) return Math.ceil(configured);
+    const gameLimit = Number(game?.totalTime ?? game?.timeLeft);
+    if (Number.isFinite(gameLimit) && gameLimit > 0) return Math.ceil(gameLimit);
+    return node?.gameType === 'GRADE_EXAM' ? 120 : 60;
+  }
+
+  startStageCountdown(node) {
+    this.stopStageCountdown();
+    this.stageTimeLimit = this.resolveStageTimeLimit(node);
+    this.stageDeadline = this.now() + this.stageTimeLimit * 1000;
+    this.updateStageCountdown(node);
+    this.stageTimerId = this.setIntervalImpl(() => this.updateStageCountdown(node), 250);
+  }
+
+  updateStageCountdown(node) {
+    if (this.stageSettled || !this.currentGame) return;
+    const remainingSeconds = Math.max(0, Math.ceil((this.stageDeadline - this.now()) / 1000));
+    this.currentGame.timeLeft = remainingSeconds;
+    this.currentGame.remainingTime = remainingSeconds;
+    this.renderStageCountdown(remainingSeconds);
+    if (remainingSeconds <= 0) this.handleStageTimeout(node);
+  }
+
+  renderStageCountdown(remainingSeconds) {
+    const timerEl = typeof document !== 'undefined' ? document.getElementById('game-timer') : null;
+    if (!timerEl) return;
+    const minutes = Math.floor(remainingSeconds / 60);
+    const seconds = remainingSeconds % 60;
+    timerEl.innerText = `⏱ ${minutes}:${String(seconds).padStart(2, '0')}`;
+    timerEl.classList.toggle('text-rose-300', remainingSeconds <= 10);
+    timerEl.classList.toggle('bg-rose-500/20', remainingSeconds <= 10);
+    timerEl.classList.toggle('animate-pulse', remainingSeconds <= 10);
+    timerEl.setAttribute('aria-label', `残り時間 ${minutes}分${seconds}秒`);
+  }
+
+  stopStageCountdown() {
+    if (this.stageTimerId != null) this.clearIntervalImpl(this.stageTimerId);
+    this.stageTimerId = null;
+    this.stageDeadline = 0;
+  }
+
+  handleStageTimeout(node) {
+    if (this.stageSettled) return;
+    this.stageSettled = true;
+    this.stopStageCountdown();
+    const game = this.currentGame;
+    game.timeLeft = 0;
+    game.remainingTime = 0;
+    const correctCount = Number(game.correctCount ?? game.qIndex ?? game.matchedPairsCount) || 0;
+    const totalCount = Number(game.totalCount ?? game.totalPairs ?? game.questions?.length ?? game.puzzles?.length) || 10;
+    game.destroy?.();
+    this.onGameOver(node, 0, 0, {
+      cleared: false,
+      is_success: false,
+      accuracy: totalCount > 0 ? Math.max(0, Math.min(1, correctCount / totalCount)) : 0,
+      correctCount,
+      totalCount,
+      reason: 'TIME_UP',
+      timedOut: true,
+      time_remaining_sec: 0
+    });
+  }
+
   // 知識ノードからゲームを開始
   open(nodeInfo, stageNum = 1) {
+    this.stopStageCountdown();
+    this.stageSettled = false;
     if (this.modal) this.modal.classList.remove('hidden');
     this.currentLevel = Number(stageNum) || 1;
     const scoreEl = document.getElementById('game-score');
     if (scoreEl) scoreEl.innerText = '0';
     const timerEl = document.getElementById('game-timer');
-    if (timerEl) timerEl.innerText = '⏱ 60s';
+    if (timerEl) timerEl.innerText = '⏱ 1:00';
     const overlayEl = document.getElementById('game-overlay-ui');
     if (overlayEl) {
       overlayEl.innerHTML = '';
@@ -575,6 +653,8 @@ export class MiniGameModal {
   }
 
   initGameInstance(gameType, targetNode, canvas, customGrade = null, customLevel = 1) {
+    this.stopStageCountdown();
+    this.stageSettled = false;
     const hintBtn = document.getElementById('game-hint-btn');
     const shuffleBtn = document.getElementById('game-shuffle-btn');
 
@@ -582,7 +662,12 @@ export class MiniGameModal {
     if (hintBtn) hintBtn.classList.add('hidden');
     if (shuffleBtn) shuffleBtn.classList.add('hidden');
 
-    const onWinCallback = (stars, score, result = {}) => this.onGameOver(targetNode, stars, score, result);
+    const onWinCallback = (stars, score, result = {}) => {
+      if (this.stageSettled) return;
+      this.stageSettled = true;
+      this.stopStageCountdown();
+      this.onGameOver(targetNode, stars, score, result);
+    };
     const hintEl = document.getElementById('game-hint');
     const effectiveGrade = customGrade || targetNode.grade || 1;
     const levelNum = Number(customLevel) || 1;
@@ -618,7 +703,8 @@ export class MiniGameModal {
           timeLimit: targetNode.gameData?.timeLimit || 75,
           onWin: onWinCallback,
           grade: effectiveGrade,
-          level: levelNum
+          level: levelNum,
+          manageCountdown: false
         });
         if (hintEl) hintEl.innerText = '操作ヒント：式（例: 7×8）と積（56）を2曲がり以内の銀河レーザーでつなげよう！';
         break;
@@ -693,7 +779,7 @@ export class MiniGameModal {
 
       case 'KOKUGO_CURRICULUM':
         if (selectedMode === 'KANJI_SLASH') {
-          this.currentGame = new KanjiSlashGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum);
+          this.currentGame = new KanjiSlashGame(canvas, { ...targetNode.gameData, manageCountdown: false }, onWinCallback, effectiveGrade, levelNum);
         } else if (selectedMode === 'RADICAL_BUILDER') {
           this.currentGame = new RadicalBuilderGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum);
         } else {
@@ -706,7 +792,7 @@ export class MiniGameModal {
 
       case 'MATH_CURRICULUM':
         if (selectedMode === 'KUKU_LINK' && effectiveGrade === 2) {
-          this.currentGame = new KukuLinkGame(canvas, { rows: 4, cols: 4, timeLimit: 75, onWin: onWinCallback, grade: effectiveGrade, level: levelNum });
+          this.currentGame = new KukuLinkGame(canvas, { rows: 4, cols: 4, timeLimit: 75, onWin: onWinCallback, grade: effectiveGrade, level: levelNum, manageCountdown: false });
         } else {
           this.currentGame = new MathCurriculumGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum);
         }
@@ -780,7 +866,7 @@ export class MiniGameModal {
           this.currentGame = new CurriculumQuizGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum, '国語');
           if (hintEl) hintEl.innerText = '操作ヒント：この学年の国語テーマ10問に答えよう！';
         } else {
-          this.currentGame = new KanjiSlashGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum);
+          this.currentGame = new KanjiSlashGame(canvas, { ...targetNode.gameData, manageCountdown: false }, onWinCallback, effectiveGrade, levelNum);
           if (hintEl) hintEl.innerText = `操作ヒント：小学${effectiveGrade}年の漢字が落ちる前に正しい読みをタップまたはスワイプ斬撃！`;
         }
         break;
@@ -793,6 +879,7 @@ export class MiniGameModal {
     if (this.currentGame && typeof this.currentGame.start === 'function') {
       this.attachStandardSaveState(this.currentGame, gameType, targetNode, levelNum);
       this.currentGame.start();
+      if (!this.stageSettled && this.currentGame) this.startStageCountdown(targetNode);
     }
   }
 
@@ -832,6 +919,7 @@ export class MiniGameModal {
   }
 
   onGameOver(node, stars = 3, score = 100, result = {}) {
+    this.stopStageCountdown();
     const cleared = result?.cleared ?? result?.is_success ?? (Number(stars) > 0);
     const accuracy = Number.isFinite(Number(result?.accuracy))
       ? Math.max(0, Math.min(1, Number(result.accuracy)))
@@ -916,6 +1004,8 @@ export class MiniGameModal {
   }
 
   close() {
+    this.stopStageCountdown();
+    this.stageSettled = true;
     if (this.currentGame) {
       this.currentGame.destroy();
       this.currentGame = null;
@@ -970,6 +1060,7 @@ export class KanjiSlashGame {
     this.score = 0;
     this.combo = 0;
     this.timeLeft = 50;
+    this.manageCountdown = gameData?.manageCountdown !== false;
     this.running = false;
     this.questions = gameData?.questions ? [...gameData.questions] : [];
     this.qIndex = 0;
@@ -1020,15 +1111,17 @@ export class KanjiSlashGame {
     this.canvas.addEventListener('pointerdown', this.boundHandlePointer);
     this.canvas.addEventListener('pointermove', this.boundHandlePointerMove);
 
-    this.timerInterval = setInterval(() => {
-      this.timeLeft--;
-      const tEl = document.getElementById('game-timer');
-      if (tEl) tEl.innerText = `⏱ ${this.timeLeft}s`;
-      if (this.timeLeft <= 0) {
-        this.destroy();
-        this.onWin(0, this.score, { cleared: false, accuracy: 0, correctCount: this.qIndex, totalCount: this.questions.length });
-      }
-    }, 1000);
+    if (this.manageCountdown) {
+      this.timerInterval = setInterval(() => {
+        this.timeLeft--;
+        const tEl = document.getElementById('game-timer');
+        if (tEl) tEl.innerText = `⏱ ${this.timeLeft}s`;
+        if (this.timeLeft <= 0) {
+          this.destroy();
+          this.onWin(0, this.score, { cleared: false, accuracy: 0, correctCount: this.qIndex, totalCount: this.questions.length });
+        }
+      }, 1000);
+    }
 
     this.loop();
   }

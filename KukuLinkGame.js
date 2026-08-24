@@ -42,6 +42,7 @@ export class KukuLinkGame {
     this.combo = 0;
     this.maxCombo = 0;
     this.configuredTimeLimit = Number(options.timeLimit) || null;
+    this.manageCountdown = options.manageCountdown !== false;
     this.timeLeft = this.getTimeLimit();
     this.totalTime = this.timeLeft;
     this.basePoints = 0;
@@ -75,18 +76,20 @@ export class KukuLinkGame {
     this.canvas.addEventListener('pointerdown', this.boundPointer);
 
     clearInterval(this.timerInterval);
-    this.timerInterval = setInterval(() => {
-      this.timeLeft--;
-      if (typeof document !== 'undefined') {
-        const timerEl = document.getElementById('game-timer');
-        if (timerEl) timerEl.innerText = `⏱ ${this.timeLeft}s`;
-      }
+    if (this.manageCountdown) {
+      this.timerInterval = setInterval(() => {
+        this.timeLeft--;
+        if (typeof document !== 'undefined') {
+          const timerEl = document.getElementById('game-timer');
+          if (timerEl) timerEl.innerText = `⏱ ${this.timeLeft}s`;
+        }
 
-      if (this.timeLeft <= 0) {
-        this.destroy();
-        this.finishGame(false);
-      }
-    }, 1000);
+        if (this.timeLeft <= 0) {
+          this.destroy();
+          this.finishGame(false);
+        }
+      }, 1000);
+    }
 
     this.renderLoop();
   }

@@ -10,7 +10,7 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
       const worker = read('worker/index.js');
       for (const route of [
         '/api/auth/turnstile-verify', '/api/auth/google', '/api/auth/apple',
-        '/api/guest/start', '/api/guest/status', '/api/game-data', '/api/star-graph', '/api/state'
+        '/api/guest/start', '/api/guest/status', '/api/guest/usage', '/api/game-data', '/api/star-graph', '/api/state'
       ]) assert.ok(worker.includes(route), `${route} が必要です`);
       assert.ok(worker.includes('https://challenges.cloudflare.com/turnstile/v0/siteverify'));
       assert.ok(worker.includes('GUEST_TTL_SECONDS'));
@@ -49,12 +49,12 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
       }
     });
 
-    test('旧ゲスト記録を移行し、週2時間・7日周期の新しい体験を発行する', async () => {
+    test('旧ゲスト記録を移行し、累積2時間・7日周期の新しい体験を発行する', async () => {
       const worker = loadESModule(path.join(root, 'worker/index.js')).default;
       const originalFetch = global.fetch;
       const originalNow = Date.now;
       const now = 1_800_000_000_000;
-      let current = { status: 'EXPIRED', startTime: now - 86_400_000, expiresAt: now - 1, blockExpiresAt: now + 2_000_000 };
+      let current = { policyVersion: 2, status: 'EXPIRED', startTime: now - 86_400_000, blockExpiresAt: now + 2_000_000 };
       let stored;
       let deleted = false;
       global.fetch = async () => new Response(JSON.stringify({ success: true, hostname: 'app.example.test', action: 'access' }), {
@@ -73,13 +73,16 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
               policy_version: current.policyVersion,
               status: current.status,
               start_time: current.startTime,
-              expires_at: current.expiresAt,
-              block_expires_at: current.blockExpiresAt
+              expires_at: current.blockExpiresAt,
+              block_expires_at: current.blockExpiresAt,
+              used_ms: current.usedMs || 0,
+              last_heartbeat_at: current.lastHeartbeatAt || null,
+              is_playing: current.isPlaying ? 1 : 0
             } : null,
             run: (sql, args) => {
               if (sql.startsWith('DELETE FROM guest_trials')) { deleted = true; current = null; }
               if (sql.includes('INSERT INTO guest_trials')) {
-                stored = { policyVersion: args[1], status: 'ACTIVE', startTime: args[2], expiresAt: args[3], blockExpiresAt: args[4] };
+                stored = { policyVersion: args[1], status: 'ACTIVE', startTime: args[2], blockExpiresAt: args[3], usedMs: 0, isPlaying: false };
                 current = stored;
               }
             }
@@ -87,14 +90,63 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
         }, {});
         const result = await response.json();
         assert.equal(response.status, 201);
-        assert.equal(deleted, true, '旧30日ポリシー記録を削除してください');
-        assert.equal(result.policyVersion, 2);
-        assert.equal(result.expiresAt - result.startTime, 2 * 60 * 60 * 1000);
-        assert.equal(result.blockExpiresAt - result.startTime, 7 * 24 * 60 * 60 * 1000);
-        assert.equal(stored.policyVersion, 2);
+        assert.equal(deleted, true, '旧方式の記録を削除してください');
+        assert.equal(result.policyVersion, 3);
+        assert.equal(result.usedMs, 0);
+        assert.equal(result.remainingMs, 2 * 60 * 60 * 1000);
+        assert.equal(result.periodEndsAt - result.periodStartedAt, 7 * 24 * 60 * 60 * 1000);
+        assert.equal(stored.policyVersion, 3);
         assert.equal(stored.blockExpiresAt - stored.startTime, 7 * 24 * 60 * 60 * 1000);
       } finally {
         global.fetch = originalFetch;
+        Date.now = originalNow;
+      }
+    });
+
+    test('Worker は遊んでいる区間だけを累積し、ハートビート遅延を45秒で制限する', async () => {
+      const worker = loadESModule(path.join(root, 'worker/index.js')).default;
+      const originalNow = Date.now;
+      let now = 1_800_000_000_000;
+      const allowance = 2 * 60 * 60 * 1000;
+      const current = {
+        policy_version: 3, status: 'ACTIVE', start_time: now - 60_000,
+        expires_at: now + 604_800_000, block_expires_at: now + 604_800_000,
+        used_ms: 10_000, last_heartbeat_at: now - 30_000, is_playing: 1
+      };
+      const database = createD1Mock({
+        first: sql => sql.includes('FROM guest_trials') ? { ...current } : null,
+        run: (sql, args) => {
+          if (!sql.includes('UPDATE guest_trials SET')) return;
+          const [heartbeatAt, graceMs, limitMs, reportedMs, active] = args;
+          const delta = current.is_playing && current.last_heartbeat_at != null
+            ? Math.min(graceMs, Math.max(0, heartbeatAt - current.last_heartbeat_at))
+            : 0;
+          current.used_ms = Math.min(limitMs, Math.max(reportedMs, current.used_ms + delta));
+          current.status = current.used_ms >= limitMs ? 'EXPIRED' : 'ACTIVE';
+          current.is_playing = current.status === 'EXPIRED' ? 0 : active;
+          current.last_heartbeat_at = heartbeatAt;
+        }
+      });
+      const env = { APP_ORIGIN: 'https://app.example.test', FINGERPRINT_PEPPER: 'pepper', DB: database };
+      const request = (route, active) => new Request(`https://app.example.test/api/guest/${route}`, {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ fingerprintHash: 'b'.repeat(64), usedMs: current.used_ms, ...(active == null ? {} : { active }) })
+      });
+      Date.now = () => now;
+      try {
+        let response = await worker.fetch(request('usage', true), env, {});
+        let result = await response.json();
+        assert.equal(result.usedMs, 40_000, '直前のプレイ30秒を一度だけ加算してください');
+        now += 5 * 60 * 1000;
+        response = await worker.fetch(request('status'), env, {});
+        result = await response.json();
+        assert.equal(result.usedMs, 85_000, '長い通信断は45秒までに制限してください');
+        now += 5 * 60 * 1000;
+        response = await worker.fetch(request('status'), env, {});
+        result = await response.json();
+        assert.equal(result.usedMs, 85_000, '停止中の経過時間を加算しないでください');
+        assert.equal(result.remainingMs, allowance - 85_000);
+      } finally {
         Date.now = originalNow;
       }
     });
@@ -103,8 +155,35 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
       const manager = read('src/auth/GuestTrialManager.js');
       assert.ok(manager.includes('2 * 60 * 60 * 1000'));
       assert.ok(manager.includes('7 * 24 * 60 * 60 * 1000'));
-      assert.ok(manager.includes('formatGuestRemaining(remaining)'));
+      assert.ok(manager.includes('formatGuestRemaining(this.remainingMs)'));
       assert.ok(manager.includes("String(hours).padStart(2, '0')"));
+      assert.ok(manager.includes('GAME_PLAY_STATE_CHANGED'));
+      assert.ok(manager.includes('プレイ中のみ'));
+    });
+
+    test('ブラウザー側もゲーム実行中だけ残り時間を減らす', () => {
+      const { GuestTrialManager } = loadESModule(path.join(root, 'src/auth/GuestTrialManager.js'));
+      let now = 10_000;
+      const manager = new GuestTrialManager({
+        storage: { saveGuestTracker: async () => {}, getGuestTracker: async () => null },
+        fetchImpl: null,
+        now: () => now,
+        setIntervalImpl: () => 1,
+        clearIntervalImpl: () => {}
+      });
+      manager.fingerprintHash = 'c'.repeat(64);
+      manager.resume({ usedMs: 0, remainingMs: 7_200_000, periodStartedAt: now, periodEndsAt: now + 604_800_000 });
+      manager.setGameActive(true);
+      now += 1_000;
+      manager.tick();
+      now += 1_000;
+      manager.tick();
+      assert.equal(manager.usedMs, 2_000);
+      manager.setGameActive(false);
+      now += 60_000;
+      manager.tick();
+      assert.equal(manager.usedMs, 2_000, 'ゲーム停止中の1分を消費しないでください');
+      manager.destroy();
     });
 
     test('Wrangler はD1を唯一のクラウドデータストアとして束縛し、秘密値を平文で持たない', () => {

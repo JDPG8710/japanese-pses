@@ -11,7 +11,7 @@ export class AuthManager extends EventTarget {
     this.localMode = isLocalDevelopmentHost(location.hostname);
     this.modal = this.localMode ? null : new LoginModal({ siteKey: turnstileSiteKey });
     this.guest = new GuestTrialManager({ apiBase: this.apiBase, storage, fetchImpl });
-    this.guest.addEventListener('expired', () => this.blockExpiredGuest());
+    this.guest.addEventListener('expired', event => this.blockExpiredGuest(event.detail));
     this.modal?.addEventListener('submit', event => this.handleSubmit(event.detail));
   }
 
@@ -55,9 +55,12 @@ export class AuthManager extends EventTarget {
     }
   }
 
-  blockExpiredGuest() {
+  blockExpiredGuest({ reason } = {}) {
     window.dispatchEvent(new CustomEvent('GUEST_TRIAL_EXPIRED'));
-    this.modal?.show({ message: '今週分の2時間ゲスト体験が終了しました。続けるにはGoogleでログインしてください。' });
+    const message = reason === 'PERIOD_ENDED'
+      ? '前回のゲスト体験から1週間が経過しました。人間確認を完了すると、新しい週の体験を開始できます。'
+      : '今週分の累積2時間ゲスト体験を使い切りました。続けるにはGoogleでログインしてください。';
+    this.modal?.show({ message });
   }
 }
 

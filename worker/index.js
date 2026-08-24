@@ -7,9 +7,10 @@ const APPLE_TOKEN_URL = 'https://appleid.apple.com/auth/token';
 const APPLE_JWKS_URL = 'https://appleid.apple.com/auth/keys';
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7;
 const OAUTH_TTL_SECONDS = 10 * 60;
-const GUEST_POLICY_VERSION = 2;
+const GUEST_POLICY_VERSION = 3;
 const GUEST_TTL_SECONDS = 60 * 60 * 24 * 7;
 const GUEST_DURATION_MS = 2 * 60 * 60 * 1000;
+const GUEST_HEARTBEAT_GRACE_MS = 45 * 1000;
 const GAME_DATA_FILES = [
   'eigo.json', 'kanji_1026.json', 'kokugo.json', 'metadata.json',
   'prefectures_47.json', 'rika.json', 'sansu.json', 'seikatsu.json',
@@ -40,6 +41,7 @@ async function routeRequest(request, env) {
   if (url.pathname === '/api/auth/logout' && request.method === 'POST') return handleLogout(request, env);
   if (url.pathname === '/api/guest/start' && request.method === 'POST') return handleGuestStart(request, env);
   if (url.pathname === '/api/guest/status' && request.method === 'POST') return handleGuestStatus(request, env);
+  if (url.pathname === '/api/guest/usage' && request.method === 'POST') return handleGuestUsage(request, env);
   if ((url.pathname === '/api/game-data' || url.pathname.startsWith('/api/game-data/')) && request.method === 'GET') return handleGameData(request, env);
   if (url.pathname === '/api/star-graph' && request.method === 'GET') return handleStarGraph(request, env);
   if (url.pathname === '/api/state' && request.method === 'GET') return handleStateRead(request, env);
@@ -249,20 +251,26 @@ async function handleGuestStart(request, env) {
   const key = await guestKey(body.fingerprintHash, request, env);
   const database = requiredDatabase(env);
   const existing = guestRecordFromRow(await database.prepare('SELECT * FROM guest_trials WHERE guest_key = ?1 LIMIT 1').bind(key).first());
-  if (isCurrentGuestRecord(existing)) return json({ allowed: false, status: guestStatus(existing), ...guestRecordResponse(existing) }, 403, request, env);
+  if (isCurrentGuestRecord(existing)) {
+    const status = guestStatus(existing);
+    return json({ allowed: status === 'ACTIVE', status, ...guestRecordResponse(existing) }, status === 'ACTIVE' ? 200 : 403, request, env);
+  }
   if (existing) await database.prepare('DELETE FROM guest_trials WHERE guest_key = ?1').bind(key).run();
   const startTime = Date.now();
   const record = {
     policyVersion: GUEST_POLICY_VERSION,
     status: 'ACTIVE',
     startTime,
-    expiresAt: startTime + GUEST_DURATION_MS,
-    blockExpiresAt: startTime + GUEST_TTL_SECONDS * 1000
+    blockExpiresAt: startTime + GUEST_TTL_SECONDS * 1000,
+    usedMs: 0,
+    lastHeartbeatAt: null,
+    isPlaying: false
   };
   await database.prepare(`INSERT INTO guest_trials
-    (guest_key, policy_version, status, start_time, expires_at, block_expires_at, created_at, updated_at)
-    VALUES (?1, ?2, 'ACTIVE', ?3, ?4, ?5, ?3, ?3)`)
-    .bind(key, record.policyVersion, record.startTime, record.expiresAt, record.blockExpiresAt).run();
+    (guest_key, policy_version, status, start_time, expires_at, block_expires_at, created_at, updated_at,
+      used_ms, last_heartbeat_at, is_playing)
+    VALUES (?1, ?2, 'ACTIVE', ?3, ?4, ?4, ?3, ?3, 0, NULL, 0)`)
+    .bind(key, record.policyVersion, record.startTime, record.blockExpiresAt).run();
   return json({ allowed: true, ...guestRecordResponse(record) }, 201, request, env);
 }
 
@@ -270,17 +278,48 @@ async function handleGuestStatus(request, env) {
   const body = await readJson(request);
   const key = await guestKey(body.fingerprintHash, request, env);
   const database = requiredDatabase(env);
-  const record = guestRecordFromRow(await database.prepare('SELECT * FROM guest_trials WHERE guest_key = ?1 LIMIT 1').bind(key).first());
+  let record = guestRecordFromRow(await database.prepare('SELECT * FROM guest_trials WHERE guest_key = ?1 LIMIT 1').bind(key).first());
   if (!isCurrentGuestRecord(record)) {
     if (record) await database.prepare('DELETE FROM guest_trials WHERE guest_key = ?1').bind(key).run();
     return json({ allowed: true, status: 'AVAILABLE', policyVersion: GUEST_POLICY_VERSION, allowanceMs: GUEST_DURATION_MS }, 200, request, env);
   }
+  record = await updateGuestUsage(database, key, body.usedMs, false);
   const status = guestStatus(record);
-  if (status !== record.status) {
-    await database.prepare('UPDATE guest_trials SET status = ?1, updated_at = ?2 WHERE guest_key = ?3')
-      .bind(status, Date.now(), key).run();
-  }
   return json({ allowed: status === 'ACTIVE', status, ...guestRecordResponse(record) }, 200, request, env);
+}
+
+async function handleGuestUsage(request, env) {
+  const body = await readJson(request);
+  if (typeof body.active !== 'boolean') throw new HttpError(400, 'INVALID_GUEST_ACTIVITY');
+  const key = await guestKey(body.fingerprintHash, request, env);
+  const database = requiredDatabase(env);
+  const existing = guestRecordFromRow(await database.prepare('SELECT * FROM guest_trials WHERE guest_key = ?1 LIMIT 1').bind(key).first());
+  if (!isCurrentGuestRecord(existing)) {
+    if (existing) await database.prepare('DELETE FROM guest_trials WHERE guest_key = ?1').bind(key).run();
+    return json({ allowed: false, status: 'AVAILABLE', policyVersion: GUEST_POLICY_VERSION, allowanceMs: GUEST_DURATION_MS }, 403, request, env);
+  }
+  const record = await updateGuestUsage(database, key, body.usedMs, body.active);
+  const status = guestStatus(record);
+  return json({ allowed: status === 'ACTIVE', status, ...guestRecordResponse(record) }, 200, request, env);
+}
+
+async function updateGuestUsage(database, key, clientUsedMs, active) {
+  const now = Date.now();
+  const reportedUsedMs = clamp(Math.trunc(Number(clientUsedMs || 0)), 0, GUEST_DURATION_MS);
+  const deltaExpression = `CASE WHEN is_playing = 1 AND last_heartbeat_at IS NOT NULL
+    THEN MIN(?2, MAX(0, ?1 - last_heartbeat_at)) ELSE 0 END`;
+  // クライアント累積値と、直前のサーバーハートビートから算出した累積値の
+  // 大きい方を採用する。同じ区間を両方へ加算すると二重計上になるため足し合わせない。
+  const newUsedExpression = `MIN(?3, MAX(?4, used_ms + ${deltaExpression}))`;
+  await database.prepare(`UPDATE guest_trials SET
+      used_ms = ${newUsedExpression},
+      status = CASE WHEN ${newUsedExpression} >= ?3 THEN 'EXPIRED' ELSE 'ACTIVE' END,
+      is_playing = CASE WHEN ${newUsedExpression} >= ?3 THEN 0 ELSE ?5 END,
+      last_heartbeat_at = ?1,
+      updated_at = ?1
+    WHERE guest_key = ?6`)
+    .bind(now, GUEST_HEARTBEAT_GRACE_MS, GUEST_DURATION_MS, reportedUsedMs, active ? 1 : 0, key).run();
+  return guestRecordFromRow(await database.prepare('SELECT * FROM guest_trials WHERE guest_key = ?1 LIMIT 1').bind(key).first());
 }
 
 async function guestKey(clientHash, request, env) {
@@ -290,7 +329,7 @@ async function guestKey(clientHash, request, env) {
 }
 
 function guestStatus(record) {
-  return record.status === 'EXPIRED' || Number(record.expiresAt) <= Date.now() ? 'EXPIRED' : 'ACTIVE';
+  return record.status === 'EXPIRED' || Number(record.usedMs) >= GUEST_DURATION_MS ? 'EXPIRED' : 'ACTIVE';
 }
 
 function isCurrentGuestRecord(record) {
@@ -300,12 +339,15 @@ function isCurrentGuestRecord(record) {
 }
 
 function guestRecordResponse(record) {
+  const usedMs = clamp(Number(record.usedMs || 0), 0, GUEST_DURATION_MS);
   return {
     policyVersion: GUEST_POLICY_VERSION,
     allowanceMs: GUEST_DURATION_MS,
-    startTime: Number(record.startTime),
-    expiresAt: Number(record.expiresAt),
-    blockExpiresAt: Number(record.blockExpiresAt)
+    periodStartedAt: Number(record.startTime),
+    periodEndsAt: Number(record.blockExpiresAt),
+    usedMs,
+    remainingMs: Math.max(0, GUEST_DURATION_MS - usedMs),
+    active: Boolean(record.isPlaying)
   };
 }
 
@@ -315,8 +357,10 @@ function guestRecordFromRow(row) {
     policyVersion: Number(row.policy_version),
     status: row.status,
     startTime: Number(row.start_time),
-    expiresAt: Number(row.expires_at),
-    blockExpiresAt: Number(row.block_expires_at)
+    blockExpiresAt: Number(row.block_expires_at),
+    usedMs: Number(row.used_ms || 0),
+    lastHeartbeatAt: row.last_heartbeat_at == null ? null : Number(row.last_heartbeat_at),
+    isPlaying: Boolean(row.is_playing)
   };
 }
 

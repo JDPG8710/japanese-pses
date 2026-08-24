@@ -152,6 +152,7 @@ export class MiniGameModal {
     this.stageDeadline = 0;
     this.stageTimeLimit = 0;
     this.stageSettled = false;
+    this.playActivityActive = false;
     this.createModalDOM();
     this.currentGame = null;
     this.boundCanvasResize = () => this.handleCanvasResize();
@@ -277,8 +278,18 @@ export class MiniGameModal {
     this.stopStageCountdown();
     this.stageTimeLimit = this.resolveStageTimeLimit(node);
     this.stageDeadline = this.now() + this.stageTimeLimit * 1000;
+    this.setPlayActivity(true);
     this.updateStageCountdown(node);
     this.stageTimerId = this.setIntervalImpl(() => this.updateStageCountdown(node), 250);
+  }
+
+  setPlayActivity(active) {
+    const next = Boolean(active);
+    if (this.playActivityActive === next) return;
+    this.playActivityActive = next;
+    if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+      window.dispatchEvent(new CustomEvent('GAME_PLAY_STATE_CHANGED', { detail: { active: next } }));
+    }
   }
 
   updateStageCountdown(node) {
@@ -306,6 +317,7 @@ export class MiniGameModal {
     if (this.stageTimerId != null) this.clearIntervalImpl(this.stageTimerId);
     this.stageTimerId = null;
     this.stageDeadline = 0;
+    this.setPlayActivity(false);
   }
 
   handleStageTimeout(node) {

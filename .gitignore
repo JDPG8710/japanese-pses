@@ -1,5 +1,9 @@
 node_modules/
 .wrangler/
+.dev.vars
+.env
+.env.*
+!.env.example
 
 # 複数エージェントの一時実行記録
 .agents/orchestrator/

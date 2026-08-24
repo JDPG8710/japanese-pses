@@ -12,13 +12,13 @@ APPLE_CLIENT_ID = "REPLACE_WITH_APPLE_SERVICES_ID"
 
 [[kv_namespaces]]
 binding = "SESSION_KV"
-id = "REPLACE_WITH_SESSION_KV_NAMESPACE_ID"
-preview_id = "REPLACE_WITH_SESSION_KV_PREVIEW_NAMESPACE_ID"
+id = "2fb44af92bba41519654e51a8b25b0b5"
+preview_id = "4eabeb32053f4306b2165983fa7c6caf"
 
 [[kv_namespaces]]
 binding = "GUEST_KV"
-id = "REPLACE_WITH_GUEST_KV_NAMESPACE_ID"
-preview_id = "REPLACE_WITH_GUEST_KV_PREVIEW_NAMESPACE_ID"
+id = "4b7406adb62b41aa8af38a5970f6730e"
+preview_id = "ecb569dbcf1b403493467ad0fc25830f"
 
 [[r2_buckets]]
 binding = "GAME_DATA_R2"

@@ -827,7 +827,8 @@ function registerSuites() {
     'test_question_banks.js',
     'test_content_safety.js',
     'test_adversarial_challenger.js',
-    'test_platform_architecture.js'
+    'test_platform_architecture.js',
+    'test_learning_entry_and_progression.js'
   ];
 
   for (const file of testFiles) {

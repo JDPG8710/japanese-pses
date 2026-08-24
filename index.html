@@ -44,7 +44,7 @@
       <button id="user-profile-btn" class="glass-panel px-3.5 py-1.5 rounded-full hover:bg-slate-800 text-xs font-bold text-amber-300 flex items-center gap-2 transition border border-amber-500/40 shadow-lg shadow-amber-500/10">
         <span class="text-base">👦</span>
         <span id="current-user-name">ひなた</span>
-        <span class="text-[10px] text-slate-400 bg-slate-800 px-1.5 py-0.5 rounded">👤 切替</span>
+        <span class="text-[10px] text-slate-300 bg-slate-800 px-1.5 py-0.5 rounded">Profile</span>
       </button>
 
       <div>
@@ -65,6 +65,10 @@
         <span>⭐</span>
         <span id="user-coins">500</span>
       </div>
+
+      <button id="learning-mode-open-btn" class="glass-panel px-3.5 py-1.5 rounded-full hover:bg-slate-800 text-xs font-bold text-cyan-200 border border-cyan-500/30 transition" title="学習モードを選び直す">
+        <span class="hidden sm:inline">モード選択</span><span class="sm:hidden">🎮</span>
+      </button>
 
       <!-- 音声ミュート切り替えボタン (Mute Toggle) -->
       <button id="audio-mute-btn" class="glass-panel px-3.5 py-1.5 rounded-full hover:bg-slate-800 text-xs font-bold text-slate-200 flex items-center gap-1.5 transition border border-indigo-500/30 shadow-lg cursor-pointer" title="音声ミュート切替">
@@ -208,19 +212,25 @@
     </div>
   </div>
 
-  <!-- お子さまログイン・プロファイル切り替えモーダル (User Profile Modal) -->
+  <!-- アカウント別学習プロフィール -->
   <div id="user-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 hidden select-none">
-    <div class="relative w-full max-w-md bg-slate-900 border border-slate-700 rounded-3xl overflow-hidden shadow-2xl p-6">
+    <div class="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto custom-scroll bg-slate-900 border border-slate-700 rounded-3xl shadow-2xl p-6">
       <div class="flex justify-between items-center mb-4">
         <div class="flex items-center gap-2">
           <span class="text-2xl">👦</span>
-          <h2 class="text-base font-bold text-white">お<ruby>子<rt>こ</rt></ruby>さまのお<ruby>名前<rt>なまえ</rt></ruby>ログイン</h2>
+          <div><h2 class="text-base font-bold text-white">学習 Profile</h2><p class="text-[10px] text-slate-400">アカウント全体の1〜6年生チャレンジ記録</p></div>
         </div>
         <button id="user-modal-close" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center">✕</button>
       </div>
-      <p class="text-xs text-slate-400 mb-4">お名前を入力すると、あなたの学習進捗・スターコイン・点灯星図が保存されます。</p>
+
+      <div id="profile-total-progress" class="mb-4 rounded-2xl border border-indigo-400/30 bg-indigo-500/10 p-4 text-sm text-white"></div>
+      <div id="profile-grade-progress" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4"></div>
+      <div id="profile-certificate-panel" class="mb-5 rounded-2xl border border-amber-400/30 bg-amber-500/10 p-4"></div>
+
+      <div class="border-t border-slate-700 pt-4">
+        <p class="text-xs text-slate-400 mb-3">ローカル開発では名前ごとの学習データも切り替えられます。</p>
       
-      <div class="space-y-3 mb-5">
+        <div class="space-y-3 mb-5">
         <div>
           <label class="text-[11px] font-bold text-slate-400">おなまえ（ひらがな・漢字など）</label>
           <input id="user-name-input" type="text" placeholder="例: ひなた, さくら, たいよう" class="w-full mt-1 px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white font-bold text-sm focus:outline-none focus:border-amber-500" />
@@ -228,11 +238,65 @@
         <div class="flex gap-2">
           <button id="user-login-confirm" class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-bold text-xs shadow-lg transition">ログイン・決定</button>
         </div>
+        </div>
       </div>
 
       <div class="border-t border-slate-800 pt-3">
         <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">登録済みのお子さま一覧:</div>
         <div id="user-profile-list" class="flex flex-wrap gap-2"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 認証後に必ず選ぶ学習入口モード -->
+  <div id="learning-mode-modal" class="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/95 backdrop-blur-xl p-4 hidden select-none">
+    <div class="relative w-full max-w-3xl max-h-[92vh] overflow-y-auto custom-scroll rounded-3xl border border-indigo-400/40 bg-slate-900 p-6 sm:p-8 shadow-2xl">
+      <div class="mb-6">
+        <p class="text-xs font-bold tracking-[0.2em] text-indigo-300">LEARNING ENTRANCE</p>
+        <h2 id="learning-mode-title" class="mt-1 text-2xl font-black text-white">学習モードを選ぶ</h2>
+        <p id="learning-mode-description" class="mt-2 text-sm leading-6 text-slate-300">どの入り口から始めても、同じアカウントの Profile に結果が保存されます。</p>
+      </div>
+
+      <div id="learning-mode-choice-panel" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <button id="grade-first-mode-btn" class="min-h-44 rounded-3xl border-2 border-indigo-400 bg-indigo-500/15 p-6 text-left transition hover:bg-indigo-500/25 focus:ring-4 focus:ring-indigo-300/40">
+          <span class="text-4xl">🎒</span><span class="mt-3 block text-xl font-black text-white">学年から選ぶ</span>
+          <span class="mt-2 block text-sm leading-6 text-slate-200">従来の標準モード。小学1〜6年生を選び、その学年の教科と学習テーマへ進みます。</span>
+          <span class="mt-3 inline-block rounded-full bg-indigo-400/20 px-3 py-1 text-xs font-bold text-indigo-200">標準モード</span>
+        </button>
+        <button id="game-first-mode-btn" class="min-h-44 rounded-3xl border-2 border-cyan-400/60 bg-cyan-500/10 p-6 text-left transition hover:bg-cyan-500/20 focus:ring-4 focus:ring-cyan-300/40">
+          <span class="text-4xl">🎮</span><span class="mt-3 block text-xl font-black text-white">ゲームから選ぶ</span>
+          <span class="mt-2 block text-sm leading-6 text-slate-200">遊びたいゲームを先に選び、そのゲームに対応する学年を選んで直接挑戦します。</span>
+          <span class="mt-3 inline-block rounded-full bg-cyan-400/20 px-3 py-1 text-xs font-bold text-cyan-200">独立ゲームモード</span>
+        </button>
+      </div>
+
+      <div id="independent-game-panel" class="hidden">
+        <button id="independent-game-back" class="mb-4 min-h-11 rounded-xl border border-slate-600 bg-slate-800 px-4 text-sm font-bold text-slate-200">← モード選択へ戻る</button>
+        <div id="independent-game-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+      </div>
+
+      <div id="independent-grade-panel" class="hidden">
+        <button id="independent-grade-back" class="mb-4 min-h-11 rounded-xl border border-slate-600 bg-slate-800 px-4 text-sm font-bold text-slate-200">← ゲーム選択へ戻る</button>
+        <div id="independent-game-selected" class="mb-4 rounded-2xl border border-cyan-400/30 bg-cyan-500/10 p-4"></div>
+        <div id="independent-grade-list" class="grid grid-cols-2 sm:grid-cols-3 gap-3"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 全学年修了時に一度だけ授与する卒業証明 -->
+  <div id="graduation-modal" class="fixed inset-0 z-[90] hidden items-center justify-center bg-slate-950/95 p-4 backdrop-blur-xl">
+    <div class="w-full max-w-2xl rounded-[2rem] border-4 border-amber-300 bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 p-3 shadow-2xl shadow-amber-500/30">
+      <div class="rounded-[1.5rem] border border-amber-300/60 p-6 text-center sm:p-10">
+        <p class="text-4xl">🎓</p><p class="mt-3 text-xs font-bold tracking-[0.35em] text-amber-300">JAPANESE PSES</p>
+        <h2 class="mt-3 text-3xl font-black text-white">小学校課程修了証</h2>
+        <p id="graduation-learner-name" class="mt-6 text-2xl font-bold text-amber-200"></p>
+        <p class="mt-3 text-sm leading-7 text-slate-200">1年生から6年生までの全教科・全関門を修了し、確かな学びと挑戦する力を身につけたことを証明します。</p>
+        <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+          <div class="rounded-xl bg-black/25 p-3"><span class="block text-slate-400">証明番号</span><strong id="graduation-certificate-number" class="text-white"></strong></div>
+          <div class="rounded-xl bg-black/25 p-3"><span class="block text-slate-400">授与日</span><strong id="graduation-issued-at" class="text-white"></strong></div>
+        </div>
+        <p id="graduation-reward" class="mt-5 font-black text-amber-300"></p>
+        <button id="graduation-close-btn" class="mt-6 min-h-14 rounded-2xl bg-gradient-to-r from-amber-400 to-yellow-300 px-8 font-black text-slate-950">証明書を Profile に保存して閉じる</button>
       </div>
     </div>
   </div>
@@ -383,8 +447,8 @@
 
   <script type="module">
     import { GalaxyEngine } from './GalaxyEngine.js?v=2';
-    import { MiniGameModal } from './MiniGameSystem.js?v=2';
-    import { EconomyManager, SHOP_CATALOG } from './EconomySystem.js?v=2';
+    import { MiniGameModal, GAME_GRADE_SUPPORT_MAP } from './MiniGameSystem.js?v=2';
+    import { EconomyManager, SHOP_CATALOG } from './EconomySystem.js?v=3';
     import { AntigravityAgentBrain, createObservationPayload } from './AgentIntegration.js?v=2';
     import { FULL_CURRICULUM_DAG, SUBJECT_METADATA, GRADES, loadCurriculumFromJSON, graphEngineInstance } from './CurriculumData.js?v=2';
     import { ErrorInterceptor } from './ErrorInterceptor.js?v=2';
@@ -394,6 +458,7 @@
     import { getErrorGuidanceSystem } from './js/ErrorGuidanceSystem.js';
     import { AuthManager } from './src/auth/AuthManager.js';
     import { StorageAdapter } from './src/storage/StorageAdapter.js';
+    import { calculateGradeProgress, createGraduationCertificate, ELEMENTARY_GRADUATION_ACHIEVEMENT_ID } from './ProgressionSystem.js';
 
     const storageAdapter = new StorageAdapter({ apiBase: '/api' });
     await storageAdapter.initialize({ sync: false });
@@ -418,12 +483,16 @@
       ? await storageAdapter.syncNow('login').catch(() => null)
       : await storageAdapter.getLocalSnapshot();
     if (synchronizedState?.profile?.star_coins != null) economy.starCoins = Number(synchronizedState.profile.star_coins);
+    if (synchronizedState?.profile?.cleared_nodes) economy.activeUser.clearedNodes = synchronizedState.profile.cleared_nodes;
+    if (synchronizedState?.profile?.cleared_stages) economy.activeUser.clearedStages = synchronizedState.profile.cleared_stages;
+    if (Array.isArray(synchronizedState?.profile?.achievements)) economy.activeUser.achievements = synchronizedState.profile.achievements;
+    if (Array.isArray(synchronizedState?.profile?.inventory)) economy.activeUser.inventory = synchronizedState.profile.inventory;
     if (synchronizedState?.nodeProgress?.length) {
       for (const progress of synchronizedState.nodeProgress) {
         economy.playerMastery[progress.node_id] = Math.max(Number(economy.playerMastery[progress.node_id] || 0), Number(progress.mastery_score || 0));
       }
-      economy.saveState();
     }
+    economy.saveState();
     const errorInterceptor = new ErrorInterceptor({ userId: economy.currentUser });
 
     const container = document.getElementById('canvas-container');
@@ -722,6 +791,127 @@
       });
     });
 
+    // 認証後の入口：標準の学年優先、またはゲーム優先から選択する。
+    const learningModeModal = document.getElementById('learning-mode-modal');
+    const learningModeChoicePanel = document.getElementById('learning-mode-choice-panel');
+    const independentGamePanel = document.getElementById('independent-game-panel');
+    const independentGradePanel = document.getElementById('independent-grade-panel');
+    const independentGameList = document.getElementById('independent-game-list');
+    const independentGradeList = document.getElementById('independent-grade-list');
+    const independentGameSelected = document.getElementById('independent-game-selected');
+    const learningModeTitle = document.getElementById('learning-mode-title');
+    const learningModeDescription = document.getElementById('learning-mode-description');
+    const INDEPENDENT_GAME_CATALOG = [
+      ['KANJI_CHALLENGE', '漢', '学年配当漢字の読み方と使い方'],
+      ['RADICAL_BUILDER', '部', '部首と漢字パーツを正しく組み立てる'],
+      ['KOKUGO_CURRICULUM', '読', '語彙・文法・読解の学年テーマ'],
+      ['KUKU_LINK', '×', '九九から計算応用までをつなぐ'],
+      ['AETHER_SCALE', '衡', '数・分数・割合をてんびんで考える'],
+      ['MATH_CURRICULUM', '算', '各学年の数・量・図形・データ'],
+      ['COSMIC_ORBIT', '月', '月相と天体の位置関係を観察する'],
+      ['LEVER_PHYSICS', '力', 'てこの規則性を実験する'],
+      ['CIRCUIT_SANDBOX', '電', '電気回路を組み立てて比較する'],
+      ['SCIENCE_CURRICULUM', '理', '各学年の理科テーマを総合練習'],
+      ['PREFECTURE_JIGSAW', '地', '都道府県・地域・産業を学ぶ'],
+      ['SOCIAL_CURRICULUM', '社', '地域・国土・産業・歴史を学ぶ'],
+      ['CONTEXT_MATCH', 'EN', '英語の語彙・会話・読解に挑戦'],
+      ['ENGLISH_CURRICULUM', '英', '学年英語を10問ランダムで練習'],
+      ['CATEGORY_SORT', '生', '生活・安全・自然を分類する'],
+      ['LIFE_CURRICULUM', '活', '1・2年生の生活科テーマを総合練習'],
+      ['GRADE_EXAM', '賞', '選んだ学年の全教科実力テスト']
+    ].map(([gameType, icon, description]) => ({
+      ...GAME_GRADE_SUPPORT_MAP[gameType], gameType, icon, description
+    })).filter(game => Array.isArray(game.grades) && game.grades.length > 0);
+
+    function resetLearningModeModal() {
+      learningModeChoicePanel.classList.remove('hidden');
+      learningModeChoicePanel.classList.add('grid');
+      independentGamePanel.classList.add('hidden');
+      independentGradePanel.classList.add('hidden');
+      learningModeTitle.textContent = '学習モードを選ぶ';
+      learningModeDescription.textContent = 'どの入り口から始めても、同じアカウントの Profile に結果が保存されます。';
+    }
+
+    function showLearningModeModal() {
+      resetLearningModeModal();
+      learningModeModal.classList.remove('hidden');
+      learningModeModal.classList.add('flex');
+    }
+
+    function hideLearningModeModal() {
+      learningModeModal.classList.add('hidden');
+      learningModeModal.classList.remove('flex');
+    }
+
+    function showIndependentGameList() {
+      learningModeChoicePanel.classList.add('hidden');
+      learningModeChoicePanel.classList.remove('grid');
+      independentGradePanel.classList.add('hidden');
+      independentGamePanel.classList.remove('hidden');
+      learningModeTitle.textContent = 'ゲームを選ぶ';
+      learningModeDescription.textContent = 'ゲームを選ぶと、学習指導要領上で対応する学年だけが表示されます。';
+    }
+
+    function launchIndependentGame(game, grade) {
+      const targetGrade = Number(grade);
+      englishModeSelection = null;
+      selectedModeByNode.clear();
+      syncCurriculumSelection(targetGrade, game.subject === '全教科総合' ? null : game.subject, { openMobile: false });
+      gradeMenuLabel.textContent = `小学${targetGrade}年`;
+      closeGradeMenu();
+      hideLearningModeModal();
+      sessionStartTime = Date.now();
+
+      if (game.gameType === 'KANJI_CHALLENGE') {
+        gameModal.openKanjiGradeChallenge(targetGrade);
+      } else if (game.gameType === 'GRADE_EXAM') {
+        gameModal.openGradeExam(targetGrade);
+      } else {
+        gameModal.openPopularGame(game.gameType, 1, targetGrade);
+      }
+    }
+
+    function showIndependentGradeList(game) {
+      independentGamePanel.classList.add('hidden');
+      independentGradePanel.classList.remove('hidden');
+      learningModeTitle.textContent = '対応学年を選ぶ';
+      learningModeDescription.textContent = `${game.name}に対応する学年から選択してください。`;
+      independentGameSelected.innerHTML = `<strong class="text-lg text-white">${game.icon} ${game.name}</strong><span class="mt-1 block text-sm text-slate-300">${game.description}</span>`;
+      independentGradeList.innerHTML = '';
+      game.grades.forEach((grade) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'min-h-20 rounded-2xl border-2 border-cyan-400/40 bg-cyan-500/10 text-base font-black text-white transition hover:bg-cyan-500/25 focus:ring-4 focus:ring-cyan-300/40';
+        button.textContent = `小学${grade}年`;
+        button.addEventListener('click', () => launchIndependentGame(game, grade));
+        independentGradeList.appendChild(button);
+      });
+    }
+
+    independentGameList.innerHTML = '';
+    INDEPENDENT_GAME_CATALOG.forEach((game) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'min-h-32 rounded-2xl border border-slate-600 bg-slate-800/80 p-4 text-left transition hover:border-cyan-400 hover:bg-cyan-500/15 focus:ring-4 focus:ring-cyan-300/40';
+      button.innerHTML = `<span class="text-2xl font-black text-cyan-200">${game.icon}</span><strong class="mt-2 block text-sm text-white">${game.name}</strong><span class="mt-1 block text-xs leading-5 text-slate-300">${game.description}</span><span class="mt-2 block text-[11px] font-bold text-cyan-300">対応：${game.grades.map(grade => `${grade}年`).join('・')}</span>`;
+      button.addEventListener('click', () => showIndependentGradeList(game));
+      independentGameList.appendChild(button);
+    });
+
+    document.getElementById('grade-first-mode-btn').addEventListener('click', () => {
+      englishModeSelection = null;
+      selectedModeByNode.clear();
+      syncCurriculumSelection(0, null);
+      gradeMenuLabel.textContent = '学年を選ぶ';
+      hideLearningModeModal();
+      gradeMenu.classList.remove('hidden');
+      gradeMenuToggle.setAttribute('aria-expanded', 'true');
+    });
+    document.getElementById('game-first-mode-btn').addEventListener('click', showIndependentGameList);
+    document.getElementById('independent-game-back').addEventListener('click', resetLearningModeModal);
+    document.getElementById('independent-grade-back').addEventListener('click', showIndependentGameList);
+    document.getElementById('learning-mode-open-btn').addEventListener('click', showLearningModeModal);
+
     // Agent は裏側で学習状態を観測するが、画面上には通知を表示しない。
     function showAgentToast() {}
 
@@ -744,6 +934,108 @@
       showAgentToast(`⚠️ ${diagnosis.classification} 診断完了: 安定化パッチ適用`);
     });
 
+    function getCurrentGradeProgress() {
+      return calculateGradeProgress(
+        curriculumNodes,
+        economy.clearedStages,
+        node => gameModal.getMaxStagesForNode(node)
+      );
+    }
+
+    function getGraduationCertificate() {
+      return economy.achievements.find(item => item.id === ELEMENTARY_GRADUATION_ACHIEVEMENT_ID) || null;
+    }
+
+    function getIndependentResultCounts() {
+      const curriculumNodeIds = new Set(curriculumNodes.map(node => node.id));
+      const counts = Object.fromEntries([1, 2, 3, 4, 5, 6].map(grade => [grade, 0]));
+      Object.entries(economy.clearedStages || {}).forEach(([nodeId, stages]) => {
+        if (curriculumNodeIds.has(nodeId)) return;
+        const gradeMatch = nodeId.match(/_G([1-6])(?:_|$)/);
+        if (!gradeMatch) return;
+        counts[Number(gradeMatch[1])] += Object.values(stages || {}).filter(Boolean).length;
+      });
+      return counts;
+    }
+
+    function buildSynchronizedProfile() {
+      return {
+        user_id: localStorageUserId,
+        display_name: economy.currentUser,
+        star_coins: economy.starCoins,
+        cleared_nodes: economy.clearedNodes,
+        cleared_stages: economy.clearedStages,
+        achievements: economy.achievements,
+        inventory: economy.inventory
+      };
+    }
+
+    function showGraduationCertificate(certificate) {
+      if (!certificate) return;
+      document.getElementById('graduation-learner-name').textContent = `${certificate.learnerName} さん`;
+      document.getElementById('graduation-certificate-number').textContent = certificate.certificateNumber;
+      document.getElementById('graduation-issued-at').textContent = new Date(certificate.issuedAt).toLocaleDateString('ja-JP');
+      document.getElementById('graduation-reward').textContent = `成果報酬：スターコイン ${certificate.rewardCoins} 枚`;
+      const modal = document.getElementById('graduation-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function ensureGraduationReward({ showWhenAwarded = true, syncWhenAwarded = true } = {}) {
+      const existingCertificate = getGraduationCertificate();
+      if (existingCertificate) return { awarded: false, certificate: existingCertificate };
+      const certificate = createGraduationCertificate({
+        userId: localStorageUserId,
+        learnerName: economy.currentUser,
+        gradeProgress: getCurrentGradeProgress()
+      });
+      if (!certificate) return { awarded: false, certificate: null };
+      const result = economy.awardGraduationCertificate(certificate);
+      if (result.awarded) {
+        if (syncWhenAwarded) {
+          storageAdapter.saveProfile(buildSynchronizedProfile())
+            .then(() => storageAdapter.syncNow('graduation-award'))
+            .catch(error => console.warn('修了証の同期を再試行します。', error));
+        }
+        if (showWhenAwarded) showGraduationCertificate(result.certificate);
+      }
+      return result;
+    }
+
+    function renderProfileProgress() {
+      const progress = getCurrentGradeProgress();
+      const totalStages = progress.reduce((sum, item) => sum + item.totalStages, 0);
+      const clearedStages = progress.reduce((sum, item) => sum + item.clearedStages, 0);
+      const completionRate = totalStages > 0 ? Math.round((clearedStages / totalStages) * 100) : 0;
+      const completedGrades = progress.filter(item => item.completed).length;
+      const independentResultCounts = getIndependentResultCounts();
+
+      document.getElementById('profile-total-progress').innerHTML = `
+        <div class="flex items-center justify-between gap-3"><strong class="text-base">全学年の学習進捗</strong><span class="font-black text-indigo-200">${completionRate}%</span></div>
+        <div class="mt-2 h-3 overflow-hidden rounded-full bg-slate-950"><div class="h-full rounded-full bg-gradient-to-r from-indigo-500 to-cyan-400" style="width:${completionRate}%"></div></div>
+        <p class="mt-2 text-xs text-slate-300">${clearedStages} / ${totalStages} 関門クリア · 修了学年 ${completedGrades} / 6</p>`;
+
+      document.getElementById('profile-grade-progress').innerHTML = progress.map(item => {
+        const percent = Math.round(item.completionRate * 100);
+        return `<section class="rounded-2xl border ${item.completed ? 'border-emerald-400/50 bg-emerald-500/10' : 'border-slate-700 bg-slate-950/60'} p-4">
+          <div class="flex items-center justify-between"><strong class="text-white">小学${item.grade}年</strong><span class="text-xs font-bold ${item.completed ? 'text-emerald-300' : 'text-slate-300'}">${item.completed ? '修了' : `${percent}%`}</span></div>
+          <p class="mt-2 text-xs text-slate-300">関門 ${item.clearedStages} / ${item.totalStages} · 単元 ${item.nodeCount}</p>
+          <p class="mt-1 text-[11px] text-cyan-300">独立ゲームのクリア記録 ${independentResultCounts[item.grade]} 件</p>
+          <div class="mt-2 h-2 overflow-hidden rounded-full bg-slate-800"><div class="h-full rounded-full ${item.completed ? 'bg-emerald-400' : 'bg-indigo-400'}" style="width:${percent}%"></div></div>
+        </section>`;
+      }).join('');
+
+      const certificate = getGraduationCertificate();
+      const certificatePanel = document.getElementById('profile-certificate-panel');
+      if (certificate) {
+        certificatePanel.innerHTML = `<div class="flex items-start justify-between gap-3"><div><p class="text-xs font-bold tracking-widest text-amber-300">ACHIEVEMENT</p><h3 class="mt-1 text-lg font-black text-white">${certificate.title}</h3><p class="mt-1 text-xs text-slate-300">証明番号 ${certificate.certificateNumber} · ${new Date(certificate.issuedAt).toLocaleDateString('ja-JP')}</p></div><button id="profile-view-certificate" class="min-h-11 rounded-xl bg-amber-300 px-4 text-xs font-black text-slate-950">表示</button></div>`;
+        document.getElementById('profile-view-certificate').addEventListener('click', () => showGraduationCertificate(certificate));
+      } else {
+        const remaining = Math.max(0, totalStages - clearedStages);
+        certificatePanel.innerHTML = `<p class="text-xs font-bold tracking-widest text-amber-300">GRADUATION GOAL</p><h3 class="mt-1 font-black text-white">小学校課程修了証</h3><p class="mt-1 text-xs leading-5 text-slate-300">全6学年の必修関門をクリアすると成果報酬を授与します。あと ${remaining} 関門です。</p>`;
+      }
+    }
+
     function updateEconomyUI() {
       document.getElementById('current-user-name').innerText = economy.currentUser;
       document.getElementById('user-coins').innerText = economy.starCoins;
@@ -765,6 +1057,7 @@
       `).join('');
 
       renderUserProfilesList();
+      renderProfileProgress();
     }
 
     function renderShopCatalog() {
@@ -804,7 +1097,10 @@
 
     // ユーザー切り替えモーダル
     const userModal = document.getElementById('user-modal');
-    document.getElementById('user-profile-btn').onclick = () => userModal.classList.remove('hidden');
+    document.getElementById('user-profile-btn').onclick = () => {
+      renderProfileProgress();
+      userModal.classList.remove('hidden');
+    };
     document.getElementById('user-modal-close').onclick = () => userModal.classList.add('hidden');
 
     document.getElementById('user-login-confirm').onclick = () => {
@@ -832,6 +1128,7 @@
     };
 
     window.addEventListener('USER_PROFILE_CHANGED', (e) => {
+      ensureGraduationReward();
       updateEconomyUI();
       engine.syncProgress(economy.playerMastery);
       showAgentToast(`👦 学習者切り替え：【${e.detail.userName}】の星図進捗をロードしました！`);
@@ -873,9 +1170,18 @@
       }
     });
 
+    ensureGraduationReward();
     updateEconomyUI();
     renderShopCatalog();
     syncCurriculumSelection(0, null);
+    showLearningModeModal();
+
+    document.getElementById('graduation-close-btn').addEventListener('click', () => {
+      const modal = document.getElementById('graduation-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      renderProfileProgress();
+    });
 
     // 初期化時に習熟度を反映（達成済みノードは黄金点灯、未解放は暗灰色）
     engine.syncProgress(economy.playerMastery);
@@ -1041,17 +1347,15 @@
         economy.saveState();
       }
 
+      // 全6学年の必修関門を終えた瞬間に、証明書と成果報酬を一度だけ授与する。
+      ensureGraduationReward({ syncWhenAwarded: false });
+
       // ステージ精算時は即時一括同期し、細かな更新は60秒のデバウンスでまとめて送信する。
       storageAdapter.reportStageClear({
         nodeId: targetNodeId,
         masteryScore: Math.max(Number(economy.playerMastery[targetNodeId] || 0), Number(accuracy)),
         unlockedStatus: true,
-        profile: {
-          user_id: localStorageUserId,
-          display_name: economy.currentUser,
-          star_coins: economy.starCoins,
-          cleared_nodes: economy.clearedNodes
-        }
+        profile: buildSynchronizedProfile()
       }).catch(error => console.warn('学習データの同期を再試行します。', error));
 
       updateEconomyUI();

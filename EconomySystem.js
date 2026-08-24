@@ -197,6 +197,7 @@ export class EconomyManager {
       clearedNodes: {},
       clearedStages: {},
       playerMastery: {},
+      achievements: [],
       inventory: [],
       ledger: [
         {
@@ -218,6 +219,9 @@ export class EconomyManager {
     if (!this.users[this.currentUser].clearedStages) {
       this.users[this.currentUser].clearedStages = {};
     }
+    if (!Array.isArray(this.users[this.currentUser].achievements)) {
+      this.users[this.currentUser].achievements = [];
+    }
     return this.users[this.currentUser];
   }
 
@@ -238,6 +242,7 @@ export class EconomyManager {
 
   get clearedNodes() { return this.activeUser.clearedNodes; }
   get clearedStages() { return this.activeUser.clearedStages || {}; }
+  get achievements() { return this.activeUser.achievements || []; }
 
   isStageCleared(nodeId, stageNum) {
     return !!(this.clearedStages[nodeId] && this.clearedStages[nodeId][stageNum]);
@@ -306,6 +311,30 @@ export class EconomyManager {
 
   getUserList() {
     return Object.keys(this.users);
+  }
+
+  awardGraduationCertificate(certificate) {
+    if (!certificate?.id || this.achievements.some(item => item.id === certificate.id)) {
+      return { awarded: false, certificate: this.achievements.find(item => item.id === certificate?.id) || null };
+    }
+    this.activeUser.achievements.push(certificate);
+    this.starCoins += Number(certificate.rewardCoins) || 0;
+    this.inventory.push({
+      itemId: certificate.id,
+      title: certificate.title,
+      certificateNumber: certificate.certificateNumber,
+      purchasedAt: certificate.issuedAt
+    });
+    this.ledger.unshift({
+      transactionId: `TX-GRADUATION-${Date.now()}`,
+      timestamp: certificate.issuedAt,
+      type: 'ELEMENTARY_GRADUATION_REWARD',
+      amount: Number(certificate.rewardCoins) || 0,
+      balanceAfter: this.starCoins,
+      description: `全学年・全教科の関門を修了：【${certificate.title}】を授与`
+    });
+    this.saveState();
+    return { awarded: true, certificate };
   }
 
   // ステージクリア処理（初回クリアのみポイント加算・重複挑戦はスコア更新のみ）

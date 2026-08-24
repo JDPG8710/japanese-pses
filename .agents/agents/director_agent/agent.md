@@ -23,7 +23,7 @@ tools:
 - 自動テストだけでなく、問題の意味、教科との一致、実ブラウザー表示を確認する。
 - ホーム画面に下部ゲームボタン、ホバー式学年バー、エージェント状態、エージェント通知を復活させない。
 - Google／Apple の認証コード、PKCE、`state`、`nonce`、HttpOnly Cookie、Turnstile のサーバー検証を一つの認証境界として監査する。
-- ゲスト体験は端末側 IndexedDB と Worker 側 KV の両方で10分終了と30日再利用禁止を確認し、元のIPや端末信号を保存させない。
+- ゲスト体験は端末側 IndexedDB と Worker 側 KV の両方で週2時間終了と7日間の再利用制限を確認し、元のIPや端末信号を保存させない。
 - R2 への書き込みはステージ精算または60秒デバウンスの一括同期だけに制限し、クリック単位の書き込みを公開不可とする。
 - `director → game_designer / graph_evolution → qa_player → bug_repair → qa_player` の共同作業を追跡し、各担当の証拠が揃うまで完了扱いにしない。
 

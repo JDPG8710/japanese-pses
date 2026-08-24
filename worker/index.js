@@ -7,8 +7,9 @@ const APPLE_TOKEN_URL = 'https://appleid.apple.com/auth/token';
 const APPLE_JWKS_URL = 'https://appleid.apple.com/auth/keys';
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7;
 const OAUTH_TTL_SECONDS = 10 * 60;
-const GUEST_TTL_SECONDS = 60 * 60 * 24 * 30;
-const GUEST_DURATION_MS = 10 * 60 * 1000;
+const GUEST_POLICY_VERSION = 2;
+const GUEST_TTL_SECONDS = 60 * 60 * 24 * 7;
+const GUEST_DURATION_MS = 2 * 60 * 60 * 1000;
 const GAME_DATA_FILES = [
   'eigo.json', 'kanji_1026.json', 'kokugo.json', 'metadata.json',
   'prefectures_47.json', 'rika.json', 'sansu.json', 'seikatsu.json',
@@ -203,24 +204,34 @@ async function handleGuestStart(request, env) {
   if (!turnstile.success) return json({ error: 'TURNSTILE_FAILED' }, 400, request, env);
   const key = await guestKey(body.fingerprintHash, request, env);
   const existing = await env.GUEST_KV.get(key, 'json');
-  if (existing) return json({ allowed: false, status: guestStatus(existing), expiresAt: existing.expiresAt, blockExpiresAt: existing.blockExpiresAt || Number(existing.startTime) + GUEST_TTL_SECONDS * 1000 }, 403, request, env);
+  if (isCurrentGuestRecord(existing)) return json({ allowed: false, status: guestStatus(existing), ...guestRecordResponse(existing) }, 403, request, env);
+  if (existing) await env.GUEST_KV.delete(key);
   const startTime = Date.now();
-  const record = { status: 'ACTIVE', startTime, expiresAt: startTime + GUEST_DURATION_MS, blockExpiresAt: startTime + GUEST_TTL_SECONDS * 1000 };
+  const record = {
+    policyVersion: GUEST_POLICY_VERSION,
+    status: 'ACTIVE',
+    startTime,
+    expiresAt: startTime + GUEST_DURATION_MS,
+    blockExpiresAt: startTime + GUEST_TTL_SECONDS * 1000
+  };
   await env.GUEST_KV.put(key, JSON.stringify(record), { expirationTtl: GUEST_TTL_SECONDS });
-  return json({ allowed: true, ...record }, 201, request, env);
+  return json({ allowed: true, ...guestRecordResponse(record) }, 201, request, env);
 }
 
 async function handleGuestStatus(request, env) {
   const body = await readJson(request);
   const key = await guestKey(body.fingerprintHash, request, env);
   const record = await env.GUEST_KV.get(key, 'json');
-  if (!record) return json({ allowed: true, status: 'AVAILABLE' }, 200, request, env);
+  if (!isCurrentGuestRecord(record)) {
+    if (record) await env.GUEST_KV.delete(key);
+    return json({ allowed: true, status: 'AVAILABLE', policyVersion: GUEST_POLICY_VERSION, allowanceMs: GUEST_DURATION_MS }, 200, request, env);
+  }
   const status = guestStatus(record);
   if (status !== record.status) {
-    const remainingTtl = Math.max(60, Math.floor((Number(record.startTime) + GUEST_TTL_SECONDS * 1000 - Date.now()) / 1000));
+    const remainingTtl = Math.max(60, Math.ceil((Number(record.blockExpiresAt) - Date.now()) / 1000));
     await env.GUEST_KV.put(key, JSON.stringify({ ...record, status }), { expirationTtl: remainingTtl });
   }
-  return json({ allowed: status === 'ACTIVE', status, startTime: record.startTime, expiresAt: record.expiresAt, blockExpiresAt: record.blockExpiresAt || Number(record.startTime) + GUEST_TTL_SECONDS * 1000 }, 200, request, env);
+  return json({ allowed: status === 'ACTIVE', status, ...guestRecordResponse(record) }, 200, request, env);
 }
 
 async function guestKey(clientHash, request, env) {
@@ -231,6 +242,22 @@ async function guestKey(clientHash, request, env) {
 
 function guestStatus(record) {
   return record.status === 'EXPIRED' || Number(record.expiresAt) <= Date.now() ? 'EXPIRED' : 'ACTIVE';
+}
+
+function isCurrentGuestRecord(record) {
+  return Boolean(record)
+    && Number(record.policyVersion) === GUEST_POLICY_VERSION
+    && Number(record.blockExpiresAt) > Date.now();
+}
+
+function guestRecordResponse(record) {
+  return {
+    policyVersion: GUEST_POLICY_VERSION,
+    allowanceMs: GUEST_DURATION_MS,
+    startTime: Number(record.startTime),
+    expiresAt: Number(record.expiresAt),
+    blockExpiresAt: Number(record.blockExpiresAt)
+  };
 }
 
 async function handleStarGraph(request, env) {

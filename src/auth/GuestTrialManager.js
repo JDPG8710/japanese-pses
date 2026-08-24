@@ -1,7 +1,8 @@
 import { createDeviceFingerprint } from './DeviceFingerprint.js';
 
-const TRIAL_DURATION_MS = 10 * 60 * 1000;
-const TRIAL_BLOCK_MS = 30 * 24 * 60 * 60 * 1000;
+const GUEST_POLICY_VERSION = 2;
+const TRIAL_DURATION_MS = 2 * 60 * 60 * 1000;
+const TRIAL_BLOCK_MS = 7 * 24 * 60 * 60 * 1000;
 
 export class GuestTrialManager extends EventTarget {
   constructor({ apiBase = '/api', storage, fetchImpl = globalThis.fetch?.bind(globalThis) } = {}) {
@@ -12,11 +13,15 @@ export class GuestTrialManager extends EventTarget {
     this.timer = null;
     this.fingerprintHash = null;
     this.expiresAt = 0;
+    this.startTime = 0;
+    this.blockExpiresAt = 0;
+    this.expired = false;
   }
 
   async getAvailability() {
     this.fingerprintHash ||= await createDeviceFingerprint();
     let local = await this.storage.getGuestTracker(this.fingerprintHash);
+    if (local && Number(local.policy_version) !== GUEST_POLICY_VERSION) local = null;
     if (local && (local.status === 'EXPIRED' || Number(local.expires_at) <= Date.now())) {
       const blockUntil = Number(local.block_until || Number(local.start_time) + TRIAL_BLOCK_MS);
       if (blockUntil > Date.now()) return { allowed: false, status: 'EXPIRED', blockExpiresAt: blockUntil };
@@ -33,11 +38,11 @@ export class GuestTrialManager extends EventTarget {
     if (!response.ok) return { allowed: false, status: 'UNAVAILABLE' };
     const remote = await response.json();
     if (remote.status === 'EXPIRED') {
-      await this.storage.saveGuestTracker({ fingerprint_hash: this.fingerprintHash, status: 'EXPIRED', start_time: remote.startTime || 0, expires_at: remote.expiresAt || Date.now(), block_until: remote.blockExpiresAt || Number(remote.startTime || 0) + TRIAL_BLOCK_MS });
+      await this.saveTracker(remote, 'EXPIRED');
       return remote;
     }
     if (remote.status === 'ACTIVE') {
-      await this.storage.saveGuestTracker({ fingerprint_hash: this.fingerprintHash, status: 'ACTIVE', start_time: remote.startTime, expires_at: remote.expiresAt, block_until: remote.blockExpiresAt || Number(remote.startTime) + TRIAL_BLOCK_MS });
+      await this.saveTracker(remote, 'ACTIVE');
       return remote;
     }
     return local?.status === 'ACTIVE'
@@ -49,7 +54,7 @@ export class GuestTrialManager extends EventTarget {
     this.fingerprintHash ||= await createDeviceFingerprint();
     const availability = await this.getAvailability();
     if (availability.status === 'ACTIVE') return this.resume(availability);
-    if (!availability.allowed) throw new Error('この端末のゲスト体験は終了しています。ログインしてください。');
+    if (!availability.allowed) throw new Error('この端末の今週のゲスト体験は終了しています。Google でログインしてください。');
     const response = await this.fetchImpl(`${this.apiBase}/guest/start`, {
       method: 'POST', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ fingerprintHash: this.fingerprintHash, 'cf-turnstile-response': turnstileToken })
@@ -58,15 +63,18 @@ export class GuestTrialManager extends EventTarget {
     if (!response.ok || !result.allowed) {
       if (result.error === 'TURNSTILE_FAILED') throw new Error('人間確認の有効期限が切れました。もう一度確認してください。');
       if (result.status === 'ACTIVE') return this.resume(result);
-      if (result.status === 'EXPIRED') throw new Error('この端末のゲスト体験は終了しています。Google でログインしてください。');
+      if (result.status === 'EXPIRED') throw new Error('この端末の今週のゲスト体験は終了しています。Google でログインしてください。');
       throw new Error('ゲスト体験を開始できませんでした。もう一度お試しください。');
     }
-    await this.storage.saveGuestTracker({ fingerprint_hash: this.fingerprintHash, status: 'ACTIVE', start_time: result.startTime, expires_at: result.expiresAt, block_until: result.blockExpiresAt || Number(result.startTime) + TRIAL_BLOCK_MS });
+    await this.saveTracker(result, 'ACTIVE');
     return this.resume(result);
   }
 
   resume(record) {
-    this.expiresAt = Number(record.expiresAt || record.expires_at || (Number(record.startTime || record.start_time) + TRIAL_DURATION_MS));
+    this.startTime = Number(record.startTime || record.start_time || Date.now());
+    this.expiresAt = Number(record.expiresAt || record.expires_at || (this.startTime + TRIAL_DURATION_MS));
+    this.blockExpiresAt = Number(record.blockExpiresAt || record.block_until || (this.startTime + TRIAL_BLOCK_MS));
+    this.expired = false;
     if (this.expiresAt <= Date.now()) { this.expire(); return { mode: 'guest', expired: true }; }
     this.renderCountdown();
     clearInterval(this.timer);
@@ -79,17 +87,17 @@ export class GuestTrialManager extends EventTarget {
     const remaining = Math.max(0, this.expiresAt - Date.now());
     const label = document.getElementById('guest-trial-countdown');
     if (label) {
-      const totalSeconds = Math.ceil(remaining / 1000);
-      label.textContent = `体験残り ${String(Math.floor(totalSeconds / 60)).padStart(2, '0')}:${String(totalSeconds % 60).padStart(2, '0')}`;
+      label.textContent = `体験残り ${formatGuestRemaining(remaining)}`;
     }
     if (remaining <= 0) this.expire();
   }
 
   async expire() {
+    if (this.expired) return;
+    this.expired = true;
     clearInterval(this.timer);
     if (this.fingerprintHash) {
-      const startTime = this.expiresAt - TRIAL_DURATION_MS;
-      await this.storage.saveGuestTracker({ fingerprint_hash: this.fingerprintHash, status: 'EXPIRED', start_time: startTime, expires_at: this.expiresAt, block_until: startTime + TRIAL_BLOCK_MS });
+      await this.saveTracker({ startTime: this.startTime, expiresAt: this.expiresAt, blockExpiresAt: this.blockExpiresAt }, 'EXPIRED');
     }
     document.getElementById('guest-trial-countdown')?.remove();
     this.dispatchEvent(new CustomEvent('expired'));
@@ -105,6 +113,26 @@ export class GuestTrialManager extends EventTarget {
   }
 
   destroy() { clearInterval(this.timer); }
+
+  async saveTracker(record, status) {
+    const startTime = Number(record.startTime || record.start_time || Date.now());
+    return this.storage.saveGuestTracker({
+      fingerprint_hash: this.fingerprintHash,
+      policy_version: GUEST_POLICY_VERSION,
+      status,
+      start_time: startTime,
+      expires_at: Number(record.expiresAt || record.expires_at || startTime + TRIAL_DURATION_MS),
+      block_until: Number(record.blockExpiresAt || record.block_until || startTime + TRIAL_BLOCK_MS)
+    });
+  }
+}
+
+export function formatGuestRemaining(milliseconds) {
+  const totalSeconds = Math.max(0, Math.ceil(Number(milliseconds) / 1000));
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
 
 async function readJsonResponse(response) {

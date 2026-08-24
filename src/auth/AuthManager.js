@@ -57,7 +57,7 @@ export class AuthManager extends EventTarget {
 
   blockExpiredGuest() {
     window.dispatchEvent(new CustomEvent('GUEST_TRIAL_EXPIRED'));
-    this.modal?.show({ message: '10分間のゲスト体験が終了しました。続けるにはログインしてください。' });
+    this.modal?.show({ message: '今週分の2時間ゲスト体験が終了しました。続けるにはGoogleでログインしてください。' });
   }
 }
 

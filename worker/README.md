@@ -1,6 +1,6 @@
 # Cloudflare Worker 配備手順
 
-この Worker は Turnstile、Google／Apple 認証、10分ゲスト体験、KV セッション、R2 学習データを同一の認証境界で提供します。
+この Worker は Turnstile、Google認証、週2時間ゲスト体験、KV セッション、R2 学習データを同一の認証境界で提供します。
 
 ## 1. リソース作成
 

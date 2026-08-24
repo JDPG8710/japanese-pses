@@ -47,6 +47,54 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
       }
     });
 
+    test('旧ゲスト記録を移行し、週2時間・7日周期の新しい体験を発行する', async () => {
+      const worker = loadESModule(path.join(root, 'worker/index.js')).default;
+      const originalFetch = global.fetch;
+      const originalNow = Date.now;
+      const now = 1_800_000_000_000;
+      let current = { status: 'EXPIRED', startTime: now - 86_400_000, expiresAt: now - 1, blockExpiresAt: now + 2_000_000 };
+      let stored;
+      let storedOptions;
+      let deleted = false;
+      global.fetch = async () => new Response(JSON.stringify({ success: true, hostname: 'app.example.test', action: 'access' }), {
+        headers: { 'content-type': 'application/json' }
+      });
+      Date.now = () => now;
+      try {
+        const response = await worker.fetch(new Request('https://app.example.test/api/guest/start', {
+          method: 'POST', headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ fingerprintHash: 'a'.repeat(64), 'cf-turnstile-response': 'valid-looking-token' })
+        }), {
+          APP_ORIGIN: 'https://app.example.test', TURNSTILE_HOSTNAME: 'app.example.test',
+          TURNSTILE_SECRET_KEY: 'test-secret', FINGERPRINT_PEPPER: 'pepper',
+          GUEST_KV: {
+            get: async () => current,
+            delete: async () => { deleted = true; current = null; },
+            put: async (_key, value, options) => { stored = JSON.parse(value); storedOptions = options; current = stored; }
+          }
+        }, {});
+        const result = await response.json();
+        assert.equal(response.status, 201);
+        assert.equal(deleted, true, '旧30日ポリシー記録を削除してください');
+        assert.equal(result.policyVersion, 2);
+        assert.equal(result.expiresAt - result.startTime, 2 * 60 * 60 * 1000);
+        assert.equal(result.blockExpiresAt - result.startTime, 7 * 24 * 60 * 60 * 1000);
+        assert.equal(stored.policyVersion, 2);
+        assert.equal(storedOptions.expirationTtl, 7 * 24 * 60 * 60);
+      } finally {
+        global.fetch = originalFetch;
+        Date.now = originalNow;
+      }
+    });
+
+    test('ゲスト残り時間を2時間対応の時分秒で表示する', () => {
+      const manager = read('src/auth/GuestTrialManager.js');
+      assert.ok(manager.includes('2 * 60 * 60 * 1000'));
+      assert.ok(manager.includes('7 * 24 * 60 * 60 * 1000'));
+      assert.ok(manager.includes('formatGuestRemaining(remaining)'));
+      assert.ok(manager.includes("String(hours).padStart(2, '0')"));
+    });
+
     test('Wrangler は KV 2系統と R2 を束縛し、秘密値を平文で持たない', () => {
       const config = read('wrangler.toml');
       assert.ok(config.includes('binding = "SESSION_KV"'));
@@ -157,7 +205,7 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
       const expectations = {
         director_agent: ['Turnstile', 'R2', 'DPR'],
         game_designer_agent: ['HDCanvasRenderer', 'exportSaveState', 'StorageAdapter'],
-        qa_player_agent: ['Playwright', '10分', 'DPR'],
+        qa_player_agent: ['Playwright', '2時間', 'DPR'],
         bug_repair_agent: ['DPR_HITBOX_OFFSET', 'CANVAS_MEMORY_LEAK', 'WORKER_CORS'],
         graph_evolution_agent: ['star_graph.json', 'IndexedDB', 'ETag']
       };

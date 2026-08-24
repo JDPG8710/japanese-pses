@@ -19,6 +19,34 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
       assert.ok(worker.includes("claims.nonce !== expectedNonce"));
     });
 
+    test('ログイン画面は可視Turnstile完了後だけGoogleとゲストを許可する', () => {
+      const modal = read('src/auth/LoginModal.js');
+      const manager = read('src/auth/AuthManager.js');
+      assert.ok(modal.includes("action: 'access'"), 'ログインとゲストで同じ検証actionを使用してください');
+      assert.ok(modal.includes("appearance: 'always'"), '人間確認を常に表示してください');
+      assert.ok(modal.includes('data-provider="google" disabled'), '検証前はGoogleボタンを無効にしてください');
+      assert.ok(modal.includes('data-action="guest" disabled'), '検証前はゲストボタンを無効にしてください');
+      assert.ok(!modal.includes('data-provider="apple"'), 'Appleログインボタンは一時的に非表示にしてください');
+      assert.ok(manager.includes("provider !== 'google'"), '画面外からApple認証を開始できないようにしてください');
+    });
+
+    test('Worker はTurnstile actionがaccessと完全一致しないトークンを拒否する', async () => {
+      const worker = loadESModule(path.join(root, 'worker/index.js')).default;
+      const originalFetch = global.fetch;
+      global.fetch = async () => new Response(JSON.stringify({ success: true, hostname: 'app.example.test', action: 'auth' }), {
+        headers: { 'content-type': 'application/json' }
+      });
+      try {
+        const response = await worker.fetch(new Request('https://app.example.test/api/auth/google', {
+          method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ 'cf-turnstile-response': 'valid-looking-token' })
+        }), { APP_ORIGIN: 'https://app.example.test', TURNSTILE_HOSTNAME: 'app.example.test', TURNSTILE_SECRET_KEY: 'test-secret' }, {});
+        assert.equal(response.status, 400);
+        assert.equal((await response.json()).error, 'TURNSTILE_FAILED');
+      } finally {
+        global.fetch = originalFetch;
+      }
+    });
+
     test('Wrangler は KV 2系統と R2 を束縛し、秘密値を平文で持たない', () => {
       const config = read('wrangler.toml');
       assert.ok(config.includes('binding = "SESSION_KV"'));

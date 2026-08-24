@@ -54,8 +54,13 @@ export class GuestTrialManager extends EventTarget {
       method: 'POST', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ fingerprintHash: this.fingerprintHash, 'cf-turnstile-response': turnstileToken })
     });
-    const result = await response.json();
-    if (!response.ok || !result.allowed) throw new Error('ゲスト体験を開始できませんでした。ログインしてください。');
+    const result = await readJsonResponse(response);
+    if (!response.ok || !result.allowed) {
+      if (result.error === 'TURNSTILE_FAILED') throw new Error('人間確認の有効期限が切れました。もう一度確認してください。');
+      if (result.status === 'ACTIVE') return this.resume(result);
+      if (result.status === 'EXPIRED') throw new Error('この端末のゲスト体験は終了しています。Google でログインしてください。');
+      throw new Error('ゲスト体験を開始できませんでした。もう一度お試しください。');
+    }
     await this.storage.saveGuestTracker({ fingerprint_hash: this.fingerprintHash, status: 'ACTIVE', start_time: result.startTime, expires_at: result.expiresAt, block_until: result.blockExpiresAt || Number(result.startTime) + TRIAL_BLOCK_MS });
     return this.resume(result);
   }
@@ -100,4 +105,8 @@ export class GuestTrialManager extends EventTarget {
   }
 
   destroy() { clearInterval(this.timer); }
+}
+
+async function readJsonResponse(response) {
+  try { return await response.json(); } catch { return {}; }
 }

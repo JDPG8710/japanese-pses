@@ -21,7 +21,7 @@ export class AuthManager extends EventTarget {
     if (session?.authenticated) return { mode: 'authenticated', ...session };
     const availability = await this.guest.getAvailability().catch(() => ({ allowed: false, status: 'UNAVAILABLE' }));
     if (availability.status === 'ACTIVE') return this.guest.resume(availability);
-    await this.modal.show({ message: availability.allowed ? undefined : 'この端末のゲスト体験は終了しています。Google または Apple でログインしてください。' });
+    await this.modal.show({ message: availability.allowed ? undefined : 'この端末のゲスト体験は終了しています。Google でログインしてください。' });
     return new Promise(resolve => { this.resolveAccess = resolve; });
   }
 
@@ -36,11 +36,12 @@ export class AuthManager extends EventTarget {
     this.modal.setBusy(true);
     try {
       if (kind === 'oauth') {
+        if (provider !== 'google') throw new Error('現在利用できるログイン方法は Google のみです。');
         const response = await this.fetchImpl(`${this.apiBase}/auth/${provider}`, {
           method: 'POST', credentials: 'include', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ 'cf-turnstile-response': turnstileToken })
         });
-        const result = await response.json();
-        if (!response.ok || !result.authorizeUrl) throw new Error('ログインを開始できませんでした。');
+        const result = await readJson(response);
+        if (!response.ok || !result.authorizeUrl) throw new Error(authErrorMessage(result));
         location.assign(result.authorizeUrl);
         return;
       }
@@ -58,4 +59,14 @@ export class AuthManager extends EventTarget {
     window.dispatchEvent(new CustomEvent('GUEST_TRIAL_EXPIRED'));
     this.modal?.show({ message: '10分間のゲスト体験が終了しました。続けるにはログインしてください。' });
   }
+}
+
+async function readJson(response) {
+  try { return await response.json(); } catch { return {}; }
+}
+
+function authErrorMessage(result) {
+  if (result?.error === 'TURNSTILE_FAILED') return '人間確認の有効期限が切れました。もう一度確認してください。';
+  if (result?.error === 'SERVER_MISCONFIGURED') return '認証サービスの設定を確認中です。しばらくしてからもう一度お試しください。';
+  return 'Google ログインを開始できませんでした。もう一度お試しください。';
 }

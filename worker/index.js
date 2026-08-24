@@ -63,7 +63,7 @@ async function verifyTurnstile(token, request, env, expectedAction) {
   const response = await fetch(TURNSTILE_VERIFY_URL, { method: 'POST', body: form });
   const result = await response.json();
   const hostAllowed = !env.TURNSTILE_HOSTNAME || result.hostname === env.TURNSTILE_HOSTNAME;
-  const actionAllowed = !expectedAction || !result.action || result.action === expectedAction;
+  const actionAllowed = !expectedAction || result.action === expectedAction;
   return { ...result, success: Boolean(result.success && hostAllowed && actionAllowed) };
 }
 
@@ -78,7 +78,7 @@ async function handleOAuth(provider, request, env) {
   if (request.method !== 'POST') return json({ error: 'METHOD_NOT_ALLOWED' }, 405, request, env);
 
   const body = await readJson(request);
-  const turnstile = await verifyTurnstile(body['cf-turnstile-response'] || body.turnstileToken, request, env, 'auth');
+  const turnstile = await verifyTurnstile(body['cf-turnstile-response'] || body.turnstileToken, request, env, 'access');
   if (!turnstile.success) return json({ error: 'TURNSTILE_FAILED', errorCodes: turnstile['error-codes'] || [] }, 400, request, env);
 
   const state = randomToken(32);
@@ -199,7 +199,7 @@ async function handleLogout(request, env) {
 
 async function handleGuestStart(request, env) {
   const body = await readJson(request);
-  const turnstile = await verifyTurnstile(body['cf-turnstile-response'] || body.turnstileToken, request, env, 'auth');
+  const turnstile = await verifyTurnstile(body['cf-turnstile-response'] || body.turnstileToken, request, env, 'access');
   if (!turnstile.success) return json({ error: 'TURNSTILE_FAILED' }, 400, request, env);
   const key = await guestKey(body.fingerprintHash, request, env);
   const existing = await env.GUEST_KV.get(key, 'json');

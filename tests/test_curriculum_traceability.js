@@ -168,6 +168,7 @@ function register({ describe, test, assert, loadESModule }) {
       };
       modal.currentGame = {
         running: true,
+        totalTime: 2,
         correctCount: 1,
         questions: [{}, {}, {}],
         destroy() { this.running = false; }
@@ -176,8 +177,9 @@ function register({ describe, test, assert, loadESModule }) {
       modal.onGameOver = (_node, stars, score, result) => { timeoutResult = { stars, score, result }; };
       modal.startStageCountdown(node);
       assert.strictEqual(typeof scheduledTick, 'function');
-      assert.strictEqual(modal.currentGame.timeLeft, 2);
-      now += 2_001;
+      assert.strictEqual(modal.currentGame.timeLeft, 180, 'Every stage must ignore shorter per-game defaults and start at three minutes');
+      assert.strictEqual(modal.currentGame.totalTime, 180, 'Score calculations must use the same three-minute limit');
+      now += 180_001;
       scheduledTick();
       assert.strictEqual(modal.currentGame.timeLeft, 0);
       assert.strictEqual(modal.currentGame.running, false);

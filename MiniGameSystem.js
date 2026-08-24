@@ -17,6 +17,8 @@ import { getErrorGuidanceSystem } from './ErrorGuidanceSystem.js';
 import { getRadicalPuzzlesForGrade } from './RadicalQuestionBank.js';
 import { HDCanvasRenderer, getLogicalCanvasWidth, getLogicalCanvasHeight } from './src/render/HDCanvasRenderer.js';
 
+const UNIFIED_STAGE_TIME_LIMIT_SECONDS = 3 * 60;
+
 /** Canvas cannot render HTML ruby. Grades 1-2, or unknown grade -> append hiragana after the title. */
 function withKidsReading(kanjiTitle, hiragana, grade) {
   if (grade != null && Number(grade) > 2) return kanjiTitle;
@@ -190,7 +192,7 @@ export class MiniGameModal {
             <div class="flex items-center gap-2 sm:gap-3 flex-shrink-0">
               <button id="game-hint-btn" class="hidden px-2.5 py-1 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 text-xs font-bold border border-sky-500/30 transition cursor-pointer min-h-[36px]">💡 ヒント</button>
               <button id="game-shuffle-btn" class="hidden px-2.5 py-1 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 text-xs font-bold border border-purple-500/30 transition cursor-pointer min-h-[36px]">🌀 シャッフル</button>
-              <div id="game-timer" role="timer" aria-live="polite" class="text-xs sm:text-sm font-mono text-amber-400 font-bold bg-amber-400/10 border border-amber-400/30 px-2.5 sm:px-3 py-1 rounded-full whitespace-nowrap">⏱ 1:00</div>
+              <div id="game-timer" role="timer" aria-live="polite" class="text-xs sm:text-sm font-mono text-amber-400 font-bold bg-amber-400/10 border border-amber-400/30 px-2.5 sm:px-3 py-1 rounded-full whitespace-nowrap">⏱ 3:00</div>
               <button id="game-close-btn" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition cursor-pointer" title="閉じる">✕</button>
             </div>
           </div>
@@ -266,18 +268,15 @@ export class MiniGameModal {
     if (this.currentGame && typeof this.currentGame.render === 'function') this.currentGame.render();
   }
 
-  resolveStageTimeLimit(node, game = this.currentGame) {
-    const configured = Number(node?.gameData?.timeLimit);
-    if (Number.isFinite(configured) && configured > 0) return Math.ceil(configured);
-    const gameLimit = Number(game?.totalTime ?? game?.timeLeft);
-    if (Number.isFinite(gameLimit) && gameLimit > 0) return Math.ceil(gameLimit);
-    return node?.gameType === 'GRADE_EXAM' ? 120 : 60;
+  resolveStageTimeLimit() {
+    return UNIFIED_STAGE_TIME_LIMIT_SECONDS;
   }
 
   startStageCountdown(node) {
     this.stopStageCountdown();
     this.stageTimeLimit = this.resolveStageTimeLimit(node);
     this.stageDeadline = this.now() + this.stageTimeLimit * 1000;
+    if (this.currentGame && 'totalTime' in this.currentGame) this.currentGame.totalTime = this.stageTimeLimit;
     this.setPlayActivity(true);
     this.updateStageCountdown(node);
     this.stageTimerId = this.setIntervalImpl(() => this.updateStageCountdown(node), 250);
@@ -351,7 +350,7 @@ export class MiniGameModal {
     const scoreEl = document.getElementById('game-score');
     if (scoreEl) scoreEl.innerText = '0';
     const timerEl = document.getElementById('game-timer');
-    if (timerEl) timerEl.innerText = '⏱ 1:00';
+    if (timerEl) timerEl.innerText = '⏱ 3:00';
     const overlayEl = document.getElementById('game-overlay-ui');
     if (overlayEl) {
       overlayEl.innerHTML = '';

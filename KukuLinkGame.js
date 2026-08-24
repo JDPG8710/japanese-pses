@@ -18,6 +18,7 @@
 import { getAudioSynthesizer } from './AudioSynthesizer.js';
 import { getFXSystem } from './FXSystem.js';
 import { getErrorGuidanceSystem } from './ErrorGuidanceSystem.js';
+import { getLogicalCanvasWidth, getLogicalCanvasHeight } from './src/render/HDCanvasRenderer.js';
 
 export class KukuLinkGame {
   constructor(canvas, options = {}) {
@@ -426,8 +427,8 @@ export class KukuLinkGame {
 
   handlePointer(e) {
     const rect = this.canvas.getBoundingClientRect();
-    const clientX = (e.clientX - rect.left) * (this.canvas.width / rect.width);
-    const clientY = (e.clientY - rect.top) * (this.canvas.height / rect.height);
+    const clientX = (e.clientX - rect.left) * (getLogicalCanvasWidth(this.canvas) / rect.width);
+    const clientY = (e.clientY - rect.top) * (getLogicalCanvasHeight(this.canvas) / rect.height);
 
     // レベル切り替えバーのタップ判定 (上部 y: 5 ~ 32)
     if (clientY >= 5 && clientY <= 32) {
@@ -630,8 +631,8 @@ export class KukuLinkGame {
   }
 
   getCardLayout() {
-    const w = this.canvas.width;
-    const h = this.canvas.height;
+    const w = getLogicalCanvasWidth(this.canvas);
+    const h = getLogicalCanvasHeight(this.canvas);
     const isSmallMobile = w < 480;
 
     const gap = isSmallMobile ? 6 : 10;
@@ -652,7 +653,7 @@ export class KukuLinkGame {
 
   renderLoop() {
     if (!this.running) return;
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.ctx.clearRect(0, 0, getLogicalCanvasWidth(this.canvas), getLogicalCanvasHeight(this.canvas));
 
     const layout = this.getCardLayout();
     const { startX, startY, cardW, cardH, gap, isSmallMobile } = layout;
@@ -689,7 +690,7 @@ export class KukuLinkGame {
     this.ctx.textAlign = 'right';
     this.ctx.fillStyle = '#38bdf8';
     this.ctx.font = 'bold 11px sans-serif';
-    this.ctx.fillText(`💡(${this.hintsRemaining}) 🌀(${this.shufflesRemaining})`, this.canvas.width - 15, 22);
+    this.ctx.fillText(`💡(${this.hintsRemaining}) 🌀(${this.shufflesRemaining})`, getLogicalCanvasWidth(this.canvas) - 15, 22);
 
     // カード描画
     for (let r = 1; r <= this.rows; r++) {
@@ -745,7 +746,7 @@ export class KukuLinkGame {
     }
 
     if (this.fx && typeof this.fx.render === 'function') {
-      this.fx.render(this.ctx, this.canvas.width, this.canvas.height);
+      this.fx.render(this.ctx, getLogicalCanvasWidth(this.canvas), getLogicalCanvasHeight(this.canvas));
     }
     if (typeof requestAnimationFrame !== 'undefined') {
       requestAnimationFrame(() => this.renderLoop());
@@ -791,7 +792,7 @@ export class KukuLinkGame {
 
     if (isSuccess) {
       this.audio.playVictory();
-      this.fx.spawnConfetti(this.canvas.width, this.canvas.height, 60);
+      this.fx.spawnConfetti(getLogicalCanvasWidth(this.canvas), getLogicalCanvasHeight(this.canvas), 60);
     } else {
       this.audio.playGentleError();
     }

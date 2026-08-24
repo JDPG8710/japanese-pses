@@ -15,6 +15,7 @@ import { getAudioSynthesizer } from './AudioSynthesizer.js';
 import { getFXSystem } from './FXSystem.js';
 import { getErrorGuidanceSystem } from './ErrorGuidanceSystem.js';
 import { getRadicalPuzzlesForGrade } from './RadicalQuestionBank.js';
+import { HDCanvasRenderer, getLogicalCanvasWidth, getLogicalCanvasHeight } from './src/render/HDCanvasRenderer.js';
 
 /** Canvas cannot render HTML ruby. Grades 1-2, or unknown grade -> append hiragana after the title. */
 function withKidsReading(kanjiTitle, hiragana, grade) {
@@ -142,6 +143,17 @@ export class MiniGameModal {
   constructor() {
     this.createModalDOM();
     this.currentGame = null;
+    this.boundCanvasResize = () => this.handleCanvasResize();
+    if (typeof ResizeObserver !== 'undefined') {
+      const stage = document.getElementById('game-stage');
+      if (stage) {
+        this.canvasResizeObserver = new ResizeObserver(this.boundCanvasResize);
+        this.canvasResizeObserver.observe(stage);
+      }
+    } else if (typeof window !== 'undefined') {
+      window.addEventListener('resize', this.boundCanvasResize);
+      window.addEventListener('orientationchange', this.boundCanvasResize);
+    }
   }
 
   createModalDOM() {
@@ -226,6 +238,22 @@ export class MiniGameModal {
     return 6;
   }
 
+  setupGameCanvas(canvas, container) {
+    if (!canvas || !container) return null;
+    const width = container.clientWidth || 640;
+    const height = container.clientHeight || 384;
+    return HDCanvasRenderer.setup(canvas, width, height);
+  }
+
+  handleCanvasResize() {
+    if (!this.modal || this.modal.classList.contains('hidden')) return;
+    const canvas = document.getElementById('game-canvas');
+    const stage = document.getElementById('game-stage');
+    if (!canvas || !stage) return;
+    this.setupGameCanvas(canvas, stage);
+    if (this.currentGame && typeof this.currentGame.render === 'function') this.currentGame.render();
+  }
+
   // 知識ノードからゲームを開始
   open(nodeInfo, stageNum = 1) {
     if (this.modal) this.modal.classList.remove('hidden');
@@ -259,10 +287,7 @@ export class MiniGameModal {
 
     const canvas = document.getElementById('game-canvas') || (typeof document !== 'undefined' && document.createElement ? document.createElement('canvas') : null);
     const container = document.getElementById('game-stage');
-    if (canvas && container) {
-      canvas.width = container.clientWidth || 640;
-      canvas.height = container.clientHeight || 384;
-    }
+    this.setupGameCanvas(canvas, container);
 
     if (this.currentGame) {
       this.currentGame.destroy();
@@ -475,10 +500,7 @@ export class MiniGameModal {
 
     const canvas = document.getElementById('game-canvas') || (typeof document !== 'undefined' && document.createElement ? document.createElement('canvas') : null);
     const container = document.getElementById('game-stage');
-    if (canvas && container) {
-      canvas.width = container.clientWidth || 640;
-      canvas.height = container.clientHeight || 384;
-    }
+    this.setupGameCanvas(canvas, container);
 
     if (this.currentGame) {
       this.currentGame.destroy();
@@ -505,10 +527,7 @@ export class MiniGameModal {
 
     const canvas = document.getElementById('game-canvas') || (typeof document !== 'undefined' && document.createElement ? document.createElement('canvas') : null);
     const container = document.getElementById('game-stage');
-    if (canvas && container) {
-      canvas.width = container.clientWidth || 640;
-      canvas.height = container.clientHeight || 384;
-    }
+    this.setupGameCanvas(canvas, container);
 
     if (this.currentGame) {
       this.currentGame.destroy();
@@ -544,10 +563,7 @@ export class MiniGameModal {
 
     const canvas = document.getElementById('game-canvas') || (typeof document !== 'undefined' && document.createElement ? document.createElement('canvas') : null);
     const container = document.getElementById('game-stage');
-    if (canvas && container) {
-      canvas.width = container.clientWidth || 640;
-      canvas.height = container.clientHeight || 384;
-    }
+    this.setupGameCanvas(canvas, container);
 
     if (this.currentGame) {
       this.currentGame.destroy();
@@ -775,7 +791,43 @@ export class MiniGameModal {
     }
 
     if (this.currentGame && typeof this.currentGame.start === 'function') {
+      this.attachStandardSaveState(this.currentGame, gameType, targetNode, levelNum);
       this.currentGame.start();
+    }
+  }
+
+  attachStandardSaveState(game, gameType, node, level) {
+    if (!game || typeof game !== 'object') return;
+    if (typeof game.exportSaveState !== 'function') {
+      game.exportSaveState = () => ({
+        schemaVersion: 1,
+        gameType,
+        nodeId: node?.id || null,
+        updated_at: Date.now(),
+        payload: {
+          level: Number(game.level ?? level) || 1,
+          score: Number(game.score) || 0,
+          correctCount: Number(game.correctCount ?? game.matchesFound) || 0,
+          totalCount: Number(game.totalCount ?? game.totalPairs ?? game.questions?.length) || 0,
+          questionIndex: Number(game.currentQuestionIndex ?? game.questionIndex) || 0,
+          timeLeft: Number(game.timeLeft ?? game.remainingTime) || 0,
+          completed: Boolean(game.completed || game.isComplete || game.gameEnded)
+        }
+      });
+    }
+    if (typeof game.importSaveState !== 'function') {
+      game.importSaveState = (state) => {
+        if (!state || state.schemaVersion !== 1 || state.gameType !== gameType || state.nodeId !== (node?.id || null)) return false;
+        const payload = state.payload || {};
+        const assignments = [
+          ['score', 'score'], ['correctCount', 'correctCount'], ['currentQuestionIndex', 'questionIndex'],
+          ['questionIndex', 'questionIndex'], ['timeLeft', 'timeLeft'], ['remainingTime', 'timeLeft']
+        ];
+        for (const [property, key] of assignments) {
+          if (property in game && Number.isFinite(Number(payload[key]))) game[property] = Number(payload[key]);
+        }
+        return true;
+      };
     }
   }
 
@@ -873,6 +925,8 @@ export class MiniGameModal {
       overlay.innerHTML = '';
       overlay.style.pointerEvents = 'none';
     }
+    const canvas = document.getElementById('game-canvas');
+    HDCanvasRenderer.for(canvas)?.dispose();
     this.modal.classList.add('hidden');
   }
 }
@@ -993,7 +1047,7 @@ export class KanjiSlashGame {
     const shuffled = [...q.options].sort(() => Math.random() - 0.5);
     const count = shuffled.length;
     const padding = 65;
-    const step = (this.canvas.width - padding * 2) / Math.max(1, count - 1);
+    const step = (getLogicalCanvasWidth(this.canvas) - padding * 2) / Math.max(1, count - 1);
 
     shuffled.forEach((text, i) => {
       this.meteors.push({
@@ -1011,16 +1065,16 @@ export class KanjiSlashGame {
 
   handlePointer(e) {
     const rect = this.canvas.getBoundingClientRect();
-    const x = (e.clientX - rect.left) * (this.canvas.width / rect.width);
-    const y = (e.clientY - rect.top) * (this.canvas.height / rect.height);
+    const x = (e.clientX - rect.left) * (getLogicalCanvasWidth(this.canvas) / rect.width);
+    const y = (e.clientY - rect.top) * (getLogicalCanvasHeight(this.canvas) / rect.height);
     this.checkHit(x, y);
   }
 
   handlePointerMove(e) {
     if (e.buttons === 1) {
       const rect = this.canvas.getBoundingClientRect();
-      const x = (e.clientX - rect.left) * (this.canvas.width / rect.width);
-      const y = (e.clientY - rect.top) * (this.canvas.height / rect.height);
+      const x = (e.clientX - rect.left) * (getLogicalCanvasWidth(this.canvas) / rect.width);
+      const y = (e.clientY - rect.top) * (getLogicalCanvasHeight(this.canvas) / rect.height);
       this.trail.push({ x, y, life: 10 });
       this.checkHit(x, y);
     }
@@ -1077,13 +1131,13 @@ export class KanjiSlashGame {
 
   loop() {
     if (!this.running) return;
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.ctx.clearRect(0, 0, getLogicalCanvasWidth(this.canvas), getLogicalCanvasHeight(this.canvas));
 
     // お題表示
     this.ctx.fillStyle = '#ffffff';
     this.ctx.font = 'bold 22px sans-serif';
     this.ctx.textAlign = 'center';
-    this.ctx.fillText(`【 ${this.currentKanji || ''} 】の${withKidsReading('正しい読み', 'ただしいよみ', this.grade)}は？`, this.canvas.width / 2, 42);
+    this.ctx.fillText(`【 ${this.currentKanji || ''} 】の${withKidsReading('正しい読み', 'ただしいよみ', this.grade)}は？`, getLogicalCanvasWidth(this.canvas) / 2, 42);
 
     // 流れ星描画
     this.meteors.forEach((m) => {
@@ -1117,7 +1171,7 @@ export class KanjiSlashGame {
         this.ctx.textBaseline = 'middle';
         this.ctx.fillText(m.text, m.x, m.y);
 
-        if (m.y > this.canvas.height + 40) {
+        if (m.y > getLogicalCanvasHeight(this.canvas) + 40) {
           m.y = -30;
         }
       }
@@ -1233,8 +1287,8 @@ export class RadicalBuilderGame {
     const opts = p.options || [...this.requiredParts, '木', '日'];
     const shuffled = [...opts].sort(() => Math.random() - 0.5);
 
-    const w = this.canvas.width;
-    const h = this.canvas.height;
+    const w = getLogicalCanvasWidth(this.canvas);
+    const h = getLogicalCanvasHeight(this.canvas);
     const btnSize = 58; // min 56px hitbox
     const totalW = shuffled.length * (btnSize + 14);
     const startX = (w - totalW) / 2 + btnSize / 2;
@@ -1252,8 +1306,8 @@ export class RadicalBuilderGame {
   handlePointer(e) {
     if (!this.running || this.locked) return;
     const rect = this.canvas.getBoundingClientRect();
-    const x = (e.clientX - rect.left) * (this.canvas.width / rect.width);
-    const y = (e.clientY - rect.top) * (this.canvas.height / rect.height);
+    const x = (e.clientX - rect.left) * (getLogicalCanvasWidth(this.canvas) / rect.width);
+    const y = (e.clientY - rect.top) * (getLogicalCanvasHeight(this.canvas) / rect.height);
 
     const audio = getAudioSynthesizer();
     const fx = getFXSystem();
@@ -1277,8 +1331,8 @@ export class RadicalBuilderGame {
             this.feedback = `正解！「${this.targetKanji}」`;
             this.combo++;
             audio.playPositive(this.grade, this.combo);
-            fx.spawnStarBurst(this.canvas.width / 2, this.canvas.height / 2, 35, '#fbbf24');
-            fx.showFloatingScore(this.canvas.width / 2, this.canvas.height / 2 - 40, `合体成功！【${this.targetKanji}】`, '#34d399');
+            fx.spawnStarBurst(getLogicalCanvasWidth(this.canvas) / 2, getLogicalCanvasHeight(this.canvas) / 2, 35, '#fbbf24');
+            fx.showFloatingScore(getLogicalCanvasWidth(this.canvas) / 2, getLogicalCanvasHeight(this.canvas) / 2 - 40, `合体成功！【${this.targetKanji}】`, '#34d399');
             guidance.registerSuccess({ questionId: 'RADICAL_' + this.targetKanji });
 
             this.score += 150 * this.combo;
@@ -1328,11 +1382,11 @@ export class RadicalBuilderGame {
     }
 
     // 2. Check tap on placed slot to return piece
-    const slotY = this.canvas.height / 2 + 10;
+    const slotY = getLogicalCanvasHeight(this.canvas) / 2 + 10;
     const slotSize = 64;
     const slotCount = this.requiredParts.length;
     const totalSlotW = slotCount * (slotSize + 16);
-    const slotStartX = (this.canvas.width - totalSlotW) / 2 + slotSize / 2;
+    const slotStartX = (getLogicalCanvasWidth(this.canvas) - totalSlotW) / 2 + slotSize / 2;
 
     for (let i = 0; i < this.placedParts.length; i++) {
       const sx = slotStartX + i * (slotSize + 16);
@@ -1348,8 +1402,8 @@ export class RadicalBuilderGame {
 
   loop() {
     if (!this.running) return;
-    const w = this.canvas.width;
-    const h = this.canvas.height;
+    const w = getLogicalCanvasWidth(this.canvas);
+    const h = getLogicalCanvasHeight(this.canvas);
     this.ctx.clearRect(0, 0, w, h);
 
     // お題・ヒント表示
@@ -1646,18 +1700,18 @@ export class CurriculumQuizGame {
   }
 
   getOptionLayout() {
-    const h = this.canvas.height;
+    const h = getLogicalCanvasHeight(this.canvas);
     const startY = 154;
     const gap = 8;
     const optionH = Math.max(56, Math.floor((h - startY - 12 - gap * 3) / 4));
-    return { x: 24, w: this.canvas.width - 48, startY, gap, optionH };
+    return { x: 24, w: getLogicalCanvasWidth(this.canvas) - 48, startY, gap, optionH };
   }
 
   handlePointer(event) {
     if (!this.running || this.locked) return;
     const rect = this.canvas.getBoundingClientRect();
-    const x = (event.clientX - rect.left) * (this.canvas.width / rect.width);
-    const y = (event.clientY - rect.top) * (this.canvas.height / rect.height);
+    const x = (event.clientX - rect.left) * (getLogicalCanvasWidth(this.canvas) / rect.width);
+    const y = (event.clientY - rect.top) * (getLogicalCanvasHeight(this.canvas) / rect.height);
     const layout = this.getOptionLayout();
     const question = this.questions[this.qIndex];
     question.options.forEach((option, index) => {
@@ -1674,7 +1728,7 @@ export class CurriculumQuizGame {
         this.correctCount++;
         this.feedback = '正解！';
         audio.playPositive(this.grade, this.correctCount);
-        fx.spawnStarBurst(this.canvas.width / 2, optionY + layout.optionH / 2, 24, '#34d399');
+        fx.spawnStarBurst(getLogicalCanvasWidth(this.canvas) / 2, optionY + layout.optionH / 2, 24, '#34d399');
         guidance.registerSuccess({ questionId: question.id });
       } else {
         this.feedback = `正解は「${question.correct}」`;
@@ -1725,9 +1779,9 @@ export class CurriculumQuizGame {
 
   loop() {
     if (!this.running) return;
-    const w = this.canvas.width;
+    const w = getLogicalCanvasWidth(this.canvas);
     const question = this.questions[this.qIndex];
-    this.ctx.clearRect(0, 0, w, this.canvas.height);
+    this.ctx.clearRect(0, 0, w, getLogicalCanvasHeight(this.canvas));
     this.ctx.fillStyle = '#f8fafc';
     this.ctx.font = 'bold 16px sans-serif';
     this.ctx.textAlign = 'center';
@@ -1914,17 +1968,17 @@ export class PanBalanceScaleGame {
 
   handlePointer(e) {
     const rect = this.canvas.getBoundingClientRect();
-    const x = (e.clientX - rect.left) * (this.canvas.width / rect.width);
-    const y = (e.clientY - rect.top) * (this.canvas.height / rect.height);
+    const x = (e.clientX - rect.left) * (getLogicalCanvasWidth(this.canvas) / rect.width);
+    const y = (e.clientY - rect.top) * (getLogicalCanvasHeight(this.canvas) / rect.height);
 
     const audio = getAudioSynthesizer();
     const fx = getFXSystem();
     const guidance = getErrorGuidanceSystem();
 
     // 1. Check tap on weight tray at bottom
-    const trayY = this.canvas.height - 50;
+    const trayY = getLogicalCanvasHeight(this.canvas) - 50;
     const trayStartX = 80;
-    const stepX = (this.canvas.width - 160) / Math.max(1, this.weightTray.length - 1);
+    const stepX = (getLogicalCanvasWidth(this.canvas) - 160) / Math.max(1, this.weightTray.length - 1);
 
     for (let i = 0; i < this.weightTray.length; i++) {
       const item = this.weightTray[i];
@@ -1938,7 +1992,7 @@ export class PanBalanceScaleGame {
     }
 
     // 2. Check tap on Reset / Clear button
-    if (x > this.canvas.width - 90 && y > this.canvas.height - 50) {
+    if (x > getLogicalCanvasWidth(this.canvas) - 90 && y > getLogicalCanvasHeight(this.canvas) - 50) {
       audio.playClick();
       this.rightWeightsPlaced = [];
       this.recalcBalance();
@@ -1946,8 +2000,8 @@ export class PanBalanceScaleGame {
     }
 
     // 3. Check tap on right pan to remove last weight
-    const cx = this.canvas.width / 2;
-    const cy = this.canvas.height / 2 - 20;
+    const cx = getLogicalCanvasWidth(this.canvas) / 2;
+    const cy = getLogicalCanvasHeight(this.canvas) / 2 - 20;
     const rx = cx + 130;
     const ry = cy + 60;
     if (Math.hypot(rx - x, ry - y) < 45 && this.rightWeightsPlaced.length > 0) {
@@ -1973,8 +2027,8 @@ export class PanBalanceScaleGame {
 
     if (diff === 0 && rightTotal > 0) {
       audio.playPositive(5, 1);
-      fx.spawnStarBurst(this.canvas.width / 2, this.canvas.height / 2, 35, '#10b981');
-      fx.showFloatingScore(this.canvas.width / 2, this.canvas.height / 2 - 40, '天秤完全平衡！', '#34d399');
+      fx.spawnStarBurst(getLogicalCanvasWidth(this.canvas) / 2, getLogicalCanvasHeight(this.canvas) / 2, 35, '#10b981');
+      fx.showFloatingScore(getLogicalCanvasWidth(this.canvas) / 2, getLogicalCanvasHeight(this.canvas) / 2 - 40, '天秤完全平衡！', '#34d399');
       guidance.registerSuccess({ questionId: 'PAN_BALANCE' });
 
       setTimeout(() => {
@@ -1986,8 +2040,8 @@ export class PanBalanceScaleGame {
 
   loop() {
     if (!this.running) return;
-    const w = this.canvas.width;
-    const h = this.canvas.height;
+    const w = getLogicalCanvasWidth(this.canvas);
+    const h = getLogicalCanvasHeight(this.canvas);
     this.ctx.clearRect(0, 0, w, h);
 
     // Smooth angle interpolation
@@ -2179,10 +2233,10 @@ export class CosmicOrbitGame {
 
   updateAngleByPointer(e) {
     const rect = this.canvas.getBoundingClientRect();
-    const x = (e.clientX - rect.left) * (this.canvas.width / rect.width);
-    const y = (e.clientY - rect.top) * (this.canvas.height / rect.height);
-    const cx = this.canvas.width / 2 - 40;
-    const cy = this.canvas.height / 2 + 10;
+    const x = (e.clientX - rect.left) * (getLogicalCanvasWidth(this.canvas) / rect.width);
+    const y = (e.clientY - rect.top) * (getLogicalCanvasHeight(this.canvas) / rect.height);
+    const cx = getLogicalCanvasWidth(this.canvas) / 2 - 40;
+    const cy = getLogicalCanvasHeight(this.canvas) / 2 + 10;
 
     const rad = Math.atan2(y - cy, x - cx);
     this.moonAngleDeg = (rad * (180 / Math.PI) + 360) % 360;
@@ -2201,8 +2255,8 @@ export class CosmicOrbitGame {
 
     if (isMatched) {
       audio.playPositive(4, 1);
-      fx.spawnStarBurst(this.canvas.width - 80, 90, 30, '#fbbf24');
-      fx.showFloatingScore(this.canvas.width / 2, this.canvas.height / 2, `観察成功！【${this.targetPhase}】`, '#34d399');
+      fx.spawnStarBurst(getLogicalCanvasWidth(this.canvas) - 80, 90, 30, '#fbbf24');
+      fx.showFloatingScore(getLogicalCanvasWidth(this.canvas) / 2, getLogicalCanvasHeight(this.canvas) / 2, `観察成功！【${this.targetPhase}】`, '#34d399');
       guidance.registerSuccess({ questionId: 'COSMIC_ORBIT' });
 
       setTimeout(() => {
@@ -2214,8 +2268,8 @@ export class CosmicOrbitGame {
 
   loop() {
     if (!this.running) return;
-    const w = this.canvas.width;
-    const h = this.canvas.height;
+    const w = getLogicalCanvasWidth(this.canvas);
+    const h = getLogicalCanvasHeight(this.canvas);
     this.ctx.clearRect(0, 0, w, h);
 
     const cx = w / 2 - 40;
@@ -2336,8 +2390,8 @@ export class LeverPhysicsGame {
 
   handlePointer(e) {
     const rect = this.canvas.getBoundingClientRect();
-    const x = (e.clientX - rect.left) * (this.canvas.width / rect.width);
-    const cx = this.canvas.width / 2;
+    const x = (e.clientX - rect.left) * (getLogicalCanvasWidth(this.canvas) / rect.width);
+    const cx = getLogicalCanvasWidth(this.canvas) / 2;
 
     const audio = getAudioSynthesizer();
     const fx = getFXSystem();
@@ -2361,8 +2415,8 @@ export class LeverPhysicsGame {
 
       if (isBalanced) {
         audio.playPositive(6, 1);
-        fx.spawnStarBurst(cx + clickedSlot * 30, this.canvas.height / 2 + 50, 30, '#10b981');
-        fx.showFloatingScore(cx, this.canvas.height / 2 - 30, 'モーメント完全平衡！', '#34d399');
+        fx.spawnStarBurst(cx + clickedSlot * 30, getLogicalCanvasHeight(this.canvas) / 2 + 50, 30, '#10b981');
+        fx.showFloatingScore(cx, getLogicalCanvasHeight(this.canvas) / 2 - 30, 'モーメント完全平衡！', '#34d399');
         guidance.registerSuccess({ questionId: 'LEVER_PHYSICS' });
 
         setTimeout(() => {
@@ -2388,8 +2442,8 @@ export class LeverPhysicsGame {
 
   loop() {
     if (!this.running) return;
-    const w = this.canvas.width;
-    const h = this.canvas.height;
+    const w = getLogicalCanvasWidth(this.canvas);
+    const h = getLogicalCanvasHeight(this.canvas);
     this.ctx.clearRect(0, 0, w, h);
 
     this.angle += (this.targetAngle - this.angle) * 0.15;
@@ -2491,28 +2545,28 @@ export class CircuitSandboxGame {
 
   handlePointer(e) {
     const rect = this.canvas.getBoundingClientRect();
-    const x = (e.clientX - rect.left) * (this.canvas.width / rect.width);
-    const y = (e.clientY - rect.top) * (this.canvas.height / rect.height);
+    const x = (e.clientX - rect.left) * (getLogicalCanvasWidth(this.canvas) / rect.width);
+    const y = (e.clientY - rect.top) * (getLogicalCanvasHeight(this.canvas) / rect.height);
 
     const audio = getAudioSynthesizer();
     const fx = getFXSystem();
     const guidance = getErrorGuidanceSystem();
 
     // 1. Click switch area
-    if (Math.abs(x - (this.canvas.width / 2)) < 60 && Math.abs(y - 120) < 40) {
+    if (Math.abs(x - (getLogicalCanvasWidth(this.canvas) / 2)) < 60 && Math.abs(y - 120) < 40) {
       this.switchClosed = !this.switchClosed;
       audio.playClick();
 
       if (this.switchClosed) {
         audio.playLaser();
-        fx.spawnSparkBurst(this.canvas.width / 2, 120, 15, '#38bdf8');
+        fx.spawnSparkBurst(getLogicalCanvasWidth(this.canvas) / 2, 120, 15, '#38bdf8');
         this.checkWinCondition();
       }
       return;
     }
 
     // 2. Click battery mode toggle button
-    if (x > this.canvas.width - 150 && y > this.canvas.height - 70) {
+    if (x > getLogicalCanvasWidth(this.canvas) - 150 && y > getLogicalCanvasHeight(this.canvas) - 70) {
       this.isSeriesDual = !this.isSeriesDual;
       audio.playClick();
       if (this.switchClosed) this.checkWinCondition();
@@ -2530,8 +2584,8 @@ export class CircuitSandboxGame {
 
     if (this.switchClosed) {
       audio.playPositive(5, 1);
-      fx.spawnStarBurst(this.canvas.width / 2, this.canvas.height / 2 + 60, 30, '#fbbf24');
-      fx.showFloatingScore(this.canvas.width / 2, this.canvas.height / 2, '回路開通！豆電球点灯！', '#34d399');
+      fx.spawnStarBurst(getLogicalCanvasWidth(this.canvas) / 2, getLogicalCanvasHeight(this.canvas) / 2 + 60, 30, '#fbbf24');
+      fx.showFloatingScore(getLogicalCanvasWidth(this.canvas) / 2, getLogicalCanvasHeight(this.canvas) / 2, '回路開通！豆電球点灯！', '#34d399');
       guidance.registerSuccess({ questionId: 'CIRCUIT_SANDBOX' });
 
       setTimeout(() => {
@@ -2543,8 +2597,8 @@ export class CircuitSandboxGame {
 
   loop() {
     if (!this.running) return;
-    const w = this.canvas.width;
-    const h = this.canvas.height;
+    const w = getLogicalCanvasWidth(this.canvas);
+    const h = getLogicalCanvasHeight(this.canvas);
     this.ctx.clearRect(0, 0, w, h);
 
     const cx = w / 2;
@@ -2852,10 +2906,10 @@ export class PrefectureJigsawGame {
   handlePointer(e) {
     if (!this.running || this.locked) return;
     const rect = this.canvas.getBoundingClientRect();
-    const x = (e.clientX - rect.left) * (this.canvas.width / rect.width);
-    const y = (e.clientY - rect.top) * (this.canvas.height / rect.height);
-    const w = this.canvas.width;
-    const h = this.canvas.height;
+    const x = (e.clientX - rect.left) * (getLogicalCanvasWidth(this.canvas) / rect.width);
+    const y = (e.clientY - rect.top) * (getLogicalCanvasHeight(this.canvas) / rect.height);
+    const w = getLogicalCanvasWidth(this.canvas);
+    const h = getLogicalCanvasHeight(this.canvas);
 
     // 0. 上部ステージ進行バー (y: 4 ~ 26)
     if (y >= 4 && y <= 26) {
@@ -2972,8 +3026,8 @@ export class PrefectureJigsawGame {
 
   loop() {
     if (!this.running) return;
-    const w = this.canvas.width;
-    const h = this.canvas.height;
+    const w = getLogicalCanvasWidth(this.canvas);
+    const h = getLogicalCanvasHeight(this.canvas);
     this.ctx.clearRect(0, 0, w, h);
 
     // 0. 上部ステージ進行バー
@@ -3342,15 +3396,15 @@ class LegacyContextMatchGame {
 
   handlePointer(e) {
     const rect = this.canvas.getBoundingClientRect();
-    const x = (e.clientX - rect.left) * (this.canvas.width / rect.width);
-    const y = (e.clientY - rect.top) * (this.canvas.height / rect.height);
+    const x = (e.clientX - rect.left) * (getLogicalCanvasWidth(this.canvas) / rect.width);
+    const y = (e.clientY - rect.top) * (getLogicalCanvasHeight(this.canvas) / rect.height);
 
     const audio = getAudioSynthesizer();
     const fx = getFXSystem();
     const guidance = getErrorGuidanceSystem();
 
     const leftX = 120;
-    const rightX = this.canvas.width - 120;
+    const rightX = getLogicalCanvasWidth(this.canvas) - 120;
     const cardH = 46;
 
     // Check tap on left cards
@@ -3373,7 +3427,7 @@ class LegacyContextMatchGame {
             audio.playLaser();
             audio.playPositive(3, 1);
             fx.spawnStarBurst(rightX, cy, 25, '#34d399');
-            fx.showFloatingScore(this.canvas.width / 2, cy, 'Match!', '#fbbf24');
+            fx.showFloatingScore(getLogicalCanvasWidth(this.canvas) / 2, cy, 'Match!', '#fbbf24');
             guidance.registerSuccess({ questionId: 'CONTEXT_' + p.id });
 
             if (this.pairs.every(pr => pr.matched)) {
@@ -3400,8 +3454,8 @@ class LegacyContextMatchGame {
 
   loop() {
     if (!this.running) return;
-    const w = this.canvas.width;
-    const h = this.canvas.height;
+    const w = getLogicalCanvasWidth(this.canvas);
+    const h = getLogicalCanvasHeight(this.canvas);
     this.ctx.clearRect(0, 0, w, h);
 
     this.ctx.fillStyle = '#ffffff';
@@ -3495,14 +3549,14 @@ export class CategorySortGame {
 
   handlePointer(e) {
     const rect = this.canvas.getBoundingClientRect();
-    const x = (e.clientX - rect.left) * (this.canvas.width / rect.width);
-    const y = (e.clientY - rect.top) * (this.canvas.height / rect.height);
+    const x = (e.clientX - rect.left) * (getLogicalCanvasWidth(this.canvas) / rect.width);
+    const y = (e.clientY - rect.top) * (getLogicalCanvasHeight(this.canvas) / rect.height);
 
     const audio = getAudioSynthesizer();
     const fx = getFXSystem();
     const guidance = getErrorGuidanceSystem();
 
-    const w = this.canvas.width;
+    const w = getLogicalCanvasWidth(this.canvas);
     const catW = 160;
     const catStartX = (w - (this.categories.length * (catW + 20))) / 2 + catW / 2;
 
@@ -3511,7 +3565,7 @@ export class CategorySortGame {
     const itemStepX = (w - 160) / Math.max(1, this.items.length - 1);
     this.items.forEach((it, idx) => {
       const ix = itemStartX + idx * itemStepX;
-      const iy = this.canvas.height - 60;
+      const iy = getLogicalCanvasHeight(this.canvas) - 60;
       if (!it.sorted && Math.hypot(ix - x, iy - y) < 45) {
         audio.playClick();
         this.selectedItem = it;
@@ -3556,8 +3610,8 @@ export class CategorySortGame {
 
   loop() {
     if (!this.running) return;
-    const w = this.canvas.width;
-    const h = this.canvas.height;
+    const w = getLogicalCanvasWidth(this.canvas);
+    const h = getLogicalCanvasHeight(this.canvas);
     this.ctx.clearRect(0, 0, w, h);
 
     this.ctx.fillStyle = '#ffffff';
@@ -3735,9 +3789,9 @@ export class GradeComprehensiveExamGame {
   handlePointer(e) {
     if (!this.running || this.locked) return;
     const rect = this.canvas.getBoundingClientRect();
-    const x = (e.clientX - rect.left) * (this.canvas.width / rect.width);
-    const y = (e.clientY - rect.top) * (this.canvas.height / rect.height);
-    const w = this.canvas.width;
+    const x = (e.clientX - rect.left) * (getLogicalCanvasWidth(this.canvas) / rect.width);
+    const y = (e.clientY - rect.top) * (getLogicalCanvasHeight(this.canvas) / rect.height);
+    const w = getLogicalCanvasWidth(this.canvas);
 
     const audio = getAudioSynthesizer();
     const fx = getFXSystem();
@@ -3798,8 +3852,8 @@ export class GradeComprehensiveExamGame {
 
   loop() {
     if (!this.running) return;
-    const w = this.canvas.width;
-    const h = this.canvas.height;
+    const w = getLogicalCanvasWidth(this.canvas);
+    const h = getLogicalCanvasHeight(this.canvas);
     this.ctx.clearRect(0, 0, w, h);
 
     const curQ = this.questions[this.qIndex];

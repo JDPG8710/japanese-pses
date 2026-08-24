@@ -32,6 +32,10 @@ tools:
 - 誤操作でも必ず音、動き、説明のいずれかを返す。
 - 問題と選択肢を独立して無作為化し、同じ並びや同じ問題を繰り返さない。
 - クリア結果には次ステージ操作を含め、失敗結果には報酬を含めない。
+- すべての2D H5ゲームは `src/render/HDCanvasRenderer.js` で初期化し、物理ピクセルと論理座標を分離する。独自の `canvas.width = CSS幅` を禁止する。
+- Canvas 内の文字は整数座標へ揃え、長文、問題文、操作パネルは可能な限りHTML/CSSのオーバーレイへ分離する。
+- 各ゲームは `exportSaveState()` と `importSaveState(state)` の標準インターフェースを実装し、少なくとも問題ID、乱数シード、得点、正答数、経過時間、完了状態を復元可能にする。
+- 保存状態は `{ schemaVersion, gameType, nodeId, updated_at, payload }` とし、ステージ精算時に `StorageAdapter.reportStageClear()` へ渡せる契約を維持する。
 
 ## 禁止事項
 
@@ -43,4 +47,4 @@ tools:
 
 ## 出力
 
-`DESIGNER_OUTPUT_v1` には対象ファイル、ゲーム種類、操作、問題生成、正解判定、音・視覚フック、アクセシビリティ、結果契約、受け入れテストを含めます。
+`DESIGNER_OUTPUT_v1` には対象ファイル、ゲーム種類、操作、問題生成、正解判定、音・視覚フック、アクセシビリティ、HD描画、Save State契約、結果契約、受け入れテストを含めます。

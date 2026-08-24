@@ -1,0 +1,111 @@
+const fs = require('fs');
+const path = require('path');
+
+module.exports = ({ describe, test, assert, loadESModule }) => {
+  const root = path.resolve(__dirname, '..');
+  const read = relative => fs.readFileSync(path.join(root, relative), 'utf8');
+
+  describe('Cloudflare エッジ認証・保存契約', () => {
+    test('Worker は必須認証、ゲスト、R2 API を公開する', () => {
+      const worker = read('worker/index.js');
+      for (const route of [
+        '/api/auth/turnstile-verify', '/api/auth/google', '/api/auth/apple',
+        '/api/guest/start', '/api/guest/status', '/api/star-graph', '/api/state'
+      ]) assert.ok(worker.includes(route), `${route} が必要です`);
+      assert.ok(worker.includes('https://challenges.cloudflare.com/turnstile/v0/siteverify'));
+      assert.ok(worker.includes('GUEST_TTL_SECONDS'));
+      assert.ok(worker.includes('users/${encodeURIComponent(userId)}/game_state.json'));
+      assert.ok(worker.includes('code_challenge_method'));
+      assert.ok(worker.includes("claims.nonce !== expectedNonce"));
+    });
+
+    test('Wrangler は KV 2系統と R2 を束縛し、秘密値を平文で持たない', () => {
+      const config = read('wrangler.toml');
+      assert.ok(config.includes('binding = "SESSION_KV"'));
+      assert.ok(config.includes('binding = "GUEST_KV"'));
+      assert.ok(config.includes('binding = "GAME_DATA_R2"'));
+      for (const secret of ['TURNSTILE_SECRET_KEY =', 'GOOGLE_CLIENT_SECRET =', 'APPLE_CLIENT_SECRET =', 'JWT_SECRET =', 'FINGERPRINT_PEPPER =']) {
+        assert.ok(!config.includes(secret), `${secret} を設定ファイルへ書かないでください`);
+      }
+    });
+
+    test('Worker のヘルスチェックと不正JSONが実行時に正しい状態コードを返す', async () => {
+      const workerModule = loadESModule(path.join(root, 'worker/index.js'));
+      const worker = workerModule.default;
+      const health = await worker.fetch(new Request('https://api.example.test/api/health'), { APP_ORIGIN: 'https://app.example.test' }, {});
+      assert.equal(health.status, 200);
+      const invalid = await worker.fetch(new Request('https://api.example.test/api/auth/turnstile-verify', {
+        method: 'POST', headers: { 'content-type': 'application/json' }, body: '{'
+      }), { APP_ORIGIN: 'https://app.example.test' }, {});
+      assert.equal(invalid.status, 400);
+    });
+  });
+
+  describe('Retina Canvas 論理座標', () => {
+    test('DPR 3でも物理サイズと論理サイズを分離し、ヒット座標を補正する', () => {
+      global.window.devicePixelRatio = 3;
+      const { HDCanvasRenderer, getLogicalCanvasWidth, getLogicalCanvasHeight, eventToCanvasPoint } = loadESModule(path.join(root, 'src/render/HDCanvasRenderer.js'));
+      const context = { scale() {}, clearRect() {}, save() {}, restore() {}, imageSmoothingEnabled: false, textAlign: '', textBaseline: '' };
+      const canvas = {
+        width: 0, height: 0, style: {}, dataset: {},
+        getContext: () => context,
+        getBoundingClientRect: () => ({ left: 10, top: 20, width: 320, height: 180 })
+      };
+      const renderer = HDCanvasRenderer.setup(canvas, 320, 180);
+      assert.equal(canvas.width, 960);
+      assert.equal(canvas.height, 540);
+      assert.equal(getLogicalCanvasWidth(canvas), 320);
+      assert.equal(getLogicalCanvasHeight(canvas), 180);
+      const point = eventToCanvasPoint(canvas, { clientX: 170, clientY: 110 });
+      assert.equal(point.x, 160);
+      assert.equal(point.y, 90);
+      renderer.dispose();
+    });
+  });
+
+  describe('IndexedDB と R2 の競合マージ', () => {
+    test('profile と node_progress は updated_at が新しい側を採用する', () => {
+      const { mergeSnapshots } = loadESModule(path.join(root, 'src/storage/StorageAdapter.js'));
+      const merged = mergeSnapshots(
+        { updatedAt: 20, profile: { user_id: 'u', star_coins: 800, updated_at: 20 }, nodeProgress: [{ node_id: 'A', mastery_score: 0.9, updated_at: 20 }] },
+        { updatedAt: 10, profile: { user_id: 'u', star_coins: 500, updated_at: 10 }, nodeProgress: [{ node_id: 'A', mastery_score: 0.4, updated_at: 10 }, { node_id: 'B', mastery_score: 0.7, updated_at: 15 }] },
+        'u'
+      );
+      assert.equal(merged.profile.star_coins, 800);
+      assert.equal(merged.nodeProgress.find(node => node.node_id === 'A').mastery_score, 0.9);
+      assert.equal(merged.nodeProgress.find(node => node.node_id === 'B').mastery_score, 0.7);
+    });
+
+    test('同じ node_id でも利用者ごとのローカル進捗を混在させない', async () => {
+      const { StorageAdapter } = loadESModule(path.join(root, 'src/storage/StorageAdapter.js'));
+      const storage = new StorageAdapter({ fetchImpl: null });
+      storage.setUser('user-a', { cloudEnabled: false });
+      await storage.saveNodeProgress({ node_id: 'MATH-1', mastery_score: 0.9 });
+      storage.setUser('user-b', { cloudEnabled: false });
+      await storage.saveNodeProgress({ node_id: 'MATH-1', mastery_score: 0.4 });
+      const userB = await storage.getLocalSnapshot();
+      assert.equal(userB.nodeProgress.length, 1);
+      assert.equal(userB.nodeProgress[0].mastery_score, 0.4);
+      storage.setUser('user-a', { cloudEnabled: false });
+      const userA = await storage.getLocalSnapshot();
+      assert.equal(userA.nodeProgress.length, 1);
+      assert.equal(userA.nodeProgress[0].mastery_score, 0.9);
+    });
+  });
+
+  describe('Antigravity 役割契約', () => {
+    test('指定5エージェントが認証、保存、Retina の責務を分担する', () => {
+      const expectations = {
+        director_agent: ['Turnstile', 'R2', 'DPR'],
+        game_designer_agent: ['HDCanvasRenderer', 'exportSaveState', 'StorageAdapter'],
+        qa_player_agent: ['Playwright', '10分', 'DPR'],
+        bug_repair_agent: ['DPR_HITBOX_OFFSET', 'CANVAS_MEMORY_LEAK', 'WORKER_CORS'],
+        graph_evolution_agent: ['star_graph.json', 'IndexedDB', 'ETag']
+      };
+      for (const [agent, terms] of Object.entries(expectations)) {
+        const content = read(`.agents/agents/${agent}/agent.md`);
+        for (const term of terms) assert.ok(content.includes(term), `${agent} に ${term} が必要です`);
+      }
+    });
+  });
+};

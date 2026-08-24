@@ -1,0 +1,33 @@
+name = "japanese-pses-edge"
+main = "worker/index.js"
+compatibility_date = "2026-08-01"
+
+[vars]
+APP_ORIGIN = "https://YOUR_PUBLIC_DOMAIN.example"
+API_ORIGIN = "https://YOUR_WORKER_DOMAIN.example"
+DEV_ORIGINS = "http://localhost:4173,http://127.0.0.1:4173"
+TURNSTILE_HOSTNAME = "YOUR_PUBLIC_DOMAIN.example"
+GOOGLE_CLIENT_ID = "REPLACE_WITH_GOOGLE_CLIENT_ID"
+APPLE_CLIENT_ID = "REPLACE_WITH_APPLE_SERVICES_ID"
+
+[[kv_namespaces]]
+binding = "SESSION_KV"
+id = "REPLACE_WITH_SESSION_KV_NAMESPACE_ID"
+preview_id = "REPLACE_WITH_SESSION_KV_PREVIEW_NAMESPACE_ID"
+
+[[kv_namespaces]]
+binding = "GUEST_KV"
+id = "REPLACE_WITH_GUEST_KV_NAMESPACE_ID"
+preview_id = "REPLACE_WITH_GUEST_KV_PREVIEW_NAMESPACE_ID"
+
+[[r2_buckets]]
+binding = "GAME_DATA_R2"
+bucket_name = "japanese-pses-game-data"
+preview_bucket_name = "japanese-pses-game-data-preview"
+
+# 機密値はコミットせず、次のコマンドで登録してください。
+# npx wrangler secret put TURNSTILE_SECRET_KEY
+# npx wrangler secret put GOOGLE_CLIENT_SECRET
+# npx wrangler secret put APPLE_CLIENT_SECRET
+# npx wrangler secret put JWT_SECRET
+# npx wrangler secret put FINGERPRINT_PEPPER

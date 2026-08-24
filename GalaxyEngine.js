@@ -51,8 +51,9 @@ export class GalaxyEngine {
 
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     this.renderer.setSize(this.width, this.height);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.setPixelRatio(Math.min(Math.max(window.devicePixelRatio || 1, 2), 3));
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.domElement.style.touchAction = 'none';
     this.container.appendChild(this.renderer.domElement);
 
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
@@ -612,7 +613,7 @@ export class GalaxyEngine {
 
       this.camera.updateProjectionMatrix();
       this.renderer.setSize(this.width, this.height);
-      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      this.renderer.setPixelRatio(Math.min(Math.max(window.devicePixelRatio || 1, 2), 3));
     };
 
     window.addEventListener('resize', handleResize);

@@ -2,7 +2,8 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="turnstile-site-key" content="REPLACE_WITH_TURNSTILE_SITE_KEY" />
   <title>日本小学校学習指導要領 · 銀河知識星図</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="css/style.css" />
@@ -391,15 +392,38 @@
     import { getAudioSynthesizer } from './js/AudioSynthesizer.js';
     import { getFXSystem } from './js/FXSystem.js';
     import { getErrorGuidanceSystem } from './js/ErrorGuidanceSystem.js';
+    import { AuthManager } from './src/auth/AuthManager.js';
+    import { StorageAdapter } from './src/storage/StorageAdapter.js';
+
+    const storageAdapter = new StorageAdapter({ apiBase: '/api' });
+    await storageAdapter.initialize({ sync: false });
+    const turnstileSiteKey = document.querySelector('meta[name="turnstile-site-key"]')?.content || '';
+    const authManager = new AuthManager({ apiBase: '/api', turnstileSiteKey, storage: storageAdapter });
+    const accessSession = await authManager.initialize();
+    const localStorageUserId = accessSession.mode === 'guest' ? 'guest-local' : (accessSession.user?.id || 'local-offline');
+    storageAdapter.setUser(localStorageUserId, { cloudEnabled: accessSession.mode === 'authenticated' });
 
     // 1. 各教科の独立 JSON データを動的ロード
-    const curriculumNodes = await loadCurriculumFromJSON();
+    const curriculumNodes = await loadCurriculumFromJSON({ cacheAdapter: storageAdapter });
 
     const audioSynth = getAudioSynthesizer();
     const fxSystem = getFXSystem();
     const errorGuidance = getErrorGuidanceSystem({ audio: audioSynth, fx: fxSystem });
 
     const economy = new EconomyManager();
+    if (accessSession.user?.displayName && accessSession.mode === 'authenticated') {
+      economy.loginUser(accessSession.user.displayName);
+    }
+    const synchronizedState = accessSession.mode === 'authenticated'
+      ? await storageAdapter.syncNow('login').catch(() => null)
+      : await storageAdapter.getLocalSnapshot();
+    if (synchronizedState?.profile?.star_coins != null) economy.starCoins = Number(synchronizedState.profile.star_coins);
+    if (synchronizedState?.nodeProgress?.length) {
+      for (const progress of synchronizedState.nodeProgress) {
+        economy.playerMastery[progress.node_id] = Math.max(Number(economy.playerMastery[progress.node_id] || 0), Number(progress.mastery_score || 0));
+      }
+      economy.saveState();
+    }
     const errorInterceptor = new ErrorInterceptor({ userId: economy.currentUser });
 
     const container = document.getElementById('canvas-container');
@@ -408,6 +432,11 @@
 
     const gameModal = new MiniGameModal();
     const agentBrain = new AntigravityAgentBrain(curriculumNodes, economy, graphEngineInstance);
+    window.addEventListener('GUEST_TRIAL_EXPIRED', () => {
+      gameModal.close();
+      document.getElementById('game-type-modal')?.classList.add('hidden');
+      document.getElementById('mobile-sheet')?.classList.add('translate-y-full');
+    });
 
     let currentNode = curriculumNodes[0] || { subject: '国語', name: '単元読込中', desc: '' };
     let sessionStartTime = 0;
@@ -998,7 +1027,6 @@
       const isExam = targetNodeId?.includes('EXAM') || e.detail?.subject === '全教科総合';
 
       const awardResult = economy.recordStageClear(targetNodeId, stageLevel, accuracy);
-
       // 学年総合チャレンジのボーナス加算
       if (isExam && accuracy >= 0.8) {
         economy.starCoins += 300;
@@ -1012,6 +1040,19 @@
         });
         economy.saveState();
       }
+
+      // ステージ精算時は即時一括同期し、細かな更新は60秒のデバウンスでまとめて送信する。
+      storageAdapter.reportStageClear({
+        nodeId: targetNodeId,
+        masteryScore: Math.max(Number(economy.playerMastery[targetNodeId] || 0), Number(accuracy)),
+        unlockedStatus: true,
+        profile: {
+          user_id: localStorageUserId,
+          display_name: economy.currentUser,
+          star_coins: economy.starCoins,
+          cleared_nodes: economy.clearedNodes
+        }
+      }).catch(error => console.warn('学習データの同期を再試行します。', error));
 
       updateEconomyUI();
       updateNodeCard(currentNode);

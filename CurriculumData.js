@@ -65,12 +65,25 @@ export function validateCurriculumNodeSchema(nodes = []) {
 /**
  * 統合 JSON (subjects_curriculum.json) または個別教科 JSON を動的ロードして DAG を構築
  */
-export async function loadCurriculumFromJSON() {
+export async function loadCurriculumFromJSON({ cacheAdapter = null } = {}) {
   try {
-    // プラン A: 総合 subjects_curriculum.json を最優先ロード
-    const masterRes = await fetch('./data/subjects_curriculum.json').catch(() => null);
-    if (masterRes && masterRes.ok) {
-      const masterJson = await masterRes.json();
+    // 本番は R2 の star_graph.json を優先し、失敗時は IndexedDB キャッシュ、同梱JSONの順で復旧する。
+    const isLocal = typeof location !== 'undefined' && ['localhost', '127.0.0.1', '::1'].includes(location.hostname);
+    let masterJson = null;
+    if (!isLocal && typeof fetch === 'function') {
+      const cloudRes = await fetch('/api/star-graph', { credentials: 'include' }).catch(() => null);
+      if (cloudRes?.ok) {
+        masterJson = await cloudRes.json();
+        await cacheAdapter?.cacheStarGraph?.(masterJson, cloudRes.headers.get('etag'));
+      } else {
+        masterJson = (await cacheAdapter?.getCachedStarGraph?.())?.graph || null;
+      }
+    }
+    if (!masterJson) {
+      const masterRes = await fetch('./data/subjects_curriculum.json').catch(() => null);
+      if (masterRes?.ok) masterJson = await masterRes.json();
+    }
+    if (masterJson) {
       if (masterJson.grades) GRADES = masterJson.grades;
       if (masterJson.subjects) {
         // 色設定などをマージ
@@ -85,7 +98,7 @@ export async function loadCurriculumFromJSON() {
         if (!validation.valid) throw new Error(`統合カリキュラムデータの検証に失敗しました: ${validation.errors.join(', ')}`);
         FULL_CURRICULUM_DAG = masterJson.nodes;
         graphEngineInstance.buildGraph(FULL_CURRICULUM_DAG);
-        console.log(`[CurriculumLoader] 総合 subjects_curriculum.json より全 ${FULL_CURRICULUM_DAG.length} 件の単元ノードをロード完了。`);
+        console.log(`[CurriculumLoader] 検証済み star_graph より全 ${FULL_CURRICULUM_DAG.length} 件の単元ノードをロード完了。`);
         return FULL_CURRICULUM_DAG;
       }
     }

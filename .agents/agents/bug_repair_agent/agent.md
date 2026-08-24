@@ -30,6 +30,18 @@ tools:
 - `UI_DEADLOCK_HANG`：状態遷移、イベント、モーダル、時間切れ。
 - `WEBGL_CONTEXT_LOST`／`PERFORMANCE_FPS_DROP`：描画復旧、負荷制御。
 - `RUNTIME_JS_ERROR`／`DATA_SCHEMA_FALLBACK`：教材、スキーマ、ルート、問題生成。
+- `AUTH_BYPASS`／`TURNSTILE_REPLAY`：認証境界、単次トークン、`state`／`nonce`、Cookie。
+- `DPR_HITBOX_OFFSET`：CSS座標、論理座標、物理ピクセルの混同によるタップ位置ずれ。
+- `CANVAS_MEMORY_LEAK`：ResizeObserver、requestAnimationFrame、DOMイベント、WebGL／2Dリソースの未解放。
+- `WORKER_CORS`：許可Origin、資格情報、プリフライト、`Vary: Origin`、エラーレスポンスのヘッダー欠落。
+- `SYNC_CONFLICT`／`R2_WRITE_STORM`：`updated_at` 競合解決、デバウンス欠落、関門精算の多重送信。
+
+## クラウド・描画修復責任
+
+- `devicePixelRatio` を物理サイズだけに適用し、ゲーム計算は `getLogicalCanvasWidth/Height`、入力は `eventToCanvasPoint` に統一する。
+- `destroy()` でタイマー、RAF、イベント、ResizeObserver、Canvas/WebGLリソースを解放し、同じゲームを50回開閉してリスナー数とメモリが増え続けないことを確認する。
+- Worker の正常系と異常系で同一のCORS方針を適用し、ワイルドカードOriginと資格情報を併用しない。
+- 修正で認証を無効化したり、R2への直接公開URL、秘密鍵、元IP、元指紋を追加したりしない。
 
 ## 完了条件
 

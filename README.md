@@ -11,6 +11,9 @@
 - 基礎・英検3級・英検2級・短文読解・長文読解から選べる英語学習
 - 生活科の分類・場面判断ゲーム
 - 学習状況、スターコイン、クリア履歴のブラウザー保存
+- Google／Apple ログイン、Cloudflare Turnstile、端末ごと10分のゲスト体験
+- Cloudflare R2／KV と IndexedDB の双方向同期、オフライン学習
+- DPR 2〜3倍の Retina Canvas と論理座標補正による高精細な表示・タップ判定
 - 6種類の宇宙背景に加え、大樹や高層都市などを選べるテーマ機能
 - 音声合成、パーティクル、段階的なヒントによる子ども向けフィードバック
 
@@ -50,6 +53,12 @@ node tests/test_e2e_runner.js
 - `data/`：漢字、教科、都道府県、英語などの教材データ
 - `.agents/agents/`：製品管理、設計、品質保証、修復、知識グラフ管理の役割定義
 - `tests/`：単体・統合・回帰テスト
+- `worker/`：Cloudflare Worker の認証、ゲスト制限、KV／R2 API
+- `src/auth/`：ログインモーダル、Turnstile、ゲスト体験、不可逆端末ハッシュ
+- `src/storage/`：IndexedDB と R2 の競合解決・一括同期
+- `src/render/`：全Canvas共通の高DPIレンダラー
+
+Cloudflare への配備と秘密値の登録は [worker/README.md](worker/README.md) を参照してください。ローカルホストでは認証を要求せず、自動的にオフライン開発モードへ切り替わります。
 
 ## 言語方針
 

@@ -233,6 +233,143 @@ body, html {
   transform: scale(0.94);
 }
 
+/* Learning entrance: colorful, animated PSES Game wordmark. */
+.pses-game-brand-shell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 112px;
+  margin: -0.25rem auto 0.75rem;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.pses-game-brand-shell::before {
+  content: '';
+  position: absolute;
+  z-index: -2;
+  width: min(82%, 34rem);
+  height: 5rem;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(34, 211, 238, 0.34), rgba(168, 85, 247, 0.38), rgba(251, 191, 36, 0.34));
+  filter: blur(24px);
+  animation: pses-brand-aurora 5.5s ease-in-out infinite alternate;
+}
+
+.pses-game-brand {
+  position: relative;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.22em;
+  margin: 0;
+  padding: 0.2em 0.45em;
+  font-family: "Arial Rounded MT Bold", "Noto Sans JP", system-ui, sans-serif;
+  font-size: clamp(2.5rem, 9vw, 4.9rem);
+  font-weight: 1000;
+  line-height: 1;
+  letter-spacing: -0.055em;
+  filter: drop-shadow(0 5px 0 rgba(15, 23, 42, 0.8)) drop-shadow(0 12px 24px rgba(56, 189, 248, 0.28));
+  animation: pses-brand-float 3.2s ease-in-out infinite;
+}
+
+.pses-game-brand::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: linear-gradient(105deg, transparent 28%, rgba(255, 255, 255, 0.82) 45%, transparent 61%);
+  transform: translateX(-135%) skewX(-18deg);
+  mix-blend-mode: screen;
+  pointer-events: none;
+  animation: pses-brand-shine 3.8s ease-in-out infinite;
+}
+
+.pses-game-brand-primary,
+.pses-game-brand-secondary {
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-stroke: 1px rgba(255, 255, 255, 0.65);
+}
+
+.pses-game-brand-primary {
+  background-image: linear-gradient(105deg, #22d3ee 0%, #60a5fa 25%, #a78bfa 52%, #f472b6 76%, #fb7185 100%);
+}
+
+.pses-game-brand-secondary {
+  background-image: linear-gradient(105deg, #fbbf24 0%, #fb7185 45%, #c084fc 100%);
+  font-size: 0.62em;
+  letter-spacing: -0.025em;
+}
+
+.pses-game-orbit {
+  position: absolute;
+  z-index: -1;
+  width: min(72vw, 31rem);
+  height: 4.5rem;
+  border: 2px solid rgba(125, 211, 252, 0.35);
+  border-radius: 50%;
+  transform: rotate(-7deg);
+  animation: pses-brand-orbit 8s linear infinite;
+}
+
+.pses-game-orbit-two {
+  width: min(63vw, 27rem);
+  height: 6.1rem;
+  border-color: rgba(251, 191, 36, 0.24);
+  transform: rotate(10deg);
+  animation-direction: reverse;
+  animation-duration: 10s;
+}
+
+.pses-game-star {
+  position: absolute;
+  color: #fde68a;
+  text-shadow: 0 0 12px currentColor;
+  animation: pses-brand-twinkle 1.8s ease-in-out infinite alternate;
+}
+
+.pses-game-star-one { left: 10%; top: 20%; color: #67e8f9; font-size: 1.15rem; }
+.pses-game-star-two { right: 12%; top: 18%; color: #f9a8d4; font-size: 1.45rem; animation-delay: -0.8s; }
+.pses-game-star-three { right: 19%; bottom: 17%; color: #fde68a; font-size: 0.65rem; animation-delay: -1.25s; }
+
+@keyframes pses-brand-float {
+  0%, 100% { transform: translateY(0) rotate(-0.6deg); }
+  50% { transform: translateY(-8px) rotate(0.6deg); }
+}
+
+@keyframes pses-brand-shine {
+  0%, 55% { transform: translateX(-135%) skewX(-18deg); opacity: 0; }
+  65% { opacity: 0.8; }
+  88%, 100% { transform: translateX(135%) skewX(-18deg); opacity: 0; }
+}
+
+@keyframes pses-brand-aurora {
+  from { transform: scale(0.92) translateX(-3%); opacity: 0.68; }
+  to { transform: scale(1.08) translateX(3%); opacity: 1; }
+}
+
+@keyframes pses-brand-orbit {
+  from { transform: rotate(-7deg); }
+  to { transform: rotate(353deg); }
+}
+
+@keyframes pses-brand-twinkle {
+  from { transform: scale(0.65) rotate(-12deg); opacity: 0.45; }
+  to { transform: scale(1.2) rotate(12deg); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pses-game-brand,
+  .pses-game-brand::after,
+  .pses-game-brand-shell::before,
+  .pses-game-orbit,
+  .pses-game-star {
+    animation: none !important;
+  }
+}
+
 /* Child-Friendly Ergonomics: Touch Target Scaling */
 @media (max-width: 768px) {
   button, .subj-btn, .grade-tab-btn {

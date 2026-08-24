@@ -709,6 +709,36 @@ function register({ describe, test, it, assert, loadESModule }) {
       }
     });
 
+    test('GB4b: independent science and social games never fall back to an unrelated subject quiz', () => {
+      const engineByGameType = {
+        COSMIC_ORBIT: miniGameMod.CosmicOrbitGame,
+        LEVER_PHYSICS: miniGameMod.LeverPhysicsGame,
+        CIRCUIT_SANDBOX: miniGameMod.CircuitSandboxGame,
+        PREFECTURE_JIGSAW: miniGameMod.PrefectureJigsawGame
+      };
+
+      Object.entries(engineByGameType).forEach(([gameType, EngineClass]) => {
+        GAME_GRADE_SUPPORT_MAP[gameType].grades.forEach(grade => {
+          const node = modal.generatePopularGameNode(gameType, grade, 1);
+          const canvas = document.createElement('canvas');
+          modal.initGameInstance(gameType, node, canvas, grade, 1);
+          assert.ok(
+            modal.currentGame instanceof EngineClass,
+            `${gameType} Grade ${grade} must use ${EngineClass.name}, not a mixed curriculum quiz`
+          );
+          assert.strictEqual(node.subject, GAME_GRADE_SUPPORT_MAP[gameType].subject, `${gameType} Grade ${grade} subject must match its registry`);
+          assert.ok(node.gameData.selectedMode, `${gameType} Grade ${grade} must carry an explicit selectedMode association`);
+          if (modal.currentGame?.destroy) modal.currentGame.destroy();
+        });
+      });
+
+      const grade6Circuit = modal.generatePopularGameNode('CIRCUIT_SANDBOX', 6, 1);
+      modal.initGameInstance('CIRCUIT_SANDBOX', grade6Circuit, document.createElement('canvas'), 6, 1);
+      assert.ok(modal.currentGame instanceof miniGameMod.CircuitSandboxGame, '六年生の回路入口に太陽・新月を含む理科混合問題を表示しない');
+      assert.strictEqual(modal.currentGame instanceof miniGameMod.CurriculumQuizGame, false, '六年生の回路入口は理科混合問題へフォールバックしない');
+      if (modal.currentGame?.destroy) modal.currentGame.destroy();
+    });
+
     test('GB5: All 27 MEXT curriculum DAG nodes can open and infer correct game types', () => {
       const loaderFn = loadESModule || require('./test_e2e_runner.js').loadESModule;
       const { FULL_CURRICULUM_DAG } = loaderFn(path.join(rootDir, 'CurriculumData.js'));

@@ -451,7 +451,7 @@ export class MiniGameModal {
           desc: '月を地球のまわりに回転させ、太陽の光による月の満ち欠けを観察しよう！',
           bloomDepth: 1.6 + (g - 4) * 0.3,
           gameType: 'COSMIC_ORBIT',
-          gameData: { grade: g, level: level }
+          gameData: { selectedMode: 'COSMIC_ORBIT', contentDomain: 'ASTRONOMY', grade: g, level: level }
         };
       case 'LEVER_PHYSICS':
         return {
@@ -462,7 +462,7 @@ export class MiniGameModal {
           desc: '支点・力点・作用点と力のモーメント平衡。おもりを正しい目盛りに吊るして釣り合わせよう！',
           bloomDepth: 2.5,
           gameType: 'LEVER_PHYSICS',
-          gameData: { targetLeft: 50, armLeft: 2, targetRight: 20, correctSlot: 5, grade: g, level: level }
+          gameData: { selectedMode: 'LEVER_PHYSICS', contentDomain: 'LEVER', targetLeft: 50, armLeft: 2, targetRight: 20, correctSlot: 5, grade: g, level: level }
         };
       case 'CIRCUIT_SANDBOX':
         return {
@@ -473,7 +473,7 @@ export class MiniGameModal {
           desc: '乾電池・スイッチ・豆電球を配線し、直列・並列つなぎで豆電球の明るさを実験しよう！',
           bloomDepth: 1.5 + (g - 3) * 0.25,
           gameType: 'CIRCUIT_SANDBOX',
-          gameData: { grade: g, level: level }
+          gameData: { selectedMode: 'CIRCUIT_SANDBOX', contentDomain: 'ELECTRIC', grade: g, level: level }
         };
       case 'PREFECTURE_JIGSAW':
         return {
@@ -484,7 +484,7 @@ export class MiniGameModal {
           desc: '8地方47都道府県の名称・位置・特産品。ピースを地図の正しい位置にはめ込もう！',
           bloomDepth: 1.5 + (g - 3) * 0.2,
           gameType: 'PREFECTURE_JIGSAW',
-          gameData: { mode: 'PREFECTURES', region: 'ALL_JAPAN', grade: g, level: level }
+          gameData: { selectedMode: 'PREFECTURE_JIGSAW', contentDomain: 'SOCIAL_GEOGRAPHY', mode: 'PREFECTURES', region: 'ALL_JAPAN', grade: g, level: level }
         };
       case 'CONTEXT_MATCH':
         return {
@@ -738,33 +738,18 @@ export class MiniGameModal {
 
       case 'COSMIC_ORBIT':
       case 'CELESTIAL_ORBIT':
-        if (selectedMode === 'COSMIC_ORBIT' || selectedMode === 'CELESTIAL_ORBIT') {
-          this.currentGame = new CosmicOrbitGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum);
-          if (hintEl) hintEl.innerText = '操作ヒント：月をドラッグして、目標の月相に合わせよう！';
-        } else {
-          this.currentGame = new CurriculumQuizGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum, '理科');
-          if (hintEl) hintEl.innerText = '操作ヒント：この学年の観察・実験テーマ10問に答えよう！';
-        }
+        this.currentGame = new CosmicOrbitGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum);
+        if (hintEl) hintEl.innerText = '操作ヒント：月をドラッグして、目標の月相に合わせよう！';
         break;
 
       case 'LEVER_PHYSICS':
-        if (selectedMode === 'LEVER_PHYSICS') {
-          this.currentGame = new LeverPhysicsGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum);
-          if (hintEl) hintEl.innerText = '操作ヒント：右側のおもりを選んで目盛りに吊るし、てこを釣り合わせよう！';
-        } else {
-          this.currentGame = new CurriculumQuizGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum, '理科');
-          if (hintEl) hintEl.innerText = '操作ヒント：この学年の観察・実験テーマ10問に答えよう！';
-        }
+        this.currentGame = new LeverPhysicsGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum);
+        if (hintEl) hintEl.innerText = '操作ヒント：右側のおもりを選んで目盛りに吊るし、てこを釣り合わせよう！';
         break;
 
       case 'CIRCUIT_SANDBOX':
-        if (selectedMode === 'CIRCUIT_SANDBOX') {
-          this.currentGame = new CircuitSandboxGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum);
-          if (hintEl) hintEl.innerText = '操作ヒント：スイッチを閉じて回路を通電させ、豆電球を点灯させよう！';
-        } else {
-          this.currentGame = new CurriculumQuizGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum, '理科');
-          if (hintEl) hintEl.innerText = '操作ヒント：この学年の観察・実験テーマ10問に答えよう！';
-        }
+        this.currentGame = new CircuitSandboxGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum);
+        if (hintEl) hintEl.innerText = '操作ヒント：スイッチを閉じて回路を通電させ、豆電球を点灯させよう！';
         break;
 
       case 'SCIENCE_SANDBOX': {
@@ -779,13 +764,8 @@ export class MiniGameModal {
       }
 
       case 'PREFECTURE_JIGSAW':
-        if (effectiveGrade === 4 || selectedMode === 'PREFECTURE_JIGSAW') {
-          this.currentGame = new PrefectureJigsawGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum);
-          if (hintEl) hintEl.innerText = '操作ヒント：都道府県ピースをマップの正しい位置にはめ込もう！';
-        } else {
-          this.currentGame = new CurriculumQuizGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum, '社会');
-          if (hintEl) hintEl.innerText = '操作ヒント：学年の社会テーマから出る10問に答えよう！';
-        }
+        this.currentGame = new PrefectureJigsawGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum);
+        if (hintEl) hintEl.innerText = '操作ヒント：都道府県ピースをマップの正しい位置にはめ込もう！';
         break;
 
       case 'KOKUGO_CURRICULUM':

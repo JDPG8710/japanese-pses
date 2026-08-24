@@ -6,7 +6,7 @@
   <meta name="turnstile-site-key" content="0x4AAAAAAEZrRJQcMv2tk9IP" />
   <title>日本小学校学習指導要領 · 銀河知識星図</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/style.css?v=20260824.2" />
   <!-- Three.js Import Maps -->
   <script type="importmap">
     {
@@ -258,7 +258,19 @@
   <!-- 認証後に必ず選ぶ学習入口モード -->
   <div id="learning-mode-modal" class="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/95 backdrop-blur-xl p-4 hidden select-none">
     <div class="relative w-full max-w-3xl max-h-[92vh] overflow-y-auto custom-scroll rounded-3xl border border-indigo-400/40 bg-slate-900 p-6 sm:p-8 shadow-2xl">
-      <div class="mb-6">
+      <div class="pses-game-brand-shell" aria-label="PSES Game">
+        <span class="pses-game-orbit pses-game-orbit-one" aria-hidden="true"></span>
+        <span class="pses-game-orbit pses-game-orbit-two" aria-hidden="true"></span>
+        <h1 id="learning-mode-game-title" class="pses-game-brand">
+          <span class="pses-game-brand-primary">PSES</span>
+          <span class="pses-game-brand-secondary">Game</span>
+        </h1>
+        <span class="pses-game-star pses-game-star-one" aria-hidden="true">★</span>
+        <span class="pses-game-star pses-game-star-two" aria-hidden="true">✦</span>
+        <span class="pses-game-star pses-game-star-three" aria-hidden="true">●</span>
+      </div>
+
+      <div class="mb-6 text-center">
         <p class="text-xs font-bold tracking-[0.2em] text-indigo-300">LEARNING ENTRANCE</p>
         <h2 id="learning-mode-title" class="mt-1 text-2xl font-black text-white">学習モードを選ぶ</h2>
         <p id="learning-mode-description" class="mt-2 text-sm leading-6 text-slate-300">どの入り口から始めても、同じアカウントの Profile に結果が保存されます。</p>
@@ -454,7 +466,7 @@
 
   <script type="module">
     import { GalaxyEngine } from './GalaxyEngine.js?v=2';
-    import { MiniGameModal, GAME_GRADE_SUPPORT_MAP } from './MiniGameSystem.js?v=2';
+    import { MiniGameModal, GAME_GRADE_SUPPORT_MAP } from './MiniGameSystem.js?v=3';
     import { EconomyManager, SHOP_CATALOG } from './EconomySystem.js?v=3';
     import { AntigravityAgentBrain, createObservationPayload } from './AgentIntegration.js?v=2';
     import { FULL_CURRICULUM_DAG, SUBJECT_METADATA, GRADES, loadCurriculumFromJSON, graphEngineInstance } from './CurriculumData.js?v=2';

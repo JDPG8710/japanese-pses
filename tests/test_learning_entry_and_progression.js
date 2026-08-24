@@ -37,11 +37,15 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
 
     test('認証後に学年優先・ゲーム優先の2つの入口を必ず表示する', () => {
       const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+      const css = fs.readFileSync(path.join(root, 'css', 'style.css'), 'utf8');
       const auth = fs.readFileSync(path.join(root, 'src/auth/AuthManager.js'), 'utf8');
       for (const id of [
-        'learning-mode-modal', 'grade-first-mode-btn', 'game-first-mode-btn',
+        'learning-mode-modal', 'learning-mode-game-title', 'grade-first-mode-btn', 'game-first-mode-btn',
         'independent-game-list', 'independent-grade-list'
       ]) assert.ok(html.includes(`id="${id}"`), `${id} が必要です`);
+      assert.ok(/PSES\s*<\/span>\s*<span[^>]*>Game/.test(html), '入口の上部に PSES Game のゲーム名を表示してください');
+      assert.ok(css.includes('@keyframes pses-brand-float'), 'PSES Game の軽量アニメーションが必要です');
+      assert.ok(css.includes('@media (prefers-reduced-motion: reduce)'), '動きを減らす端末設定にも対応してください');
       assert.ok(html.includes('showLearningModeModal();'), '初期化後に入口モーダルを表示する必要があります');
       assert.ok(html.includes('GAME_GRADE_SUPPORT_MAP'), 'ゲームと対応学年は共通マップから生成してください');
       assert.ok(auth.includes('isLocalDevelopmentHost(location.hostname)'), 'ローカル環境は共通判定で認証を迂回してください');

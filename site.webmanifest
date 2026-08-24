@@ -1,0 +1,18 @@
+{
+  "name": "PSES Game｜小学生向け学習ゲーム",
+  "short_name": "PSES Game",
+  "description": "小学1〜6年生の国語・算数・理科・社会・生活・英語を楽しく学べるゲーム",
+  "lang": "ja",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#020208",
+  "theme_color": "#090b2f",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

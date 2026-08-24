@@ -10,10 +10,10 @@
  */
 
 import { FULL_CURRICULUM_DAG, loadKanjiDatabase, loadPrefecturesDatabase } from './CurriculumData.js';
-import { KukuLinkGame } from './KukuLinkGame.js';
+import { KukuLinkGame } from './KukuLinkGame.js?v=4';
 import { getAudioSynthesizer } from './AudioSynthesizer.js';
 import { getFXSystem } from './FXSystem.js';
-import { getErrorGuidanceSystem } from './ErrorGuidanceSystem.js';
+import { getErrorGuidanceSystem } from './ErrorGuidanceSystem.js?v=3';
 import { getRadicalPuzzlesForGrade } from './RadicalQuestionBank.js';
 import { HDCanvasRenderer, getLogicalCanvasWidth, getLogicalCanvasHeight } from './src/render/HDCanvasRenderer.js';
 
@@ -185,9 +185,9 @@ export class MiniGameModal {
               <div class="flex items-center gap-2 flex-wrap">
                 <span id="game-grade-badge" class="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">小学1年</span>
                 <span id="game-subject-badge" class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">国語</span>
-                <span id="game-mode-badge" class="hidden sm:inline-block text-[10px] font-medium px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">体験学習</span>
+                <span id="game-mode-badge" class="hidden sm:inline-block text-[10px] font-medium px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">チャレンジ中</span>
               </div>
-              <h2 id="game-title" class="text-sm sm:text-base md:text-lg font-bold text-white mt-1 truncate">ステージ読込中...</h2>
+              <h2 id="game-title" class="text-sm sm:text-base md:text-lg font-bold text-white mt-1 truncate">ゲームを用意しているよ…</h2>
             </div>
             <div class="flex items-center gap-2 sm:gap-3 flex-shrink-0">
               <button id="game-hint-btn" class="hidden px-2.5 py-1 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 text-xs font-bold border border-sky-500/30 transition cursor-pointer min-h-[36px]">💡 ヒント</button>
@@ -205,7 +205,7 @@ export class MiniGameModal {
 
           <!-- フッター案内とスコア -->
           <div class="px-4 sm:px-6 py-2.5 sm:py-3 bg-slate-900/95 border-t border-slate-800 flex justify-between items-center text-xs text-slate-400 flex-shrink-0">
-            <span id="game-hint" class="truncate max-w-[65%] sm:max-w-[70%]">操作案内：画面をタップまたはドラッグして回答してください</span>
+            <span id="game-hint" class="truncate max-w-[65%] sm:max-w-[70%]">タップやドラッグで答えてね</span>
             <div id="game-score-box" class="font-mono text-white font-semibold flex-shrink-0 text-right">
               スコア: <span id="game-score" class="text-amber-400 font-bold">0</span>
             </div>
@@ -372,7 +372,7 @@ export class MiniGameModal {
     const subjBadge = document.getElementById('game-subject-badge');
     if (subjBadge) subjBadge.innerText = targetNode.subject || '全般';
     const titleEl = document.getElementById('game-title');
-    if (titleEl) titleEl.innerText = `${targetNode.name || '学習ステージ'} (Stage ${this.currentLevel})`;
+    if (titleEl) titleEl.innerText = `${targetNode.name || '学習ステージ'}　ステージ${this.currentLevel}`;
 
     const canvas = document.getElementById('game-canvas') || (typeof document !== 'undefined' && document.createElement ? document.createElement('canvas') : null);
     const container = document.getElementById('game-stage');
@@ -536,7 +536,7 @@ export class MiniGameModal {
           subject: '全教科総合',
           grade: g,
           name: `${g}年 学年総合チャレンジ（実力判定テスト）`,
-          desc: `小学${g}年生の全履修教科（国・算・理・社・英・生）から横断出題！実力を試して特別スターコイン（+300pt）を獲得しよう！`,
+          desc: `小学${g}年生で習う教科のまとめ問題だよ。クリアすると、お祝いコインを300枚もらえるよ！`,
           bloomDepth: 2.0 + g * 0.1,
           gameType: 'GRADE_EXAM',
           gameData: { grade: g, isExam: true, level: level }
@@ -544,9 +544,9 @@ export class MiniGameModal {
       default:
         return {
           id: `UNSUPPORTED_${String(gameType || 'UNKNOWN')}_G${g}`,
-          subject: '未対応',
+          subject: '準備中',
           grade: g,
-          name: '未対応のゲーム',
+          name: 'ただいま準備中',
           desc: '対応するゲーム形式が登録されていません。',
           bloomDepth: 1,
           gameType: 'UNSUPPORTED_GAME_TYPE',
@@ -585,7 +585,7 @@ export class MiniGameModal {
     const subjBadge = document.getElementById('game-subject-badge');
     if (subjBadge) subjBadge.innerText = matchingNode.subject;
     const titleEl = document.getElementById('game-title');
-    if (titleEl) titleEl.innerText = `【特訓】${matchingNode.name} (Stage ${this.currentLevel})`;
+    if (titleEl) titleEl.innerText = `もう一歩チャレンジ！ ${matchingNode.name}　ステージ${this.currentLevel}`;
 
     const canvas = document.getElementById('game-canvas') || (typeof document !== 'undefined' && document.createElement ? document.createElement('canvas') : null);
     const container = document.getElementById('game-stage');
@@ -690,8 +690,8 @@ export class MiniGameModal {
       if (overlay) {
         overlay.style.pointerEvents = 'auto';
         overlay.innerHTML = `<div class="w-full h-full bg-slate-950 flex flex-col items-center justify-center p-6 text-center">
-          <h3 class="text-xl font-black text-rose-300 mb-3">このゲームは開始できません</h3>
-          <p class="text-sm text-white max-w-md">${String(message || '対応する学習ゲームが見つかりません。')}</p>
+          <h3 class="text-xl font-black text-rose-300 mb-3">ごめんね、今はあそべないみたい</h3>
+          <p class="text-sm text-white max-w-md">${String(message || 'ほかのゲームを選んでみてね。')}</p>
           <button id="unsupported-close-btn" class="mt-5 min-h-14 px-6 rounded-xl bg-slate-700 text-white font-bold">もどる</button>
         </div>`;
         const closeButton = document.getElementById('unsupported-close-btn');
@@ -703,7 +703,7 @@ export class MiniGameModal {
       case 'KUKU_LINK':
         if (selectedMode === 'MATH_CURRICULUM') {
           this.currentGame = new MathCurriculumGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum);
-          if (hintEl) hintEl.innerText = '操作ヒント：この学年の算数テーマ10問に答えよう！';
+          if (hintEl) hintEl.innerText = '算数の問題が10問。よく読んで答えよう！';
           break;
         }
         if (hintBtn) hintBtn.classList.remove('hidden');
@@ -717,39 +717,39 @@ export class MiniGameModal {
           level: levelNum,
           manageCountdown: false
         });
-        if (hintEl) hintEl.innerText = '操作ヒント：式（例: 7×8）と積（56）を2曲がり以内の銀河レーザーでつなげよう！';
+        if (hintEl) hintEl.innerText = '式と答えを見つけたら、同じペアをつなごう！';
         break;
 
       case 'RADICAL_BUILDER':
         this.currentGame = new RadicalBuilderGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum);
-        if (hintEl) hintEl.innerText = '操作ヒント：学年配当漢字のパーツ合成・部首・組み立て方から、正しいカードを選ぼう！';
+        if (hintEl) hintEl.innerText = '漢字の形をよく見て、ぴったりのカードを選ぼう！';
         break;
 
       case 'AETHER_SCALE':
       case 'RATIO_SCALE':
         if (effectiveGrade >= 3) {
           this.currentGame = new MathCurriculumGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum);
-          if (hintEl) hintEl.innerText = '操作ヒント：この学年の算数テーマ10問に答えよう！';
+          if (hintEl) hintEl.innerText = '算数の問題が10問。よく読んで答えよう！';
         } else {
           this.currentGame = new PanBalanceScaleGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum);
-          if (hintEl) hintEl.innerText = targetNode.gameData?.hint || '操作ヒント：右側の皿におもりを置いて天秤を釣り合わせよう！';
+          if (hintEl) hintEl.innerText = targetNode.gameData?.hint || '右のお皿におもりを置いて、てんびんをまっすぐにしよう！';
         }
         break;
 
       case 'COSMIC_ORBIT':
       case 'CELESTIAL_ORBIT':
         this.currentGame = new CosmicOrbitGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum);
-        if (hintEl) hintEl.innerText = '操作ヒント：月をドラッグして、目標の月相に合わせよう！';
+        if (hintEl) hintEl.innerText = '月を動かして、お手本と同じ形にしよう！';
         break;
 
       case 'LEVER_PHYSICS':
         this.currentGame = new LeverPhysicsGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum);
-        if (hintEl) hintEl.innerText = '操作ヒント：右側のおもりを選んで目盛りに吊るし、てこを釣り合わせよう！';
+        if (hintEl) hintEl.innerText = '右のおもりを動かして、てこをまっすぐにしよう！';
         break;
 
       case 'CIRCUIT_SANDBOX':
         this.currentGame = new CircuitSandboxGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum);
-        if (hintEl) hintEl.innerText = '操作ヒント：スイッチを閉じて回路を通電させ、豆電球を点灯させよう！';
+        if (hintEl) hintEl.innerText = 'スイッチを入れて、豆電球を光らせよう！';
         break;
 
       case 'SCIENCE_SANDBOX': {
@@ -759,13 +759,13 @@ export class MiniGameModal {
         } else {
           this.currentGame = new CurriculumQuizGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum, '理科');
         }
-        if (hintEl) hintEl.innerText = '操作ヒント：この学年の観察・実験テーマ10問に答えよう！';
+        if (hintEl) hintEl.innerText = '観察や実験を思い出しながら、10問に挑戦しよう！';
         break;
       }
 
       case 'PREFECTURE_JIGSAW':
         this.currentGame = new PrefectureJigsawGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum);
-        if (hintEl) hintEl.innerText = '操作ヒント：都道府県ピースをマップの正しい位置にはめ込もう！';
+        if (hintEl) hintEl.innerText = '都道府県のピースを、日本地図の正しい場所へ運ぼう！';
         break;
 
       case 'KOKUGO_CURRICULUM':
@@ -777,8 +777,8 @@ export class MiniGameModal {
           this.currentGame = new CurriculumQuizGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum, '国語');
         }
         if (hintEl) hintEl.innerText = selectedMode === 'RADICAL_BUILDER'
-          ? '操作ヒント：学年配当漢字のパーツ合成・部首・組み立て方から、正しいカードを選ぼう！'
-          : '操作ヒント：10問の国語問題に順番に答えよう！';
+          ? '漢字の形をよく見て、ぴったりのカードを選ぼう！'
+          : '国語の問題が10問。ことばをよく読んで答えよう！';
         break;
 
       case 'MATH_CURRICULUM':
@@ -787,7 +787,7 @@ export class MiniGameModal {
         } else {
           this.currentGame = new MathCurriculumGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum);
         }
-        if (hintEl) hintEl.innerText = '操作ヒント：学年の単元から出る10問に答えよう！';
+        if (hintEl) hintEl.innerText = '今の学年で習う算数から10問。落ち着いて考えよう！';
         break;
 
       case 'SCIENCE_CURRICULUM':
@@ -799,7 +799,7 @@ export class MiniGameModal {
         else if (selectedMode === 'LEVER_PHYSICS' && effectiveGrade === 6) this.currentGame = new LeverPhysicsGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum);
         else if (selectedMode === 'CIRCUIT_SANDBOX') this.currentGame = new CircuitSandboxGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum);
         else this.currentGame = new CurriculumQuizGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum, '理科');
-        if (hintEl) hintEl.innerText = '操作ヒント：学年の観察・実験テーマから出る10問に答えよう！';
+        if (hintEl) hintEl.innerText = '今の学年で習う理科から10問。実験を思い出そう！';
         break;
 
       case 'LIFE_CURRICULUM':
@@ -809,7 +809,7 @@ export class MiniGameModal {
         }
         if (selectedMode === 'CATEGORY_SORT') this.currentGame = new CategorySortGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum);
         else this.currentGame = new CurriculumQuizGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum, '生活');
-        if (hintEl) hintEl.innerText = '操作ヒント：学校・町・自然・成長について10問に答えよう！';
+        if (hintEl) hintEl.innerText = '学校やまち、自然のことを思い出して10問に答えよう！';
         break;
 
       case 'SOCIAL_CURRICULUM':
@@ -819,7 +819,7 @@ export class MiniGameModal {
         }
         if (selectedMode === 'PREFECTURE_JIGSAW') this.currentGame = new PrefectureJigsawGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum);
         else this.currentGame = new CurriculumQuizGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum, '社会');
-        if (hintEl) hintEl.innerText = '操作ヒント：地図・産業・歴史・政治から出る10問に答えよう！';
+        if (hintEl) hintEl.innerText = '地図やくらし、歴史から10問。知っていることを生かそう！';
         break;
 
       case 'ENGLISH_CURRICULUM': {
@@ -830,40 +830,40 @@ export class MiniGameModal {
           break;
         }
         this.currentGame = new ContextMatchGame(canvas, { ...targetNode.gameData, difficulty: englishMode }, onWinCallback, effectiveGrade, levelNum);
-        if (hintEl) hintEl.innerText = '操作ヒント：選んだ英語レベルの10問に挑戦しよう！';
+        if (hintEl) hintEl.innerText = '選んだレベルの英語が10問。文をよく読んでみよう！';
         break;
       }
 
       case 'CONTEXT_MATCH':
         this.currentGame = new ContextMatchGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum);
-        if (hintEl) hintEl.innerText = '操作ヒント：左の英語表現と右の日本語・情景カードをタップしてペアにしよう！';
+        if (hintEl) hintEl.innerText = '英語と、その意味が合うカードを見つけてペアにしよう！';
         break;
 
       case 'CATEGORY_SORT':
         this.currentGame = new CategorySortGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum);
-        if (hintEl) hintEl.innerText = '操作ヒント：下のアイテムをタップまたはドラッグして正しい仕分け箱に入れよう！';
+        if (hintEl) hintEl.innerText = 'カードを、ぴったりの箱へ入れよう！';
         break;
 
       case 'GRADE_EXAM':
         this.currentGame = new GradeComprehensiveExamGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum);
-        if (hintEl) hintEl.innerText = `操作ヒント：小学${effectiveGrade}年の全教科横断テスト！問題文をよく読んで正しい答えを選ぼう！`;
+        if (hintEl) hintEl.innerText = `小学${effectiveGrade}年のまとめ問題！よく読んで答えよう！`;
         break;
 
       case 'KANJI_SLASH':
         if (selectedMode === 'RADICAL_BUILDER') {
           this.currentGame = new RadicalBuilderGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum);
-          if (hintEl) hintEl.innerText = '操作ヒント：学年配当漢字のパーツ合成・部首・組み立て方から、正しいカードを選ぼう！';
+          if (hintEl) hintEl.innerText = '漢字の形をよく見て、ぴったりのカードを選ぼう！';
         } else if (selectedMode && !['KANJI_SLASH', 'KANJI_CHALLENGE'].includes(selectedMode)) {
           this.currentGame = new CurriculumQuizGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum, '国語');
-          if (hintEl) hintEl.innerText = '操作ヒント：この学年の国語テーマ10問に答えよう！';
+          if (hintEl) hintEl.innerText = '今の学年で習う国語から10問。ことばをよく見よう！';
         } else {
           this.currentGame = new KanjiSlashGame(canvas, { ...targetNode.gameData, manageCountdown: false }, onWinCallback, effectiveGrade, levelNum);
-          if (hintEl) hintEl.innerText = `操作ヒント：小学${effectiveGrade}年の漢字が落ちる前に正しい読みをタップまたはスワイプ斬撃！`;
+          if (hintEl) hintEl.innerText = `小学${effectiveGrade}年の漢字だよ。正しい読みを見つけてタップ！`;
         }
         break;
 
       default:
-        failClosed(`未対応のゲーム形式です：${gameType || 'UNKNOWN'}`);
+        failClosed('このゲームはただいま準備中です。ほかのゲームを選んでね。');
         break;
     }
 
@@ -956,7 +956,7 @@ export class MiniGameModal {
       }
 
       const isExam = node.gameType === 'GRADE_EXAM' || node.id?.includes('EXAM');
-      const examBonusHtml = isExam ? `<div class="mb-3 px-3 py-1.5 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-bold animate-pulse">🌟 学年総合チャレンジをクリア！特別ボーナス +300 スターコイン獲得！</div>` : '';
+      const examBonusHtml = isExam ? `<div class="mb-3 px-3 py-1.5 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-bold animate-pulse">🌟 まとめ問題クリア！お祝いコインを300枚もらったよ！</div>` : '';
 
       const nextBtnHtml = isLastStage
         ? `<button disabled class="px-5 py-2.5 bg-gradient-to-r from-yellow-600 to-amber-500 text-white font-bold rounded-xl shadow-lg cursor-default opacity-90">🏆 全${maxStages}ステージ完全制覇！</button>`
@@ -966,7 +966,7 @@ export class MiniGameModal {
         <div class="w-full h-full bg-black/90 flex flex-col items-center justify-center p-6 text-center animate-fade-in">
           <div class="text-4xl mb-2">${isLastStage ? '🏆🏆🏆' : '⭐'.repeat(stars) + '☆'.repeat(3 - stars)}</div>
           <h3 class="text-2xl font-black text-amber-400 mb-1">${isLastStage ? '🎉 全ステージ完全制覇！おめでとう！ 🎉' : (isExam ? '🎓 学年総合チャレンジ合格！' : 'ステージクリア！')}</h3>
-          <p class="text-sm font-semibold text-white mb-1">[${node.name}] — Stage ${stageLevel} / ${maxStages}</p>
+          <p class="text-sm font-semibold text-white mb-1">${node.name}　${stageLevel} / ${maxStages} ステージ</p>
           <p class="text-xs text-slate-400 mb-4 max-w-md">${node.desc || ''}</p>
           ${examBonusHtml}
           <div class="flex gap-3 flex-wrap justify-center">
@@ -3133,7 +3133,7 @@ export class PrefectureJigsawGame {
       this.ctx.fillStyle = '#ffffff';
       this.ctx.font = 'bold 15px sans-serif';
       this.ctx.textAlign = 'center';
-      this.ctx.fillText(`${withKidsReading('4年 社会：日本47都道府県 列島パズル', 'にほんれっとう・ちほうくぶん')} (Stage ${this.level})`, w / 2, 44);
+      this.ctx.fillText(`${withKidsReading('4年 社会：日本47都道府県 列島パズル', 'にほんれっとう・ちほうくぶん')}　ステージ${this.level}`, w / 2, 44);
 
       this.ctx.fillStyle = '#38bdf8';
       this.ctx.font = '11px sans-serif';

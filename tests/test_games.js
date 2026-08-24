@@ -621,7 +621,7 @@ function register({ describe, test, it, assert, loadESModule }) {
 
       const shopRes = eco.purchaseItem('badge_kuku_master');
       assert.strictEqual(shopRes.success, true);
-      assert.strictEqual(eco.inventory[0].title, '九九銀河レジェンド（算数）');
+      assert.strictEqual(eco.inventory[0].title, '九九マスター（算数）');
     });
   });
 

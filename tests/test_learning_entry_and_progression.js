@@ -75,7 +75,7 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
         assert.ok(html.includes(`id="${id}"`), `${id} が必要です`);
       }
       assert.ok(html.includes('cleared_stages: economy.clearedStages'), 'クリア関門をクラウド同期してください');
-      assert.ok(html.includes('独立ゲームのクリア記録'), 'ゲーム優先モードの結果も Profile に表示してください');
+      assert.ok(html.includes('好きなゲームからクリアした回数'), 'ゲーム優先モードの結果も学習記録に表示してください');
     });
 
     test('銀河テーマは多層6色渦状腕・巨大ブラックホール・大判学科惑星を描画する', () => {

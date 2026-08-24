@@ -82,7 +82,7 @@ export class GuestTrialManager extends EventTarget {
     this.fingerprintHash ||= await createDeviceFingerprint();
     const availability = await this.getAvailability();
     if (availability.status === 'ACTIVE') return this.resume(availability);
-    if (!availability.allowed) throw new Error('この端末の今週の累積ゲスト体験は終了しています。Google でログインしてください。');
+    if (!availability.allowed) throw new Error('今週のゲスト時間を使い切りました。つづきはGoogleでログインしてね。');
     const response = await this.fetchImpl(`${this.apiBase}/guest/start`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -90,10 +90,10 @@ export class GuestTrialManager extends EventTarget {
     });
     const result = await readJsonResponse(response);
     if (!response.ok || !result.allowed) {
-      if (result.error === 'TURNSTILE_FAILED') throw new Error('人間確認の有効期限が切れました。もう一度確認してください。');
+      if (result.error === 'TURNSTILE_FAILED') throw new Error('安全チェックの時間が切れました。もう一度チェックしてね。');
       if (result.status === 'ACTIVE') return this.resume(result);
-      if (result.status === 'EXPIRED') throw new Error('この端末の今週の累積ゲスト体験は終了しています。Google でログインしてください。');
-      throw new Error('ゲスト体験を開始できませんでした。もう一度お試しください。');
+      if (result.status === 'EXPIRED') throw new Error('今週のゲスト時間を使い切りました。つづきはGoogleでログインしてね。');
+      throw new Error('ゲスト体験を始められませんでした。少し待って、もう一度ためしてみてね。');
     }
     await this.saveTracker(result, 'ACTIVE');
     return this.resume(result);
@@ -177,8 +177,8 @@ export class GuestTrialManager extends EventTarget {
     this.accountLocalUsage();
     const label = typeof document !== 'undefined' ? document.getElementById('guest-trial-countdown') : null;
     if (label) {
-      const stateLabel = this.isActivelyPlaying() ? 'プレイ中のみ消費' : '星図では停止中';
-      label.textContent = `ゲスト残り（${stateLabel}） ${formatGuestRemaining(this.remainingMs)}`;
+      const stateLabel = this.isActivelyPlaying() ? 'あそんでいる間だけ減るよ' : 'いまは時間を使っていないよ';
+      label.textContent = `ゲスト体験のこり ${formatGuestRemaining(this.remainingMs)}｜${stateLabel}`;
       label.dataset.playState = this.isActivelyPlaying() ? 'active' : 'paused';
     }
     if (this.remainingMs <= 0) void this.expire({ reason: 'QUOTA_EXHAUSTED' });

@@ -111,6 +111,37 @@ function register({ describe, test, assert, loadESModule }) {
       assert.match(html, /currentActiveGrade\s*<=\s*2[\s\S]{0,160}\['国語',\s*'算数',\s*'生活'\]/, 'Grades 1-2 must show only 国語・算数・生活');
       assert.match(html, /\['国語',\s*'算数',\s*'理科',\s*'社会',\s*'外国語・英語'\]/, 'Grades 3-6 must show 国語・算数・理科・社会・英語');
     });
+
+    test('CS7: visible Japanese copy speaks to children instead of exposing implementation terms', () => {
+      const miniGames = fs.readFileSync(path.join(rootDir, 'MiniGameSystem.js'), 'utf8');
+      const login = fs.readFileSync(path.join(rootDir, 'src', 'auth', 'LoginModal.js'), 'utf8');
+      ['Bloom', '認知深度', '有向グラフ', '独立ゲームモード', '標準モード', '交換履歴元帳', 'Profile'].forEach(term => {
+        assert.strictEqual(markupBeforeModule.includes(term), false, `Visible homepage copy must not expose "${term}"`);
+      });
+      assert.strictEqual(miniGames.includes('操作ヒント：'), false, 'Game guidance must use direct, natural instructions');
+      assert.strictEqual(miniGames.includes('(Stage '), false, 'Game titles must not mix developer-style English stage notation into Japanese');
+      assert.ok(login.includes('PSES Gameへようこそ！') && login.includes('安全チェック'), 'Login copy must be friendly and understandable');
+      assert.ok(html.includes('どちらを選んでも、がんばった記録は「わたしの学習きろく」に残るよ。'), 'Learning entrance must explain the result in child-friendly language');
+    });
+
+    test('CS8: homepage exposes complete crawl and share metadata', () => {
+      const canonical = 'https://japanese-pses.j565718319.workers.dev/';
+      assert.match(html, /<title>PSES Game｜小学生向け無料学習ゲーム<\/title>/);
+      assert.match(html, /<meta name="description" content="[^"]+"\s*\/>/);
+      assert.ok(html.includes(`<link rel="canonical" href="${canonical}" />`), 'Canonical URL must point to production');
+      assert.ok(html.includes('<meta property="og:title"') && html.includes('<meta property="og:description"'), 'Open Graph metadata is required');
+      assert.ok(html.includes('<meta name="twitter:card"'), 'Twitter card metadata is required');
+      const jsonLdMatch = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/);
+      assert.ok(jsonLdMatch, 'SoftwareApplication JSON-LD is required');
+      const structured = JSON.parse(jsonLdMatch[1]);
+      const app = structured['@graph'].find(item => item['@type'] === 'SoftwareApplication');
+      assert.strictEqual(app.name, 'PSES Game');
+      assert.strictEqual(app.offers.price, '0');
+      assert.strictEqual(app.url, canonical);
+      assert.ok(fs.readFileSync(path.join(rootDir, 'robots.txt'), 'utf8').includes('/sitemap.xml'));
+      assert.ok(fs.readFileSync(path.join(rootDir, 'sitemap.xml'), 'utf8').includes(`<loc>${canonical}</loc>`));
+      assert.ok(fs.existsSync(path.join(rootDir, 'site.webmanifest')) && fs.existsSync(path.join(rootDir, 'favicon.svg')));
+    });
   });
 }
 

@@ -17,7 +17,7 @@
 
 import { getAudioSynthesizer } from './AudioSynthesizer.js';
 import { getFXSystem } from './FXSystem.js';
-import { getErrorGuidanceSystem } from './ErrorGuidanceSystem.js';
+import { getErrorGuidanceSystem } from './ErrorGuidanceSystem.js?v=3';
 import { getLogicalCanvasWidth, getLogicalCanvasHeight } from './src/render/HDCanvasRenderer.js';
 
 export class KukuLinkGame {

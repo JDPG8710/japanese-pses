@@ -29,10 +29,10 @@ export function validateLearnerProfile(source = {}) {
   const profile = normalizeLearnerProfile(source);
   let error = '';
   if (!profile.name) error = 'おなまえを入力してください。';
-  else if ([...profile.name].length > 20) error = 'おなまえは20文字以内で入力してください。';
+  else if ([...profile.name].length > 20) error = 'おなまえは20文字までだよ。少し短くしてね。';
   else if (!Number.isInteger(profile.age) || profile.age < LEARNER_AGE_MIN || profile.age > LEARNER_AGE_MAX) {
     error = `${LEARNER_AGE_MIN}〜${LEARNER_AGE_MAX}歳から選んでください。`;
-  } else if (!profile.gender) error = '性別の項目を選んでください。';
+  } else if (!profile.gender) error = 'あてはまるものを選んでね。答えたくないときは「回答しない」で大丈夫だよ。';
   return { valid: !error, error, profile };
 }
 
@@ -58,9 +58,9 @@ export class LearnerProfileModal {
     element.className = 'fixed inset-0 z-[110] hidden items-center justify-center bg-slate-950/95 p-4 backdrop-blur-xl';
     element.innerHTML = `
       <form id="learner-profile-form" class="w-full max-w-md rounded-3xl border border-cyan-400/40 bg-slate-900 p-6 shadow-2xl sm:p-8" novalidate>
-        <p class="text-xs font-black tracking-[0.2em] text-cyan-300">LEARNER PROFILE</p>
-        <h1 class="mt-2 text-2xl font-black text-white">学習者の情報を入力</h1>
-        <p class="mt-2 text-sm leading-6 text-slate-300">ゲームで表示するおなまえ、年齢、性別の項目を登録してください。あとから Profile で確認できます。</p>
+        <p class="text-xs font-black tracking-[0.2em] text-cyan-300">はじめまして！</p>
+        <h1 class="mt-2 text-2xl font-black text-white">あそぶ人のことを教えてね</h1>
+        <p class="mt-2 text-sm leading-6 text-slate-300">ゲームで使うおなまえと年齢を選んでね。あとで「わたしの学習きろく」から確認できます。</p>
         <div class="mt-6 space-y-4">
           <label class="block text-sm font-bold text-white">おなまえ
             <input id="learner-profile-name" name="learnerName" type="text" maxlength="20" autocomplete="nickname" required
@@ -87,7 +87,7 @@ export class LearnerProfileModal {
         </div>
         <p id="learner-profile-error" role="alert" class="mt-4 hidden rounded-xl border border-rose-400/40 bg-rose-500/10 px-4 py-3 text-sm font-bold text-rose-200"></p>
         <button type="submit" class="mt-6 min-h-12 w-full rounded-xl bg-gradient-to-r from-cyan-400 to-indigo-400 px-5 font-black text-slate-950 shadow-lg transition hover:brightness-110">
-          このプロフィールで始める
+          これで始める！
         </button>
       </form>`;
     document.body.appendChild(element);

@@ -158,7 +158,7 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
       assert.ok(manager.includes('formatGuestRemaining(this.remainingMs)'));
       assert.ok(manager.includes("String(hours).padStart(2, '0')"));
       assert.ok(manager.includes('GAME_PLAY_STATE_CHANGED'));
-      assert.ok(manager.includes('プレイ中のみ'));
+      assert.ok(manager.includes('あそんでいる間だけ減るよ'));
     });
 
     test('ブラウザー側もゲーム実行中だけ残り時間を減らす', () => {
@@ -209,7 +209,7 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
       assert.ok(html.includes("phase: 'GALAXY_SELECTION'"));
       assert.ok(manager.includes('defaultGameStageVisible'));
       assert.ok(manager.includes('this.isGameStageVisible()'));
-      assert.ok(manager.includes("'星図では停止中'"));
+      assert.ok(manager.includes("'いまは時間を使っていないよ'"));
     });
 
     test('Wrangler はD1を唯一のクラウドデータストアとして束縛し、秘密値を平文で持たない', () => {

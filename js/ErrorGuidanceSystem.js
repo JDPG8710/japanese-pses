@@ -37,7 +37,7 @@ export class ErrorGuidanceSystem {
           <div class="flex items-center justify-between mb-1.5">
             <div class="flex items-center gap-1.5 text-amber-300 font-bold">
               <span>💡</span>
-              <span id="guidance-title">星の子ピコからのヒント</span>
+              <span id="guidance-title">ピコといっしょに考えよう</span>
             </div>
             <button id="guidance-close-btn" class="text-slate-400 hover:text-white text-xs px-1.5 py-0.5 rounded bg-slate-800 transition">✕</button>
           </div>
@@ -162,7 +162,7 @@ export class ErrorGuidanceSystem {
     this.showTransientToast(`💡 ヒント：${clueMsg}`);
 
     if (context.coords) {
-      this.fx.showFloatingScore(context.coords.x, context.coords.y, 'ヒントが出現！', '#fbbf24', 18);
+      this.fx.showFloatingScore(context.coords.x, context.coords.y, 'ここを見て！', '#fbbf24', 18);
       this.fx.spawnStarBurst(context.coords.x, context.coords.y, 12, '#fbbf24');
     }
 
@@ -180,7 +180,7 @@ export class ErrorGuidanceSystem {
   handleTier3(context, options = {}) {
     this.audio.playClue();
 
-    const title = options.title || '星の子ピコからのヒント 🛸';
+    const title = options.title || 'ピコといっしょに考えよう 🛸';
     const explanation = options.explanation || this.generatePedagogicalExplanation(context);
 
     this.showMascotGuidance(title, explanation, options);
@@ -310,25 +310,25 @@ export class ErrorGuidanceSystem {
 
       case '算数':
         if (qData.formula) {
-          return `計算式【 ${qData.formula} 】の九九の段を思い出してみてね！`;
+          return `「${qData.formula}」は、何の段の九九を使うかな？`;
         }
         if (qData.targetRatio) {
-          return `割合（%）＝（比べられる量 ÷ もとにする量）× 100 だよ！`;
+          return '「くらべる量」を「もとにする量」でわってみよう！';
         }
-        return '位取りや数字の組み合わせをもう一度確認しよう！';
+        return '一の位、十の位を順番に見直してみよう！';
 
       case '理科':
         if (qData.targetLeft && qData.armLeft) {
           const moment = qData.targetLeft * qData.armLeft;
           return `てこのつり合い：（左のおもり × 距離 ＝ ${moment}）になる目盛りを探そう！`;
         }
-        return '実験の規則性や条件の変化を確かめてみよう！';
+        return '何を変えたとき、結果がどう変わったか思い出そう！';
 
       case '社会':
         if (qData.prefecture) {
           return `「${qData.prefecture}」はどの地方にあるかな？ 形や隣の県を見てみよう！`;
         }
-        return '日本の地形や特産品のつながりを思い出してみよう！';
+        return '地図の形や、その土地で作られているものを思い出そう！';
 
       case '外国語・英語':
       case '英語':
@@ -356,7 +356,7 @@ export class ErrorGuidanceSystem {
         if (qData.kanji && qData.correctAnswer) {
           return `「${qData.kanji}」の正しい読み方は「${qData.correctAnswer}」だよ！${qData.hint ? ' ' + qData.hint : '草かんむりや偏（へん）の形を手がかりに選んでみてね！'}`;
         }
-        return 'ゆっくり声に出して読んでみると、正しい言葉のリズムが見つかるよ！ピコと一緒に挑戦しよう！';
+        return 'ゆっくり声に出して読むと、ことばのリズムが見つかるよ。もう一度やってみよう！';
 
       case '算数':
         if (qData.formula && qData.correctAnswer) {
@@ -365,20 +365,20 @@ export class ErrorGuidanceSystem {
         if (qData.targetRatio) {
           return `目標割合は【 ${qData.targetRatio}% 】だよ！スライダーの数値を青い目印に合わせてみてね！`;
         }
-        return '図や式を順番に整理すると解きやすくなるよ！焦らず落ち着いてやってみよう！';
+        return 'わかっている数字から順番に、図や式へ書いてみよう。ゆっくりで大丈夫！';
 
       case '理科':
         if (qData.targetLeft && qData.armLeft && qData.correctSlot) {
           const moment = qData.targetLeft * qData.armLeft;
           return `左側の力（${qData.targetLeft}g × ${qData.armLeft}cm = ${moment}）と右側を釣り合わせるには、${qData.targetRight || 20}gのおもりを【${qData.correctSlot}番】の目盛りにかけよう！`;
         }
-        return '自然のきまりはとても美しいよ！てこの原理や電気の通り道を観察してみよう！';
+        return 'おもりの場所や電気の通り道を、最初から順番に見てみよう！';
 
       case '社会':
         if (qData.prefecture && qData.region) {
           return `「${qData.prefecture}」は【${qData.region}地方】にあるよ！名産品や有名な山・川をヒントに地図にはめ込んでみてね！`;
         }
-        return '日本列島の形をパズルのように見てみよう！海に面しているか山があるかが大きな手がかりだよ！';
+        return '海に面しているかな？近くの県や山の場所も手がかりになるよ！';
 
       case '外国語・英語':
       case '英語':

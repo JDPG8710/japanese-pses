@@ -76,20 +76,20 @@ export const SHOP_CATALOG = {
   categories: [
     {
       id: 'skins',
-      name: '銀河ビジュアルスキン (Galaxy Themes)',
+      name: '星空のきせかえ',
       items: [
         {
           id: 'skin_nebula_aurora',
-          title: 'オーロラエメラルド銀河',
-          description: '星雲の輝きを神秘的な極光エメラルド粒子流へ変化させます。',
+          title: 'オーロラの星空',
+          description: '星空が、緑と青にゆれるオーロラカラーになるよ。',
           price: 600,
           icon: '🌌',
           type: 'SKIN'
         },
         {
           id: 'skin_cyber_neon',
-          title: 'サイバーネオン軌道',
-          description: '銀河の旋臂がサイバーグリッドとパルスレーザー光輪へ変化します。',
+          title: 'ネオンの星空',
+          description: '星空が、ピンクと青に光るネオンカラーになるよ。',
           price: 1200,
           icon: '✨',
           type: 'SKIN'
@@ -98,36 +98,36 @@ export const SHOP_CATALOG = {
     },
     {
       id: 'badges',
-      name: '教科専修マスター勲章 (Achievement Badges)',
+      name: 'がんばりバッジ',
       items: [
         {
           id: 'badge_kanji_master',
-          title: '漢字・ことば達人勲章 (国語)',
-          description: '流れ星の斬撃でノーミス50連続正解を達成した栄誉の証。',
+          title: '漢字・ことば名人（国語）',
+          description: '漢字ゲームで50問つづけて正解したしるしだよ。',
           price: 300,
           icon: '🎴',
           type: 'BADGE'
         },
         {
           id: 'badge_kuku_master',
-          title: '九九銀河レジェンド（算数）',
-          description: '九九銀河マッチングをノーミスで素早くクリアした学習者に授与。',
+          title: '九九マスター（算数）',
+          description: '九九ゲームをまちがえずにクリアしたしるしだよ。',
           price: 300,
           icon: '⚡',
           type: 'BADGE'
         },
         {
           id: 'badge_ratio_alchemist',
-          title: '割合の錬金術士 (算数)',
-          description: 'エネルギー比率調整で誤差0%のパーフェクト配分を達成。',
+          title: '割合ぴったり名人（算数）',
+          description: '割合の問題をぴったり正しく解けたしるしだよ。',
           price: 300,
           icon: '⚖️',
           type: 'BADGE'
         },
         {
           id: 'badge_prefecture_pilot',
-          title: '列島巡航マスターパイロット (社会)',
-          description: '日本47都道府県の全ピースをノーヒントで高速吸着。',
+          title: '日本地図マスター（社会）',
+          description: '47都道府県をヒントなしで正しく置けたしるしだよ。',
           price: 300,
           icon: '🗾',
           type: 'BADGE'
@@ -136,20 +136,20 @@ export const SHOP_CATALOG = {
     },
     {
       id: 'items',
-      name: '冒険アシスト・チケット (Power-ups)',
+      name: 'おたすけアイテム',
       items: [
         {
           id: 'item_challenge_ticket',
           title: '制限時間延長チケット × 3',
-          description: 'ステージの残り時間を即座に30秒延長します。',
+          description: 'ゲームの残り時間を30秒ふやせるよ。',
           price: 150,
           icon: '🎟️',
           type: 'CONSUMABLE'
         },
         {
           id: 'item_hint_radar',
-          title: '銀河ヒントレーダー',
-          description: 'ミニゲーム中に正解の選択肢・配置場所を即座に1回強調表示。',
+          title: 'きらきらヒント',
+          description: '答えを考える手がかりを1回だけ光らせるよ。',
           price: 100,
           icon: '📡',
           type: 'CONSUMABLE'
@@ -207,7 +207,7 @@ export class EconomyManager {
           type: 'SYSTEM_GRANT',
           amount: 500,
           balanceAfter: 500,
-          description: `【${userName}】ようこそ！星図探検スターターパック（スターコイン）`
+          description: `${userName}さんへ、はじめてのお祝いコイン！`
         }
       ]
     };
@@ -332,7 +332,7 @@ export class EconomyManager {
       type: 'ELEMENTARY_GRADUATION_REWARD',
       amount: Number(certificate.rewardCoins) || 0,
       balanceAfter: this.starCoins,
-      description: `全学年・全教科の関門を修了：【${certificate.title}】を授与`
+      description: `1〜6年生のチャレンジを全部クリア！「${certificate.title}」のお祝い`
     });
     this.saveState();
     return { awarded: true, certificate };
@@ -342,7 +342,7 @@ export class EconomyManager {
   awardNodeClear(nodeId, accuracy = 1.0) {
     const node = FULL_CURRICULUM_DAG.find((n) => n.id === nodeId) || {
       bloomDepth: 1.5,
-      name: '知識ノード'
+      name: '学びの星'
     };
 
     const isFirstClear = !this.clearedNodes[nodeId] || !this.clearedNodes[nodeId].rewarded;
@@ -376,7 +376,7 @@ export class EconomyManager {
         type: 'STAGE_CLEAR_REWARD',
         amount: pointsAwarded,
         balanceAfter: this.starCoins,
-        description: `【${node.name}】初回クリア達成 · スター報酬 (${calc.breakdown.formula})`
+        description: `「${node.name}」をはじめてクリア！`
       };
       this.ledger.unshift(record);
     } else {
@@ -409,8 +409,8 @@ export class EconomyManager {
       }
     }
 
-    if (!targetItem) return { success: false, message: '商品が存在しません。' };
-    if (this.starCoins < targetItem.price) return { success: false, message: 'スターコインが不足しています！' };
+    if (!targetItem) return { success: false, message: 'このアイテムは見つかりませんでした。' };
+    if (this.starCoins < targetItem.price) return { success: false, message: 'コインがもう少し必要だよ！' };
 
     this.starCoins -= targetItem.price;
     this.inventory.push({
@@ -425,7 +425,7 @@ export class EconomyManager {
       type: 'SHOP_PURCHASE',
       amount: -targetItem.price,
       balanceAfter: this.starCoins,
-      description: `ショップ交換：【${targetItem.title}】`
+      description: `「${targetItem.title}」と交換`
     };
 
     this.ledger.unshift(record);

@@ -750,7 +750,8 @@ function transformEsmToCjs(source) {
 }
 
 function resolveRelativeModule(fromFile, spec) {
-  const base = path.resolve(path.dirname(fromFile), spec);
+  const fileSpec = String(spec).split(/[?#]/, 1)[0];
+  const base = path.resolve(path.dirname(fromFile), fileSpec);
   const candidates = [base, base + '.js', path.join(base, 'index.js')];
   for (const candidate of candidates) {
     if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) {

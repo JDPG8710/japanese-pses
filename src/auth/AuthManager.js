@@ -1,4 +1,4 @@
-import { LoginModal } from './LoginModal.js';
+import { LoginModal } from './LoginModal.js?v=3';
 import { GuestTrialManager } from './GuestTrialManager.js?v=2';
 import { isLocalDevelopmentHost } from '../runtime/LocalEnvironment.js';
 
@@ -21,7 +21,7 @@ export class AuthManager extends EventTarget {
     if (session?.authenticated) return { mode: 'authenticated', ...session };
     const availability = await this.guest.getAvailability().catch(() => ({ allowed: false, status: 'UNAVAILABLE' }));
     if (availability.status === 'ACTIVE') return this.guest.resume(availability);
-    await this.modal.show({ message: availability.allowed ? undefined : 'この端末のゲスト体験は終了しています。Google でログインしてください。' });
+    await this.modal.show({ message: availability.allowed ? undefined : '今週のゲスト時間を使い切りました。つづきはGoogleでログインしてね。' });
     return new Promise(resolve => { this.resolveAccess = resolve; });
   }
 
@@ -36,7 +36,7 @@ export class AuthManager extends EventTarget {
     this.modal.setBusy(true);
     try {
       if (kind === 'oauth') {
-        if (provider !== 'google') throw new Error('現在利用できるログイン方法は Google のみです。');
+        if (provider !== 'google') throw new Error('いま使えるログイン方法はGoogleだけです。');
         const response = await this.fetchImpl(`${this.apiBase}/auth/${provider}`, {
           method: 'POST', credentials: 'include', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ 'cf-turnstile-response': turnstileToken })
         });
@@ -49,7 +49,7 @@ export class AuthManager extends EventTarget {
       this.modal.hide();
       this.resolveAccess?.(guestSession);
     } catch (error) {
-      this.modal.showError(error.message || '認証に失敗しました。');
+      this.modal.showError(error.message || 'うまくログインできませんでした。もう一度ためしてみてね。');
     } finally {
       this.modal.setBusy(false);
     }
@@ -58,8 +58,8 @@ export class AuthManager extends EventTarget {
   blockExpiredGuest({ reason } = {}) {
     window.dispatchEvent(new CustomEvent('GUEST_TRIAL_EXPIRED'));
     const message = reason === 'PERIOD_ENDED'
-      ? '前回のゲスト体験から1週間が経過しました。人間確認を完了すると、新しい週の体験を開始できます。'
-      : '今週分の累積2時間ゲスト体験を使い切りました。続けるにはGoogleでログインしてください。';
+      ? '新しい1週間が始まりました。安全チェックを終えると、またゲストで遊べるよ。'
+      : '今週のゲスト時間を使い切りました。つづきはGoogleでログインしてね。';
     this.modal?.show({ message });
   }
 }
@@ -69,7 +69,7 @@ async function readJson(response) {
 }
 
 function authErrorMessage(result) {
-  if (result?.error === 'TURNSTILE_FAILED') return '人間確認の有効期限が切れました。もう一度確認してください。';
-  if (result?.error === 'SERVER_MISCONFIGURED') return '認証サービスの設定を確認中です。しばらくしてからもう一度お試しください。';
-  return 'Google ログインを開始できませんでした。もう一度お試しください。';
+  if (result?.error === 'TURNSTILE_FAILED') return '安全チェックの時間が切れました。もう一度チェックしてね。';
+  if (result?.error === 'SERVER_MISCONFIGURED') return 'ログインの準備をしています。少し待ってから、もう一度ためしてみてね。';
+  return 'Googleログインを始められませんでした。もう一度ためしてみてね。';
 }

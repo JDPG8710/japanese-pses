@@ -4,7 +4,55 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta name="turnstile-site-key" content="0x4AAAAAAEZrRJQcMv2tk9IP" />
-  <title>日本小学校学習指導要領 · 銀河知識星図</title>
+  <title>PSES Game｜小学生向け無料学習ゲーム</title>
+  <meta name="description" content="小学1年生から6年生までの国語・算数・理科・社会・生活・英語を、星空を冒険するゲームで楽しく学べる無料のオンライン教材です。" />
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+  <meta name="theme-color" content="#090b2f" />
+  <meta name="application-name" content="PSES Game" />
+  <link rel="canonical" href="https://japanese-pses.j565718319.workers.dev/" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="manifest" href="/site.webmanifest" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="PSES Game" />
+  <meta property="og:locale" content="ja_JP" />
+  <meta property="og:title" content="PSES Game｜小学生向け無料学習ゲーム" />
+  <meta property="og:description" content="国語・算数・理科・社会・生活・英語を、星空のゲームで楽しく学ぼう。小学1〜6年生に対応。" />
+  <meta property="og:url" content="https://japanese-pses.j565718319.workers.dev/" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="PSES Game｜小学生向け無料学習ゲーム" />
+  <meta name="twitter:description" content="小学1〜6年生の6教科を、星空のゲームで楽しく学べるオンライン教材です。" />
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebSite",
+          "@id": "https://japanese-pses.j565718319.workers.dev/#website",
+          "url": "https://japanese-pses.j565718319.workers.dev/",
+          "name": "PSES Game",
+          "alternateName": "日本小学星图教育游戏",
+          "inLanguage": "ja"
+        },
+        {
+          "@type": "SoftwareApplication",
+          "@id": "https://japanese-pses.j565718319.workers.dev/#app",
+          "name": "PSES Game",
+          "url": "https://japanese-pses.j565718319.workers.dev/",
+          "description": "小学1年生から6年生までの国語・算数・理科・社会・生活・英語を、星空のゲームで学べるオンライン教材です。",
+          "applicationCategory": "GameApplication",
+          "applicationSubCategory": "Educational game",
+          "operatingSystem": "Web Browser",
+          "inLanguage": "ja",
+          "isAccessibleForFree": true,
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "JPY"
+          }
+        }
+      ]
+    }
+  </script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="css/style.css?v=20260824.2" />
   <!-- Three.js Import Maps -->
@@ -44,12 +92,12 @@
       <button id="user-profile-btn" class="glass-panel px-3.5 py-1.5 rounded-full hover:bg-slate-800 text-xs font-bold text-amber-300 flex items-center gap-2 transition border border-amber-500/40 shadow-lg shadow-amber-500/10">
         <span class="text-base">👦</span>
         <span id="current-user-name">学習者</span>
-        <span class="text-[10px] text-slate-300 bg-slate-800 px-1.5 py-0.5 rounded">Profile</span>
+        <span class="text-[10px] text-slate-300 bg-slate-800 px-1.5 py-0.5 rounded">きろく</span>
       </button>
 
       <div>
-        <h1 class="text-xs md:text-sm font-bold tracking-wider text-white hidden sm:block">銀河知識星図 · 生きる力</h1>
-        <p class="text-[10px] text-slate-400 hidden sm:block">文部科学省 学習指導要領 1〜6年 完全準拠</p>
+        <h1 class="text-xs md:text-sm font-bold tracking-wider text-white hidden sm:block">PSES Game · 星空の学び</h1>
+        <p class="text-[10px] text-slate-400 hidden sm:block">小学1〜6年生の6教科を楽しく学ぼう</p>
       </div>
     </div>
 
@@ -67,7 +115,7 @@
       </div>
 
       <button id="learning-mode-open-btn" class="glass-panel px-3.5 py-1.5 rounded-full hover:bg-slate-800 text-xs font-bold text-cyan-200 border border-cyan-500/30 transition" title="学習モードを選び直す">
-        <span class="hidden sm:inline">モード選択</span><span class="sm:hidden">🎮</span>
+        <span class="hidden sm:inline">あそび方</span><span class="sm:hidden">🎮</span>
       </button>
 
       <!-- 音声ミュート切り替えボタン (Mute Toggle) -->
@@ -131,7 +179,7 @@
       </div>
       <span id="node-status-badge" class="text-xs text-yellow-400 font-medium flex items-center gap-1">
         <span class="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse"></span>
-        挑戦可能
+        あそべるよ
       </span>
     </div>
     <h2 id="node-title" class="text-base font-bold text-white mb-1 leading-snug">1年 ひらがな・カタカナ・音読</h2>
@@ -139,13 +187,13 @@
       清音・濁音・半濁音・拗音の読み書きと、正しい姿勢での声に出した音読。
     </p>
 
-    <!-- スコアと認知深度計算 -->
+    <!-- スコア案内 -->
     <div class="p-2.5 rounded-xl bg-white/5 border border-white/10 mb-3 text-xs font-mono">
       <div class="flex justify-between text-[10px] text-slate-400 mb-1 font-sans">
-        <span>Bloom 認知深度: <b id="bloom-depth-val" class="text-indigo-300 font-mono">1.0</b></span>
-        <span>クリア報酬: <b class="text-amber-400">初回のみ加算</b></span>
+        <span>むずかしさ: <b id="bloom-depth-val" class="text-indigo-300 font-mono">1.0</b></span>
+        <span><b class="text-amber-400">はじめてクリアでコイン</b></span>
       </div>
-      <div class="text-emerald-400 font-bold text-[11px]" id="formula-display">基礎 100 pt × 深度 1.0 × 連勝 1.3 = 130 pt</div>
+      <div class="text-emerald-400 font-bold text-[11px]" id="formula-display">もらえるコインのめやす：130枚</div>
     </div>
 
     <!-- ステージ一覧と進捗バッジ。数字だけの見やすいボタンを使用する。 -->
@@ -181,9 +229,9 @@
         </div>
         <h3 id="m-node-title" class="text-base font-bold text-white">1年 ひらがな・カタカナ・音読</h3>
       </div>
-      <span id="m-node-status" class="text-xs text-amber-400 font-medium">挑戦可能</span>
+      <span id="m-node-status" class="text-xs text-amber-400 font-medium">あそべるよ</span>
     </div>
-    <p id="m-node-desc" class="text-xs text-slate-300 mb-3">習熟度85%到達で次の有向グラフノードが解放されます。</p>
+    <p id="m-node-desc" class="text-xs text-slate-300 mb-3">この星のチャレンジに挑戦しよう。</p>
 
     <!-- モバイルのステージ一覧 -->
     <div id="m-node-stages-container" class="mb-4">
@@ -218,14 +266,14 @@
       <div class="flex justify-between items-center mb-4">
         <div class="flex items-center gap-2">
           <span class="text-2xl">👦</span>
-          <div><h2 class="text-base font-bold text-white">学習 Profile</h2><p class="text-[10px] text-slate-400">アカウント全体の1〜6年生チャレンジ記録</p></div>
+          <div><h2 class="text-base font-bold text-white">わたしの学習きろく</h2><p class="text-[10px] text-slate-400">1年生から6年生までのがんばりが見られます</p></div>
         </div>
         <button id="user-modal-close" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center">✕</button>
       </div>
 
       <div id="profile-total-progress" class="mb-4 rounded-2xl border border-indigo-400/30 bg-indigo-500/10 p-4 text-sm text-white"></div>
       <div id="profile-learner-summary" class="mb-4 rounded-2xl border border-cyan-400/30 bg-cyan-500/10 p-4">
-        <p class="text-[10px] font-black tracking-[0.2em] text-cyan-300">LEARNER</p>
+        <p class="text-[10px] font-black tracking-[0.2em] text-cyan-300">わたしのプロフィール</p>
         <div class="mt-1 flex flex-wrap items-end justify-between gap-2">
           <strong id="profile-learner-name" class="text-lg text-white">学習者</strong>
           <span id="profile-learner-details" class="text-xs font-bold text-cyan-100"></span>
@@ -235,7 +283,7 @@
       <div id="profile-certificate-panel" class="mb-5 rounded-2xl border border-amber-400/30 bg-amber-500/10 p-4"></div>
 
       <div class="border-t border-slate-700 pt-4">
-        <p class="text-xs text-slate-400 mb-3">ローカル開発では名前ごとの学習データも切り替えられます。</p>
+        <p class="text-xs text-slate-400 mb-3">この端末では、名前ごとに学習きろくを分けられます。</p>
       
         <div class="space-y-3 mb-5">
         <div>
@@ -243,13 +291,13 @@
           <input id="user-name-input" type="text" placeholder="例: さくら, たいよう" class="w-full mt-1 px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white font-bold text-sm focus:outline-none focus:border-amber-500" />
         </div>
         <div class="flex gap-2">
-          <button id="user-login-confirm" class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-bold text-xs shadow-lg transition">ログイン・決定</button>
+          <button id="user-login-confirm" class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-bold text-xs shadow-lg transition">この名前でつづける</button>
         </div>
         </div>
       </div>
 
       <div class="border-t border-slate-800 pt-3">
-        <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">登録済みのお子さま一覧:</div>
+        <div class="text-[10px] font-bold text-slate-500 tracking-wider mb-2">この端末であそんだ人</div>
         <div id="user-profile-list" class="flex flex-wrap gap-2"></div>
       </div>
     </div>
@@ -271,21 +319,21 @@
       </div>
 
       <div class="mb-6 text-center">
-        <p class="text-xs font-bold tracking-[0.2em] text-indigo-300">LEARNING ENTRANCE</p>
-        <h2 id="learning-mode-title" class="mt-1 text-2xl font-black text-white">学習モードを選ぶ</h2>
-        <p id="learning-mode-description" class="mt-2 text-sm leading-6 text-slate-300">どの入り口から始めても、同じアカウントの Profile に結果が保存されます。</p>
+        <p class="text-xs font-bold tracking-[0.2em] text-indigo-300">きょうは、どうやってあそぶ？</p>
+        <h2 id="learning-mode-title" class="mt-1 text-2xl font-black text-white">はじめ方を選ぼう</h2>
+        <p id="learning-mode-description" class="mt-2 text-sm leading-6 text-slate-300">どちらを選んでも、がんばった記録は「わたしの学習きろく」に残るよ。</p>
       </div>
 
       <div id="learning-mode-choice-panel" class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <button id="grade-first-mode-btn" class="min-h-44 rounded-3xl border-2 border-indigo-400 bg-indigo-500/15 p-6 text-left transition hover:bg-indigo-500/25 focus:ring-4 focus:ring-indigo-300/40">
           <span class="text-4xl">🎒</span><span class="mt-3 block text-xl font-black text-white">学年から選ぶ</span>
-          <span class="mt-2 block text-sm leading-6 text-slate-200">従来の標準モード。小学1〜6年生を選び、その学年の教科と学習テーマへ進みます。</span>
-          <span class="mt-3 inline-block rounded-full bg-indigo-400/20 px-3 py-1 text-xs font-bold text-indigo-200">標準モード</span>
+          <span class="mt-2 block text-sm leading-6 text-slate-200">まず学年を選んで、その学年で学ぶ国語や算数などの星へ進むよ。</span>
+          <span class="mt-3 inline-block rounded-full bg-indigo-400/20 px-3 py-1 text-xs font-bold text-indigo-200">学校の学びにそって進む</span>
         </button>
         <button id="game-first-mode-btn" class="min-h-44 rounded-3xl border-2 border-cyan-400/60 bg-cyan-500/10 p-6 text-left transition hover:bg-cyan-500/20 focus:ring-4 focus:ring-cyan-300/40">
           <span class="text-4xl">🎮</span><span class="mt-3 block text-xl font-black text-white">ゲームから選ぶ</span>
-          <span class="mt-2 block text-sm leading-6 text-slate-200">遊びたいゲームを先に選び、そのゲームに対応する学年を選んで直接挑戦します。</span>
-          <span class="mt-3 inline-block rounded-full bg-cyan-400/20 px-3 py-1 text-xs font-bold text-cyan-200">独立ゲームモード</span>
+          <span class="mt-2 block text-sm leading-6 text-slate-200">好きなゲームを先に選んでから、挑戦したい学年を選ぶよ。</span>
+          <span class="mt-3 inline-block rounded-full bg-cyan-400/20 px-3 py-1 text-xs font-bold text-cyan-200">好きなゲームから始める</span>
         </button>
       </div>
 
@@ -299,6 +347,11 @@
         <div id="independent-game-selected" class="mb-4 rounded-2xl border border-cyan-400/30 bg-cyan-500/10 p-4"></div>
         <div id="independent-grade-list" class="grid grid-cols-2 sm:grid-cols-3 gap-3"></div>
       </div>
+
+      <section class="mt-7 rounded-2xl border border-white/10 bg-slate-950/45 p-4 text-left text-xs leading-6 text-slate-300" aria-label="PSES Gameについて">
+        <h2 class="text-sm font-black text-white">PSES Gameで学べること</h2>
+        <p class="mt-1">小学1年生から6年生までの国語・算数・理科・社会・生活・英語を、漢字、部首、計算、実験、地図、英語読解などのゲームで楽しく練習できます。</p>
+      </section>
     </div>
   </div>
 
@@ -315,7 +368,7 @@
           <div class="rounded-xl bg-black/25 p-3"><span class="block text-slate-400">授与日</span><strong id="graduation-issued-at" class="text-white"></strong></div>
         </div>
         <p id="graduation-reward" class="mt-5 font-black text-amber-300"></p>
-        <button id="graduation-close-btn" class="mt-6 min-h-14 rounded-2xl bg-gradient-to-r from-amber-400 to-yellow-300 px-8 font-black text-slate-950">証明書を Profile に保存して閉じる</button>
+        <button id="graduation-close-btn" class="mt-6 min-h-14 rounded-2xl bg-gradient-to-r from-amber-400 to-yellow-300 px-8 font-black text-slate-950">学習きろくにしまって閉じる</button>
       </div>
     </div>
   </div>
@@ -326,7 +379,7 @@
       <div class="flex items-center justify-between px-6 py-4 border-b border-slate-700">
         <div>
           <h2 id="game-type-title" class="text-base font-bold text-white">ゲームタイプを選ぶ</h2>
-          <p class="text-xs text-slate-300 mt-1">この学年と教科に合う内容だけを表示しています。</p>
+          <p class="text-xs text-slate-300 mt-1">この学年で楽しめるゲームを選んでね。</p>
         </div>
         <button id="game-type-close" type="button" class="w-10 h-10 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center justify-center">✕</button>
       </div>
@@ -342,7 +395,7 @@
           <span class="text-2xl">🎴</span>
           <div>
             <h2 class="text-base font-bold text-white"><ruby>国語<rt>こくご</rt></ruby> · <ruby>小学校<rt>しょうがっこう</rt></ruby> <ruby>漢字<rt>かんじ</rt></ruby>1,026<ruby>字<rt>じ</rt></ruby>チャレンジ</h2>
-            <p class="text-[10px] text-slate-400"><ruby>文部科学省<rt>もんぶかがくしょう</rt></ruby> <ruby>学年別漢字配当表<rt>がくねんべつかんじはいとうひょう</rt></ruby>（1年〜6年）<ruby>完全網羅<rt>かんぜんもうら</rt></ruby></p>
+            <p class="text-[10px] text-slate-400">1年生から6年生まで、学年に合った漢字に挑戦しよう</p>
           </div>
         </div>
         <button id="kanji-modal-close" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center">✕</button>
@@ -457,7 +510,7 @@
       <div class="p-6 overflow-y-auto custom-scroll space-y-6 flex-1">
         <div id="shop-items-container" class="space-y-4"></div>
         <div class="border-t border-slate-800 pt-4">
-          <h3 class="text-xs uppercase font-bold tracking-wider text-slate-400 mb-3"><ruby>報酬獲得<rt>ほうしゅうかくとく</rt></ruby> & <ruby>交換履歴元帳<rt>こうかんりれきもとちょう</rt></ruby> (Ledger)</h3>
+          <h3 class="text-xs font-bold tracking-wider text-slate-400 mb-3">コインをもらった・つかった記録</h3>
           <div id="ledger-records" class="space-y-2 max-h-40 overflow-y-auto custom-scroll text-xs"></div>
         </div>
       </div>
@@ -466,7 +519,7 @@
 
   <script type="module">
     import { GalaxyEngine } from './GalaxyEngine.js?v=6';
-    import { MiniGameModal, GAME_GRADE_SUPPORT_MAP } from './MiniGameSystem.js?v=3';
+    import { MiniGameModal, GAME_GRADE_SUPPORT_MAP } from './MiniGameSystem.js?v=4';
     import { EconomyManager, SHOP_CATALOG } from './EconomySystem.js?v=3';
     import { AntigravityAgentBrain, createObservationPayload } from './AgentIntegration.js?v=2';
     import { FULL_CURRICULUM_DAG, SUBJECT_METADATA, GRADES, loadCurriculumFromJSON, graphEngineInstance } from './CurriculumData.js?v=2';
@@ -474,10 +527,10 @@
     import { diagnoseAndRecommendFix } from './AgentQADiagnostics.js?v=2';
     import { getAudioSynthesizer } from './js/AudioSynthesizer.js';
     import { getFXSystem } from './js/FXSystem.js';
-    import { getErrorGuidanceSystem } from './js/ErrorGuidanceSystem.js';
+    import { getErrorGuidanceSystem } from './js/ErrorGuidanceSystem.js?v=3';
     import { AuthManager } from './src/auth/AuthManager.js?v=2';
     import { StorageAdapter } from './src/storage/StorageAdapter.js';
-    import { LearnerProfileModal, isLearnerProfileComplete, learnerGenderLabel } from './src/profile/LearnerProfile.js';
+    import { LearnerProfileModal, isLearnerProfileComplete, learnerGenderLabel } from './src/profile/LearnerProfile.js?v=3';
     import { calculateGradeProgress, createGraduationCertificate, ELEMENTARY_GRADUATION_ACHIEVEMENT_ID } from './ProgressionSystem.js';
 
     const storageAdapter = new StorageAdapter({ apiBase: '/api' });
@@ -606,7 +659,7 @@
 
       const mult = Math.min(2.0, 1.0 + economy.streak * 0.1);
       const est = Math.round(100 * (node.bloomDepth || 1.0) * mult);
-      document.getElementById('formula-display').innerText = `基礎 100 pt × 深度 ${(node.bloomDepth||1.0).toFixed(1)} × 連勝 ${mult.toFixed(1)} = ${est} pt (初回のみ)`;
+      document.getElementById('formula-display').innerText = `もらえるコインのめやす：${est}枚（はじめてのクリア）`;
 
       document.getElementById('m-node-grade').innerText = gradeStr;
       document.getElementById('m-node-subject').innerText = node.subject;
@@ -630,7 +683,7 @@
 
       const isAllCleared = clearedCount >= maxStages;
       const progressText = isAllCleared
-        ? `🏆 全 ${maxStages} 関門完全制覇！`
+        ? `🏆 ${maxStages}ステージ、ぜんぶクリア！`
         : `${clearedCount} / ${maxStages} クリア`;
 
       const gridPc = document.getElementById('node-stages-grid');
@@ -658,12 +711,12 @@
         if (pcPlayBtn) {
           pcPlayBtn.disabled = true;
           pcPlayBtn.classList.add('opacity-40', 'cursor-not-allowed', 'pointer-events-none');
-          pcPlayBtn.innerHTML = `⚠️ 小学${node.grade}年専用 (現在: 小学${currentActiveGrade}年)`;
+          pcPlayBtn.innerHTML = `小学${node.grade}年を選ぶとあそべるよ`;
         }
         if (mobilePlayBtn) {
           mobilePlayBtn.disabled = true;
           mobilePlayBtn.classList.add('opacity-40', 'cursor-not-allowed', 'pointer-events-none');
-          mobilePlayBtn.innerHTML = `⚠️ 小学${node.grade}年専用 (現在: 小学${currentActiveGrade}年)`;
+          mobilePlayBtn.innerHTML = `小学${node.grade}年を選ぶとあそべるよ`;
         }
       } else {
         if (pcPlayBtn) {
@@ -867,8 +920,8 @@
       learningModeChoicePanel.classList.add('grid');
       independentGamePanel.classList.add('hidden');
       independentGradePanel.classList.add('hidden');
-      learningModeTitle.textContent = '学習モードを選ぶ';
-      learningModeDescription.textContent = 'どの入り口から始めても、同じアカウントの Profile に結果が保存されます。';
+      learningModeTitle.textContent = 'はじめ方を選ぼう';
+      learningModeDescription.textContent = 'どちらを選んでも、がんばった記録は「わたしの学習きろく」に残るよ。';
     }
 
     function showLearningModeModal() {
@@ -889,7 +942,7 @@
       independentGradePanel.classList.add('hidden');
       independentGamePanel.classList.remove('hidden');
       learningModeTitle.textContent = 'ゲームを選ぶ';
-      learningModeDescription.textContent = 'ゲームを選ぶと、学習指導要領上で対応する学年だけが表示されます。';
+      learningModeDescription.textContent = '気になるゲームを選んでね。次に、そのゲームであそべる学年を選ぶよ。';
     }
 
     function launchIndependentGame(game, grade) {
@@ -914,8 +967,8 @@
     function showIndependentGradeList(game) {
       independentGamePanel.classList.add('hidden');
       independentGradePanel.classList.remove('hidden');
-      learningModeTitle.textContent = '対応学年を選ぶ';
-      learningModeDescription.textContent = `${game.name}に対応する学年から選択してください。`;
+      learningModeTitle.textContent = 'どの学年に挑戦する？';
+      learningModeDescription.textContent = `${game.name}であそびたい学年を選んでね。`;
       independentGameSelected.innerHTML = `<strong class="text-lg text-white">${game.icon} ${game.name}</strong><span class="mt-1 block text-sm text-slate-300">${game.description}</span>`;
       independentGradeList.innerHTML = '';
       game.grades.forEach((grade) => {
@@ -933,7 +986,7 @@
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'min-h-32 rounded-2xl border border-slate-600 bg-slate-800/80 p-4 text-left transition hover:border-cyan-400 hover:bg-cyan-500/15 focus:ring-4 focus:ring-cyan-300/40';
-      button.innerHTML = `<span class="text-2xl font-black text-cyan-200">${game.icon}</span><strong class="mt-2 block text-sm text-white">${game.name}</strong><span class="mt-1 block text-xs leading-5 text-slate-300">${game.description}</span><span class="mt-2 block text-[11px] font-bold text-cyan-300">対応：${game.grades.map(grade => `${grade}年`).join('・')}</span>`;
+      button.innerHTML = `<span class="text-2xl font-black text-cyan-200">${game.icon}</span><strong class="mt-2 block text-sm text-white">${game.name}</strong><span class="mt-1 block text-xs leading-5 text-slate-300">${game.description}</span><span class="mt-2 block text-[11px] font-bold text-cyan-300">あそべる学年：${game.grades.map(grade => `${grade}年`).join('・')}</span>`;
       button.addEventListener('click', () => showIndependentGradeList(game));
       independentGameList.appendChild(button);
     });
@@ -1019,7 +1072,7 @@
       document.getElementById('graduation-learner-name').textContent = `${certificate.learnerName} さん`;
       document.getElementById('graduation-certificate-number').textContent = certificate.certificateNumber;
       document.getElementById('graduation-issued-at').textContent = new Date(certificate.issuedAt).toLocaleDateString('ja-JP');
-      document.getElementById('graduation-reward').textContent = `成果報酬：スターコイン ${certificate.rewardCoins} 枚`;
+      document.getElementById('graduation-reward').textContent = `お祝いのスターコイン ${certificate.rewardCoins}枚をプレゼント！`;
       const modal = document.getElementById('graduation-modal');
       modal.classList.remove('hidden');
       modal.classList.add('flex');
@@ -1058,16 +1111,16 @@
       document.getElementById('profile-learner-details').textContent = `${learnerProfile.age}歳 · ${learnerGenderLabel(learnerProfile.gender)}`;
 
       document.getElementById('profile-total-progress').innerHTML = `
-        <div class="flex items-center justify-between gap-3"><strong class="text-base">全学年の学習進捗</strong><span class="font-black text-indigo-200">${completionRate}%</span></div>
+        <div class="flex items-center justify-between gap-3"><strong class="text-base">ぜんぶの学年のがんばり</strong><span class="font-black text-indigo-200">${completionRate}%</span></div>
         <div class="mt-2 h-3 overflow-hidden rounded-full bg-slate-950"><div class="h-full rounded-full bg-gradient-to-r from-indigo-500 to-cyan-400" style="width:${completionRate}%"></div></div>
-        <p class="mt-2 text-xs text-slate-300">${clearedStages} / ${totalStages} 関門クリア · 修了学年 ${completedGrades} / 6</p>`;
+        <p class="mt-2 text-xs text-slate-300">${totalStages}こ中 ${clearedStages}こクリア · 全部できた学年 ${completedGrades} / 6</p>`;
 
       document.getElementById('profile-grade-progress').innerHTML = progress.map(item => {
         const percent = Math.round(item.completionRate * 100);
         return `<section class="rounded-2xl border ${item.completed ? 'border-emerald-400/50 bg-emerald-500/10' : 'border-slate-700 bg-slate-950/60'} p-4">
           <div class="flex items-center justify-between"><strong class="text-white">小学${item.grade}年</strong><span class="text-xs font-bold ${item.completed ? 'text-emerald-300' : 'text-slate-300'}">${item.completed ? '修了' : `${percent}%`}</span></div>
-          <p class="mt-2 text-xs text-slate-300">関門 ${item.clearedStages} / ${item.totalStages} · 単元 ${item.nodeCount}</p>
-          <p class="mt-1 text-[11px] text-cyan-300">独立ゲームのクリア記録 ${independentResultCounts[item.grade]} 件</p>
+          <p class="mt-2 text-xs text-slate-300">チャレンジ ${item.clearedStages} / ${item.totalStages} · 学べるテーマ ${item.nodeCount}</p>
+          <p class="mt-1 text-[11px] text-cyan-300">好きなゲームからクリアした回数 ${independentResultCounts[item.grade]}回</p>
           <div class="mt-2 h-2 overflow-hidden rounded-full bg-slate-800"><div class="h-full rounded-full ${item.completed ? 'bg-emerald-400' : 'bg-indigo-400'}" style="width:${percent}%"></div></div>
         </section>`;
       }).join('');
@@ -1075,11 +1128,11 @@
       const certificate = getGraduationCertificate();
       const certificatePanel = document.getElementById('profile-certificate-panel');
       if (certificate) {
-        certificatePanel.innerHTML = `<div class="flex items-start justify-between gap-3"><div><p class="text-xs font-bold tracking-widest text-amber-300">ACHIEVEMENT</p><h3 class="mt-1 text-lg font-black text-white">${certificate.title}</h3><p class="mt-1 text-xs text-slate-300">証明番号 ${certificate.certificateNumber} · ${new Date(certificate.issuedAt).toLocaleDateString('ja-JP')}</p></div><button id="profile-view-certificate" class="min-h-11 rounded-xl bg-amber-300 px-4 text-xs font-black text-slate-950">表示</button></div>`;
+        certificatePanel.innerHTML = `<div class="flex items-start justify-between gap-3"><div><p class="text-xs font-bold tracking-widest text-amber-300">おめでとう！</p><h3 class="mt-1 text-lg font-black text-white">${certificate.title}</h3><p class="mt-1 text-xs text-slate-300">証明番号 ${certificate.certificateNumber} · ${new Date(certificate.issuedAt).toLocaleDateString('ja-JP')}</p></div><button id="profile-view-certificate" class="min-h-11 rounded-xl bg-amber-300 px-4 text-xs font-black text-slate-950">見る</button></div>`;
         document.getElementById('profile-view-certificate').addEventListener('click', () => showGraduationCertificate(certificate));
       } else {
         const remaining = Math.max(0, totalStages - clearedStages);
-        certificatePanel.innerHTML = `<p class="text-xs font-bold tracking-widest text-amber-300">GRADUATION GOAL</p><h3 class="mt-1 font-black text-white">小学校課程修了証</h3><p class="mt-1 text-xs leading-5 text-slate-300">全6学年の必修関門をクリアすると成果報酬を授与します。あと ${remaining} 関門です。</p>`;
+        certificatePanel.innerHTML = `<p class="text-xs font-bold tracking-widest text-amber-300">めざせ、全学年クリア！</p><h3 class="mt-1 font-black text-white">小学校課程修了証</h3><p class="mt-1 text-xs leading-5 text-slate-300">1〜6年生のチャレンジを全部クリアすると、修了証とお祝いコインがもらえるよ。あと ${remaining}こ！</p>`;
       }
     }
 
@@ -1088,7 +1141,7 @@
       document.getElementById('user-coins').innerText = economy.starCoins;
       document.getElementById('shop-coins-display').innerText = economy.starCoins;
       const mult = Math.min(2.0, 1.0 + economy.streak * 0.1).toFixed(1);
-      document.getElementById('streak-counter').innerText = `${economy.streak}連勝 (×${mult}倍)`;
+      document.getElementById('streak-counter').innerText = `${economy.streak}れんぞく正解 ×${mult}`;
 
       const ledgerBox = document.getElementById('ledger-records');
       ledgerBox.innerHTML = economy.ledger.map(tx => `
@@ -1135,7 +1188,7 @@
     window.buyItem = (id) => {
       const res = economy.purchaseItem(id);
       if (res.success) {
-        alert(`🎉 交換完了：【${res.item.title}】を獲得しました！`);
+        alert(`🎉 「${res.item.title}」と交換できたよ！`);
         updateEconomyUI();
       } else {
         alert(`⚠️ ${res.message}`);
@@ -1334,7 +1387,7 @@
       const choices = getGameTypeChoices(node);
       if (!choices.length) return;
       pendingGameLaunch = { node, stageNum };
-      gameTypeTitle.textContent = `小学${node.grade}年・${node.subject}：ゲームタイプを選ぶ`;
+      gameTypeTitle.textContent = `小学${node.grade}年・${node.subject}　どれであそぶ？`;
       gameTypeOptions.innerHTML = '';
       choices.forEach((choice) => {
         const button = document.createElement('button');

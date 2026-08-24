@@ -34,14 +34,14 @@ tools:
 - `DPR_HITBOX_OFFSET`：CSS座標、論理座標、物理ピクセルの混同によるタップ位置ずれ。
 - `CANVAS_MEMORY_LEAK`：ResizeObserver、requestAnimationFrame、DOMイベント、WebGL／2Dリソースの未解放。
 - `WORKER_CORS`：許可Origin、資格情報、プリフライト、`Vary: Origin`、エラーレスポンスのヘッダー欠落。
-- `SYNC_CONFLICT`／`R2_WRITE_STORM`：`updated_at` 競合解決、デバウンス欠落、関門精算の多重送信。
+- `SYNC_CONFLICT`／`D1_WRITE_STORM`：`updated_at` 競合解決、デバウンス欠落、関門精算の多重送信、D1バッチ失敗。
 
 ## クラウド・描画修復責任
 
 - `devicePixelRatio` を物理サイズだけに適用し、ゲーム計算は `getLogicalCanvasWidth/Height`、入力は `eventToCanvasPoint` に統一する。
 - `destroy()` でタイマー、RAF、イベント、ResizeObserver、Canvas/WebGLリソースを解放し、同じゲームを50回開閉してリスナー数とメモリが増え続けないことを確認する。
 - Worker の正常系と異常系で同一のCORS方針を適用し、ワイルドカードOriginと資格情報を併用しない。
-- 修正で認証を無効化したり、R2への直接公開URL、秘密鍵、元IP、元指紋を追加したりしない。
+- 修正で認証を無効化したり、D1を直接公開する経路、秘密鍵、元IP、元指紋を追加したりしない。
 
 ## 完了条件
 

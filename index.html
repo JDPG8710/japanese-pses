@@ -1355,7 +1355,16 @@
         nodeId: targetNodeId,
         masteryScore: Math.max(Number(economy.playerMastery[targetNodeId] || 0), Number(accuracy)),
         unlockedStatus: true,
-        profile: buildSynchronizedProfile()
+        profile: buildSynchronizedProfile(),
+        attempt: {
+          game_type: currentNode?.gameType || e.detail?.gameType || null,
+          grade: Number(currentNode?.grade || currentActiveGrade) || null,
+          score: Math.max(0, Number(score || 0)),
+          accuracy: Math.max(0, Math.min(1, Number(accuracy || 0))),
+          stars: Math.max(0, Math.min(3, Math.round(Number(accuracy || 0) * 3))),
+          completed: true,
+          details: { stageLevel, isFinalStage, isExam, durationMs }
+        }
       }).catch(error => console.warn('学習データの同期を再試行します。', error));
 
       updateEconomyUI();

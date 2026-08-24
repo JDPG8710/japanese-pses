@@ -32,7 +32,7 @@ await writeFile(indexPath, sourceIndex.replace(/\?v=\d+/g, `?v=${releaseId}`), '
 const files = await collectFiles(output);
 const totalBytes = (await Promise.all(files.map(file => stat(file)))).reduce((sum, info) => sum + info.size, 0);
 console.log(`ビルド完了: ${files.length}ファイル / ${totalBytes}バイト -> ${output}`);
-console.log('教材JSONは静的成果物に含めず、Cloudflare R2から配信します。');
+console.log('教材JSONは静的成果物に含めず、Cloudflare D1から配信します。');
 
 async function collectFiles(directory) {
   const entries = await readdir(directory, { withFileTypes: true });

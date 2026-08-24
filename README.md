@@ -12,7 +12,7 @@
 - 生活科の分類・場面判断ゲーム
 - 学習状況、スターコイン、クリア履歴のブラウザー保存
 - Googleログイン、Cloudflare Turnstile、端末ごと週2時間のゲスト体験
-- Cloudflare R2／KV と IndexedDB の双方向同期、オフライン学習
+- Cloudflare D1 と IndexedDB の双方向同期、オフライン学習
 - DPR 2〜3倍の Retina Canvas と論理座標補正による高精細な表示・タップ判定
 - 6種類の宇宙背景に加え、大樹や高層都市などを選べるテーマ機能
 - 音声合成、パーティクル、段階的なヒントによる子ども向けフィードバック
@@ -53,14 +53,14 @@ node tests/test_e2e_runner.js
 
 ## Cloudflareへビルド・公開
 
-本番では認証APIと静的ゲームを同じWorkerから配信し、教材JSONは非公開R2バケットから `/api/game-data/` 経由で読み込みます。`data/` はローカル開発と移行元として保持されますが、静的成果物には含まれません。
+本番では認証APIと静的ゲームを同じWorkerから配信し、教材、利用者、認証セッション、ゲスト制限、通過状況、挑戦履歴、卒業証は Cloudflare D1 を唯一のクラウドデータベースとして扱います。`data/` の JSON はローカル開発と D1 インポート元としてだけ保持され、静的成果物には含まれません。本番実行時は `/api/game-data/` が D1 を読み、JSON ファイルへフォールバックしません。
 
 ```powershell
 npm install
 npm run deploy
 ```
 
-このコマンドは全テスト、`dist/` 再構築、全教材JSONのR2アップロード、Worker配備を順番に実行します。OAuth JSONや秘密値は `secrets/`、`.dev.vars`、Cloudflare Worker Secretsだけに保存し、GitHubへコミットしません。
+このコマンドは全テスト、`dist/` 再構築、D1 マイグレーション、全教材の D1 インポート、Worker 配備を順番に実行します。OAuth JSONや秘密値は `secrets/`、`.dev.vars`、Cloudflare Worker Secretsだけに保存し、GitHubへコミットしません。
 
 個別の検証方法と対象範囲は [TEST_INFRA.md](TEST_INFRA.md) と [TEST_READY.md](TEST_READY.md) を参照してください。
 
@@ -74,9 +74,10 @@ npm run deploy
 - `data/`：漢字、教科、都道府県、英語などの教材データ
 - `.agents/agents/`：製品管理、設計、品質保証、修復、知識グラフ管理の役割定義
 - `tests/`：単体・統合・回帰テスト
-- `worker/`：Cloudflare Worker の認証、ゲスト制限、KV／R2 API
+- `migrations/`：Cloudflare D1 の教材、認証、利用者、進捗、挑戦履歴、卒業証スキーマ
+- `worker/`：Cloudflare Worker の認証、ゲスト制限、D1 API
 - `src/auth/`：ログインモーダル、Turnstile、ゲスト体験、不可逆端末ハッシュ
-- `src/storage/`：IndexedDB と R2 の競合解決・一括同期
+- `src/storage/`：IndexedDB オフラインキャッシュと D1 の競合解決・一括同期
 - `src/render/`：全Canvas共通の高DPIレンダラー
 
 Cloudflare への配備と秘密値の登録は [worker/README.md](worker/README.md) を参照してください。ローカルホストでは認証を要求せず、自動的にオフライン開発モードへ切り替わります。

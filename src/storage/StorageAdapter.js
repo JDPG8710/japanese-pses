@@ -1,7 +1,7 @@
 import { isLocalDevelopmentHost } from '../runtime/LocalEnvironment.js';
 
 const DB_NAME = 'japanese-pses-learning';
-const DB_VERSION = 4;
+const DB_VERSION = 5;
 const SYNC_INTERVAL_MS = 60_000;
 
 export class StorageAdapter extends EventTarget {
@@ -17,7 +17,8 @@ export class StorageAdapter extends EventTarget {
       node_progress: new Map(),
       guest_tracker: new Map(),
       star_graph_cache: new Map(),
-      content_cache: new Map()
+      content_cache: new Map(),
+      game_attempts: new Map()
     };
     this.syncTimer = null;
     this.syncInFlight = null;
@@ -55,6 +56,20 @@ export class StorageAdapter extends EventTarget {
     return record;
   }
 
+  async saveGameAttempt(attempt) {
+    if (!attempt?.node_id) throw new TypeError('node_id is required');
+    const owner = attempt.user_id || this.userId || 'local';
+    const record = {
+      ...attempt,
+      attempt_id: attempt.attempt_id || createAttemptId(),
+      user_id: owner,
+      attempted_at: Number(attempt.attempted_at) || Date.now()
+    };
+    await this.put('game_attempts', record);
+    this.markDirty();
+    return record;
+  }
+
   async getGuestTracker(fingerprintHash) { return this.get('guest_tracker', fingerprintHash); }
 
   async saveGuestTracker(record) {
@@ -86,9 +101,19 @@ export class StorageAdapter extends EventTarget {
   async getLocalSnapshot() {
     const profiles = await this.getAll('user_profile');
     const allNodeProgress = await this.getAll('node_progress');
+    const allAttempts = await this.getAll('game_attempts');
     const profile = this.userId ? profiles.find(item => item.user_id === this.userId) || null : profiles[0] || null;
     const nodeProgress = this.userId ? allNodeProgress.filter(node => node.user_id === this.userId) : [];
-    return { version: 1, userId: this.userId, updatedAt: Math.max(0, Number(profile?.updated_at || 0), ...nodeProgress.map(node => Number(node.updated_at || 0))), profile, nodeProgress };
+    const attempts = this.userId ? allAttempts.filter(attempt => attempt.user_id === this.userId) : [];
+    return {
+      version: 2,
+      storage: 'indexeddb-cache',
+      userId: this.userId,
+      updatedAt: Math.max(0, Number(profile?.updated_at || 0), ...nodeProgress.map(node => Number(node.updated_at || 0)), ...attempts.map(attempt => Number(attempt.attempted_at || 0))),
+      profile,
+      nodeProgress,
+      attempts
+    };
   }
 
   markDirty() {
@@ -97,10 +122,18 @@ export class StorageAdapter extends EventTarget {
     if (this.cloudEnabled && !this.localMode) this.syncTimer = setTimeout(() => this.syncNow('debounced').catch(() => {}), SYNC_INTERVAL_MS);
   }
 
-  async reportStageClear({ nodeId, masteryScore, unlockedStatus = true, profile = null }) {
+  async reportStageClear({ nodeId, masteryScore, unlockedStatus = true, profile = null, attempt = null }) {
     const now = Date.now();
     if (profile) await this.saveProfile({ ...profile, updated_at: now });
-    await this.saveNodeProgress({ node_id: nodeId, mastery_score: masteryScore, unlocked_status: unlockedStatus, updated_at: now });
+    await this.saveNodeProgress({
+      node_id: nodeId,
+      mastery_score: masteryScore,
+      unlocked_status: unlockedStatus,
+      highest_score: Math.max(0, Number(attempt?.score || 0)),
+      completed_at: attempt?.completed === false ? null : now,
+      updated_at: now
+    });
+    if (attempt) await this.saveGameAttempt({ ...attempt, node_id: nodeId, completed: attempt.completed !== false, attempted_at: now });
     return this.syncNow('stage-clear');
   }
 
@@ -114,7 +147,7 @@ export class StorageAdapter extends EventTarget {
 
   async performSync(reason) {
     const local = await this.getLocalSnapshot();
-    let remote = { version: 1, userId: this.userId, updatedAt: 0, profile: null, nodeProgress: [] };
+    let remote = { version: 2, storage: 'cloudflare-d1', userId: this.userId, updatedAt: 0, profile: null, nodeProgress: [] };
     const read = await this.fetchImpl(`${this.apiBase}/state`, { credentials: 'include', headers: { accept: 'application/json' } });
     if (read.ok) remote = await read.json();
     else if (read.status !== 404) throw new Error(`State read failed: ${read.status}`);
@@ -123,11 +156,12 @@ export class StorageAdapter extends EventTarget {
     if (this.dirty || merged.updatedAt > Number(remote.updatedAt || 0)) {
       const write = await this.fetchImpl(`${this.apiBase}/state`, {
         method: 'PUT', credentials: 'include', headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ ...merged, syncReason: reason })
+        body: JSON.stringify({ ...merged, attempts: local.attempts || [], syncReason: reason })
       });
       if (!write.ok) throw new Error(`State write failed: ${write.status}`);
       const result = await write.json();
       if (result.state) await this.persistSnapshot(result.state);
+      for (const attempt of local.attempts || []) await this.delete('game_attempts', attempt.attempt_id);
     }
     this.dirty = false;
     this.dispatchEvent(new CustomEvent('sync-complete', { detail: { reason, state: merged } }));
@@ -158,11 +192,17 @@ export class StorageAdapter extends EventTarget {
       node_progress: 'progress_key',
       guest_tracker: 'fingerprint_hash',
       star_graph_cache: 'cache_key',
-      content_cache: 'content_key'
+      content_cache: 'content_key',
+      game_attempts: 'attempt_id'
     }[store];
     if (!this.db) { this.memory[store].set(value[keyPath], structuredCloneSafe(value)); return value; }
     await idbRequest(this.db.transaction(store, 'readwrite').objectStore(store).put(value));
     return value;
+  }
+
+  async delete(store, key) {
+    if (!this.db) { this.memory[store].delete(key); return; }
+    await idbRequest(this.db.transaction(store, 'readwrite').objectStore(store).delete(key));
   }
 
   destroy() {
@@ -180,7 +220,7 @@ export function mergeSnapshots(local, remote, userId) {
     if (!previous || Number(node.updated_at || 0) >= Number(previous.updated_at || 0)) nodes.set(node.node_id, structuredCloneSafe(node));
   }
   const profile = Number(local?.profile?.updated_at || 0) >= Number(remote?.profile?.updated_at || 0) ? local?.profile : remote?.profile;
-  return { version: 1, userId, updatedAt: Math.max(Number(local?.updatedAt || 0), Number(remote?.updatedAt || 0)), profile: profile || null, nodeProgress: [...nodes.values()] };
+  return { version: 2, storage: 'cloudflare-d1', userId, updatedAt: Math.max(Number(local?.updatedAt || 0), Number(remote?.updatedAt || 0)), profile: profile || null, nodeProgress: [...nodes.values()] };
 }
 
 function openDatabase() {
@@ -195,6 +235,7 @@ function openDatabase() {
       if (!db.objectStoreNames.contains('guest_tracker')) db.createObjectStore('guest_tracker', { keyPath: 'fingerprint_hash' });
       if (!db.objectStoreNames.contains('star_graph_cache')) db.createObjectStore('star_graph_cache', { keyPath: 'cache_key' });
       if (!db.objectStoreNames.contains('content_cache')) db.createObjectStore('content_cache', { keyPath: 'content_key' });
+      if (!db.objectStoreNames.contains('game_attempts')) db.createObjectStore('game_attempts', { keyPath: 'attempt_id' });
     };
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
@@ -205,3 +246,4 @@ function openDatabase() {
 function idbRequest(request) { return new Promise((resolve, reject) => { request.onsuccess = () => resolve(request.result ?? null); request.onerror = () => reject(request.error); }); }
 function structuredCloneSafe(value) { return typeof structuredClone === 'function' ? structuredClone(value) : JSON.parse(JSON.stringify(value)); }
 function isSafeContentFileName(fileName) { return typeof fileName === 'string' && /^[a-z0-9_\-]+\.json$/i.test(fileName); }
+function createAttemptId() { return globalThis.crypto?.randomUUID?.() || `attempt-${Date.now()}-${Math.random().toString(36).slice(2)}`; }

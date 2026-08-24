@@ -32,7 +32,7 @@ async function routeRequest(request, env) {
   const url = new URL(request.url);
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: corsHeaders(request, env) });
 
-  if (url.pathname === '/api/health') return json({ ok: true, service: 'japanese-pses' }, 200, request, env);
+  if (url.pathname === '/api/health') return handleHealth(request, env);
   if (url.pathname === '/api/auth/turnstile-verify' && request.method === 'POST') return handleTurnstile(request, env);
   if (url.pathname === '/api/auth/google') return handleOAuth('google', request, env);
   if (url.pathname === '/api/auth/apple') return handleOAuth('apple', request, env);
@@ -45,6 +45,12 @@ async function routeRequest(request, env) {
   if (url.pathname === '/api/state' && request.method === 'GET') return handleStateRead(request, env);
   if (url.pathname === '/api/state' && request.method === 'PUT') return handleStateWrite(request, env);
   return json({ error: 'NOT_FOUND' }, 404, request, env);
+}
+
+async function handleHealth(request, env) {
+  const database = requiredDatabase(env);
+  const result = await database.prepare('SELECT 1 AS ready').first();
+  return json({ ok: result?.ready === 1, service: 'japanese-pses', database: 'cloudflare-d1' }, 200, request, env);
 }
 
 async function handleTurnstile(request, env) {
@@ -86,7 +92,15 @@ async function handleOAuth(provider, request, env) {
   const nonce = randomToken(32);
   const verifier = randomToken(48);
   const redirectUri = oauthRedirectUri(provider, request, env);
-  await env.SESSION_KV.put(`oauth:${state}`, JSON.stringify({ provider, nonce, verifier, redirectUri, createdAt: Date.now() }), { expirationTtl: OAUTH_TTL_SECONDS });
+  const now = Date.now();
+  const database = requiredDatabase(env);
+  await database.batch([
+    database.prepare('DELETE FROM oauth_transactions WHERE expires_at <= ?1').bind(now),
+    database.prepare(`INSERT INTO oauth_transactions
+      (state, provider, nonce, verifier, redirect_uri, created_at, expires_at)
+      VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)`)
+      .bind(state, provider, nonce, verifier, redirectUri, now, now + OAUTH_TTL_SECONDS * 1000)
+  ]);
 
   const params = provider === 'google'
     ? new URLSearchParams({
@@ -105,11 +119,15 @@ async function handleOAuth(provider, request, env) {
 async function finishOAuth(provider, request, env, callback) {
   const state = callback.state;
   const cookieState = parseCookies(request.headers.get('Cookie') || '').oauth_state;
-  const oauth = state ? await env.SESSION_KV.get(`oauth:${state}`, 'json') : null;
+  const database = requiredDatabase(env);
+  const oauth = state
+    ? await database.prepare(`SELECT provider, nonce, verifier, redirect_uri AS redirectUri
+        FROM oauth_transactions WHERE state = ?1 AND expires_at > ?2 LIMIT 1`).bind(state, Date.now()).first()
+    : null;
   if (!state || !constantTimeEqual(state, cookieState || '') || !oauth || oauth.provider !== provider) {
     return oauthFailureRedirect(env, 'invalid_state');
   }
-  await env.SESSION_KV.delete(`oauth:${state}`);
+  await database.prepare('DELETE FROM oauth_transactions WHERE state = ?1').bind(state).run();
   if (callback.error || !callback.code) return oauthFailureRedirect(env, callback.error || 'missing_code');
 
   const tokenBody = new URLSearchParams({
@@ -134,7 +152,7 @@ async function finishOAuth(provider, request, env, callback) {
   const displayName = provider === 'apple'
     ? parseAppleName(callback.user) || claims.email?.split('@')[0] || 'Appleユーザー'
     : claims.name || claims.email?.split('@')[0] || 'Googleユーザー';
-  const session = await createSession({ id: userId, provider, displayName, email: claims.email || null }, env);
+  const session = await createSession({ id: userId, provider, providerSubject: claims.sub, displayName, email: claims.email || null }, env);
   const target = new URL(env.APP_ORIGIN || new URL(request.url).origin);
   target.searchParams.set('auth', 'success');
   return new Response(null, { status: 302, headers: { location: target.toString(), 'Set-Cookie': sessionCookie(session.token, request, env), 'cache-control': 'no-store' } });
@@ -164,10 +182,30 @@ async function verifyProviderIdToken(idToken, provider, expectedNonce, env) {
 
 async function createSession(user, env) {
   const nowSeconds = Math.floor(Date.now() / 1000);
+  const now = nowSeconds * 1000;
   const jti = randomToken(24);
   const payload = { sub: user.id, provider: user.provider, iat: nowSeconds, exp: nowSeconds + SESSION_TTL_SECONDS, jti };
   const token = await signJwt(payload, requiredEnv(env, 'JWT_SECRET'));
-  await env.SESSION_KV.put(`session:${jti}`, JSON.stringify({ userId: user.id, expires: payload.exp * 1000, user }), { expirationTtl: SESSION_TTL_SECONDS });
+  const database = requiredDatabase(env);
+  await database.batch([
+    database.prepare(`INSERT INTO users
+      (user_id, display_name, email, primary_provider, status, created_at, updated_at, last_login_at)
+      VALUES (?1, ?2, ?3, ?4, 'ACTIVE', ?5, ?5, ?5)
+      ON CONFLICT(user_id) DO UPDATE SET display_name=excluded.display_name, email=excluded.email,
+        primary_provider=excluded.primary_provider, updated_at=excluded.updated_at,
+        last_login_at=excluded.last_login_at, status='ACTIVE'`)
+      .bind(user.id, user.displayName, user.email, user.provider, now),
+    database.prepare(`INSERT INTO oauth_accounts
+      (provider, provider_subject, user_id, provider_email, created_at, last_login_at)
+      VALUES (?1, ?2, ?3, ?4, ?5, ?5)
+      ON CONFLICT(provider, provider_subject) DO UPDATE SET user_id=excluded.user_id,
+        provider_email=excluded.provider_email, last_login_at=excluded.last_login_at`)
+      .bind(user.provider, user.providerSubject, user.id, user.email, now),
+    database.prepare(`INSERT INTO auth_sessions (jti, user_id, provider, created_at, expires_at, revoked_at)
+      VALUES (?1, ?2, ?3, ?4, ?5, NULL)`)
+      .bind(jti, user.id, user.provider, now, payload.exp * 1000),
+    database.prepare('DELETE FROM auth_sessions WHERE expires_at <= ?1 OR revoked_at IS NOT NULL').bind(now)
+  ]);
   return { token, payload };
 }
 
@@ -178,8 +216,14 @@ async function authenticate(request, env) {
   if (!token) return null;
   try {
     const payload = await verifyJwt(token, requiredEnv(env, 'JWT_SECRET'));
-    const live = await env.SESSION_KV.get(`session:${payload.jti}`, 'json');
-    return live && live.userId === payload.sub && live.expires > Date.now() ? { ...payload, user: live.user } : null;
+    const live = await requiredDatabase(env).prepare(`SELECT s.user_id AS userId, s.expires_at AS expires,
+      u.primary_provider AS provider, u.display_name AS displayName, u.email
+      FROM auth_sessions s JOIN users u ON u.user_id = s.user_id
+      WHERE s.jti = ?1 AND s.revoked_at IS NULL AND s.expires_at > ?2 AND u.status = 'ACTIVE' LIMIT 1`)
+      .bind(payload.jti, Date.now()).first();
+    return live && live.userId === payload.sub
+      ? { ...payload, user: { id: live.userId, provider: live.provider, displayName: live.displayName, email: live.email || null } }
+      : null;
   } catch {
     return null;
   }
@@ -194,7 +238,7 @@ async function handleSession(request, env) {
 
 async function handleLogout(request, env) {
   const session = await authenticate(request, env);
-  if (session) await env.SESSION_KV.delete(`session:${session.jti}`);
+  if (session) await requiredDatabase(env).prepare('UPDATE auth_sessions SET revoked_at = ?1 WHERE jti = ?2').bind(Date.now(), session.jti).run();
   return json({ success: true }, 200, request, env, { 'Set-Cookie': expiredSessionCookie(request, env) });
 }
 
@@ -203,9 +247,10 @@ async function handleGuestStart(request, env) {
   const turnstile = await verifyTurnstile(body['cf-turnstile-response'] || body.turnstileToken, request, env, 'access');
   if (!turnstile.success) return json({ error: 'TURNSTILE_FAILED' }, 400, request, env);
   const key = await guestKey(body.fingerprintHash, request, env);
-  const existing = await env.GUEST_KV.get(key, 'json');
+  const database = requiredDatabase(env);
+  const existing = guestRecordFromRow(await database.prepare('SELECT * FROM guest_trials WHERE guest_key = ?1 LIMIT 1').bind(key).first());
   if (isCurrentGuestRecord(existing)) return json({ allowed: false, status: guestStatus(existing), ...guestRecordResponse(existing) }, 403, request, env);
-  if (existing) await env.GUEST_KV.delete(key);
+  if (existing) await database.prepare('DELETE FROM guest_trials WHERE guest_key = ?1').bind(key).run();
   const startTime = Date.now();
   const record = {
     policyVersion: GUEST_POLICY_VERSION,
@@ -214,22 +259,26 @@ async function handleGuestStart(request, env) {
     expiresAt: startTime + GUEST_DURATION_MS,
     blockExpiresAt: startTime + GUEST_TTL_SECONDS * 1000
   };
-  await env.GUEST_KV.put(key, JSON.stringify(record), { expirationTtl: GUEST_TTL_SECONDS });
+  await database.prepare(`INSERT INTO guest_trials
+    (guest_key, policy_version, status, start_time, expires_at, block_expires_at, created_at, updated_at)
+    VALUES (?1, ?2, 'ACTIVE', ?3, ?4, ?5, ?3, ?3)`)
+    .bind(key, record.policyVersion, record.startTime, record.expiresAt, record.blockExpiresAt).run();
   return json({ allowed: true, ...guestRecordResponse(record) }, 201, request, env);
 }
 
 async function handleGuestStatus(request, env) {
   const body = await readJson(request);
   const key = await guestKey(body.fingerprintHash, request, env);
-  const record = await env.GUEST_KV.get(key, 'json');
+  const database = requiredDatabase(env);
+  const record = guestRecordFromRow(await database.prepare('SELECT * FROM guest_trials WHERE guest_key = ?1 LIMIT 1').bind(key).first());
   if (!isCurrentGuestRecord(record)) {
-    if (record) await env.GUEST_KV.delete(key);
+    if (record) await database.prepare('DELETE FROM guest_trials WHERE guest_key = ?1').bind(key).run();
     return json({ allowed: true, status: 'AVAILABLE', policyVersion: GUEST_POLICY_VERSION, allowanceMs: GUEST_DURATION_MS }, 200, request, env);
   }
   const status = guestStatus(record);
   if (status !== record.status) {
-    const remainingTtl = Math.max(60, Math.ceil((Number(record.blockExpiresAt) - Date.now()) / 1000));
-    await env.GUEST_KV.put(key, JSON.stringify({ ...record, status }), { expirationTtl: remainingTtl });
+    await database.prepare('UPDATE guest_trials SET status = ?1, updated_at = ?2 WHERE guest_key = ?3')
+      .bind(status, Date.now(), key).run();
   }
   return json({ allowed: status === 'ACTIVE', status, ...guestRecordResponse(record) }, 200, request, env);
 }
@@ -260,11 +309,21 @@ function guestRecordResponse(record) {
   };
 }
 
+function guestRecordFromRow(row) {
+  if (!row) return null;
+  return {
+    policyVersion: Number(row.policy_version),
+    status: row.status,
+    startTime: Number(row.start_time),
+    expiresAt: Number(row.expires_at),
+    blockExpiresAt: Number(row.block_expires_at)
+  };
+}
+
 async function handleStarGraph(request, env) {
-  const object = await env.GAME_DATA_R2.get('game-data/subjects_curriculum.json')
-    || await env.GAME_DATA_R2.get('star_graph.json');
-  if (!object) return json({ error: 'STAR_GRAPH_NOT_FOUND' }, 404, request, env);
-  return r2JsonResponse(object, request, env, 300);
+  const document = await readContentDocument(requiredDatabase(env), 'subjects_curriculum.json');
+  if (!document) return json({ error: 'STAR_GRAPH_NOT_FOUND' }, 404, request, env);
+  return d1DocumentResponse(document, request, env, 300);
 }
 
 async function handleGameData(request, env) {
@@ -275,28 +334,37 @@ async function handleGameData(request, env) {
   let fileName;
   try { fileName = decodeURIComponent(encodedName); } catch { throw new HttpError(400, 'INVALID_GAME_DATA_FILE'); }
   if (!GAME_DATA_FILES.includes(fileName)) return json({ error: 'GAME_DATA_NOT_FOUND' }, 404, request, env);
-  const object = await env.GAME_DATA_R2.get(`game-data/${fileName}`);
-  if (!object) return json({ error: 'GAME_DATA_NOT_FOUND' }, 404, request, env);
-  return r2JsonResponse(object, request, env, fileName === 'manifest.json' ? 60 : 300);
+  const document = await readContentDocument(requiredDatabase(env), fileName);
+  if (!document) return json({ error: 'GAME_DATA_NOT_FOUND' }, 404, request, env);
+  return d1DocumentResponse(document, request, env, fileName === 'manifest.json' ? 60 : 300);
 }
 
-function r2JsonResponse(object, request, env, maxAge) {
+async function readContentDocument(database, documentKey) {
+  const metadata = await database.prepare(`SELECT document_key, etag, content_type, byte_size, chunk_count
+    FROM content_documents WHERE document_key = ?1 LIMIT 1`).bind(documentKey).first();
+  if (!metadata) return null;
+  const chunkResult = await database.prepare(`SELECT content_chunk FROM content_document_chunks
+    WHERE document_key = ?1 ORDER BY chunk_index ASC`).bind(documentKey).all();
+  const body = (chunkResult.results || []).map(row => row.content_chunk).join('');
+  if (!body) throw new HttpError(503, 'CONTENT_NOT_READY');
+  return { ...metadata, body };
+}
+
+function d1DocumentResponse(document, request, env, maxAge) {
   const headers = corsHeaders(request, env);
-  headers.set('content-type', object.httpMetadata?.contentType || 'application/json; charset=utf-8');
-  if (object.httpEtag) headers.set('etag', object.httpEtag);
+  headers.set('content-type', document.content_type || 'application/json; charset=utf-8');
+  if (document.etag) headers.set('etag', document.etag);
   headers.set('cache-control', `public, max-age=${maxAge}, stale-while-revalidate=86400`);
-  if (object.httpEtag && request.headers.get('if-none-match') === object.httpEtag) {
+  if (document.etag && request.headers.get('if-none-match') === document.etag) {
     return new Response(null, { status: 304, headers });
   }
-  return new Response(object.body, { headers });
+  return new Response(document.body, { headers });
 }
 
 async function handleStateRead(request, env) {
   const session = await authenticate(request, env);
   if (!session) return json({ error: 'UNAUTHORIZED' }, 401, request, env);
-  const object = await env.GAME_DATA_R2.get(userStateKey(session.sub));
-  if (!object) return json({ version: 1, userId: session.sub, updatedAt: 0, profile: null, nodeProgress: [] }, 200, request, env);
-  return json(await object.json(), 200, request, env, object.httpEtag ? { etag: object.httpEtag } : {});
+  return json(await readUserState(requiredDatabase(env), session.sub), 200, request, env);
 }
 
 async function handleStateWrite(request, env) {
@@ -304,16 +372,92 @@ async function handleStateWrite(request, env) {
   if (!session) return json({ error: 'UNAUTHORIZED' }, 401, request, env);
   const incoming = await readJson(request);
   validateGameState(incoming);
-  const key = userStateKey(session.sub);
-  const existingObject = await env.GAME_DATA_R2.get(key);
-  const existing = existingObject ? await existingObject.json() : null;
+  const database = requiredDatabase(env);
+  const existing = await readUserState(database, session.sub);
   const merged = mergeGameState(existing, incoming, session.sub);
-  await env.GAME_DATA_R2.put(key, JSON.stringify(merged), { httpMetadata: { contentType: 'application/json' }, customMetadata: { userId: session.sub, updatedAt: String(merged.updatedAt) } });
+  const statements = [];
+  if (merged.profile) {
+    const profile = merged.profile;
+    statements.push(database.prepare(`INSERT INTO user_profiles
+      (user_id, star_coins, cleared_nodes_json, cleared_stages_json, achievements_json, inventory_json, profile_json, updated_at)
+      VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
+      ON CONFLICT(user_id) DO UPDATE SET star_coins=excluded.star_coins,
+        cleared_nodes_json=excluded.cleared_nodes_json, cleared_stages_json=excluded.cleared_stages_json,
+        achievements_json=excluded.achievements_json, inventory_json=excluded.inventory_json,
+        profile_json=excluded.profile_json, updated_at=excluded.updated_at`)
+      .bind(session.sub, Math.max(0, Number(profile.star_coins || 0)), jsonText(profile.cleared_nodes, []),
+        jsonText(profile.cleared_stages, {}), jsonText(profile.achievements, []), jsonText(profile.inventory, []),
+        JSON.stringify(profile), Number(profile.updated_at || merged.updatedAt)));
+    const graduation = (profile.achievements || []).find(item => item?.id === 'ELEMENTARY_GRADUATION_CERTIFICATE');
+    if (graduation?.certificateNumber) {
+      statements.push(database.prepare(`INSERT INTO graduation_awards
+        (user_id, certificate_id, reward_coins, issued_at, payload_json)
+        VALUES (?1, ?2, ?3, ?4, ?5)
+        ON CONFLICT(user_id) DO NOTHING`)
+        .bind(session.sub, graduation.certificateNumber, Math.max(0, Number(graduation.rewardCoins || 1000)),
+          Number(new Date(graduation.issuedAt).getTime()) || Date.now(), JSON.stringify(graduation)));
+    }
+  }
+  for (const node of merged.nodeProgress || []) {
+    statements.push(database.prepare(`INSERT INTO node_progress
+      (user_id, node_id, mastery_score, unlocked_status, highest_score, completed_at, updated_at)
+      VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
+      ON CONFLICT(user_id, node_id) DO UPDATE SET mastery_score=excluded.mastery_score,
+        unlocked_status=excluded.unlocked_status, highest_score=MAX(node_progress.highest_score, excluded.highest_score),
+        completed_at=COALESCE(node_progress.completed_at, excluded.completed_at), updated_at=excluded.updated_at
+      WHERE excluded.updated_at >= node_progress.updated_at`)
+      .bind(session.sub, node.node_id, clamp(Number(node.mastery_score || 0), 0, 1), node.unlocked_status ? 1 : 0,
+        Math.max(0, Number(node.highest_score || 0)), node.completed_at || null, Number(node.updated_at || merged.updatedAt)));
+  }
+  for (const attempt of incoming.attempts || []) {
+    statements.push(database.prepare(`INSERT OR IGNORE INTO game_attempts
+      (attempt_id, user_id, node_id, game_type, grade, score, accuracy, stars, completed, details_json, attempted_at)
+      VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)`)
+      .bind(attempt.attempt_id || randomToken(18), session.sub, attempt.node_id, attempt.game_type || null,
+        attempt.grade || null, Math.max(0, Number(attempt.score || 0)), clamp(Number(attempt.accuracy || 0), 0, 1),
+        clamp(Math.trunc(Number(attempt.stars || 0)), 0, 3), attempt.completed ? 1 : 0,
+        JSON.stringify(attempt.details || {}), Number(attempt.attempted_at || Date.now())));
+  }
+  if (statements.length) await database.batch(statements);
   return json({ success: true, state: merged }, 200, request, env);
+}
+
+async function readUserState(database, userId) {
+  const profileRow = await database.prepare('SELECT * FROM user_profiles WHERE user_id = ?1 LIMIT 1').bind(userId).first();
+  const progressResult = await database.prepare(`SELECT node_id, mastery_score, unlocked_status,
+    highest_score, completed_at, updated_at FROM node_progress WHERE user_id = ?1 ORDER BY updated_at ASC`).bind(userId).all();
+  const profile = profileRow ? {
+    ...parseJson(profileRow.profile_json, {}),
+    user_id: userId,
+    star_coins: Number(profileRow.star_coins),
+    cleared_nodes: parseJson(profileRow.cleared_nodes_json, []),
+    cleared_stages: parseJson(profileRow.cleared_stages_json, {}),
+    achievements: parseJson(profileRow.achievements_json, []),
+    inventory: parseJson(profileRow.inventory_json, []),
+    updated_at: Number(profileRow.updated_at)
+  } : null;
+  const nodeProgress = (progressResult.results || []).map(row => ({
+    user_id: userId,
+    node_id: row.node_id,
+    mastery_score: Number(row.mastery_score),
+    unlocked_status: Boolean(row.unlocked_status),
+    highest_score: Number(row.highest_score),
+    completed_at: row.completed_at == null ? null : Number(row.completed_at),
+    updated_at: Number(row.updated_at)
+  }));
+  return {
+    version: 2,
+    storage: 'cloudflare-d1',
+    userId,
+    updatedAt: Math.max(0, Number(profile?.updated_at || 0), ...nodeProgress.map(node => node.updated_at)),
+    profile,
+    nodeProgress
+  };
 }
 
 function validateGameState(state) {
   if (!state || typeof state !== 'object' || (state.nodeProgress && !Array.isArray(state.nodeProgress))) throw new HttpError(400, 'INVALID_GAME_STATE');
+  if (state.attempts && !Array.isArray(state.attempts)) throw new HttpError(400, 'INVALID_GAME_ATTEMPTS');
   if (JSON.stringify(state).length > 1_000_000) throw new HttpError(413, 'GAME_STATE_TOO_LARGE');
 }
 
@@ -325,10 +469,9 @@ function mergeGameState(existing, incoming, userId) {
     if (!prior || Number(node.updated_at || 0) >= Number(prior.updated_at || 0)) nodes.set(node.node_id, node);
   }
   const profile = Number(incoming.profile?.updated_at || 0) >= Number(existing?.profile?.updated_at || 0) ? incoming.profile : existing?.profile;
-  return { version: 1, userId, updatedAt: Math.max(Date.now(), Number(existing?.updatedAt || 0), Number(incoming.updatedAt || 0)), profile: profile || null, nodeProgress: [...nodes.values()] };
+  return { version: 2, storage: 'cloudflare-d1', userId, updatedAt: Math.max(Date.now(), Number(existing?.updatedAt || 0), Number(incoming.updatedAt || 0)), profile: profile || null, nodeProgress: [...nodes.values()] };
 }
 
-function userStateKey(userId) { return `users/${encodeURIComponent(userId)}/game_state.json`; }
 function oauthRedirectUri(provider, request, env) { return `${env.API_ORIGIN || new URL(request.url).origin}/api/auth/${provider}`; }
 function oauthFailureRedirect(env, reason) { const url = new URL(env.APP_ORIGIN); url.searchParams.set('auth', 'error'); url.searchParams.set('reason', reason); return new Response(null, { status: 302, headers: { location: url.toString(), 'cache-control': 'no-store' } }); }
 function parseAppleName(value) { try { const user = typeof value === 'string' ? JSON.parse(value) : value; return [user?.name?.firstName, user?.name?.lastName].filter(Boolean).join(' ') || null; } catch { return null; } }
@@ -389,6 +532,10 @@ function base64UrlEncode(bytes) { let binary = ''; for (const byte of bytes) bin
 function base64UrlToBytes(value) { const normalized = value.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(value.length / 4) * 4, '='); return Uint8Array.from(atob(normalized), char => char.charCodeAt(0)); }
 function base64UrlDecodeText(value) { return new TextDecoder().decode(base64UrlToBytes(value)); }
 function constantTimeEqual(a, b) { if (a.length !== b.length) return false; let mismatch = 0; for (let i = 0; i < a.length; i += 1) mismatch |= a.charCodeAt(i) ^ b.charCodeAt(i); return mismatch === 0; }
+function parseJson(value, fallback) { try { return value ? JSON.parse(value) : fallback; } catch { return fallback; } }
+function jsonText(value, fallback) { return JSON.stringify(value == null ? fallback : value); }
+function clamp(value, minimum, maximum) { return Math.min(maximum, Math.max(minimum, Number.isFinite(value) ? value : minimum)); }
+function requiredDatabase(env) { if (!env.DB) throw new HttpError(503, 'DATABASE_UNAVAILABLE'); return env.DB; }
 function requiredEnv(env, key) { if (!env[key]) throw new Error(`Missing Worker secret: ${key}`); return env[key]; }
 
 class HttpError extends Error { constructor(status, code) { super(code); this.status = status; this.code = code; } }

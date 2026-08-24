@@ -6,7 +6,7 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
   const read = relative => fs.readFileSync(path.join(root, relative), 'utf8');
 
   describe('Cloudflare エッジ認証・保存契約', () => {
-    test('Worker は必須認証、ゲスト、R2 API を公開する', () => {
+    test('Worker は必須認証、ゲスト、D1教材・進捗APIを公開する', () => {
       const worker = read('worker/index.js');
       for (const route of [
         '/api/auth/turnstile-verify', '/api/auth/google', '/api/auth/apple',
@@ -14,7 +14,9 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
       ]) assert.ok(worker.includes(route), `${route} が必要です`);
       assert.ok(worker.includes('https://challenges.cloudflare.com/turnstile/v0/siteverify'));
       assert.ok(worker.includes('GUEST_TTL_SECONDS'));
-      assert.ok(worker.includes('users/${encodeURIComponent(userId)}/game_state.json'));
+      assert.ok(worker.includes('requiredDatabase(env)'));
+      assert.ok(worker.includes('content_documents'));
+      assert.ok(worker.includes('node_progress'));
       assert.ok(worker.includes('code_challenge_method'));
       assert.ok(worker.includes("claims.nonce !== expectedNonce"));
     });
@@ -54,7 +56,6 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
       const now = 1_800_000_000_000;
       let current = { status: 'EXPIRED', startTime: now - 86_400_000, expiresAt: now - 1, blockExpiresAt: now + 2_000_000 };
       let stored;
-      let storedOptions;
       let deleted = false;
       global.fetch = async () => new Response(JSON.stringify({ success: true, hostname: 'app.example.test', action: 'access' }), {
         headers: { 'content-type': 'application/json' }
@@ -67,11 +68,22 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
         }), {
           APP_ORIGIN: 'https://app.example.test', TURNSTILE_HOSTNAME: 'app.example.test',
           TURNSTILE_SECRET_KEY: 'test-secret', FINGERPRINT_PEPPER: 'pepper',
-          GUEST_KV: {
-            get: async () => current,
-            delete: async () => { deleted = true; current = null; },
-            put: async (_key, value, options) => { stored = JSON.parse(value); storedOptions = options; current = stored; }
-          }
+          DB: createD1Mock({
+            first: sql => sql.includes('FROM guest_trials') && current ? {
+              policy_version: current.policyVersion,
+              status: current.status,
+              start_time: current.startTime,
+              expires_at: current.expiresAt,
+              block_expires_at: current.blockExpiresAt
+            } : null,
+            run: (sql, args) => {
+              if (sql.startsWith('DELETE FROM guest_trials')) { deleted = true; current = null; }
+              if (sql.includes('INSERT INTO guest_trials')) {
+                stored = { policyVersion: args[1], status: 'ACTIVE', startTime: args[2], expiresAt: args[3], blockExpiresAt: args[4] };
+                current = stored;
+              }
+            }
+          })
         }, {});
         const result = await response.json();
         assert.equal(response.status, 201);
@@ -80,7 +92,7 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
         assert.equal(result.expiresAt - result.startTime, 2 * 60 * 60 * 1000);
         assert.equal(result.blockExpiresAt - result.startTime, 7 * 24 * 60 * 60 * 1000);
         assert.equal(stored.policyVersion, 2);
-        assert.equal(storedOptions.expirationTtl, 7 * 24 * 60 * 60);
+        assert.equal(stored.blockExpiresAt - stored.startTime, 7 * 24 * 60 * 60 * 1000);
       } finally {
         global.fetch = originalFetch;
         Date.now = originalNow;
@@ -95,11 +107,14 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
       assert.ok(manager.includes("String(hours).padStart(2, '0')"));
     });
 
-    test('Wrangler は KV 2系統と R2 を束縛し、秘密値を平文で持たない', () => {
+    test('Wrangler はD1を唯一のクラウドデータストアとして束縛し、秘密値を平文で持たない', () => {
       const config = read('wrangler.toml');
-      assert.ok(config.includes('binding = "SESSION_KV"'));
-      assert.ok(config.includes('binding = "GUEST_KV"'));
-      assert.ok(config.includes('binding = "GAME_DATA_R2"'));
+      assert.ok(config.includes('binding = "DB"'));
+      assert.ok(config.includes('database_name = "japanese-pses-production"'));
+      assert.ok(config.includes('migrations_dir = "migrations"'));
+      assert.ok(!config.includes('SESSION_KV'));
+      assert.ok(!config.includes('GUEST_KV'));
+      assert.ok(!config.includes('GAME_DATA_R2'));
       assert.ok(config.includes('directory = "./dist"'));
       assert.ok(config.includes('run_worker_first = ["/api/*"]'));
       for (const secret of ['TURNSTILE_SECRET_KEY =', 'GOOGLE_CLIENT_SECRET =', 'APPLE_CLIENT_SECRET =', 'JWT_SECRET =', 'FINGERPRINT_PEPPER =']) {
@@ -110,7 +125,9 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
     test('Worker のヘルスチェックと不正JSONが実行時に正しい状態コードを返す', async () => {
       const workerModule = loadESModule(path.join(root, 'worker/index.js'));
       const worker = workerModule.default;
-      const health = await worker.fetch(new Request('https://api.example.test/api/health'), { APP_ORIGIN: 'https://app.example.test' }, {});
+      const health = await worker.fetch(new Request('https://api.example.test/api/health'), {
+        APP_ORIGIN: 'https://app.example.test', DB: createD1Mock({ first: () => ({ ready: 1 }) })
+      }, {});
       assert.equal(health.status, 200);
       const invalid = await worker.fetch(new Request('https://api.example.test/api/auth/turnstile-verify', {
         method: 'POST', headers: { 'content-type': 'application/json' }, body: '{'
@@ -118,15 +135,18 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
       assert.equal(invalid.status, 400);
     });
 
-    test('教材APIはR2オブジェクトをETag付きで配信する', async () => {
+    test('教材APIはD1分割ドキュメントをETag付きで配信する', async () => {
       const worker = loadESModule(path.join(root, 'worker/index.js')).default;
       const env = {
         APP_ORIGIN: 'https://app.example.test',
-        GAME_DATA_R2: {
-          get: async key => key === 'game-data/metadata.json'
-            ? { body: JSON.stringify({ grades: [] }), httpEtag: '"content-v1"', httpMetadata: { contentType: 'application/json; charset=utf-8' } }
-            : null
-        }
+        DB: createD1Mock({
+          first: (sql, args) => sql.includes('FROM content_documents') && args[0] === 'metadata.json'
+            ? { document_key: 'metadata.json', etag: '"content-v1"', content_type: 'application/json; charset=utf-8', byte_size: 13, chunk_count: 2 }
+            : null,
+          all: sql => sql.includes('content_document_chunks')
+            ? { results: [{ content_chunk: '{"grades":' }, { content_chunk: '[]}' }] }
+            : { results: [] }
+        })
       };
       const response = await worker.fetch(new Request('https://app.example.test/api/game-data/metadata.json'), env, {});
       assert.equal(response.status, 200);
@@ -161,7 +181,7 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
     });
   });
 
-  describe('IndexedDB と R2 の競合マージ', () => {
+  describe('IndexedDB と D1 の競合マージ', () => {
     test('profile と node_progress は updated_at が新しい側を採用する', () => {
       const { mergeSnapshots } = loadESModule(path.join(root, 'src/storage/StorageAdapter.js'));
       const merged = mergeSnapshots(
@@ -190,7 +210,7 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
       assert.equal(userA.nodeProgress[0].mastery_score, 0.9);
     });
 
-    test('R2教材はIndexedDB互換キャッシュへ保存できる', async () => {
+    test('D1教材はIndexedDB互換キャッシュへ保存できる', async () => {
       const { StorageAdapter } = loadESModule(path.join(root, 'src/storage/StorageAdapter.js'));
       const storage = new StorageAdapter({ fetchImpl: null });
       await storage.cacheContent('metadata.json', { grades: [1, 2, 3] }, '"v1"');
@@ -203,7 +223,7 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
   describe('Antigravity 役割契約', () => {
     test('指定5エージェントが認証、保存、Retina の責務を分担する', () => {
       const expectations = {
-        director_agent: ['Turnstile', 'R2', 'DPR'],
+        director_agent: ['Turnstile', 'D1', 'DPR'],
         game_designer_agent: ['HDCanvasRenderer', 'exportSaveState', 'StorageAdapter'],
         qa_player_agent: ['Playwright', '2時間', 'DPR'],
         bug_repair_agent: ['DPR_HITBOX_OFFSET', 'CANVAS_MEMORY_LEAK', 'WORKER_CORS'],
@@ -216,3 +236,23 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
     });
   });
 };
+
+function createD1Mock(handlers = {}) {
+  return {
+    prepare(sql) {
+      const statement = {
+        sql,
+        args: [],
+        bind(...args) { this.args = args; return this; },
+        async first() { return handlers.first ? handlers.first(sql, this.args) : null; },
+        async all() { return handlers.all ? handlers.all(sql, this.args) : { results: [] }; },
+        async run() { return handlers.run ? (await handlers.run(sql, this.args)) ?? { success: true } : { success: true }; }
+      };
+      return statement;
+    },
+    async batch(statements) {
+      if (handlers.batch) return handlers.batch(statements);
+      return Promise.all(statements.map(statement => statement.run()));
+    }
+  };
+}

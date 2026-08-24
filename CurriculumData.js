@@ -163,7 +163,7 @@ export async function loadPrefecturesDatabase() {
   return null;
 }
 
-/** R2教材API、IndexedDB、ローカルJSONを同じ契約で読み込む。 */
+/** D1教材APIを正式データ源とし、IndexedDBをオフラインキャッシュ、ローカルJSONを開発用移行元として扱う。 */
 export async function loadGameDataFile(fileName, localPath = `./data/${fileName}`) {
   if (!/^[a-z0-9_\-]+\.json$/i.test(fileName)) throw new TypeError('安全でない教材ファイル名です');
   const isLocal = isLocalDevelopmentHost();
@@ -184,12 +184,13 @@ export async function loadGameDataFile(fileName, localPath = `./data/${fileName}
         return data;
       }
     } catch (error) {
-      console.warn(`[CurriculumLoader] R2教材 ${fileName} の取得に失敗しました:`, error);
+      console.warn(`[CurriculumLoader] D1教材 ${fileName} の取得に失敗しました:`, error);
     }
     if (cached?.data) return cached.data;
+    throw new Error(`D1教材 ${fileName} を取得できず、オフラインキャッシュもありません。`);
   }
 
-  if (hasBrowserOrigin && typeof fetch === 'function') {
+  if (isLocal && hasBrowserOrigin && typeof fetch === 'function') {
     const response = await fetch(localPath).catch(() => null);
     if (response?.ok) return response.json();
   }

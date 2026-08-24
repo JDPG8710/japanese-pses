@@ -21,24 +21,15 @@ APPLE_CLIENT_ID = "REPLACE_WITH_APPLE_SERVICES_ID"
 enabled = true
 head_sampling_rate = 1
 
-[[kv_namespaces]]
-binding = "SESSION_KV"
-id = "2fb44af92bba41519654e51a8b25b0b5"
-preview_id = "4eabeb32053f4306b2165983fa7c6caf"
-
-[[kv_namespaces]]
-binding = "GUEST_KV"
-id = "4b7406adb62b41aa8af38a5970f6730e"
-preview_id = "ecb569dbcf1b403493467ad0fc25830f"
-
-[[r2_buckets]]
-binding = "GAME_DATA_R2"
-bucket_name = "japanese-pses-game-data"
-preview_bucket_name = "japanese-pses-game-data-preview"
+[[d1_databases]]
+binding = "DB"
+database_name = "japanese-pses-production"
+database_id = "b04eb538-8972-4650-a3bf-56236fde9b41"
+preview_database_id = "b04eb538-8972-4650-a3bf-56236fde9b41"
+migrations_dir = "migrations"
 
 # 機密値はコミットせず、次のコマンドで登録してください。
 # npx wrangler secret put TURNSTILE_SECRET_KEY
 # npx wrangler secret put GOOGLE_CLIENT_SECRET
-# npx wrangler secret put APPLE_CLIENT_SECRET
 # npx wrangler secret put JWT_SECRET
 # npx wrangler secret put FINGERPRINT_PEPPER

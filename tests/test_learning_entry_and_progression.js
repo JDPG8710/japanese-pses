@@ -102,6 +102,13 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
       assert.ok(build.includes("createHash('sha256')") && build.includes("slice(0, 12)"), '同日中の再配信でも新しい静的資産を取得できる内容ハッシュが必要です');
     });
 
+    test('ゲーム終了時の戻るボタンは現在の冒険マップ名を表示する', () => {
+      const miniGameSource = fs.readFileSync(path.join(root, 'MiniGameSystem.js'), 'utf8');
+      const currentLabelCount = (miniGameSource.match(/まなびのぼうけんマップへ戻る/g) || []).length;
+      assert.strictEqual(currentLabelCount, 2, '失敗画面とクリア画面の両方で現在のマップ名を表示してください');
+      assert.strictEqual(miniGameSource.includes('銀河星図へ戻る'), false, '以前の銀河星図という名称をボタンに残さないでください');
+    });
+
     test('学年メニューは連続正解表示の下に配置し、重ならない', () => {
       const css = fs.readFileSync(path.join(root, 'css', 'style.css'), 'utf8');
       assert.ok(css.includes("top: max(4.25rem, calc(env(safe-area-inset-top) + 3.75rem)) !important"));

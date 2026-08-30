@@ -1088,7 +1088,7 @@ export class MiniGameModal {
           <p class="text-sm text-white mb-5">正解 ${Number(result?.correctCount) || 0} / ${Number(result?.totalCount) || 10} 問</p>
           <div class="flex gap-3 flex-wrap justify-center">
             <button id="retry-stage-btn" class="min-h-14 px-5 rounded-xl bg-sky-500 text-slate-950 font-bold">同じステージに再挑戦</button>
-            <button id="settle-confirm-btn" class="min-h-14 px-5 rounded-xl bg-slate-600 text-white font-bold">銀河星図へ戻る</button>
+            <button id="settle-confirm-btn" class="min-h-14 px-5 rounded-xl bg-slate-600 text-white font-bold">まなびのぼうけんマップへ戻る</button>
           </div>
         </div>`;
         const retryBtn = document.getElementById('retry-stage-btn');
@@ -1120,7 +1120,7 @@ export class MiniGameModal {
           ${examBonusHtml}
           <div class="flex gap-3 flex-wrap justify-center">
             ${nextBtnHtml}
-            <button id="settle-confirm-btn" class="px-5 py-2.5 bg-gradient-to-r from-slate-600 to-slate-500 hover:from-slate-500 hover:to-slate-400 text-white font-bold rounded-xl shadow-lg transition cursor-pointer">🏠 銀河星図へ戻る</button>
+            <button id="settle-confirm-btn" class="px-5 py-2.5 bg-gradient-to-r from-slate-600 to-slate-500 hover:from-slate-500 hover:to-slate-400 text-white font-bold rounded-xl shadow-lg transition cursor-pointer">🏠 まなびのぼうけんマップへ戻る</button>
           </div>
         </div>
       `;

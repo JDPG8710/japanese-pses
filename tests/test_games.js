@@ -295,6 +295,29 @@ function register({ describe, test, it, assert, loadESModule }) {
       assert.strictEqual(dualSeries.brightness, 'SUPER_BRIGHT');
     });
 
+    test('F8.4: circuit stages use grade-aligned, varied challenges without astronomy leakage', () => {
+      const loader = loadESModule || require('./test_e2e_runner.js').loadESModule;
+      const { CircuitSandboxGame, CIRCUIT_CHALLENGE_BANK } = loader(path.join(rootDir, 'MiniGameSystem.js'));
+      assert.isAtLeast(CIRCUIT_CHALLENGE_BANK.length, 15, 'Circuit bank must cover more than one play style');
+      const ids = new Set(CIRCUIT_CHALLENGE_BANK.map(item => item.id));
+      assert.strictEqual(ids.size, CIRCUIT_CHALLENGE_BANK.length);
+      const allCopy = JSON.stringify(CIRCUIT_CHALLENGE_BANK);
+      ['太陽', '新月', '月相', '惑星'].forEach(term => assert.strictEqual(allCopy.includes(term), false));
+      for (let grade = 3; grade <= 6; grade++) {
+        const gradeBank = CIRCUIT_CHALLENGE_BANK.filter(item => item.grades.includes(grade));
+        assert.isAtLeast(gradeBank.length, 3, `Grade ${grade} needs at least three circuit play styles`);
+        const modes = new Set();
+        for (let level = 1; level <= gradeBank.length; level++) {
+          const game = new CircuitSandboxGame(document.createElement('canvas'), { grade, level }, () => {}, grade, level);
+          assert.ok(game.challenge.grades.includes(grade));
+          assert.strictEqual(new Set(game.options).size, game.options.length);
+          assert.ok(game.options.includes(game.challenge.correct));
+          modes.add(game.challenge.id);
+        }
+        assert.strictEqual(modes.size, gradeBank.length, `Grade ${grade} levels must rotate through every circuit mode`);
+      }
+    });
+
     test('F9.1: Shakai 47 Prefectures & Regional Specialties matching', () => {
       const aomori = PREFECTURE_DATA.find(p => p.name === '青森県');
       assert.ok(aomori);

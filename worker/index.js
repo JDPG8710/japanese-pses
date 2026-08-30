@@ -5,12 +5,12 @@ const GOOGLE_JWKS_URL = 'https://www.googleapis.com/oauth2/v3/certs';
 const APPLE_AUTHORIZE_URL = 'https://appleid.apple.com/auth/authorize';
 const APPLE_TOKEN_URL = 'https://appleid.apple.com/auth/token';
 const APPLE_JWKS_URL = 'https://appleid.apple.com/auth/keys';
+const STRIPE_CHECKOUT_URL = 'https://api.stripe.com/v1/checkout/sessions';
+const MEMBERSHIP_PRICE_JPY = 500;
+const MEMBERSHIP_OFFER_ID = 'PSES_AD_FREE_LIFETIME_JPY_500';
+const STRIPE_SIGNATURE_TOLERANCE_SECONDS = 300;
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7;
 const OAUTH_TTL_SECONDS = 10 * 60;
-const GUEST_POLICY_VERSION = 3;
-const GUEST_TTL_SECONDS = 60 * 60 * 24 * 7;
-const GUEST_DURATION_MS = 2 * 60 * 60 * 1000;
-const GUEST_HEARTBEAT_GRACE_MS = 45 * 1000;
 const GAME_DATA_FILES = [
   'eigo.json', 'kanji_1026.json', 'kokugo.json', 'metadata.json',
   'prefectures_47.json', 'rika.json', 'sansu.json', 'seikatsu.json',
@@ -39,9 +39,9 @@ async function routeRequest(request, env) {
   if (url.pathname === '/api/auth/apple') return handleOAuth('apple', request, env);
   if (url.pathname === '/api/auth/session' && request.method === 'GET') return handleSession(request, env);
   if (url.pathname === '/api/auth/logout' && request.method === 'POST') return handleLogout(request, env);
-  if (url.pathname === '/api/guest/start' && request.method === 'POST') return handleGuestStart(request, env);
-  if (url.pathname === '/api/guest/status' && request.method === 'POST') return handleGuestStatus(request, env);
-  if (url.pathname === '/api/guest/usage' && request.method === 'POST') return handleGuestUsage(request, env);
+  if (url.pathname === '/api/membership' && request.method === 'GET') return handleMembership(request, env);
+  if (url.pathname === '/api/membership/checkout' && request.method === 'POST') return handleMembershipCheckout(request, env);
+  if (url.pathname === '/api/membership/webhook' && request.method === 'POST') return handleMembershipWebhook(request, env);
   if ((url.pathname === '/api/game-data' || url.pathname.startsWith('/api/game-data/')) && request.method === 'GET') return handleGameData(request, env);
   if (url.pathname === '/api/star-graph' && request.method === 'GET') return handleStarGraph(request, env);
   if (url.pathname === '/api/state' && request.method === 'GET') return handleStateRead(request, env);
@@ -244,124 +244,122 @@ async function handleLogout(request, env) {
   return json({ success: true }, 200, request, env, { 'Set-Cookie': expiredSessionCookie(request, env) });
 }
 
-async function handleGuestStart(request, env) {
-  const body = await readJson(request);
-  const turnstile = await verifyTurnstile(body['cf-turnstile-response'] || body.turnstileToken, request, env, 'access');
-  if (!turnstile.success) return json({ error: 'TURNSTILE_FAILED' }, 400, request, env);
-  const key = await guestKey(body.fingerprintHash, request, env);
-  const database = requiredDatabase(env);
-  const existing = guestRecordFromRow(await database.prepare('SELECT * FROM guest_trials WHERE guest_key = ?1 LIMIT 1').bind(key).first());
-  if (isCurrentGuestRecord(existing)) {
-    const status = guestStatus(existing);
-    return json({ allowed: status === 'ACTIVE', status, ...guestRecordResponse(existing) }, status === 'ACTIVE' ? 200 : 403, request, env);
+async function handleMembership(request, env) {
+  const session = await authenticate(request, env);
+  let membership = null;
+  if (session) {
+    membership = await requiredDatabase(env).prepare(`SELECT plan, ad_free, price_paid_jpy, purchased_at
+      FROM memberships WHERE user_id = ?1 LIMIT 1`).bind(session.sub).first();
   }
-  if (existing) await database.prepare('DELETE FROM guest_trials WHERE guest_key = ?1').bind(key).run();
-  const startTime = Date.now();
-  const record = {
-    policyVersion: GUEST_POLICY_VERSION,
-    status: 'ACTIVE',
-    startTime,
-    blockExpiresAt: startTime + GUEST_TTL_SECONDS * 1000,
-    usedMs: 0,
-    lastHeartbeatAt: null,
-    isPlaying: false
-  };
-  await database.prepare(`INSERT INTO guest_trials
-    (guest_key, policy_version, status, start_time, expires_at, block_expires_at, created_at, updated_at,
-      used_ms, last_heartbeat_at, is_playing)
-    VALUES (?1, ?2, 'ACTIVE', ?3, ?4, ?4, ?3, ?3, 0, NULL, 0)`)
-    .bind(key, record.policyVersion, record.startTime, record.blockExpiresAt).run();
-  return json({ allowed: true, ...guestRecordResponse(record) }, 201, request, env);
+  return json({
+    authenticated: Boolean(session),
+    plan: membership?.ad_free ? 'AD_FREE_LIFETIME' : 'FREE',
+    adFree: Boolean(membership?.ad_free),
+    priceJpy: MEMBERSHIP_PRICE_JPY,
+    purchasedAt: membership?.purchased_at == null ? null : Number(membership.purchased_at),
+    paymentAvailable: Boolean(env.STRIPE_SECRET_KEY && env.STRIPE_WEBHOOK_SECRET),
+    googleH5AdsPublisherId: publicGoogleAdsPublisherId(env.GOOGLE_H5_ADS_CLIENT)
+  }, 200, request, env);
 }
 
-async function handleGuestStatus(request, env) {
-  const body = await readJson(request);
-  const key = await guestKey(body.fingerprintHash, request, env);
-  const database = requiredDatabase(env);
-  let record = guestRecordFromRow(await database.prepare('SELECT * FROM guest_trials WHERE guest_key = ?1 LIMIT 1').bind(key).first());
-  if (!isCurrentGuestRecord(record)) {
-    if (record) await database.prepare('DELETE FROM guest_trials WHERE guest_key = ?1').bind(key).run();
-    return json({ allowed: true, status: 'AVAILABLE', policyVersion: GUEST_POLICY_VERSION, allowanceMs: GUEST_DURATION_MS }, 200, request, env);
+async function handleMembershipCheckout(request, env) {
+  const session = await authenticate(request, env);
+  if (!session) return json({ error: 'UNAUTHORIZED' }, 401, request, env);
+  const existing = await requiredDatabase(env).prepare('SELECT ad_free FROM memberships WHERE user_id = ?1 LIMIT 1').bind(session.sub).first();
+  if (existing?.ad_free) return json({ error: 'ALREADY_AD_FREE' }, 409, request, env);
+  if (!env.STRIPE_SECRET_KEY || !env.STRIPE_WEBHOOK_SECRET) return json({ error: 'PAYMENT_NOT_CONFIGURED' }, 503, request, env);
+
+  const appOrigin = env.APP_ORIGIN || new URL(request.url).origin;
+  const form = new URLSearchParams();
+  form.set('mode', 'payment');
+  form.set('client_reference_id', session.sub);
+  form.set('success_url', `${appOrigin}/?payment=success&session_id={CHECKOUT_SESSION_ID}`);
+  form.set('cancel_url', `${appOrigin}/?payment=cancelled`);
+  form.set('line_items[0][price_data][currency]', 'jpy');
+  form.set('line_items[0][price_data][unit_amount]', String(MEMBERSHIP_PRICE_JPY));
+  form.set('line_items[0][price_data][tax_behavior]', 'inclusive');
+  form.set('line_items[0][price_data][product_data][name]', 'PSES Game 広告なしメンバー');
+  form.set('line_items[0][price_data][product_data][description]', '一度のお支払いで、PSES Gameの広告をずっと非表示にします。');
+  form.set('line_items[0][quantity]', '1');
+  form.set('metadata[user_id]', session.sub);
+  form.set('metadata[offer_id]', MEMBERSHIP_OFFER_ID);
+  form.set('payment_intent_data[metadata][user_id]', session.sub);
+  form.set('payment_intent_data[metadata][offer_id]', MEMBERSHIP_OFFER_ID);
+  if (session.user?.email) form.set('customer_email', session.user.email);
+
+  const stripeResponse = await fetch(STRIPE_CHECKOUT_URL, {
+    method: 'POST',
+    headers: {
+      authorization: `Basic ${btoa(`${env.STRIPE_SECRET_KEY}:`)}`,
+      'content-type': 'application/x-www-form-urlencoded'
+    },
+    body: form
+  });
+  const checkout = await stripeResponse.json();
+  if (!stripeResponse.ok || !checkout.url || !checkout.id) {
+    console.warn('Stripe Checkout creation failed', stripeResponse.status, checkout?.error?.type || 'unknown');
+    return json({ error: 'CHECKOUT_CREATE_FAILED' }, 502, request, env);
   }
-  record = await updateGuestUsage(database, key, body.usedMs, false);
-  const status = guestStatus(record);
-  return json({ allowed: status === 'ACTIVE', status, ...guestRecordResponse(record) }, 200, request, env);
+  return json({ checkoutUrl: checkout.url, sessionId: checkout.id, priceJpy: MEMBERSHIP_PRICE_JPY }, 201, request, env);
 }
 
-async function handleGuestUsage(request, env) {
-  const body = await readJson(request);
-  if (typeof body.active !== 'boolean') throw new HttpError(400, 'INVALID_GUEST_ACTIVITY');
-  const key = await guestKey(body.fingerprintHash, request, env);
-  const database = requiredDatabase(env);
-  const existing = guestRecordFromRow(await database.prepare('SELECT * FROM guest_trials WHERE guest_key = ?1 LIMIT 1').bind(key).first());
-  if (!isCurrentGuestRecord(existing)) {
-    if (existing) await database.prepare('DELETE FROM guest_trials WHERE guest_key = ?1').bind(key).run();
-    return json({ allowed: false, status: 'AVAILABLE', policyVersion: GUEST_POLICY_VERSION, allowanceMs: GUEST_DURATION_MS }, 403, request, env);
+async function handleMembershipWebhook(request, env) {
+  if (!env.STRIPE_WEBHOOK_SECRET) return json({ error: 'PAYMENT_NOT_CONFIGURED' }, 503, request, env);
+  const rawBody = await request.text();
+  if (rawBody.length > 256_000) return json({ error: 'PAYLOAD_TOO_LARGE' }, 413, request, env);
+  const signature = request.headers.get('Stripe-Signature') || '';
+  if (!await verifyStripeWebhookSignature(rawBody, signature, env.STRIPE_WEBHOOK_SECRET)) {
+    return json({ error: 'INVALID_WEBHOOK_SIGNATURE' }, 400, request, env);
   }
-  const record = await updateGuestUsage(database, key, body.usedMs, body.active);
-  const status = guestStatus(record);
-  return json({ allowed: status === 'ACTIVE', status, ...guestRecordResponse(record) }, 200, request, env);
+  let event;
+  try { event = JSON.parse(rawBody); } catch { return json({ error: 'INVALID_JSON' }, 400, request, env); }
+  if (!event?.id || !event?.type) return json({ error: 'INVALID_STRIPE_EVENT' }, 400, request, env);
+
+  if (event.type === 'checkout.session.completed') {
+    const checkout = event.data?.object || {};
+    const userId = checkout.metadata?.user_id;
+    const validPurchase = checkout.payment_status === 'paid'
+      && checkout.metadata?.offer_id === MEMBERSHIP_OFFER_ID
+      && checkout.currency === 'jpy'
+      && Number(checkout.amount_total) === MEMBERSHIP_PRICE_JPY
+      && typeof userId === 'string' && userId.length > 0;
+    if (!validPurchase) return json({ error: 'INVALID_MEMBERSHIP_PURCHASE' }, 400, request, env);
+    const now = Date.now();
+    const database = requiredDatabase(env);
+    const user = await database.prepare('SELECT user_id FROM users WHERE user_id = ?1 LIMIT 1').bind(userId).first();
+    if (!user) return json({ error: 'MEMBERSHIP_USER_NOT_FOUND' }, 404, request, env);
+    await database.batch([
+      database.prepare(`INSERT INTO payment_events
+        (event_id, provider, event_type, user_id, amount_jpy, payload_json, received_at)
+        VALUES (?1, 'stripe', ?2, ?3, ?4, ?5, ?6)
+        ON CONFLICT(event_id) DO NOTHING`)
+        .bind(event.id, event.type, userId, MEMBERSHIP_PRICE_JPY, rawBody, now),
+      database.prepare(`INSERT INTO memberships
+        (user_id, plan, ad_free, price_paid_jpy, payment_provider, provider_customer_id, provider_payment_id, purchased_at, updated_at)
+        VALUES (?1, 'AD_FREE_LIFETIME', 1, ?2, 'stripe', ?3, ?4, ?5, ?5)
+        ON CONFLICT(user_id) DO UPDATE SET plan='AD_FREE_LIFETIME', ad_free=1,
+          price_paid_jpy=excluded.price_paid_jpy, payment_provider='stripe',
+          provider_customer_id=COALESCE(excluded.provider_customer_id, memberships.provider_customer_id),
+          provider_payment_id=excluded.provider_payment_id, updated_at=excluded.updated_at`)
+        .bind(userId, MEMBERSHIP_PRICE_JPY, checkout.customer || null, checkout.payment_intent || checkout.id, now)
+    ]);
+  }
+  return json({ received: true }, 200, request, env);
 }
 
-async function updateGuestUsage(database, key, clientUsedMs, active) {
-  const now = Date.now();
-  const reportedUsedMs = clamp(Math.trunc(Number(clientUsedMs || 0)), 0, GUEST_DURATION_MS);
-  const deltaExpression = `CASE WHEN is_playing = 1 AND last_heartbeat_at IS NOT NULL
-    THEN MIN(?2, MAX(0, ?1 - last_heartbeat_at)) ELSE 0 END`;
-  // クライアント累積値と、直前のサーバーハートビートから算出した累積値の
-  // 大きい方を採用する。同じ区間を両方へ加算すると二重計上になるため足し合わせない。
-  const newUsedExpression = `MIN(?3, MAX(?4, used_ms + ${deltaExpression}))`;
-  await database.prepare(`UPDATE guest_trials SET
-      used_ms = ${newUsedExpression},
-      status = CASE WHEN ${newUsedExpression} >= ?3 THEN 'EXPIRED' ELSE 'ACTIVE' END,
-      is_playing = CASE WHEN ${newUsedExpression} >= ?3 THEN 0 ELSE ?5 END,
-      last_heartbeat_at = ?1,
-      updated_at = ?1
-    WHERE guest_key = ?6`)
-    .bind(now, GUEST_HEARTBEAT_GRACE_MS, GUEST_DURATION_MS, reportedUsedMs, active ? 1 : 0, key).run();
-  return guestRecordFromRow(await database.prepare('SELECT * FROM guest_trials WHERE guest_key = ?1 LIMIT 1').bind(key).first());
+export async function verifyStripeWebhookSignature(rawBody, signatureHeader, secret, nowSeconds = Math.floor(Date.now() / 1000)) {
+  if (!rawBody || !signatureHeader || !secret) return false;
+  const entries = signatureHeader.split(',').map(part => part.trim().split('=', 2));
+  const timestamp = Number(entries.find(([key]) => key === 't')?.[1]);
+  const signatures = entries.filter(([key]) => key === 'v1').map(([, value]) => value).filter(Boolean);
+  if (!Number.isFinite(timestamp) || Math.abs(nowSeconds - timestamp) > STRIPE_SIGNATURE_TOLERANCE_SECONDS || signatures.length === 0) return false;
+  const expected = await hmacHex(`${timestamp}.${rawBody}`, secret);
+  return signatures.some(candidate => constantTimeEqual(candidate, expected));
 }
 
-async function guestKey(clientHash, request, env) {
-  if (!clientHash || !/^[a-f0-9]{64}$/i.test(clientHash)) throw new HttpError(400, 'INVALID_FINGERPRINT');
-  const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
-  return `guest:${await hmacHex(`${clientHash}|${ip}`, requiredEnv(env, 'FINGERPRINT_PEPPER'))}`;
-}
-
-function guestStatus(record) {
-  return record.status === 'EXPIRED' || Number(record.usedMs) >= GUEST_DURATION_MS ? 'EXPIRED' : 'ACTIVE';
-}
-
-function isCurrentGuestRecord(record) {
-  return Boolean(record)
-    && Number(record.policyVersion) === GUEST_POLICY_VERSION
-    && Number(record.blockExpiresAt) > Date.now();
-}
-
-function guestRecordResponse(record) {
-  const usedMs = clamp(Number(record.usedMs || 0), 0, GUEST_DURATION_MS);
-  return {
-    policyVersion: GUEST_POLICY_VERSION,
-    allowanceMs: GUEST_DURATION_MS,
-    periodStartedAt: Number(record.startTime),
-    periodEndsAt: Number(record.blockExpiresAt),
-    usedMs,
-    remainingMs: Math.max(0, GUEST_DURATION_MS - usedMs),
-    active: Boolean(record.isPlaying)
-  };
-}
-
-function guestRecordFromRow(row) {
-  if (!row) return null;
-  return {
-    policyVersion: Number(row.policy_version),
-    status: row.status,
-    startTime: Number(row.start_time),
-    blockExpiresAt: Number(row.block_expires_at),
-    usedMs: Number(row.used_ms || 0),
-    lastHeartbeatAt: row.last_heartbeat_at == null ? null : Number(row.last_heartbeat_at),
-    isPlaying: Boolean(row.is_playing)
-  };
+function publicGoogleAdsPublisherId(value) {
+  const candidate = String(value || '').trim();
+  return /^ca-pub-\d{10,}$/.test(candidate) ? candidate : null;
 }
 
 async function handleStarGraph(request, env) {

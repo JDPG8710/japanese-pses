@@ -16,6 +16,8 @@ DEV_ORIGINS = "http://localhost:4173,http://127.0.0.1:4173"
 TURNSTILE_HOSTNAME = "japanese-pses.j565718319.workers.dev"
 GOOGLE_CLIENT_ID = "406705820118-aa4p2gkig81k4fn9ofh4igs0v6lku7ep.apps.googleusercontent.com"
 APPLE_CLIENT_ID = "REPLACE_WITH_APPLE_SERVICES_ID"
+# Google H5 Games Ads の公開Publisher ID（例: ca-pub-123...）は取得後に設定します。
+# GOOGLE_H5_ADS_CLIENT = "ca-pub-..."
 
 [observability]
 enabled = true
@@ -32,4 +34,5 @@ migrations_dir = "migrations"
 # npx wrangler secret put TURNSTILE_SECRET_KEY
 # npx wrangler secret put GOOGLE_CLIENT_SECRET
 # npx wrangler secret put JWT_SECRET
-# npx wrangler secret put FINGERPRINT_PEPPER
+# npx wrangler secret put STRIPE_SECRET_KEY
+# npx wrangler secret put STRIPE_WEBHOOK_SECRET

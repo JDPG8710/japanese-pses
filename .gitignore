@@ -6,6 +6,7 @@ secrets/
 .env
 .env.*
 !.env.example
+.stripe/
 
 # 複数エージェントの一時実行記録
 .agents/orchestrator/

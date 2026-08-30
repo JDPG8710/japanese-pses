@@ -1,5 +1,4 @@
-import { LoginModal } from './LoginModal.js?v=3';
-import { GuestTrialManager } from './GuestTrialManager.js?v=2';
+import { LoginModal } from './LoginModal.js?v=4';
 import { isLocalDevelopmentHost } from '../runtime/LocalEnvironment.js';
 
 export class AuthManager extends EventTarget {
@@ -10,19 +9,19 @@ export class AuthManager extends EventTarget {
     this.fetchImpl = fetchImpl;
     this.localMode = isLocalDevelopmentHost(location.hostname);
     this.modal = this.localMode ? null : new LoginModal({ siteKey: turnstileSiteKey });
-    this.guest = new GuestTrialManager({ apiBase: this.apiBase, storage, fetchImpl });
-    this.guest.addEventListener('expired', event => this.blockExpiredGuest(event.detail));
     this.modal?.addEventListener('submit', event => this.handleSubmit(event.detail));
   }
 
   async initialize() {
-    if (this.localMode) return { mode: 'local', authenticated: true, user: { id: 'local-offline', provider: 'local', displayName: 'ローカル学習者' } };
+    if (this.localMode) {
+      this.session = { mode: 'local', authenticated: true, user: { id: 'local-offline', provider: 'local', displayName: 'ローカル学習者' } };
+      return this.session;
+    }
     const session = await this.getSession();
-    if (session?.authenticated) return { mode: 'authenticated', ...session };
-    const availability = await this.guest.getAvailability().catch(() => ({ allowed: false, status: 'UNAVAILABLE' }));
-    if (availability.status === 'ACTIVE') return this.guest.resume(availability);
-    await this.modal.show({ message: availability.allowed ? undefined : '今週のゲスト時間を使い切りました。つづきはGoogleでログインしてね。' });
-    return new Promise(resolve => { this.resolveAccess = resolve; });
+    this.session = session?.authenticated
+      ? { mode: 'authenticated', ...session }
+      : { mode: 'anonymous', authenticated: false, user: null };
+    return this.session;
   }
 
   async getSession() {
@@ -32,35 +31,26 @@ export class AuthManager extends EventTarget {
     } catch { return null; }
   }
 
-  async handleSubmit({ kind, provider, turnstileToken }) {
-    this.modal.setBusy(true);
-    try {
-      if (kind === 'oauth') {
-        if (provider !== 'google') throw new Error('いま使えるログイン方法はGoogleだけです。');
-        const response = await this.fetchImpl(`${this.apiBase}/auth/${provider}`, {
-          method: 'POST', credentials: 'include', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ 'cf-turnstile-response': turnstileToken })
-        });
-        const result = await readJson(response);
-        if (!response.ok || !result.authorizeUrl) throw new Error(authErrorMessage(result));
-        location.assign(result.authorizeUrl);
-        return;
-      }
-      const guestSession = await this.guest.start(turnstileToken);
-      this.modal.hide();
-      this.resolveAccess?.(guestSession);
-    } catch (error) {
-      this.modal.showError(error.message || 'うまくログインできませんでした。もう一度ためしてみてね。');
-    } finally {
-      this.modal.setBusy(false);
-    }
+  async showLogin({ message } = {}) {
+    if (this.localMode) return this.session;
+    await this.modal.show({ message });
+    return null;
   }
 
-  blockExpiredGuest({ reason } = {}) {
-    window.dispatchEvent(new CustomEvent('GUEST_TRIAL_EXPIRED'));
-    const message = reason === 'PERIOD_ENDED'
-      ? '新しい1週間が始まりました。安全チェックを終えると、またゲストで遊べるよ。'
-      : '今週のゲスト時間を使い切りました。つづきはGoogleでログインしてね。';
-    this.modal?.show({ message });
+  async handleSubmit({ provider, turnstileToken }) {
+    this.modal.setBusy(true);
+    try {
+      if (provider !== 'google') throw new Error('いま使えるログイン方法はGoogleだけです。');
+      const response = await this.fetchImpl(`${this.apiBase}/auth/${provider}`, {
+        method: 'POST', credentials: 'include', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ 'cf-turnstile-response': turnstileToken })
+      });
+      const result = await readJson(response);
+      if (!response.ok || !result.authorizeUrl) throw new Error(authErrorMessage(result));
+      location.assign(result.authorizeUrl);
+    } catch (error) {
+      this.modal.showError(error.message || 'うまくログインできませんでした。もう一度ためしてみてね。');
+      this.modal.setBusy(false);
+    }
   }
 }
 

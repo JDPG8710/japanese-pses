@@ -14,21 +14,21 @@ export class LoginModal extends EventTarget {
     this.element.className = 'fixed inset-0 z-[100] hidden items-center justify-center bg-slate-950/95 p-4 backdrop-blur-xl';
     this.element.innerHTML = `
       <section role="dialog" aria-modal="true" aria-labelledby="auth-title" class="w-full max-w-md rounded-3xl border border-indigo-300/30 bg-slate-900 p-6 text-white shadow-2xl sm:p-8">
-        <p class="mb-2 text-xs font-bold tracking-[0.25em] text-indigo-300">JAPANESE PSES</p>
-        <h1 id="auth-title" class="text-2xl font-black">PSES Gameへようこそ！</h1>
-        <p id="auth-message" class="mt-3 text-sm leading-6 text-slate-200">はじめる前に、下の安全チェックを終えてね。Googleでログインするか、ゲストでおためしできます。</p>
+        <p class="mb-2 text-xs font-bold tracking-[0.25em] text-indigo-300">PSES GAME ACCOUNT</p>
+        <h1 id="auth-title" class="text-2xl font-black">学習きろくを保存しよう</h1>
+        <p id="auth-message" class="mt-3 text-sm leading-6 text-slate-200">ゲームはログインなしでも遊べます。Googleでログインすると、別の端末でも学習きろくを引き継げます。</p>
         <div id="auth-turnstile" class="mt-5 flex min-h-[70px] justify-center" aria-label="安全チェック"></div>
         <p id="auth-verification-status" class="mt-2 text-center text-sm font-bold text-amber-200" aria-live="polite">安全チェックを準備しているよ…</p>
         <p id="auth-error" role="alert" class="mt-2 hidden rounded-xl border border-rose-400/40 bg-rose-500/10 p-3 text-sm font-bold text-rose-200"></p>
         <div class="mt-5 grid gap-3">
-          <button type="button" data-provider="google" disabled class="min-h-14 rounded-2xl border border-slate-500 bg-white px-4 font-bold text-slate-900 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40">Sign in with Google</button>
-          <button type="button" data-action="guest" disabled class="min-h-14 rounded-2xl border border-amber-300/50 bg-amber-400/15 px-4 font-black text-amber-200 transition hover:bg-amber-400/25 disabled:cursor-not-allowed disabled:opacity-40">ゲストでためしてみる（週2時間）</button>
+          <button type="button" data-provider="google" disabled class="min-h-14 rounded-2xl border border-slate-500 bg-white px-4 font-bold text-slate-900 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40">Googleでログイン</button>
+          <button type="button" data-action="close" class="min-h-12 rounded-2xl border border-slate-600 bg-slate-800 px-4 font-bold text-slate-100 transition hover:bg-slate-700">今はログインしない</button>
         </div>
-        <p class="mt-5 text-xs leading-5 text-slate-400">ゲストでは、実際にゲームで遊んだ時間だけを1週間に2時間まで使えます。不正利用を防ぐための確認情報は、元に戻せない形にして扱います。</p>
+        <p class="mt-5 text-xs leading-5 text-slate-400">ログイン時だけ、安全のために人間による操作かを確認します。ゲームを始めるための時間制限はありません。</p>
       </section>`;
     document.body.appendChild(this.element);
-    this.element.querySelectorAll('[data-provider]').forEach(button => button.addEventListener('click', () => this.submit('oauth', button.dataset.provider)));
-    this.element.querySelector('[data-action="guest"]').addEventListener('click', () => this.submit('guest'));
+    this.element.querySelector('[data-provider="google"]').addEventListener('click', () => this.submit('google'));
+    this.element.querySelector('[data-action="close"]').addEventListener('click', () => this.hide());
   }
 
   async show({ message } = {}) {
@@ -51,8 +51,10 @@ export class LoginModal extends EventTarget {
   }
 
   updateButtonState() {
-    const disabled = this.busy || !this.token;
-    this.element.querySelectorAll('button').forEach(button => { button.disabled = disabled; });
+    const googleButton = this.element.querySelector('[data-provider="google"]');
+    if (googleButton) googleButton.disabled = this.busy || !this.token;
+    const closeButton = this.element.querySelector('[data-action="close"]');
+    if (closeButton) closeButton.disabled = this.busy;
   }
 
   setVerificationStatus(message, tone = 'pending') {
@@ -68,12 +70,12 @@ export class LoginModal extends EventTarget {
     if (reset) this.resetChallenge();
   }
 
-  submit(kind, provider = null) {
+  submit(provider) {
     if (!this.token) {
-      this.showError('もう少し待ってね。上の安全チェックが終わるとボタンを押せるよ。', { reset: false });
+      this.showError('もう少し待ってね。上の安全チェックが終わるとログインできます。', { reset: false });
       return;
     }
-    this.dispatchEvent(new CustomEvent('submit', { detail: { kind, provider, turnstileToken: this.token } }));
+    this.dispatchEvent(new CustomEvent('submit', { detail: { provider, turnstileToken: this.token } }));
   }
 
   async ensureTurnstile() {
@@ -91,7 +93,7 @@ export class LoginModal extends EventTarget {
         callback: token => {
           this.token = token;
           this.element.querySelector('#auth-error').classList.add('hidden');
-          this.setVerificationStatus('準備できたよ！好きなはじめ方を選んでね。', 'ready');
+          this.setVerificationStatus('ログインの準備ができたよ！', 'ready');
           this.updateButtonState();
         },
         'expired-callback': () => {

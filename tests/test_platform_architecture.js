@@ -5,15 +5,20 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
   const root = path.resolve(__dirname, '..');
   const read = relative => fs.readFileSync(path.join(root, relative), 'utf8');
 
-  describe('Cloudflare エッジ認証・保存契約', () => {
-    test('Worker は必須認証、ゲスト、D1教材・進捗APIを公開する', () => {
+  describe('Cloudflare エッジ認証・会員・保存契約', () => {
+    test('Worker は任意認証、会員購入、D1教材・進捗APIを公開する', () => {
       const worker = read('worker/index.js');
       for (const route of [
-        '/api/auth/turnstile-verify', '/api/auth/google', '/api/auth/apple',
-        '/api/guest/start', '/api/guest/status', '/api/guest/usage', '/api/game-data', '/api/star-graph', '/api/state'
+        '/api/auth/turnstile-verify', '/api/auth/google', '/api/auth/session',
+        '/api/membership', '/api/membership/checkout', '/api/membership/webhook',
+        '/api/game-data', '/api/star-graph', '/api/state'
       ]) assert.ok(worker.includes(route), `${route} が必要です`);
+      for (const removedRoute of ['/api/guest/start', '/api/guest/status', '/api/guest/usage']) {
+        assert.ok(!worker.includes(`url.pathname === '${removedRoute}'`), `${removedRoute} は廃止してください`);
+      }
       assert.ok(worker.includes('https://challenges.cloudflare.com/turnstile/v0/siteverify'));
-      assert.ok(worker.includes('GUEST_TTL_SECONDS'));
+      assert.ok(worker.includes('MEMBERSHIP_PRICE_JPY = 500'));
+      assert.ok(worker.includes('STRIPE_CHECKOUT_URL'));
       assert.ok(worker.includes('requiredDatabase(env)'));
       assert.ok(worker.includes('content_documents'));
       assert.ok(worker.includes('node_progress'));
@@ -21,15 +26,19 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
       assert.ok(worker.includes("claims.nonce !== expectedNonce"));
     });
 
-    test('ログイン画面は可視Turnstile完了後だけGoogleとゲストを許可する', () => {
+    test('初回はログインを強制せず、Googleログインを利用者が後から開ける', () => {
       const modal = read('src/auth/LoginModal.js');
       const manager = read('src/auth/AuthManager.js');
-      assert.ok(modal.includes("action: 'access'"), 'ログインとゲストで同じ検証actionを使用してください');
-      assert.ok(modal.includes("appearance: 'always'"), '人間確認を常に表示してください');
-      assert.ok(modal.includes('data-provider="google" disabled'), '検証前はGoogleボタンを無効にしてください');
-      assert.ok(modal.includes('data-action="guest" disabled'), '検証前はゲストボタンを無効にしてください');
-      assert.ok(!modal.includes('data-provider="apple"'), 'Appleログインボタンは一時的に非表示にしてください');
-      assert.ok(manager.includes("provider !== 'google'"), '画面外からApple認証を開始できないようにしてください');
+      assert.ok(modal.includes("action: 'access'"));
+      assert.ok(modal.includes("appearance: 'always'"));
+      assert.ok(modal.includes('data-provider="google" disabled'));
+      assert.ok(modal.includes('今はログインしない'));
+      assert.ok(!modal.includes('data-action="guest"'));
+      assert.ok(!modal.includes('data-provider="apple"'));
+      assert.ok(manager.includes("mode: 'anonymous'"));
+      assert.ok(manager.includes('async showLogin('));
+      assert.ok(!manager.includes('GuestTrialManager'));
+      assert.ok(!manager.includes('await this.modal.show({ message: availability'));
     });
 
     test('Worker はTurnstile actionがaccessと完全一致しないトークンを拒否する', async () => {
@@ -49,167 +58,45 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
       }
     });
 
-    test('旧ゲスト記録を移行し、累積2時間・7日周期の新しい体験を発行する', async () => {
-      const worker = loadESModule(path.join(root, 'worker/index.js')).default;
-      const originalFetch = global.fetch;
-      const originalNow = Date.now;
-      const now = 1_800_000_000_000;
-      let current = { policyVersion: 2, status: 'EXPIRED', startTime: now - 86_400_000, blockExpiresAt: now + 2_000_000 };
-      let stored;
-      let deleted = false;
-      global.fetch = async () => new Response(JSON.stringify({ success: true, hostname: 'app.example.test', action: 'access' }), {
-        headers: { 'content-type': 'application/json' }
-      });
-      Date.now = () => now;
-      try {
-        const response = await worker.fetch(new Request('https://app.example.test/api/guest/start', {
-          method: 'POST', headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ fingerprintHash: 'a'.repeat(64), 'cf-turnstile-response': 'valid-looking-token' })
-        }), {
-          APP_ORIGIN: 'https://app.example.test', TURNSTILE_HOSTNAME: 'app.example.test',
-          TURNSTILE_SECRET_KEY: 'test-secret', FINGERPRINT_PEPPER: 'pepper',
-          DB: createD1Mock({
-            first: sql => sql.includes('FROM guest_trials') && current ? {
-              policy_version: current.policyVersion,
-              status: current.status,
-              start_time: current.startTime,
-              expires_at: current.blockExpiresAt,
-              block_expires_at: current.blockExpiresAt,
-              used_ms: current.usedMs || 0,
-              last_heartbeat_at: current.lastHeartbeatAt || null,
-              is_playing: current.isPlaying ? 1 : 0
-            } : null,
-            run: (sql, args) => {
-              if (sql.startsWith('DELETE FROM guest_trials')) { deleted = true; current = null; }
-              if (sql.includes('INSERT INTO guest_trials')) {
-                stored = { policyVersion: args[1], status: 'ACTIVE', startTime: args[2], blockExpiresAt: args[3], usedMs: 0, isPlaying: false };
-                current = stored;
-              }
-            }
-          })
-        }, {});
-        const result = await response.json();
-        assert.equal(response.status, 201);
-        assert.equal(deleted, true, '旧方式の記録を削除してください');
-        assert.equal(result.policyVersion, 3);
-        assert.equal(result.usedMs, 0);
-        assert.equal(result.remainingMs, 2 * 60 * 60 * 1000);
-        assert.equal(result.periodEndsAt - result.periodStartedAt, 7 * 24 * 60 * 60 * 1000);
-        assert.equal(stored.policyVersion, 3);
-        assert.equal(stored.blockExpiresAt - stored.startTime, 7 * 24 * 60 * 60 * 1000);
-      } finally {
-        global.fetch = originalFetch;
-        Date.now = originalNow;
-      }
-    });
-
-    test('Worker は遊んでいる区間だけを累積し、ハートビート遅延を45秒で制限する', async () => {
-      const worker = loadESModule(path.join(root, 'worker/index.js')).default;
-      const originalNow = Date.now;
-      let now = 1_800_000_000_000;
-      const allowance = 2 * 60 * 60 * 1000;
-      const current = {
-        policy_version: 3, status: 'ACTIVE', start_time: now - 60_000,
-        expires_at: now + 604_800_000, block_expires_at: now + 604_800_000,
-        used_ms: 10_000, last_heartbeat_at: now - 30_000, is_playing: 1
-      };
-      const database = createD1Mock({
-        first: sql => sql.includes('FROM guest_trials') ? { ...current } : null,
-        run: (sql, args) => {
-          if (!sql.includes('UPDATE guest_trials SET')) return;
-          const [heartbeatAt, graceMs, limitMs, reportedMs, active] = args;
-          const delta = current.is_playing && current.last_heartbeat_at != null
-            ? Math.min(graceMs, Math.max(0, heartbeatAt - current.last_heartbeat_at))
-            : 0;
-          current.used_ms = Math.min(limitMs, Math.max(reportedMs, current.used_ms + delta));
-          current.status = current.used_ms >= limitMs ? 'EXPIRED' : 'ACTIVE';
-          current.is_playing = current.status === 'EXPIRED' ? 0 : active;
-          current.last_heartbeat_at = heartbeatAt;
-        }
-      });
-      const env = { APP_ORIGIN: 'https://app.example.test', FINGERPRINT_PEPPER: 'pepper', DB: database };
-      const request = (route, active) => new Request(`https://app.example.test/api/guest/${route}`, {
-        method: 'POST', headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ fingerprintHash: 'b'.repeat(64), usedMs: current.used_ms, ...(active == null ? {} : { active }) })
-      });
-      Date.now = () => now;
-      try {
-        let response = await worker.fetch(request('usage', true), env, {});
-        let result = await response.json();
-        assert.equal(result.usedMs, 40_000, '直前のプレイ30秒を一度だけ加算してください');
-        now += 5 * 60 * 1000;
-        response = await worker.fetch(request('status'), env, {});
-        result = await response.json();
-        assert.equal(result.usedMs, 85_000, '長い通信断は45秒までに制限してください');
-        now += 5 * 60 * 1000;
-        response = await worker.fetch(request('status'), env, {});
-        result = await response.json();
-        assert.equal(result.usedMs, 85_000, '停止中の経過時間を加算しないでください');
-        assert.equal(result.remainingMs, allowance - 85_000);
-      } finally {
-        Date.now = originalNow;
-      }
-    });
-
-    test('ゲスト残り時間を2時間対応の時分秒で表示する', () => {
-      const manager = read('src/auth/GuestTrialManager.js');
-      assert.ok(manager.includes('2 * 60 * 60 * 1000'));
-      assert.ok(manager.includes('7 * 24 * 60 * 60 * 1000'));
-      assert.ok(manager.includes('formatGuestRemaining(this.remainingMs)'));
-      assert.ok(manager.includes("String(hours).padStart(2, '0')"));
-      assert.ok(manager.includes('GAME_PLAY_STATE_CHANGED'));
-      assert.ok(manager.includes('あそんでいる間だけ減るよ'));
-    });
-
-    test('ブラウザー側もゲーム実行中だけ残り時間を減らす', () => {
-      const { GuestTrialManager } = loadESModule(path.join(root, 'src/auth/GuestTrialManager.js'));
-      let now = 10_000;
-      let stageVisible = true;
-      const manager = new GuestTrialManager({
-        storage: { saveGuestTracker: async () => {}, getGuestTracker: async () => null },
-        fetchImpl: null,
-        now: () => now,
-        setIntervalImpl: () => 1,
-        clearIntervalImpl: () => {},
-        isGameStageVisible: () => stageVisible
-      });
-      manager.fingerprintHash = 'c'.repeat(64);
-      manager.resume({ usedMs: 0, remainingMs: 7_200_000, periodStartedAt: now, periodEndsAt: now + 604_800_000 });
+    test('無料会員は5分の実プレイ後、安全な画面遷移まで広告を待つ', () => {
+      const { H5AdManager, FREE_AD_INTERVAL_MS } = loadESModule(path.join(root, 'src/ads/H5AdManager.js'));
+      assert.equal(FREE_AD_INTERVAL_MS, 5 * 60 * 1000);
+      let now = 1000;
+      let continued = 0;
+      const manager = new H5AdManager({ now: () => now, intervalMs: 300_000, setIntervalImpl: () => 1, clearIntervalImpl: () => {} }).start();
       manager.setGameActive(true);
-      now += 1_000;
+      for (let i = 0; i < 60; i += 1) { now += 5000; manager.tick(); }
+      assert.equal(manager.adDue, true, 'ゲーム中は広告を直接割り込ませず、表示待ちにしてください');
+      manager.runAtSafeBreak(() => { continued += 1; });
+      assert.equal(manager.adDue, false);
+      assert.equal(continued, 1);
+      manager.setAdFree(true);
+      now += 300_000;
       manager.tick();
-      now += 1_000;
-      manager.tick();
-      assert.equal(manager.usedMs, 2_000);
-      manager.setGameActive(false);
-      now += 60_000;
-      manager.tick();
-      assert.equal(manager.usedMs, 2_000, 'ゲーム停止中の1分を消費しないでください');
-
-      stageVisible = false;
-      manager.setGameActive(true);
-      now += 60_000;
-      manager.tick();
-      assert.equal(manager.usedMs, 2_000, '星図・学科選択画面では活動イベントを受けても消費しないでください');
-
-      stageVisible = true;
-      manager.setGameActive(true);
-      now += 1_000;
-      manager.tick();
-      stageVisible = false;
-      now += 60_000;
-      manager.tick();
-      assert.equal(manager.usedMs, 3_000, 'ゲーム画面を閉じた後の時間を消費しないでください');
+      assert.equal(manager.adDue, false, '広告なしメンバーには広告を予約しないでください');
       manager.destroy();
     });
 
-    test('星図画面はゲスト活動を明示停止し、ゲーム画面の可視性を二重確認する', () => {
-      const html = read('index.html');
-      const manager = read('src/auth/GuestTrialManager.js');
-      assert.ok(html.includes("phase: 'GALAXY_SELECTION'"));
-      assert.ok(manager.includes('defaultGameStageVisible'));
-      assert.ok(manager.includes('this.isGameStageVisible()'));
-      assert.ok(manager.includes("'いまは時間を使っていないよ'"));
+    test('Stripe Webhook は生本文のHMAC署名と5分以内の時刻だけを受け付ける', async () => {
+      const { verifyStripeWebhookSignature } = loadESModule(path.join(root, 'worker/index.js'));
+      const body = JSON.stringify({ id: 'evt_test', type: 'checkout.session.completed' });
+      const secret = 'whsec_test_value';
+      const timestamp = 1_800_000_000;
+      const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+      const bytes = new Uint8Array(await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(`${timestamp}.${body}`)));
+      const digest = [...bytes].map(byte => byte.toString(16).padStart(2, '0')).join('');
+      assert.equal(await verifyStripeWebhookSignature(body, `t=${timestamp},v1=${digest}`, secret, timestamp + 10), true);
+      assert.equal(await verifyStripeWebhookSignature(body, `t=${timestamp},v1=${digest}`, secret, timestamp + 301), false);
+      assert.equal(await verifyStripeWebhookSignature(`${body} `, `t=${timestamp},v1=${digest}`, secret, timestamp), false);
+    });
+
+    test('会員マイグレーションは永久広告なし権利と支払いイベントをD1へ保存する', () => {
+      const migration = read('migrations/0004_membership_and_ads.sql');
+      assert.ok(!migration.includes('DROP TABLE'), '旧试玩记录は履歴として残し、不可逆に削除しないでください');
+      assert.ok(migration.includes('CREATE TABLE IF NOT EXISTS memberships'));
+      assert.ok(migration.includes("AD_FREE_LIFETIME"));
+      assert.ok(migration.includes('CREATE TABLE IF NOT EXISTS payment_events'));
+      assert.ok(migration.includes('REFERENCES users(user_id)'));
     });
 
     test('Wrangler はD1を唯一のクラウドデータストアとして束縛し、秘密値を平文で持たない', () => {
@@ -222,14 +109,13 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
       assert.ok(!config.includes('GAME_DATA_R2'));
       assert.ok(config.includes('directory = "./dist"'));
       assert.ok(config.includes('run_worker_first = ["/api/*"]'));
-      for (const secret of ['TURNSTILE_SECRET_KEY =', 'GOOGLE_CLIENT_SECRET =', 'APPLE_CLIENT_SECRET =', 'JWT_SECRET =', 'FINGERPRINT_PEPPER =']) {
+      for (const secret of ['TURNSTILE_SECRET_KEY =', 'GOOGLE_CLIENT_SECRET =', 'APPLE_CLIENT_SECRET =', 'JWT_SECRET =', 'FINGERPRINT_PEPPER =', 'STRIPE_SECRET_KEY =', 'STRIPE_WEBHOOK_SECRET =']) {
         assert.ok(!config.includes(secret), `${secret} を設定ファイルへ書かないでください`);
       }
     });
 
     test('Worker のヘルスチェックと不正JSONが実行時に正しい状態コードを返す', async () => {
-      const workerModule = loadESModule(path.join(root, 'worker/index.js'));
-      const worker = workerModule.default;
+      const worker = loadESModule(path.join(root, 'worker/index.js')).default;
       const health = await worker.fetch(new Request('https://api.example.test/api/health'), {
         APP_ORIGIN: 'https://app.example.test', DB: createD1Mock({ first: () => ({ ready: 1 }) })
       }, {});
@@ -330,7 +216,7 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
       const expectations = {
         director_agent: ['Turnstile', 'D1', 'DPR'],
         game_designer_agent: ['HDCanvasRenderer', 'exportSaveState', 'StorageAdapter'],
-        qa_player_agent: ['Playwright', '2時間', 'DPR'],
+        qa_player_agent: ['Playwright', 'DPR'],
         bug_repair_agent: ['DPR_HITBOX_OFFSET', 'CANVAS_MEMORY_LEAK', 'WORKER_CORS'],
         graph_evolution_agent: ['star_graph.json', 'IndexedDB', 'ETag']
       };

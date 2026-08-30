@@ -279,6 +279,21 @@
           <span id="profile-learner-details" class="text-xs font-bold text-cyan-100"></span>
         </div>
       </div>
+      <section id="profile-membership-panel" class="mb-4 rounded-2xl border border-fuchsia-400/35 bg-fuchsia-500/10 p-4" aria-labelledby="profile-membership-title">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p class="text-[10px] font-black tracking-[0.2em] text-fuchsia-300">PSESメンバー</p>
+            <h3 id="profile-membership-title" class="mt-1 text-base font-black text-white">無料でプレイ中</h3>
+            <p id="profile-membership-description" class="mt-1 max-w-lg text-xs leading-5 text-slate-200">実際にゲームで遊んだ時間が5分たつと、次のステージへ進む前などに広告が表示されます。</p>
+          </div>
+          <span id="profile-membership-badge" class="rounded-full border border-slate-500 bg-slate-800 px-3 py-1 text-xs font-black text-slate-200">FREE</span>
+        </div>
+        <div class="mt-3 flex flex-wrap gap-2">
+          <button id="account-login-btn" type="button" class="min-h-11 rounded-xl border border-white/20 bg-white px-4 text-xs font-black text-slate-900">Googleでログイン</button>
+          <button id="membership-upgrade-btn" type="button" class="min-h-11 rounded-xl bg-gradient-to-r from-fuchsia-400 to-amber-300 px-4 text-xs font-black text-slate-950">一度だけ500円で広告をなくす</button>
+        </div>
+        <p id="membership-message" role="status" class="mt-2 hidden rounded-lg bg-slate-950/60 px-3 py-2 text-xs text-slate-200"></p>
+      </section>
       <div id="profile-grade-progress" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4"></div>
       <div id="profile-certificate-panel" class="mb-5 rounded-2xl border border-amber-400/30 bg-amber-500/10 p-4"></div>
 
@@ -529,6 +544,8 @@
     import { getFXSystem } from './js/FXSystem.js';
     import { getErrorGuidanceSystem } from './js/ErrorGuidanceSystem.js?v=3';
     import { AuthManager } from './src/auth/AuthManager.js?v=2';
+    import { MembershipManager } from './src/membership/MembershipManager.js?v=1';
+    import { H5AdManager } from './src/ads/H5AdManager.js?v=1';
     import { StorageAdapter } from './src/storage/StorageAdapter.js';
     import { LearnerProfileModal, isLearnerProfileComplete, learnerGenderLabel } from './src/profile/LearnerProfile.js?v=3';
     import { calculateGradeProgress, createGraduationCertificate, ELEMENTARY_GRADUATION_ACHIEVEMENT_ID } from './ProgressionSystem.js';
@@ -538,8 +555,14 @@
     const turnstileSiteKey = document.querySelector('meta[name="turnstile-site-key"]')?.content || '';
     const authManager = new AuthManager({ apiBase: '/api', turnstileSiteKey, storage: storageAdapter });
     const accessSession = await authManager.initialize();
-    const localStorageUserId = accessSession.mode === 'guest' ? 'guest-local' : (accessSession.user?.id || 'local-offline');
+    const localStorageUserId = accessSession.user?.id || 'anonymous-device';
     storageAdapter.setUser(localStorageUserId, { cloudEnabled: accessSession.mode === 'authenticated' });
+    const membershipManager = new MembershipManager({ apiBase: '/api', session: accessSession });
+    const membershipStatus = await membershipManager.initialize();
+    const adManager = new H5AdManager({
+      publisherId: membershipStatus.googleH5AdsPublisherId,
+      adFree: membershipStatus.adFree
+    }).start();
     let synchronizedState = accessSession.mode === 'authenticated'
       ? await storageAdapter.syncNow('login').catch(() => null)
       : await storageAdapter.getLocalSnapshot();
@@ -592,12 +615,8 @@
     errorInterceptor.bindWebGLCanvas(engine.renderer.domElement);
 
     const gameModal = new MiniGameModal();
+    gameModal.setSafeBreakHandler(continueAction => adManager.runAtSafeBreak(continueAction));
     const agentBrain = new AntigravityAgentBrain(curriculumNodes, economy, graphEngineInstance);
-    window.addEventListener('GUEST_TRIAL_EXPIRED', () => {
-      gameModal.close();
-      document.getElementById('game-type-modal')?.classList.add('hidden');
-      document.getElementById('mobile-sheet')?.classList.add('translate-y-full');
-    });
 
     let currentNode = curriculumNodes[0] || { subject: '国語', name: '単元読込中', desc: '' };
     let sessionStartTime = 0;
@@ -1134,6 +1153,39 @@
         const remaining = Math.max(0, totalStages - clearedStages);
         certificatePanel.innerHTML = `<p class="text-xs font-bold tracking-widest text-amber-300">めざせ、全学年クリア！</p><h3 class="mt-1 font-black text-white">小学校課程修了証</h3><p class="mt-1 text-xs leading-5 text-slate-300">1〜6年生のチャレンジを全部クリアすると、修了証とお祝いコインがもらえるよ。あと ${remaining}こ！</p>`;
       }
+      renderMembershipPanel();
+    }
+
+    function renderMembershipPanel(message = '') {
+      const status = membershipManager.status;
+      const title = document.getElementById('profile-membership-title');
+      const description = document.getElementById('profile-membership-description');
+      const badge = document.getElementById('profile-membership-badge');
+      const loginButton = document.getElementById('account-login-btn');
+      const upgradeButton = document.getElementById('membership-upgrade-btn');
+      const messageBox = document.getElementById('membership-message');
+      if (!title || !description || !badge || !loginButton || !upgradeButton || !messageBox) return;
+
+      if (status.adFree) {
+        title.textContent = '広告なしメンバー';
+        description.textContent = '一度のお支払いが完了しています。これからも広告なしで、すべての学年とゲームを遊べます。';
+        badge.textContent = 'AD FREE';
+        badge.className = 'rounded-full border border-emerald-300/60 bg-emerald-400/15 px-3 py-1 text-xs font-black text-emerald-200';
+        upgradeButton.classList.add('hidden');
+      } else {
+        title.textContent = accessSession.mode === 'anonymous' ? 'ログインなしで無料プレイ中' : '無料メンバー';
+        description.textContent = '実際にゲームで遊んだ時間が5分たつと、次のステージへ進む前などに広告が表示されます。ログインしても無料メンバーには広告が表示されます。';
+        badge.textContent = 'FREE';
+        upgradeButton.classList.remove('hidden');
+      }
+      loginButton.classList.toggle('hidden', accessSession.mode !== 'anonymous');
+      if (accessSession.mode === 'local') upgradeButton.classList.add('hidden');
+      if (message) {
+        messageBox.textContent = message;
+        messageBox.classList.remove('hidden');
+      } else {
+        messageBox.classList.add('hidden');
+      }
     }
 
     function updateEconomyUI() {
@@ -1211,6 +1263,44 @@
         document.getElementById('user-name-input').value = '';
       }
     };
+
+    document.getElementById('account-login-btn').onclick = () => authManager.showLogin({
+      message: 'Googleでログインすると学習きろくをクラウドに保存でき、広告なしメンバーも購入できます。ゲームはログインしなくても遊べます。'
+    });
+
+    document.getElementById('membership-upgrade-btn').onclick = async () => {
+      if (accessSession.mode === 'anonymous') {
+        await authManager.showLogin({ message: '広告なしメンバーを購入するには、先にGoogleでログインしてください。' });
+        return;
+      }
+      const button = document.getElementById('membership-upgrade-btn');
+      button.disabled = true;
+      button.textContent = 'お支払いページを準備中…';
+      try {
+        await membershipManager.startCheckout();
+      } catch (error) {
+        renderMembershipPanel(error.message);
+        button.disabled = false;
+        button.textContent = '一度だけ500円で広告をなくす';
+      }
+    };
+
+    membershipManager.addEventListener('change', event => {
+      adManager.setAdFree(event.detail.adFree);
+      renderMembershipPanel();
+    });
+
+    const paymentResult = new URLSearchParams(location.search).get('payment');
+    if (paymentResult === 'success') {
+      setTimeout(async () => {
+        await membershipManager.initialize();
+        renderMembershipPanel(membershipManager.status.adFree
+          ? 'お支払いが完了しました。広告なしメンバーになりました！'
+          : 'お支払いを確認しています。少し待ってから、この画面を開き直してください。');
+      }, 1200);
+    } else if (paymentResult === 'cancelled') {
+      renderMembershipPanel('お支払いはキャンセルされました。料金はかかっていません。');
+    }
 
     function renderUserProfilesList() {
       const list = economy.getUserList();

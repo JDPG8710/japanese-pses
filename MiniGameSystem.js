@@ -155,6 +155,7 @@ export class MiniGameModal {
     this.stageTimeLimit = 0;
     this.stageSettled = false;
     this.playActivityActive = false;
+    this.safeBreakHandler = null;
     this.createModalDOM();
     this.currentGame = null;
     this.boundCanvasResize = () => this.handleCanvasResize();
@@ -217,7 +218,7 @@ export class MiniGameModal {
       }
 
       const closeBtn = document.getElementById('game-close-btn');
-      if (closeBtn) closeBtn.addEventListener('click', () => this.close());
+      if (closeBtn) closeBtn.addEventListener('click', () => this.runAtSafeBreak(() => this.close()));
       const hintBtn = document.getElementById('game-hint-btn');
       if (hintBtn) {
         hintBtn.addEventListener('click', () => {
@@ -232,6 +233,16 @@ export class MiniGameModal {
       }
     }
     this.modal = modal;
+  }
+
+  setSafeBreakHandler(handler) {
+    this.safeBreakHandler = typeof handler === 'function' ? handler : null;
+  }
+
+  runAtSafeBreak(continueAction) {
+    const action = typeof continueAction === 'function' ? continueAction : () => {};
+    if (!this.safeBreakHandler) { action(); return; }
+    try { this.safeBreakHandler(action); } catch { action(); }
   }
 
   getMaxStagesForNode(node) {
@@ -943,15 +954,15 @@ export class MiniGameModal {
           </div>
         </div>`;
         const retryBtn = document.getElementById('retry-stage-btn');
-        if (retryBtn) retryBtn.onclick = () => {
+        if (retryBtn) retryBtn.onclick = () => this.runAtSafeBreak(() => {
           overlay.innerHTML = '';
           overlay.style.pointerEvents = 'none';
           if (this.currentGame) this.currentGame.destroy();
           this.currentGame = null;
           this.open(this.lastPlayedNode, this.lastPlayedLevel);
-        };
+        });
         const backBtn = document.getElementById('settle-confirm-btn');
-        if (backBtn) backBtn.onclick = () => this.close();
+        if (backBtn) backBtn.onclick = () => this.runAtSafeBreak(() => this.close());
         return;
       }
 
@@ -976,11 +987,11 @@ export class MiniGameModal {
         </div>
       `;
       const confirmBtn = document.getElementById('settle-confirm-btn');
-      if (confirmBtn) confirmBtn.onclick = () => this.close();
+      if (confirmBtn) confirmBtn.onclick = () => this.runAtSafeBreak(() => this.close());
 
       const nextBtn = document.getElementById('next-stage-btn');
       if (nextBtn) {
-        nextBtn.onclick = () => {
+        nextBtn.onclick = () => this.runAtSafeBreak(() => {
           const nextLevel = this.lastPlayedLevel + 1;
           overlay.innerHTML = '';
           overlay.style.pointerEvents = 'none';
@@ -989,7 +1000,7 @@ export class MiniGameModal {
             this.currentGame = null;
           }
           this.open(this.lastPlayedNode, nextLevel);
-        };
+        });
       }
     }
   }
@@ -2604,162 +2615,230 @@ export class LeverPhysicsGame {
 // =========================================================================
 // 6. 理科：回路実験室 (CircuitSandboxGame)
 // =========================================================================
+export const CIRCUIT_CHALLENGE_BANK = [
+  { id: 'G3_CLOSED_LOOP', grades: [3], type: 'single', title: '豆電球が光る回路', prompt: '豆電球を光らせるには、どんな回路にする？', correct: '切れ目のない一つの輪にする', options: ['切れ目のない一つの輪にする', '導線を一本だけにする', '乾電池を外す'], explanation: '電流が一周できる閉じた回路で豆電球が光ります。' },
+  { id: 'G3_CONDUCTOR', grades: [3], type: 'material', title: '電気を通すもの', prompt: 'すき間につなぐと豆電球が光るものは？', correct: '銅のクリップ', options: ['銅のクリップ', '乾いた木の棒', 'プラスチックの定規'], explanation: '銅などの金属は電気を通します。' },
+  { id: 'G3_FAULT', grades: [3], type: 'fault', title: '回路の故障さがし', prompt: '豆電球が光らない原因を見つけよう。', correct: '導線が外れている', options: ['導線が外れている', '豆電球が丸い', '乾電池に文字がある'], explanation: '導線が外れると電流の通り道が切れます。' },
+  { id: 'G4_SERIES_CELLS', grades: [4], type: 'series', title: '乾電池の直列つなぎ', prompt: 'モーターをより速く回すつなぎ方は？', correct: '乾電池を同じ向きに直列につなぐ', options: ['乾電池を同じ向きに直列につなぐ', '乾電池を一つ外す', '乾電池を逆向きに重ねる'], explanation: '直列つなぎでは回路に加わる電圧が大きくなります。' },
+  { id: 'G4_PARALLEL_CELLS', grades: [4], type: 'parallel', title: '乾電池の並列つなぎ', prompt: '同じ明るさを長く保ちやすいつなぎ方は？', correct: '乾電池を並列につなぐ', options: ['乾電池を並列につなぐ', '乾電池を逆向きに直列につなぐ', 'スイッチを開いたままにする'], explanation: '同じ乾電池の並列つなぎは、同じ程度の電圧で長く使えます。' },
+  { id: 'G4_MOTOR_DIRECTION', grades: [4], type: 'motor', title: 'モーターの回る向き', prompt: 'モーターを反対向きに回すには？', correct: '乾電池の向きを反対にする', options: ['乾電池の向きを反対にする', '導線を長くするだけ', 'スイッチを二つにする'], explanation: '電流の向きを逆にすると、モーターの回転方向も逆になります。' },
+  { id: 'G4_PARALLEL_BULBS', grades: [4], type: 'parallelBulbs', title: '豆電球の並列回路', prompt: '一方の豆電球を外しても、もう一方を光らせたい。どの回路？', correct: '枝分かれした並列回路', options: ['枝分かれした並列回路', '一つの道だけの直列回路', '開いた回路'], explanation: '並列回路では電流の通り道が枝分かれしています。' },
+  { id: 'G5_COIL_TURNS', grades: [5], type: 'coil', title: '電磁石の巻き数', prompt: '電磁石を強くする方法は？', correct: 'コイルの巻き数を増やす', options: ['コイルの巻き数を増やす', '鉄心を抜いて木にする', '回路を開く'], explanation: '同じ電流なら、コイルの巻き数を増やすと電磁石は強くなります。' },
+  { id: 'G5_COIL_CURRENT', grades: [5], type: 'coilPower', title: '電磁石と電流', prompt: '巻き数が同じとき、電磁石を強くするには？', correct: '流れる電流を大きくする', options: ['流れる電流を大きくする', '電流を止める', '鉄心を短い紙に変える'], explanation: 'コイルに流れる電流が大きいほど電磁石は強くなります。' },
+  { id: 'G5_POLE_REVERSE', grades: [5], type: 'coilPoles', title: '電磁石の極', prompt: '電磁石のN極とS極を入れ替えるには？', correct: '電流の向きを反対にする', options: ['電流の向きを反対にする', 'コイルの色を変える', '鉄心を冷やす'], explanation: '電流の向きを逆にすると電磁石の極も入れ替わります。' },
+  { id: 'G5_BRANCH_SWITCH', grades: [5], type: 'switches', title: '枝分かれ回路のスイッチ', prompt: '右側の豆電球だけを消すには、どの操作？', correct: '右の枝のスイッチを開く', options: ['右の枝のスイッチを開く', '電源の前の主スイッチを開く', '左の枝のスイッチを開く'], explanation: '枝ごとのスイッチなら、その枝だけの電流を止められます。' },
+  { id: 'G6_ENERGY_LIGHT', grades: [6], type: 'energy', title: '電気のエネルギー変換', prompt: '豆電球では、電気のエネルギーは主に何に変わる？', correct: '光と熱', options: ['光と熱', '位置エネルギーだけ', '音だけ'], explanation: '豆電球は電気のエネルギーを光と熱に変えます。' },
+  { id: 'G6_RESISTANCE', grades: [6], type: 'resistance', title: '電熱線のはたらき', prompt: '同じ電圧で、より大きな電流が流れやすいのは？', correct: '電気抵抗が小さい電熱線', options: ['電気抵抗が小さい電熱線', '電気抵抗が大きい電熱線', '回路が切れている電熱線'], explanation: '同じ電圧なら、抵抗が小さいほど電流は大きくなります。' },
+  { id: 'G6_GENERATE', grades: [6], type: 'generator', title: '電気をつくる', prompt: '手回し発電機で豆電球を明るくするには？', correct: 'ハンドルを速く回す', options: ['ハンドルを速く回す', '導線を外す', '回すのを止める'], explanation: '発電機を速く回すと、つくられる電気が増えます。' },
+  { id: 'G6_STORAGE', grades: [6], type: 'storage', title: '電気をためて使う', prompt: '発電した電気をためて、あとで使える部品は？', correct: 'コンデンサー', options: ['コンデンサー', '開いたスイッチ', 'プラスチック棒'], explanation: 'コンデンサーには電気をためて取り出すはたらきがあります。' },
+  { id: 'G6_SAFETY', grades: [6], type: 'safety', title: '安全な回路', prompt: '電流が大きくなりすぎたとき、回路を守る部品は？', correct: 'ヒューズやブレーカー', options: ['ヒューズやブレーカー', '豆電球のガラス', '導線の色テープ'], explanation: 'ヒューズやブレーカーは異常な電流を止め、回路を守ります。' }
+];
+
 export class CircuitSandboxGame {
-  constructor(canvas, gameData, onWin) {
+  constructor(canvas, gameData, onWin, grade = 3, level = 1) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
     this.onWin = onWin;
+    this.grade = Math.max(3, Math.min(6, Number(grade || gameData?.grade) || 3));
+    this.level = Math.max(1, Number(level || gameData?.level) || 1);
+    this.gameData = gameData || {};
     this.running = false;
-
-    this.switchClosed = false;
-    this.isSeriesDual = false; // Toggle 1 or 2 batteries
-    this.animSpark = 0;
-
-    this.boundPointer = this.handlePointer.bind(this);
+    this.completed = false;
+    this.selectedOption = null;
+    const gradeChallenges = CIRCUIT_CHALLENGE_BANK.filter(item => item.grades.includes(this.grade));
+    const requested = gradeChallenges.find(item => item.id === this.gameData.challengeMode);
+    this.challenge = requested || gradeChallenges[(this.level - 1) % gradeChallenges.length];
+    this.options = shuffleCopy(this.challenge.options);
+    this.currentDirection = Math.random() < 0.5 ? -1 : 1;
   }
 
   start() {
     this.running = true;
-    this.switchClosed = false;
-    this.isSeriesDual = false;
-    this.canvas.addEventListener('pointerdown', this.boundPointer);
+    this.renderControls();
     this.loop();
   }
 
-  handlePointer(e) {
-    const rect = this.canvas.getBoundingClientRect();
-    const x = (e.clientX - rect.left) * (getLogicalCanvasWidth(this.canvas) / rect.width);
-    const y = (e.clientY - rect.top) * (getLogicalCanvasHeight(this.canvas) / rect.height);
-
-    const audio = getAudioSynthesizer();
-    const fx = getFXSystem();
-    const guidance = getErrorGuidanceSystem();
-
-    // 1. Click switch area
-    if (Math.abs(x - (getLogicalCanvasWidth(this.canvas) / 2)) < 60 && Math.abs(y - 120) < 40) {
-      this.switchClosed = !this.switchClosed;
-      audio.playClick();
-
-      if (this.switchClosed) {
-        audio.playLaser();
-        fx.spawnSparkBurst(getLogicalCanvasWidth(this.canvas) / 2, 120, 15, '#38bdf8');
-        this.checkWinCondition();
-      }
-      return;
-    }
-
-    // 2. Click battery mode toggle button
-    if (x > getLogicalCanvasWidth(this.canvas) - 150 && y > getLogicalCanvasHeight(this.canvas) - 70) {
-      this.isSeriesDual = !this.isSeriesDual;
-      audio.playClick();
-      if (this.switchClosed) this.checkWinCondition();
-      return;
-    }
+  renderControls() {
+    const overlay = typeof document !== 'undefined' ? document.getElementById('game-overlay-ui') : null;
+    if (!overlay) return;
+    overlay.style.pointerEvents = 'auto';
+    overlay.innerHTML = `<div data-circuit-controls class="absolute inset-x-0 bottom-0 bg-slate-950/95 border-t border-cyan-400/30 p-3 sm:p-4">
+      <p class="text-center text-sm sm:text-base font-black text-white">${this.challenge.prompt}</p>
+      <div class="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2">
+        ${this.options.map((option, index) => `<button type="button" data-circuit-option="${index}" class="min-h-12 rounded-xl border-2 border-slate-600 bg-slate-800 px-3 py-2 text-xs font-bold text-white transition hover:border-cyan-300 hover:bg-slate-700">${option}</button>`).join('')}
+      </div>
+      <p data-circuit-feedback class="mt-2 min-h-5 text-center text-xs font-bold text-cyan-200" aria-live="polite">回路図を見て、答えを一つ選ぼう。</p>
+    </div>`;
+    overlay.querySelectorAll?.('[data-circuit-option]').forEach(button => {
+      button.addEventListener('click', () => this.answer(this.options[Number(button.dataset.circuitOption)], button));
+    });
   }
 
-  checkWinCondition() {
-    const audio = getAudioSynthesizer();
-    const fx = getFXSystem();
-    const guidance = getErrorGuidanceSystem();
-
-    const scoreEl = document.getElementById('game-score');
-    if (scoreEl) scoreEl.innerText = this.switchClosed ? (this.isSeriesDual ? '3.0V (超高輝度)' : '1.5V (点灯)') : '0V (未通電)';
-
-    if (this.switchClosed) {
-      audio.playPositive(5, 1);
-      fx.spawnStarBurst(getLogicalCanvasWidth(this.canvas) / 2, getLogicalCanvasHeight(this.canvas) / 2 + 60, 30, '#fbbf24');
-      fx.showFloatingScore(getLogicalCanvasWidth(this.canvas) / 2, getLogicalCanvasHeight(this.canvas) / 2, '回路開通！豆電球点灯！', '#34d399');
-      guidance.registerSuccess({ questionId: 'CIRCUIT_SANDBOX' });
-
+  answer(option, button) {
+    if (!this.running || this.completed) return;
+    this.selectedOption = option;
+    const overlay = document.getElementById('game-overlay-ui');
+    const buttons = [...(overlay?.querySelectorAll?.('[data-circuit-option]') || [])];
+    buttons.forEach(item => item.className = 'min-h-12 rounded-xl border-2 border-slate-600 bg-slate-800 px-3 py-2 text-xs font-bold text-white transition opacity-70');
+    const feedback = overlay?.querySelector?.('[data-circuit-feedback]');
+    const correct = option === this.challenge.correct;
+    if (button) button.className = `min-h-12 rounded-xl border-2 px-3 py-2 text-xs font-black text-white ${correct ? 'border-emerald-300 bg-emerald-500/40 ring-4 ring-emerald-300/20' : 'border-rose-300 bg-rose-500/40 ring-4 ring-rose-300/20'}`;
+    getAudioSynthesizer().playClick();
+    if (!correct) {
+      if (feedback) feedback.textContent = 'おしい！ 回路の電流がどこを通るか、もう一度たどってみよう。';
+      getErrorGuidanceSystem().registerError?.({ questionId: this.challenge.id, errorType: 'CIRCUIT_REASONING' });
       setTimeout(() => {
-        this.destroy();
-        this.onWin(3, 260);
-      }, 500);
+        if (!this.running) return;
+        buttons.forEach(item => { item.disabled = false; item.className = 'min-h-12 rounded-xl border-2 border-slate-600 bg-slate-800 px-3 py-2 text-xs font-bold text-white transition hover:border-cyan-300 hover:bg-slate-700'; });
+      }, 550);
+      return;
     }
+    this.completed = true;
+    buttons.forEach(item => { item.disabled = true; });
+    if (feedback) feedback.textContent = `正解！ ${this.challenge.explanation}`;
+    const scoreEl = document.getElementById('game-score');
+    if (scoreEl) scoreEl.innerText = '300';
+    const w = getLogicalCanvasWidth(this.canvas);
+    const h = getLogicalCanvasHeight(this.canvas);
+    getAudioSynthesizer().playPositive(5, 1);
+    getFXSystem().spawnStarBurst(w / 2, Math.min(h / 2, 185), 28, '#fbbf24');
+    getErrorGuidanceSystem().registerSuccess({ questionId: this.challenge.id });
+    setTimeout(() => {
+      if (!this.running) return;
+      this.destroy();
+      this.onWin(3, 300, { cleared: true, accuracy: 1, correctCount: 1, totalCount: 1, challengeMode: this.challenge.id });
+    }, 850);
   }
 
   loop() {
     if (!this.running) return;
+    this.render();
+    this.frameId = requestAnimationFrame(() => this.loop());
+  }
+
+  render() {
     const w = getLogicalCanvasWidth(this.canvas);
     const h = getLogicalCanvasHeight(this.canvas);
-    this.ctx.clearRect(0, 0, w, h);
+    const ctx = this.ctx;
+    ctx.clearRect(0, 0, w, h);
+    const glow = ctx.createRadialGradient(w / 2, 145, 10, w / 2, 145, Math.max(180, w / 2));
+    glow.addColorStop(0, 'rgba(14,165,233,0.18)');
+    glow.addColorStop(1, 'rgba(2,6,23,0)');
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, 0, w, Math.min(h, 260));
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#e0f2fe';
+    ctx.font = 'bold 18px sans-serif';
+    ctx.fillText(`小学${this.grade}年　${this.challenge.title}`, Math.floor(w / 2), 28);
+    this.drawCircuitDiagram(w / 2, 135, Math.min(190, w * 0.3), this.challenge.type);
+  }
 
-    const cx = w / 2;
-    const cy = h / 2;
+  drawCircuitDiagram(cx, cy, radius, type) {
+    const ctx = this.ctx;
+    const left = cx - radius;
+    const right = cx + radius;
+    const top = cy - 62;
+    const bottom = cy + 62;
+    ctx.strokeStyle = this.completed ? '#34d399' : '#38bdf8';
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.moveTo(left, bottom);
+    ctx.lineTo(left, top);
+    ctx.lineTo(right, top);
+    ctx.lineTo(right, bottom);
+    ctx.lineTo(left, bottom);
+    ctx.stroke();
+    this.drawBattery(cx, bottom);
 
-    // Header
-    this.ctx.fillStyle = '#ffffff';
-    this.ctx.font = 'bold 18px sans-serif';
-    this.ctx.textAlign = 'center';
-    this.ctx.fillText(`${withKidsReading('回路実験室', 'かいろじっけんしつ')}：スイッチを閉じて豆電球を光らせよう！`, cx, 40);
-
-    // Circuit Wires Rectangle
-    this.ctx.strokeStyle = this.switchClosed ? '#38bdf8' : '#64748b';
-    this.ctx.lineWidth = 4;
-    this.ctx.strokeRect(cx - 160, cy - 80, 320, 160);
-
-    // Switch on Top Wire
-    this.ctx.fillStyle = '#0f172a';
-    this.ctx.fillRect(cx - 35, cy - 90, 70, 20);
-
-    this.ctx.strokeStyle = '#eab308';
-    this.ctx.lineWidth = 3.5;
-    this.ctx.beginPath();
-    this.ctx.moveTo(cx - 30, cy - 80);
-    if (this.switchClosed) {
-      this.ctx.lineTo(cx + 30, cy - 80);
+    if (/parallel|switches/i.test(type)) {
+      ctx.beginPath();
+      ctx.moveTo(cx - 80, top);
+      ctx.lineTo(cx - 80, bottom);
+      ctx.moveTo(cx + 80, top);
+      ctx.lineTo(cx + 80, bottom);
+      ctx.stroke();
+      this.drawBulb(cx - 80, cy, this.completed);
+      this.drawBulb(cx + 80, cy, this.completed);
+    } else if (/coil/i.test(type)) {
+      ctx.strokeStyle = '#fb923c';
+      ctx.lineWidth = 4;
+      for (let i = -3; i <= 3; i += 1) {
+        ctx.beginPath();
+        ctx.arc(cx + i * 16, cy, 15, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.fillStyle = '#cbd5e1';
+      ctx.fillRect(cx - 78, cy - 5, 156, 10);
+      ctx.fillStyle = '#f8fafc';
+      ctx.font = 'bold 11px sans-serif';
+      ctx.fillText('コイルと鉄心', cx, cy + 30);
+    } else if (type === 'motor' || type === 'generator') {
+      ctx.fillStyle = '#a78bfa';
+      ctx.beginPath();
+      ctx.arc(right, cy, 25, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 17px sans-serif';
+      ctx.fillText(type === 'motor' ? 'M' : 'G', right, cy);
+      ctx.save();
+      ctx.translate(right, cy);
+      ctx.rotate((Date.now() / 350) * this.currentDirection);
+      ctx.strokeStyle = '#f8fafc';
+      ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(-35, 0); ctx.lineTo(35, 0); ctx.moveTo(0, -35); ctx.lineTo(0, 35); ctx.stroke();
+      ctx.restore();
     } else {
-      this.ctx.lineTo(cx + 25, cy - 105);
-    }
-    this.ctx.stroke();
-
-    this.ctx.fillStyle = '#ffffff';
-    this.ctx.font = '11px sans-serif';
-    this.ctx.fillText(this.switchClosed ? 'スイッチ：入' : 'スイッチ：切', cx, cy - 110);
-
-    // Battery on Bottom Wire
-    const batY = cy + 80;
-    this.ctx.fillStyle = '#ef4444';
-    this.ctx.fillRect(cx - 40, batY - 14, 40, 28);
-    this.ctx.fillStyle = '#3b82f6';
-    this.ctx.fillRect(cx, batY - 14, 40, 28);
-    this.ctx.fillStyle = '#ffffff';
-    this.ctx.font = 'bold 10px sans-serif';
-    this.ctx.fillText('+  1.5V  -', cx, batY + 4);
-
-    // Light Bulb on Right Wire
-    const bulbX = cx + 160;
-    const bulbY = cy;
-
-    if (this.switchClosed) {
-      // Glow
-      const grad = this.ctx.createRadialGradient(bulbX, bulbY, 5, bulbX, bulbY, 45);
-      grad.addColorStop(0, '#fef08a');
-      grad.addColorStop(1, 'rgba(254, 240, 138, 0)');
-      this.ctx.fillStyle = grad;
-      this.ctx.beginPath();
-      this.ctx.arc(bulbX, bulbY, 45, 0, Math.PI * 2);
-      this.ctx.fill();
+      this.drawBulb(right, cy, this.completed);
     }
 
-    this.ctx.fillStyle = this.switchClosed ? '#fbbf24' : '#475569';
-    this.ctx.beginPath();
-    this.ctx.arc(bulbX, bulbY, 18, 0, Math.PI * 2);
-    this.ctx.fill();
-    this.ctx.strokeStyle = '#e2e8f0';
-    this.ctx.lineWidth = 2;
-    this.ctx.stroke();
+    if (type === 'fault') {
+      ctx.strokeStyle = '#fb7185';
+      ctx.lineWidth = 7;
+      ctx.beginPath(); ctx.moveTo(cx - 25, top); ctx.lineTo(cx - 8, top); ctx.moveTo(cx + 12, top); ctx.lineTo(cx + 30, top); ctx.stroke();
+      ctx.fillStyle = '#fecdd3'; ctx.font = 'bold 20px sans-serif'; ctx.fillText('?', cx, top - 20);
+    } else if (type === 'material') {
+      ctx.fillStyle = '#fbbf24'; ctx.font = 'bold 12px sans-serif'; ctx.fillText('ここに何をつなぐ？', cx, top - 18);
+    } else {
+      this.drawSwitch(cx, top, this.completed);
+    }
+  }
 
-    this.ctx.fillStyle = '#ffffff';
-    this.ctx.font = 'bold 10px sans-serif';
-    this.ctx.fillText('💡', bulbX, bulbY + 3);
+  drawBattery(x, y) {
+    const ctx = this.ctx;
+    ctx.fillStyle = '#ef4444'; ctx.fillRect(x - 42, y - 14, 42, 28);
+    ctx.fillStyle = '#2563eb'; ctx.fillRect(x, y - 14, 42, 28);
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 11px sans-serif'; ctx.fillText('+  乾電池  −', x, y);
+  }
 
-    requestAnimationFrame(() => this.loop());
+  drawBulb(x, y, on) {
+    const ctx = this.ctx;
+    if (on) {
+      const light = ctx.createRadialGradient(x, y, 4, x, y, 42);
+      light.addColorStop(0, 'rgba(254,240,138,0.95)'); light.addColorStop(1, 'rgba(254,240,138,0)');
+      ctx.fillStyle = light; ctx.beginPath(); ctx.arc(x, y, 42, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.fillStyle = on ? '#facc15' : '#64748b';
+    ctx.beginPath(); ctx.arc(x, y, 19, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#f8fafc'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 10px sans-serif'; ctx.fillText('豆電球', x, y + 34);
+  }
+
+  drawSwitch(x, y, closed) {
+    const ctx = this.ctx;
+    ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(x - 30, y); ctx.lineTo(closed ? x + 30 : x + 20, closed ? y : y - 24); ctx.stroke();
+    ctx.fillStyle = '#fde68a'; ctx.font = 'bold 10px sans-serif'; ctx.fillText('スイッチ', x, y - 38);
   }
 
   destroy() {
     this.running = false;
-    this.canvas.removeEventListener('pointerdown', this.boundPointer);
+    if (this.frameId != null && typeof cancelAnimationFrame === 'function') cancelAnimationFrame(this.frameId);
+    const overlay = typeof document !== 'undefined' ? document.getElementById('game-overlay-ui') : null;
+    if (overlay?.querySelector?.('[data-circuit-controls]')) {
+      overlay.innerHTML = '';
+      overlay.style.pointerEvents = 'none';
+    }
   }
 }
 

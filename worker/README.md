@@ -1,6 +1,6 @@
 # Cloudflare Worker／D1 配備手順
 
-この Worker は Turnstile、Google 認証、週2時間の累積ゲスト体験、教材配信、利用者プロファイル、ステージ通過、挑戦履歴、卒業証を Cloudflare D1 の一つの認証境界で提供します。ゲスト枠はステージが実行中かつページが表示中の時間だけを30秒間隔のハートビートで累積し、メニュー、結果画面、バックグラウンド中は消費しません。IndexedDB はオフラインキャッシュであり、クラウド側の正本は D1 です。
+この Worker は Turnstile付きGoogle認証、教材配信、利用者プロファイル、ステージ通過、挑戦履歴、卒業証、広告なしメンバー購入を Cloudflare D1 の一つの認証境界で提供します。未ログインでもゲームは時間制限なく利用でき、ログインはクラウド保存と広告なしメンバー購入に使います。IndexedDB はオフラインキャッシュであり、クラウド側の正本は D1 です。
 
 ## 1. D1 データベース
 
@@ -20,10 +20,11 @@ npm run db:seed
 npx wrangler secret put TURNSTILE_SECRET_KEY
 npx wrangler secret put GOOGLE_CLIENT_SECRET
 npx wrangler secret put JWT_SECRET
-npx wrangler secret put FINGERPRINT_PEPPER
+npx wrangler secret put STRIPE_SECRET_KEY
+npx wrangler secret put STRIPE_WEBHOOK_SECRET
 ```
 
-`JWT_SECRET` と `FINGERPRINT_PEPPER` はそれぞれ独立した32バイト以上の乱数にします。秘密値、OAuth クライアント JSON、`.dev.vars` は GitHub へコミットしません。Apple ログインは現在 UI から停止しているため、`APPLE_CLIENT_SECRET` は不要です。
+`JWT_SECRET` と Stripe の秘密値は Worker Secret にだけ登録します。秘密値、OAuth クライアント JSON、`.dev.vars` は GitHub へコミットしません。Apple ログインは現在 UI から停止しているため、`APPLE_CLIENT_SECRET` は不要です。Google H5 Games Ads の `ca-pub-...` は公開IDのため、取得後に `GOOGLE_H5_ADS_CLIENT` として設定します。
 
 ## 3. OAuth／Turnstile
 
@@ -42,12 +43,13 @@ npm run build
 npm run deploy
 ```
 
-`npm run deploy` はテスト、静的成果物の再構築、本番 D1 マイグレーション、教材インポート、Worker 配備を順番に実行します。公開後は `/api/health`、`/api/game-data/manifest.json`、Google ログイン、ゲスト開始、ステージ精算を確認してください。
+`npm run deploy` はテスト、静的成果物の再構築、本番 D1 マイグレーション、教材インポート、Worker 配備を順番に実行します。公開後は `/api/health`、`/api/game-data/manifest.json`、任意のGoogleログイン、無料会員の広告間隔、広告なし会員、ステージ精算を確認してください。
 
 ## 5. データ書き込み方針
 
 - 教材はデプロイ時に D1 へ一括投入し、ETag 付き API で配信します。
-- OAuth、セッション、ゲスト体験は D1 上で期限を検証します。
+- OAuth、セッション、会員権、Stripe支払いイベントは D1 上で検証・保存します。
+- Stripe Webhook は生のリクエスト本文と署名を検証し、同じイベントを重複処理しません。
 - プレイヤー進捗はステージ精算時または60秒デバウンスでバッチ送信します。
 - 各挑戦は `attempt_id` で重複を防ぎ、卒業証は利用者ごとに一度だけ保存します。
 - IndexedDB は断網時の一時保存に使い、再接続時は `updated_at` の新しい側へ収束させます。

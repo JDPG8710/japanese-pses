@@ -11,7 +11,8 @@
 - 基礎・英検3級・英検2級・短文読解・長文読解から選べる英語学習
 - 生活科の分類・場面判断ゲーム
 - 学習状況、スターコイン、クリア履歴のブラウザー保存
-- Googleログイン、Cloudflare Turnstile、端末ごと週2時間の累積ゲスト体験（ゲーム中だけ消費）
+- ログインなしですぐ遊べる入口、Googleログインによるクラウド保存
+- 無料メンバー向け5分間隔のGoogle H5ゲーム広告と、500円の永久広告なしメンバー
 - Cloudflare D1 と IndexedDB の双方向同期、オフライン学習
 - DPR 2〜3倍の Retina Canvas と論理座標補正による高精細な表示・タップ判定
 - 6種類の宇宙背景に加え、大樹や高層都市などを選べるテーマ機能
@@ -53,7 +54,7 @@ node tests/test_e2e_runner.js
 
 ## Cloudflareへビルド・公開
 
-本番では認証APIと静的ゲームを同じWorkerから配信し、教材、利用者、認証セッション、ゲスト制限、通過状況、挑戦履歴、卒業証は Cloudflare D1 を唯一のクラウドデータベースとして扱います。`data/` の JSON はローカル開発と D1 インポート元としてだけ保持され、静的成果物には含まれません。本番実行時は `/api/game-data/` が D1 を読み、JSON ファイルへフォールバックしません。
+本番では認証APIと静的ゲームを同じWorkerから配信し、教材、利用者、認証セッション、会員権、支払いイベント、通過状況、挑戦履歴、卒業証は Cloudflare D1 を唯一のクラウドデータベースとして扱います。`data/` の JSON はローカル開発と D1 インポート元としてだけ保持され、静的成果物には含めません。本番実行時は `/api/game-data/` が D1 を読み、JSON ファイルへフォールバックしません。
 
 ```powershell
 npm install
@@ -75,8 +76,9 @@ npm run deploy
 - `.agents/agents/`：製品管理、設計、品質保証、修復、知識グラフ管理の役割定義
 - `tests/`：単体・統合・回帰テスト
 - `migrations/`：Cloudflare D1 の教材、認証、利用者、進捗、挑戦履歴、卒業証スキーマ
-- `worker/`：Cloudflare Worker の認証、ゲスト制限、D1 API
-- `src/auth/`：ログインモーダル、Turnstile、ゲスト体験、不可逆端末ハッシュ
+- `worker/`：Cloudflare Worker の認証、会員決済、D1 API
+- `src/auth/`：任意のGoogleログインモーダルとTurnstile
+- `src/ads/` / `src/membership/`：実プレイ時間広告と広告なしメンバー管理
 - `src/storage/`：IndexedDB オフラインキャッシュと D1 の競合解決・一括同期
 - `src/render/`：全Canvas共通の高DPIレンダラー
 

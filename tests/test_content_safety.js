@@ -120,7 +120,7 @@ function register({ describe, test, assert, loadESModule }) {
       });
       assert.strictEqual(miniGames.includes('操作ヒント：'), false, 'Game guidance must use direct, natural instructions');
       assert.strictEqual(miniGames.includes('(Stage '), false, 'Game titles must not mix developer-style English stage notation into Japanese');
-      assert.ok(login.includes('PSES Gameへようこそ！') && login.includes('安全チェック'), 'Login copy must be friendly and understandable');
+      assert.ok(login.includes('学習きろくを保存しよう') && login.includes('ゲームはログインなしでも遊べます') && login.includes('安全チェック'), 'Login copy must be friendly and understandable');
       assert.ok(html.includes('どちらを選んでも、がんばった記録は「わたしの学習きろく」に残るよ。'), 'Learning entrance must explain the result in child-friendly language');
     });
 

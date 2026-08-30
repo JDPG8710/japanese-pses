@@ -35,7 +35,7 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
       assert.strictEqual(economy.activeUser.name, 'みなと');
     });
 
-    test('認証後に学年優先・ゲーム優先の2つの入口を必ず表示する', () => {
+    test('ログインを強制せず、学年優先・ゲーム優先の2つの入口を表示する', () => {
       const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
       const css = fs.readFileSync(path.join(root, 'css', 'style.css'), 'utf8');
       const auth = fs.readFileSync(path.join(root, 'src/auth/AuthManager.js'), 'utf8');
@@ -49,7 +49,8 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
       assert.ok(html.includes('showLearningModeModal();'), '初期化後に入口モーダルを表示する必要があります');
       assert.ok(html.includes('GAME_GRADE_SUPPORT_MAP'), 'ゲームと対応学年は共通マップから生成してください');
       assert.ok(auth.includes('isLocalDevelopmentHost(location.hostname)'), 'ローカル環境は共通判定で認証を迂回してください');
-      assert.ok(auth.includes('await this.modal.show('), '本番の未認証アクセスではログイン画面を表示してください');
+      assert.ok(auth.includes("mode: 'anonymous'"), '本番の未認証アクセスも匿名モードですぐ開始してください');
+      assert.ok(auth.includes('async showLogin('), '利用者が後からログイン画面を開けるようにしてください');
     });
 
     test('ループバックと主要なプライベートLANアドレスはローカル免認証として扱う', () => {

@@ -73,8 +73,12 @@ export class GalaxyEngine {
     this.renderNodes();
   }
 
-  setBackgroundTheme() {
-    // 旧テーマAPIとの互換用。現在は端末負荷の低い冒険マップに統一している。
+  setBackgroundTheme(themeId = '') {
+    const allowedThemes = new Set(['skin_nebula_aurora', 'skin_cyber_neon']);
+    const resolvedTheme = allowedThemes.has(String(themeId)) ? String(themeId) : 'default';
+    this.backgroundTheme = resolvedTheme;
+    if (this.root) this.root.dataset.theme = resolvedTheme;
+    return resolvedTheme;
   }
 
   setStageCountResolver(resolver) {

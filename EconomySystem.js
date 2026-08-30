@@ -76,20 +76,20 @@ export const SHOP_CATALOG = {
   categories: [
     {
       id: 'skins',
-      name: '星空のきせかえ',
+      name: 'ぼうけんマップのきせかえ',
       items: [
         {
           id: 'skin_nebula_aurora',
-          title: 'オーロラの星空',
-          description: '星空が、緑と青にゆれるオーロラカラーになるよ。',
+          title: 'オーロラの光',
+          description: '冒険マップが、緑と青にきらめくオーロラカラーになるよ。',
           price: 600,
           icon: '🌌',
           type: 'SKIN'
         },
         {
           id: 'skin_cyber_neon',
-          title: 'ネオンの星空',
-          description: '星空が、ピンクと青に光るネオンカラーになるよ。',
+          title: 'ネオンフェスティバル',
+          description: '冒険マップが、紫と青に光る特別カラーになるよ。',
           price: 1200,
           icon: '✨',
           type: 'SKIN'
@@ -103,7 +103,7 @@ export const SHOP_CATALOG = {
         {
           id: 'badge_kanji_master',
           title: '漢字・ことば名人（国語）',
-          description: '漢字ゲームで50問つづけて正解したしるしだよ。',
+          description: 'プロフィールの横に、漢字名人のしるしを表示できるよ。',
           price: 300,
           icon: '🎴',
           type: 'BADGE'
@@ -111,7 +111,7 @@ export const SHOP_CATALOG = {
         {
           id: 'badge_kuku_master',
           title: '九九マスター（算数）',
-          description: '九九ゲームをまちがえずにクリアしたしるしだよ。',
+          description: 'プロフィールの横に、九九マスターのしるしを表示できるよ。',
           price: 300,
           icon: '⚡',
           type: 'BADGE'
@@ -119,7 +119,7 @@ export const SHOP_CATALOG = {
         {
           id: 'badge_ratio_alchemist',
           title: '割合ぴったり名人（算数）',
-          description: '割合の問題をぴったり正しく解けたしるしだよ。',
+          description: 'プロフィールの横に、割合名人のしるしを表示できるよ。',
           price: 300,
           icon: '⚖️',
           type: 'BADGE'
@@ -127,7 +127,7 @@ export const SHOP_CATALOG = {
         {
           id: 'badge_prefecture_pilot',
           title: '日本地図マスター（社会）',
-          description: '47都道府県をヒントなしで正しく置けたしるしだよ。',
+          description: 'プロフィールの横に、日本地図マスターのしるしを表示できるよ。',
           price: 300,
           icon: '🗾',
           type: 'BADGE'
@@ -144,7 +144,8 @@ export const SHOP_CATALOG = {
           description: 'ゲームの残り時間を30秒ふやせるよ。',
           price: 150,
           icon: '🎟️',
-          type: 'CONSUMABLE'
+          type: 'CONSUMABLE',
+          bundleQuantity: 3
         },
         {
           id: 'item_hint_radar',
@@ -152,7 +153,8 @@ export const SHOP_CATALOG = {
           description: '答えを考える手がかりを1回だけ光らせるよ。',
           price: 100,
           icon: '📡',
-          type: 'CONSUMABLE'
+          type: 'CONSUMABLE',
+          bundleQuantity: 1
         }
       ]
     }
@@ -223,6 +225,22 @@ export class EconomyManager {
     if (!Array.isArray(this.users[this.currentUser].achievements)) {
       this.users[this.currentUser].achievements = [];
     }
+    if (!Array.isArray(this.users[this.currentUser].inventory)) {
+      this.users[this.currentUser].inventory = [];
+    }
+    const normalizedInventory = [];
+    this.users[this.currentUser].inventory.forEach(entry => {
+      const catalogItem = this.getCatalogItem(entry.itemId);
+      if (!Number.isFinite(Number(entry.quantity))) {
+        entry.quantity = catalogItem?.type === 'CONSUMABLE' ? Number(catalogItem.bundleQuantity || 1) : 1;
+      }
+      entry.quantity = Math.max(0, Math.floor(Number(entry.quantity)));
+      entry.type ||= catalogItem?.type || 'SPECIAL';
+      const previous = normalizedInventory.find(candidate => candidate.itemId === entry.itemId);
+      if (previous && catalogItem?.type === 'CONSUMABLE') previous.quantity += entry.quantity;
+      else if (!previous) normalizedInventory.push(entry);
+    });
+    this.users[this.currentUser].inventory = normalizedInventory;
     return this.users[this.currentUser];
   }
 
@@ -244,6 +262,69 @@ export class EconomyManager {
   get clearedNodes() { return this.activeUser.clearedNodes; }
   get clearedStages() { return this.activeUser.clearedStages || {}; }
   get achievements() { return this.activeUser.achievements || []; }
+
+  getCatalogItem(itemId) {
+    for (const category of SHOP_CATALOG.categories) {
+      const item = category.items.find(candidate => candidate.id === itemId);
+      if (item) return item;
+    }
+    return null;
+  }
+
+  getInventoryEntry(itemId) {
+    return this.inventory.find(entry => entry.itemId === itemId) || null;
+  }
+
+  getItemQuantity(itemId) {
+    return Math.max(0, Number(this.getInventoryEntry(itemId)?.quantity || 0));
+  }
+
+  ownsItem(itemId) {
+    const item = this.getCatalogItem(itemId);
+    const entry = this.getInventoryEntry(itemId);
+    return Boolean(item && entry && (item.type !== 'CONSUMABLE' || this.getItemQuantity(itemId) > 0));
+  }
+
+  getEquippedItem(type) {
+    const normalizedType = String(type || '').toUpperCase();
+    const entry = this.inventory.find(candidate => {
+      const item = this.getCatalogItem(candidate.itemId);
+      return candidate.equipped === true && item?.type === normalizedType;
+    });
+    const item = entry ? this.getCatalogItem(entry.itemId) : null;
+    return item ? { ...item, ...entry } : null;
+  }
+
+  equipItem(itemId) {
+    const item = this.getCatalogItem(itemId);
+    if (!item || !['SKIN', 'BADGE'].includes(item.type)) return { success: false, message: 'このアイテムは装備できません。' };
+    const entry = this.getInventoryEntry(itemId);
+    if (!entry) return { success: false, message: '先にショップで交換してね。' };
+    this.inventory.forEach(candidate => {
+      if (this.getCatalogItem(candidate.itemId)?.type === item.type) candidate.equipped = candidate.itemId === itemId;
+    });
+    this.saveState();
+    return { success: true, item, entry };
+  }
+
+  consumeItem(itemId, quantity = 1) {
+    const item = this.getCatalogItem(itemId);
+    const requested = Math.max(1, Math.floor(Number(quantity) || 1));
+    if (!item || item.type !== 'CONSUMABLE') return { success: false, message: 'このアイテムは使用できません。' };
+    const entry = this.getInventoryEntry(itemId);
+    if (!entry || this.getItemQuantity(itemId) < requested) return { success: false, message: 'このアイテムを持っていません。' };
+    entry.quantity -= requested;
+    this.ledger.unshift({
+      transactionId: `TX-USE-${Date.now()}`,
+      timestamp: new Date().toISOString(),
+      type: 'ITEM_USE',
+      amount: 0,
+      balanceAfter: this.starCoins,
+      description: `「${item.title}」を使用`
+    });
+    this.saveState();
+    return { success: true, item, remainingQuantity: entry.quantity };
+  }
 
   isStageCleared(nodeId, stageNum) {
     return !!(this.clearedStages[nodeId] && this.clearedStages[nodeId][stageNum]);
@@ -400,24 +481,34 @@ export class EconomyManager {
   }
 
   purchaseItem(itemId) {
-    let targetItem = null;
-    for (const cat of SHOP_CATALOG.categories) {
-      const found = cat.items.find((i) => i.id === itemId);
-      if (found) {
-        targetItem = found;
-        break;
-      }
-    }
+    const targetItem = this.getCatalogItem(itemId);
 
     if (!targetItem) return { success: false, message: 'このアイテムは見つかりませんでした。' };
+    if (targetItem.type !== 'CONSUMABLE' && this.ownsItem(itemId)) return { success: false, message: 'このアイテムはもう持っているよ。' };
     if (this.starCoins < targetItem.price) return { success: false, message: 'コインがもう少し必要だよ！' };
 
     this.starCoins -= targetItem.price;
-    this.inventory.push({
-      itemId: targetItem.id,
-      title: targetItem.title,
-      purchasedAt: new Date().toISOString()
-    });
+    const purchasedAt = new Date().toISOString();
+    let inventoryEntry = this.getInventoryEntry(targetItem.id);
+    if (targetItem.type === 'CONSUMABLE' && inventoryEntry) {
+      inventoryEntry.quantity += Number(targetItem.bundleQuantity || 1);
+      inventoryEntry.purchasedAt = purchasedAt;
+    } else {
+      inventoryEntry = {
+        itemId: targetItem.id,
+        title: targetItem.title,
+        type: targetItem.type,
+        quantity: Number(targetItem.bundleQuantity || 1),
+        equipped: ['SKIN', 'BADGE'].includes(targetItem.type),
+        purchasedAt
+      };
+      if (inventoryEntry.equipped) {
+        this.inventory.forEach(candidate => {
+          if (this.getCatalogItem(candidate.itemId)?.type === targetItem.type) candidate.equipped = false;
+        });
+      }
+      this.inventory.push(inventoryEntry);
+    }
 
     const record = {
       transactionId: `TX-BUY-${Date.now()}`,
@@ -425,11 +516,11 @@ export class EconomyManager {
       type: 'SHOP_PURCHASE',
       amount: -targetItem.price,
       balanceAfter: this.starCoins,
-      description: `「${targetItem.title}」と交換`
+      description: `「${targetItem.title}」${targetItem.type === 'CONSUMABLE' ? ` × ${targetItem.bundleQuantity || 1}` : ''}と交換`
     };
 
     this.ledger.unshift(record);
     this.saveState();
-    return { success: true, item: targetItem, newBalance: this.starCoins };
+    return { success: true, item: targetItem, inventoryEntry, newBalance: this.starCoins };
   }
 }

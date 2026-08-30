@@ -188,6 +188,37 @@ function register({ describe, test, assert, loadESModule }) {
       assert.strictEqual(timeoutResult.result.reason, 'TIME_UP');
       assert.strictEqual(timeoutResult.result.cleared, false);
     });
+
+    test('CT9: purchased time ticket adds 30 seconds and hint radar invokes a real hint before consumption', () => {
+      let now = 20_000;
+      const quantities = { item_challenge_ticket: 1, item_hint_radar: 1 };
+      const consumed = [];
+      let changeCount = 0;
+      const modal = new MiniGameModal({ now: () => now, setIntervalImpl: () => 77, clearIntervalImpl: () => {} });
+      modal.setShopItemAdapter({
+        getQuantity: itemId => quantities[itemId] || 0,
+        consume: itemId => {
+          if (!quantities[itemId]) return { success: false };
+          quantities[itemId]--;
+          consumed.push(itemId);
+          return { success: true, remainingQuantity: quantities[itemId] };
+        },
+        onChange: () => { changeCount++; }
+      });
+      let hintCount = 0;
+      modal.currentGame = { totalTime: 180, useHint() { hintCount++; } };
+      modal.stageSettled = false;
+      modal.stageTimerId = 77;
+      modal.stageTimeLimit = 180;
+      modal.stageDeadline = now + 180_000;
+      assert.strictEqual(modal.useTimeExtensionItem(), true);
+      assert.strictEqual(modal.stageDeadline, now + 210_000);
+      assert.strictEqual(modal.currentGame.totalTime, 210);
+      assert.strictEqual(modal.useHintRadarItem(), true);
+      assert.strictEqual(hintCount, 1);
+      assert.deepStrictEqual(consumed, ['item_challenge_ticket', 'item_hint_radar']);
+      assert.strictEqual(changeCount, 2);
+    });
   });
 }
 

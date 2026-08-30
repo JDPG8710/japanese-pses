@@ -55,7 +55,7 @@
     }
   </script>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="css/style.css?v=20260830.4" />
+  <link rel="stylesheet" href="css/style.css?v=20260830.5" />
   <style>
     body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #8bd8ff; }
     #canvas-container { position: absolute; inset: 0; touch-action: none; z-index: 1; }
@@ -95,6 +95,7 @@
       <button id="user-profile-btn" class="glass-panel px-3.5 py-1.5 rounded-full hover:bg-slate-800 text-xs font-bold text-amber-300 flex items-center gap-2 transition border border-amber-500/40 shadow-lg shadow-amber-500/10">
         <span class="text-base">👦</span>
         <span id="current-user-name">まなびくん</span>
+        <span id="equipped-badge-icon" class="hidden text-base" aria-label="装備中のバッジ"></span>
         <span class="text-[10px] text-slate-300 bg-slate-800 px-1.5 py-0.5 rounded">きろく</span>
       </button>
 
@@ -525,6 +526,8 @@
         </div>
       </div>
 
+      <div id="shop-action-notice" class="hidden border-b border-emerald-400/30 bg-emerald-950/80 px-6 py-3 text-sm font-bold text-emerald-100" role="status" aria-live="polite"></div>
+
       <div class="p-6 overflow-y-auto custom-scroll space-y-6 flex-1">
         <div id="shop-items-container" class="space-y-4"></div>
         <div class="border-t border-slate-800 pt-4">
@@ -536,9 +539,9 @@
   </div>
 
   <script type="module">
-    import { GalaxyEngine } from './GalaxyEngine.js?v=8';
-    import { MiniGameModal, GAME_GRADE_SUPPORT_MAP } from './MiniGameSystem.js?v=4';
-    import { EconomyManager, SHOP_CATALOG } from './EconomySystem.js?v=4';
+    import { GalaxyEngine } from './GalaxyEngine.js?v=9';
+    import { MiniGameModal, GAME_GRADE_SUPPORT_MAP } from './MiniGameSystem.js?v=7';
+    import { EconomyManager, SHOP_CATALOG } from './EconomySystem.js?v=5';
     import { AntigravityAgentBrain, createObservationPayload } from './AgentIntegration.js?v=2';
     import { FULL_CURRICULUM_DAG, SUBJECT_METADATA, GRADES, loadCurriculumFromJSON, graphEngineInstance } from './CurriculumData.js?v=2';
     import { ErrorInterceptor } from './ErrorInterceptor.js?v=2';
@@ -596,17 +599,15 @@
       : await storageAdapter.getLocalSnapshot();
     const learnerProfileModal = new LearnerProfileModal();
     const storedLearnerProfile = normalizeLearnerProfile(synchronizedState?.profile || {});
-    const rawSuggestedLearnerName = String(accessSession.user?.displayName || storedLearnerProfile.name || '').trim().slice(0, 20);
+    const rawSuggestedLearnerName = String(storedLearnerProfile.name || accessSession.user?.displayName || '').trim().slice(0, 20);
     const suggestedLearnerName = LEGACY_DEFAULT_LEARNER_NAMES.has(rawSuggestedLearnerName)
       ? DEFAULT_LEARNER_NAME
       : (rawSuggestedLearnerName || DEFAULT_LEARNER_NAME);
-    let learnerProfile = isLearnerProfileComplete(storedLearnerProfile)
-      ? storedLearnerProfile
-      : {
-          name: suggestedLearnerName,
-          age: null,
-          gender: ''
-        };
+    let learnerProfile = {
+      name: storedLearnerProfile.name || suggestedLearnerName,
+      age: storedLearnerProfile.age,
+      gender: storedLearnerProfile.gender
+    };
 
     // 1. 各教科の独立 JSON データを動的ロード
     const curriculumNodes = await loadCurriculumFromJSON({ cacheAdapter: storageAdapter });
@@ -638,6 +639,14 @@
 
     const gameModal = new MiniGameModal();
     gameModal.setSafeBreakHandler(continueAction => adManager.runAtSafeBreak(continueAction));
+    gameModal.setShopItemAdapter({
+      getQuantity: itemId => economy.getItemQuantity(itemId),
+      consume: itemId => economy.consumeItem(itemId),
+      onChange: () => {
+        updateEconomyUI();
+        persistShopState('shop-item-use');
+      }
+    });
     const agentBrain = new AntigravityAgentBrain(curriculumNodes, economy, graphEngineInstance);
 
     let currentNode = curriculumNodes[0] || { subject: '国語', name: '単元読込中', desc: '' };
@@ -1240,6 +1249,45 @@
 
       renderUserProfilesList();
       renderProfileProgress();
+      applyShopEffects();
+      renderShopCatalog();
+      gameModal.refreshShopItemControls();
+    }
+
+    function applyShopEffects() {
+      const equippedSkin = economy.getEquippedItem('SKIN');
+      const equippedBadge = economy.getEquippedItem('BADGE');
+      engine.setBackgroundTheme(equippedSkin?.id || 'default');
+      const badgeIcon = document.getElementById('equipped-badge-icon');
+      if (badgeIcon) {
+        badgeIcon.textContent = equippedBadge?.icon || '';
+        badgeIcon.title = equippedBadge ? `使用中：${equippedBadge.title}` : '';
+        badgeIcon.classList.toggle('hidden', !equippedBadge);
+      }
+      document.body.dataset.equippedSkin = equippedSkin?.id || 'default';
+      document.body.dataset.equippedBadge = equippedBadge?.id || 'none';
+    }
+
+    function persistShopState(reason = 'shop-update') {
+      storageAdapter.saveProfile(buildSynchronizedProfile())
+        .then(() => accessSession.mode === 'authenticated' ? storageAdapter.syncNow(reason) : null)
+        .catch(error => console.warn('ショップの状態をもう一度保存します。', error));
+    }
+
+    let shopNoticeTimer = null;
+    function showShopNotice(message, isError = false) {
+      const notice = document.getElementById('shop-action-notice');
+      if (!notice) return;
+      notice.textContent = String(message || '');
+      notice.classList.toggle('hidden', !message);
+      notice.classList.toggle('bg-rose-950/80', isError);
+      notice.classList.toggle('border-rose-400/30', isError);
+      notice.classList.toggle('text-rose-100', isError);
+      notice.classList.toggle('bg-emerald-950/80', !isError);
+      notice.classList.toggle('border-emerald-400/30', !isError);
+      notice.classList.toggle('text-emerald-100', !isError);
+      if (shopNoticeTimer) clearTimeout(shopNoticeTimer);
+      shopNoticeTimer = setTimeout(() => notice.classList.add('hidden'), 3600);
     }
 
     function renderShopCatalog() {
@@ -1248,33 +1296,67 @@
         <div>
           <h4 class="text-xs font-bold text-indigo-400 mb-2">${cat.name}</h4>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            ${cat.items.map(item => `
-              <div class="p-3 rounded-2xl bg-slate-950/60 border border-slate-800 flex items-center justify-between">
+            ${cat.items.map(item => {
+              const owned = economy.ownsItem(item.id);
+              const equipped = economy.getEquippedItem(item.type)?.id === item.id;
+              const quantity = economy.getItemQuantity(item.id);
+              const stateLabel = item.type === 'CONSUMABLE'
+                ? `もっている数：${quantity}`
+                : (equipped ? 'いま使っているよ' : (owned ? 'もっているよ' : ''));
+              const action = item.type !== 'CONSUMABLE' && owned ? 'equip' : 'buy';
+              const disabled = equipped;
+              const buttonLabel = equipped ? '使用中' : (action === 'equip' ? '使う' : `${item.price} ⭐`);
+              return `
+              <div class="p-3 rounded-2xl ${equipped ? 'bg-emerald-950/60 border-emerald-500/60' : 'bg-slate-950/60 border-slate-800'} border flex items-center justify-between gap-3">
                 <div class="flex items-center gap-3">
                   <div class="text-2xl">${item.icon}</div>
                   <div>
                     <div class="text-xs font-bold text-white">${item.title}</div>
                     <div class="text-[10px] text-slate-400">${item.description}</div>
+                    <div class="mt-1 text-[10px] font-bold ${equipped ? 'text-emerald-300' : 'text-cyan-300'}">${stateLabel}</div>
                   </div>
                 </div>
-                <button onclick="buyItem('${item.id}')" class="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-bold font-mono transition">
-                  ${item.price} ⭐
+                <button type="button" data-shop-action="${action}" data-shop-item="${item.id}" ${disabled ? 'disabled' : ''} class="shrink-0 px-3 py-1.5 rounded-xl ${action === 'equip' ? 'bg-cyan-500/20 text-cyan-200 border-cyan-500/40' : 'bg-amber-500/20 text-amber-300 border-amber-500/40'} hover:brightness-125 border text-xs font-bold font-mono transition disabled:cursor-default disabled:opacity-60">
+                  ${buttonLabel}
                 </button>
-              </div>
-            `).join('')}
+              </div>`;
+            }).join('')}
           </div>
         </div>
       `).join('');
+      box.querySelectorAll('[data-shop-action="buy"]').forEach(button => {
+        button.addEventListener('click', () => window.buyItem(button.dataset.shopItem));
+      });
+      box.querySelectorAll('[data-shop-action="equip"]').forEach(button => {
+        button.addEventListener('click', () => window.equipShopItem(button.dataset.shopItem));
+      });
     }
 
     window.buyItem = (id) => {
       const res = economy.purchaseItem(id);
       if (res.success) {
-        alert(`🎉 「${res.item.title}」と交換できたよ！`);
+        applyShopEffects();
+        const message = ['SKIN', 'BADGE'].includes(res.item.type)
+          ? `🎉 「${res.item.title}」と交換して、すぐに使ったよ！`
+          : `🎉 「${res.item.title}」と交換できたよ！ゲーム中に使えるよ。`;
+        showShopNotice(message);
         updateEconomyUI();
+        persistShopState('shop-purchase');
       } else {
-        alert(`⚠️ ${res.message}`);
+        showShopNotice(`⚠️ ${res.message}`, true);
       }
+    };
+
+    window.equipShopItem = (id) => {
+      const res = economy.equipItem(id);
+      if (!res.success) {
+        showShopNotice(`⚠️ ${res.message}`, true);
+        return;
+      }
+      applyShopEffects();
+      updateEconomyUI();
+      showShopNotice(`✨ 「${res.item.title}」を使ったよ！`);
+      persistShopState('shop-equip');
     };
 
     // ユーザー切り替えモーダル
@@ -1313,10 +1395,25 @@
       userModal.classList.remove('hidden');
     };
 
-    document.getElementById('user-login-confirm').onclick = () => {
+    async function activateLearnerProfile(name) {
+      const normalizedName = String(name || '').trim();
+      if (!normalizedName) return false;
+      economy.loginUser(normalizedName);
+      learnerProfile = {
+        name: normalizedName,
+        age: economy.activeUser.age || null,
+        gender: economy.activeUser.gender || ''
+      };
+      await storageAdapter.saveProfile(buildSynchronizedProfile());
+      if (accessSession.mode === 'authenticated') {
+        await storageAdapter.syncNow('learner-switch').catch(() => null);
+      }
+      return true;
+    }
+
+    document.getElementById('user-login-confirm').onclick = async () => {
       const name = document.getElementById('user-name-input').value.trim();
-      if (name) {
-        economy.loginUser(name);
+      if (await activateLearnerProfile(name)) {
         userModal.classList.add('hidden');
         document.getElementById('user-name-input').value = '';
       }
@@ -1370,8 +1467,8 @@
       `).join('');
     }
 
-    window.switchUser = (uname) => {
-      economy.loginUser(uname);
+    window.switchUser = async (uname) => {
+      await activateLearnerProfile(uname);
       userModal.classList.add('hidden');
     };
 

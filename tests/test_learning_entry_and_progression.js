@@ -15,6 +15,7 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
       assert.ok(!html.includes('let learnerProfile = await learnerProfileModal.collect'), '初回表示でプロフィール入力を待たせないでください');
       assert.ok(html.includes("DEFAULT_LEARNER_NAME = 'まなびくん'") || html.includes('DEFAULT_LEARNER_NAME,'), '未設定時は「まなびくん」で開始してください');
       assert.ok(html.includes('profile-learner-summary'), 'Profileで入力内容を確認できるようにしてください');
+      assert.ok(html.includes('storedLearnerProfile.name || accessSession.user?.displayName'), '年齢未入力でも保存済みの学習者名を優先してください');
       assert.ok(!html.includes('id="current-user-name">ひなた</span>'), '既定名ひなたを表示しないでください');
       assert.ok(html.includes('id="current-user-name">まなびくん</span>'), '画面上の既定名を「まなびくん」にしてください');
       const auth = fs.readFileSync(path.join(root, 'src', 'auth', 'AuthManager.js'), 'utf8');
@@ -105,6 +106,25 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
       const css = fs.readFileSync(path.join(root, 'css', 'style.css'), 'utf8');
       assert.ok(css.includes("top: max(4.25rem, calc(env(safe-area-inset-top) + 3.75rem)) !important"));
       assert.ok(css.includes("#grade-tabs-container { top: max(3.75rem"), 'スマートフォンでもヘッダーの下へ配置してください');
+    });
+
+    test('ショップのテーマ・バッジ・消費アイテムは表示だけでなく実処理へ接続される', () => {
+      const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+      const css = fs.readFileSync(path.join(root, 'css', 'style.css'), 'utf8');
+      const miniGameSource = fs.readFileSync(path.join(root, 'MiniGameSystem.js'), 'utf8');
+      const { GalaxyEngine } = loadESModule(path.join(root, 'GalaxyEngine.js'));
+      const engine = Object.create(GalaxyEngine.prototype);
+      engine.root = { dataset: {} };
+      assert.strictEqual(engine.setBackgroundTheme('skin_nebula_aurora'), 'skin_nebula_aurora');
+      assert.strictEqual(engine.root.dataset.theme, 'skin_nebula_aurora');
+      assert.strictEqual(engine.setBackgroundTheme('unknown'), 'default');
+      assert.ok(css.includes('[data-theme="skin_nebula_aurora"]') && css.includes('[data-theme="skin_cyber_neon"]'));
+      for (const token of ['setShopItemAdapter', 'persistShopState', 'equipped-badge-icon', 'shop-action-notice', 'activateLearnerProfile']) {
+        assert.ok(html.includes(token), `${token} を実際のUI・保存経路へ接続してください`);
+      }
+      for (const token of ['useTimeExtensionItem', 'useHintRadarItem']) {
+        assert.ok(miniGameSource.includes(token), `${token} をゲーム中の実処理へ接続してください`);
+      }
     });
 
     test('新しいゲーム名を1日1回、5秒表示し、閉じるボタンを備える', () => {

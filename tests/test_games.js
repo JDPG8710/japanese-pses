@@ -549,11 +549,46 @@ function register({ describe, test, it, assert, loadESModule }) {
       assert.strictEqual(eco.starCoins, 700);
       assert.strictEqual(eco.inventory.length, 1);
       assert.strictEqual(eco.inventory[0].itemId, 'badge_kanji_master');
+      assert.strictEqual(eco.getEquippedItem('BADGE').id, 'badge_kanji_master', '購入したバッジはすぐ表示できる装備状態にする');
 
       const latestTx = eco.ledger[0];
       assert.strictEqual(latestTx.type, 'SHOP_PURCHASE');
       assert.strictEqual(latestTx.amount, -300);
       assert.strictEqual(latestTx.balanceAfter, 700);
+    });
+
+    test('F15.6: Shop consumables stack bundle quantities and are actually consumed', () => {
+      const eco = new economy.EconomyManager();
+      eco.loginUser('ItemStudent');
+      eco.starCoins = 1000;
+      assert.strictEqual(eco.purchaseItem('item_challenge_ticket').success, true);
+      assert.strictEqual(eco.getItemQuantity('item_challenge_ticket'), 3, '一回の購入で延長券を3枚受け取る');
+      assert.strictEqual(eco.purchaseItem('item_challenge_ticket').success, true);
+      assert.strictEqual(eco.getItemQuantity('item_challenge_ticket'), 6, '買い足した数量を同じ在庫へまとめる');
+      const useResult = eco.consumeItem('item_challenge_ticket');
+      assert.strictEqual(useResult.success, true);
+      assert.strictEqual(eco.getItemQuantity('item_challenge_ticket'), 5);
+      assert.strictEqual(eco.ledger[0].type, 'ITEM_USE');
+      const restored = new economy.EconomyManager();
+      restored.loginUser('ItemStudent');
+      assert.strictEqual(restored.getItemQuantity('item_challenge_ticket'), 5, 'ページ再読み込み後も残数を復元する');
+    });
+
+    test('F15.7: Durable cosmetics cannot be bought twice and can be re-equipped', () => {
+      const eco = new economy.EconomyManager();
+      eco.loginUser('CosmeticStudent');
+      eco.starCoins = 5000;
+      assert.strictEqual(eco.purchaseItem('skin_nebula_aurora').success, true);
+      assert.strictEqual(eco.purchaseItem('skin_cyber_neon').success, true);
+      assert.strictEqual(eco.getEquippedItem('SKIN').id, 'skin_cyber_neon');
+      assert.strictEqual(eco.equipItem('skin_nebula_aurora').success, true);
+      assert.strictEqual(eco.getEquippedItem('SKIN').id, 'skin_nebula_aurora');
+      const balance = eco.starCoins;
+      assert.strictEqual(eco.purchaseItem('skin_nebula_aurora').success, false);
+      assert.strictEqual(eco.starCoins, balance, '重複購入でコインを減らさない');
+      const restored = new economy.EconomyManager();
+      restored.loginUser('CosmeticStudent');
+      assert.strictEqual(restored.getEquippedItem('SKIN').id, 'skin_nebula_aurora', 'ページ再読み込み後も装備を復元する');
     });
   });
 

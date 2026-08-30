@@ -156,6 +156,8 @@ export class MiniGameModal {
     this.stageSettled = false;
     this.playActivityActive = false;
     this.safeBreakHandler = null;
+    this.shopItemAdapter = null;
+    this.itemMessageTimer = null;
     this.createModalDOM();
     this.currentGame = null;
     this.boundCanvasResize = () => this.handleCanvasResize();
@@ -198,6 +200,13 @@ export class MiniGameModal {
             </div>
           </div>
 
+          <div id="game-shop-item-bar" class="hidden items-center gap-2 overflow-x-auto border-b border-indigo-400/20 bg-indigo-950/70 px-3 py-2 sm:px-6">
+            <span class="shrink-0 text-[10px] font-black text-indigo-200">おたすけ</span>
+            <button id="game-time-ticket-btn" type="button" class="min-h-9 shrink-0 rounded-xl border border-amber-400/40 bg-amber-500/15 px-3 text-xs font-black text-amber-200 disabled:cursor-not-allowed disabled:opacity-40">🎟️ +30秒 ×0</button>
+            <button id="game-hint-radar-btn" type="button" class="min-h-9 shrink-0 rounded-xl border border-cyan-400/40 bg-cyan-500/15 px-3 text-xs font-black text-cyan-200 disabled:cursor-not-allowed disabled:opacity-40">📡 きらめきヒント ×0</button>
+            <span id="game-shop-item-message" class="min-w-32 text-[10px] font-bold text-emerald-200" aria-live="polite"></span>
+          </div>
+
           <!-- ゲームステージキャンバス -->
           <div id="game-stage" class="relative w-full h-[420px] bg-slate-950 overflow-hidden flex items-center justify-center">
             <canvas id="game-canvas" class="w-full h-full touch-none"></canvas>
@@ -233,10 +242,136 @@ export class MiniGameModal {
       }
     }
     this.modal = modal;
+    const timeTicketButton = document.getElementById('game-time-ticket-btn');
+    const hintRadarButton = document.getElementById('game-hint-radar-btn');
+    if (timeTicketButton) timeTicketButton.onclick = () => this.useTimeExtensionItem();
+    if (hintRadarButton) hintRadarButton.onclick = () => this.useHintRadarItem();
   }
 
   setSafeBreakHandler(handler) {
     this.safeBreakHandler = typeof handler === 'function' ? handler : null;
+  }
+
+  setShopItemAdapter(adapter) {
+    this.shopItemAdapter = adapter && typeof adapter === 'object' ? adapter : null;
+    this.refreshShopItemControls();
+  }
+
+  getShopItemQuantity(itemId) {
+    const value = this.shopItemAdapter?.getQuantity?.(itemId);
+    return Math.max(0, Math.floor(Number(value) || 0));
+  }
+
+  refreshShopItemControls() {
+    if (typeof document === 'undefined') return;
+    const ticketQuantity = this.getShopItemQuantity('item_challenge_ticket');
+    const hintQuantity = this.getShopItemQuantity('item_hint_radar');
+    const bar = document.getElementById('game-shop-item-bar');
+    const ticketButton = document.getElementById('game-time-ticket-btn');
+    const hintButton = document.getElementById('game-hint-radar-btn');
+    if (bar) {
+      bar.classList.toggle('hidden', ticketQuantity + hintQuantity <= 0);
+      bar.classList.toggle('flex', ticketQuantity + hintQuantity > 0);
+    }
+    if (ticketButton) {
+      ticketButton.textContent = `🎟️ +30秒 ×${ticketQuantity}`;
+      ticketButton.disabled = ticketQuantity <= 0 || this.stageSettled || !this.currentGame || this.stageTimerId == null;
+    }
+    if (hintButton) {
+      hintButton.textContent = `📡 きらめきヒント ×${hintQuantity}`;
+      hintButton.disabled = hintQuantity <= 0 || this.stageSettled || !this.currentGame;
+    }
+  }
+
+  showShopItemMessage(message) {
+    if (typeof document === 'undefined') return;
+    const element = document.getElementById('game-shop-item-message');
+    if (!element) return;
+    element.textContent = String(message || '');
+    const bar = document.getElementById('game-shop-item-bar');
+    if (message && this.currentGame && bar) {
+      bar.classList.remove('hidden');
+      bar.classList.add('flex');
+    }
+    if (this.itemMessageTimer) globalThis.clearTimeout(this.itemMessageTimer);
+    this.itemMessageTimer = globalThis.setTimeout(() => {
+      element.textContent = '';
+      this.refreshShopItemControls();
+    }, 3200);
+  }
+
+  consumeShopItem(itemId) {
+    const result = this.shopItemAdapter?.consume?.(itemId);
+    if (!result?.success) {
+      this.showShopItemMessage(result?.message || 'アイテムを使えませんでした。');
+      return result || { success: false };
+    }
+    this.shopItemAdapter?.onChange?.(result);
+    this.refreshShopItemControls();
+    return result;
+  }
+
+  useTimeExtensionItem(seconds = 30) {
+    if (this.stageSettled || !this.currentGame || this.stageTimerId == null || this.stageDeadline <= this.now()) return false;
+    if (this.getShopItemQuantity('item_challenge_ticket') <= 0) return false;
+    const extension = Math.max(1, Math.floor(Number(seconds) || 30));
+    this.stageDeadline += extension * 1000;
+    this.stageTimeLimit += extension;
+    if ('totalTime' in this.currentGame) this.currentGame.totalTime = this.stageTimeLimit;
+    const result = this.consumeShopItem('item_challenge_ticket');
+    if (!result?.success) {
+      this.stageDeadline -= extension * 1000;
+      this.stageTimeLimit -= extension;
+      if ('totalTime' in this.currentGame) this.currentGame.totalTime = this.stageTimeLimit;
+      return false;
+    }
+    const remainingSeconds = Math.max(0, Math.ceil((this.stageDeadline - this.now()) / 1000));
+    this.renderStageCountdown(remainingSeconds);
+    this.showShopItemMessage(`残り時間が${extension}秒ふえたよ！`);
+    return true;
+  }
+
+  applyPurchasedHint() {
+    const game = this.currentGame;
+    if (!game || this.stageSettled) return false;
+    try {
+      if (typeof game.useHint === 'function') {
+        if (game.useHint() === false) return false;
+      } else if (Array.isArray(game.meteors)) {
+        const correct = game.meteors.find(item => item.isCorrect && item.alive !== false);
+        if (correct) correct.highlight = true;
+      } else if (Array.isArray(game.palette) && Array.isArray(game.requiredParts)) {
+        game.palette.forEach(item => { if (game.requiredParts.includes(item.text)) item.highlight = true; });
+      }
+      const clueByGame = {
+        PanBalanceScaleGame: '左右のおもりの合計をくらべてみよう。',
+        CosmicOrbitGame: '太陽・地球・月の位置を順番に見てみよう。',
+        LeverPhysicsGame: 'おもりの重さと、支点からの距離をかけてみよう。',
+        CircuitSandboxGame: '電池から出た線が、切れずに戻る道を確かめよう。',
+        PrefectureJigsawGame: '地方と海岸線の形を手がかりにしよう。',
+        CategorySortGame: 'カードの意味と、箱の仲間を一つずつ比べよう。'
+      };
+      const clue = clueByGame[game.constructor?.name] || '光った場所や、選択肢の違いをよく見てみよう。';
+      const hintElement = typeof document !== 'undefined' ? document.getElementById('game-hint') : null;
+      if (hintElement) hintElement.textContent = `📡 ${clue}`;
+      const canvas = game.canvas;
+      if (canvas?.classList) {
+        canvas.classList.remove('shop-hint-flash');
+        void canvas.offsetWidth;
+        canvas.classList.add('shop-hint-flash');
+      }
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  useHintRadarItem() {
+    if (this.getShopItemQuantity('item_hint_radar') <= 0 || !this.applyPurchasedHint()) return false;
+    const result = this.consumeShopItem('item_hint_radar');
+    if (!result?.success) return false;
+    this.showShopItemMessage('手がかりが光ったよ！');
+    return true;
   }
 
   runAtSafeBreak(continueAction) {
@@ -291,6 +426,7 @@ export class MiniGameModal {
     this.setPlayActivity(true);
     this.updateStageCountdown(node);
     this.stageTimerId = this.setIntervalImpl(() => this.updateStageCountdown(node), 250);
+    this.refreshShopItemControls();
   }
 
   setPlayActivity(active) {
@@ -328,6 +464,7 @@ export class MiniGameModal {
     this.stageTimerId = null;
     this.stageDeadline = 0;
     this.setPlayActivity(false);
+    this.refreshShopItemControls();
   }
 
   handleStageTimeout(node) {
@@ -1018,6 +1155,12 @@ export class MiniGameModal {
       overlay.style.pointerEvents = 'none';
     }
     const canvas = document.getElementById('game-canvas');
+    canvas?.classList?.remove('shop-hint-flash');
+    if (this.itemMessageTimer) globalThis.clearTimeout(this.itemMessageTimer);
+    this.itemMessageTimer = null;
+    const itemBar = document.getElementById('game-shop-item-bar');
+    itemBar?.classList.add('hidden');
+    itemBar?.classList.remove('flex');
     HDCanvasRenderer.for(canvas)?.dispose();
     this.modal.classList.add('hidden');
   }
@@ -1779,6 +1922,7 @@ export class CurriculumQuizGame {
     this.feedback = '';
     this.selectedOption = null;
     this.selectionCorrect = null;
+    this.hintEliminatedOption = null;
     this.running = false;
     this.boundPointer = this.handlePointer.bind(this);
   }
@@ -1801,6 +1945,15 @@ export class CurriculumQuizGame {
     return { x: 24, w: getLogicalCanvasWidth(this.canvas) - 48, startY, gap, optionH };
   }
 
+  useHint() {
+    if (!this.running || this.locked) return false;
+    const question = this.questions[this.qIndex];
+    const wrongOptions = question?.options?.filter(option => option !== question.correct && option !== this.hintEliminatedOption) || [];
+    if (!wrongOptions.length) return false;
+    this.hintEliminatedOption = wrongOptions[Math.floor(Math.random() * wrongOptions.length)];
+    return true;
+  }
+
   handlePointer(event) {
     if (!this.running || this.locked) return;
     const rect = this.canvas.getBoundingClientRect();
@@ -1810,6 +1963,7 @@ export class CurriculumQuizGame {
     const question = this.questions[this.qIndex];
     question.options.forEach((option, index) => {
       const optionY = layout.startY + index * (layout.optionH + layout.gap);
+      if (option === this.hintEliminatedOption) return;
       if (this.locked || x < layout.x || x > layout.x + layout.w || y < optionY || y > optionY + layout.optionH) return;
       this.locked = true;
       const correct = option === question.correct;
@@ -1840,6 +1994,7 @@ export class CurriculumQuizGame {
     this.feedback = '';
     this.selectedOption = null;
     this.selectionCorrect = null;
+    this.hintEliminatedOption = null;
     this.locked = false;
     if (this.qIndex >= this.questions.length) {
       const accuracy = this.correctCount / this.questions.length;
@@ -1889,8 +2044,9 @@ export class CurriculumQuizGame {
       const isSelected = option === this.selectedOption;
       const isCorrectReveal = this.locked && option === question.correct;
       const isWrongSelected = isSelected && this.selectionCorrect === false;
-      this.ctx.fillStyle = isCorrectReveal ? '#065f46' : (isWrongSelected ? '#9f1239' : (isSelected ? '#075985' : '#172554'));
-      this.ctx.strokeStyle = isCorrectReveal ? '#6ee7b7' : (isWrongSelected ? '#fda4af' : (isSelected ? '#ffffff' : '#60a5fa'));
+      const isHintEliminated = !this.locked && option === this.hintEliminatedOption;
+      this.ctx.fillStyle = isCorrectReveal ? '#065f46' : (isWrongSelected ? '#9f1239' : (isSelected ? '#075985' : (isHintEliminated ? '#273449' : '#172554')));
+      this.ctx.strokeStyle = isCorrectReveal ? '#6ee7b7' : (isWrongSelected ? '#fda4af' : (isSelected ? '#ffffff' : (isHintEliminated ? '#64748b' : '#60a5fa')));
       this.ctx.lineWidth = isSelected || isCorrectReveal ? 4 : 2;
       if (isSelected) {
         this.ctx.shadowColor = isWrongSelected ? '#fb7185' : '#38bdf8';
@@ -1900,7 +2056,7 @@ export class CurriculumQuizGame {
       safeRoundRect(this.ctx, layout.x, optionY, layout.w, layout.optionH, 12);
       this.ctx.fill();
       this.ctx.stroke();
-      this.drawWrappedText(`${String.fromCharCode(65 + index)}. ${option}`, layout.x + 8, optionY + 2, layout.w - 16, layout.optionH - 4, option.length > 30 ? 12 : 14, '#ffffff');
+      this.drawWrappedText(`${isHintEliminated ? '×' : String.fromCharCode(65 + index)}. ${option}`, layout.x + 8, optionY + 2, layout.w - 16, layout.optionH - 4, option.length > 30 ? 12 : 14, isHintEliminated ? '#94a3b8' : '#ffffff');
       this.ctx.shadowBlur = 0;
     });
     if (this.feedback) {

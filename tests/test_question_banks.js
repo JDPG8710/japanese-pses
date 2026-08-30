@@ -8,6 +8,7 @@ function register({ describe, test, assert, loadESModule }) {
   const loader = loadESModule || require('./test_e2e_runner.js').loadESModule;
   const games = loader(path.join(rootDir, 'MiniGameSystem.js'));
   const radicalBank = loader(path.join(rootDir, 'RadicalQuestionBank.js'));
+  const curriculumModeBank = loader(path.join(rootDir, 'CurriculumModeBank.js'));
 
   const MATH_THEME_BASELINE = {
     1: [/100/, /たし算|加/, /ひき算|減/, /比較|大小/, /形|かたち/, /長さ/, /時刻|時間/],
@@ -228,6 +229,77 @@ function register({ describe, test, assert, loadESModule }) {
         }
         assert.isAbove(orders.size, 1, `${subject} Grade ${grade} session order must vary across launches`);
       }));
+    });
+
+    test('QB9: every selectable science quiz mode is grade-locked, theme-locked and larger than one session', () => {
+      Object.entries(curriculumModeBank.SCIENCE_QUIZ_MODES_BY_GRADE).forEach(([gradeValue, modes]) => {
+        const grade = Number(gradeValue);
+        modes.forEach(mode => {
+          const pool = games.getCurriculumQuestionPool('理科', grade, mode);
+          assert.isAtLeast(pool.length, 12, `Grade ${grade} ${mode} must have more than one 10-question session`);
+          assert.strictEqual(new Set(pool.map(item => `${item.prompt}::${item.correct}`)).size, pool.length, `Grade ${grade} ${mode} pool must be duplicate-free`);
+          pool.forEach((question, index) => {
+            assert.strictEqual(question.subject, '理科', `Grade ${grade} ${mode} question ${index} must stay in science`);
+            assert.strictEqual(question.grade, grade, `Grade ${grade} ${mode} question ${index} must stay in grade`);
+            assert.strictEqual(question.mode, mode, `Grade ${grade} ${mode} question ${index} leaked from ${question.mode}`);
+            assertQuestion(question, `Grade ${grade} ${mode} pool question ${index}`);
+          });
+
+          const seenAcrossSessions = new Set();
+          for (let run = 0; run < 16; run++) {
+            const game = new games.CurriculumQuizGame(makeCanvas(), { subject: '理科', grade, selectedMode: mode }, () => {}, grade, 1, '理科');
+            const session = extractSession(game);
+            assert.strictEqual(session.length, 10, `Grade ${grade} ${mode} must draw 10 questions`);
+            session.forEach(question => {
+              assert.strictEqual(question.mode, mode, `Grade ${grade} ${mode} session leaked ${question.mode}`);
+              seenAcrossSessions.add(`${question.prompt}::${question.correct}`);
+            });
+            game.destroy();
+          }
+          assert.isAbove(seenAcrossSessions.size, 10, `Grade ${grade} ${mode} must change content, not only order`);
+        });
+      });
+    });
+
+    test('QB10: Japanese, social and life selections also use exclusive pools larger than one session', () => {
+      const matrix = {
+        '国語': { grades: [1, 2, 3, 4, 5, 6], modes: ['READING_QUIZ'] },
+        '社会': { grades: [3, 4, 5, 6], modes: ['MAP_GAME', 'SEQUENCE_GAME'] },
+        '生活': { grades: [1, 2], modes: ['OBSERVATION_SEQUENCE', 'COMMUNITY_MATCH'] }
+      };
+      Object.entries(matrix).forEach(([subject, config]) => config.grades.forEach(grade => config.modes.forEach(mode => {
+        const pool = games.getCurriculumQuestionPool(subject, grade, mode);
+        assert.isAtLeast(pool.length, 12, `${subject} Grade ${grade} ${mode} needs more than one session`);
+        assert.strictEqual(new Set(pool.map(item => `${item.prompt}::${item.correct}`)).size, pool.length, `${subject} Grade ${grade} ${mode} must be duplicate-free`);
+        pool.forEach((question, index) => {
+          assert.strictEqual(question.subject, subject, `${subject} Grade ${grade} ${mode} question ${index} has wrong subject`);
+          assert.strictEqual(question.grade, grade, `${subject} Grade ${grade} ${mode} question ${index} has wrong grade`);
+          assert.strictEqual(question.mode, mode, `${subject} Grade ${grade} ${mode} question ${index} leaked ${question.mode}`);
+          assertQuestion(question, `${subject} Grade ${grade} ${mode} question ${index}`);
+        });
+      })));
+    });
+
+    test('QB11: each math selection emits only its named theme in every grade', () => {
+      const modes = ['NUMBER_CALCULATION', 'MEASUREMENT', 'GEOMETRY', 'DATA_WORD_PROBLEM'];
+      for (let grade = 1; grade <= 6; grade++) {
+        modes.forEach(mode => {
+          const seenAcrossSessions = new Set();
+          for (let run = 0; run < 8; run++) {
+            const game = new games.MathCurriculumGame(makeCanvas(), { selectedMode: mode }, () => {}, grade, 1);
+            const session = extractSession(game);
+            assert.strictEqual(session.length, 10, `Grade ${grade} ${mode} must create 10 questions`);
+            session.forEach((question, index) => {
+              assert.strictEqual(question.mode, mode, `Grade ${grade} ${mode} question ${index} must keep selected mode`);
+              assert.strictEqual(game.questionMatchesMode(question, mode), true, `Grade ${grade} ${mode} leaked theme ${question.theme}`);
+              assertQuestion(question, `Grade ${grade} ${mode} question ${index}`);
+              seenAcrossSessions.add(`${question.prompt}::${question.correct}`);
+            });
+            game.destroy();
+          }
+          assert.isAbove(seenAcrossSessions.size, 10, `Grade ${grade} ${mode} must vary content across sessions`);
+        });
+      }
     });
   });
 }

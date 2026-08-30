@@ -191,7 +191,7 @@ export async function loadGameDataFile(fileName, localPath = `./data/${fileName}
   }
 
   if (isLocal && hasBrowserOrigin && typeof fetch === 'function') {
-    const response = await fetch(localPath).catch(() => null);
+    const response = await fetch(localPath, { cache: 'no-store' }).catch(() => null);
     if (response?.ok) return response.json();
   }
   return cached?.data || null;

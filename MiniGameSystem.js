@@ -15,6 +15,7 @@ import { getAudioSynthesizer } from './AudioSynthesizer.js';
 import { getFXSystem } from './FXSystem.js';
 import { getErrorGuidanceSystem } from './ErrorGuidanceSystem.js?v=3';
 import { getRadicalPuzzlesForGrade } from './RadicalQuestionBank.js';
+import { getCurriculumModePolicy, getSupplementalCurriculumQuestions } from './CurriculumModeBank.js';
 import { HDCanvasRenderer, getLogicalCanvasWidth, getLogicalCanvasHeight } from './src/render/HDCanvasRenderer.js';
 
 const UNIFIED_STAGE_TIME_LIMIT_SECONDS = 3 * 60;
@@ -917,7 +918,7 @@ export class MiniGameModal {
         break;
 
       case 'KOKUGO_CURRICULUM':
-        if (selectedMode === 'KANJI_SLASH') {
+        if (selectedMode === 'KANJI_SLASH' || selectedMode === 'KANJI_READING') {
           this.currentGame = new KanjiSlashGame(canvas, { ...targetNode.gameData, manageCountdown: false }, onWinCallback, effectiveGrade, levelNum);
         } else if (selectedMode === 'RADICAL_BUILDER') {
           this.currentGame = new RadicalBuilderGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum);
@@ -1886,7 +1887,7 @@ function getFallbackCurriculumBank(subject, grade) {
   return (kokugoByGrade[g] || kokugoByGrade[1]).map(([prompt, correct, wrong]) => q(prompt, correct, Array.isArray(wrong) ? wrong : []));
 }
 
-function sanitizeCurriculumBank(records, subject, selectedMode) {
+function sanitizeCurriculumBank(records, subject, selectedMode, grade) {
   const removeEmoji = (value) => String(value ?? '').replace(/[\p{Extended_Pictographic}\uFE0F]/gu, '').replace(/\s{2,}/g, ' ').trim();
   const normalized = records.map((record, index) => {
     const prompt = subject === '社会' ? removeEmoji(record.prompt ?? record.q) : String(record.prompt ?? record.q ?? '');
@@ -1894,12 +1895,33 @@ function sanitizeCurriculumBank(records, subject, selectedMode) {
     const rawOptions = record.options || [correct, ...(record.distractors || [])];
     const options = [...new Set(rawOptions.map(item => subject === '社会' ? removeEmoji(item) : String(item)))];
     if (!options.includes(correct)) options.unshift(correct);
-    return { ...record, id: record.id || `${subject}_${index}`, prompt, correct, options: options.slice(0, 4), mode: record.mode || 'ALL' };
+    return {
+      ...record,
+      id: record.id || `${subject}_G${grade}_${index}`,
+      subject,
+      grade: Number(grade),
+      prompt,
+      correct,
+      options: options.slice(0, 4),
+      mode: record.mode || 'ALL'
+    };
   }).filter(record => record.prompt && record.correct && record.options.length >= 4)
     .filter(record => subject !== '社会' || !record.prompt.toLocaleLowerCase().includes(record.correct.toLocaleLowerCase()));
-  const preferred = selectedMode ? normalized.filter(record => record.mode === selectedMode) : [];
-  const remaining = normalized.filter(record => !preferred.includes(record));
-  return [...shuffleCopy(preferred), ...shuffleCopy(remaining)];
+  const unique = [...new Map(normalized.map(record => [`${record.prompt}::${record.correct}`, record])).values()];
+  const policy = getCurriculumModePolicy(subject, selectedMode);
+  const eligible = policy.strict
+    ? unique.filter(record => policy.modes.includes(record.mode))
+    : unique;
+  return shuffleCopy(eligible);
+}
+
+export function getCurriculumQuestionPool(subject, grade, selectedMode = null, supplied = []) {
+  const source = Array.isArray(supplied) ? supplied : [];
+  return sanitizeCurriculumBank([
+    ...source,
+    ...getFallbackCurriculumBank(subject, grade),
+    ...getSupplementalCurriculumQuestions(subject, grade)
+  ], subject, selectedMode, grade);
 }
 
 export class CurriculumQuizGame {
@@ -1913,8 +1935,7 @@ export class CurriculumQuizGame {
     this.gameData = gameData || {};
     this.selectedMode = this.gameData.selectedMode || this.gameData.mode || null;
     const supplied = Array.isArray(this.gameData.questionBank) ? this.gameData.questionBank : [];
-    const fallback = getFallbackCurriculumBank(subject, this.grade);
-    const bank = sanitizeCurriculumBank([...supplied, ...fallback], subject, this.selectedMode);
+    const bank = getCurriculumQuestionPool(subject, this.grade, this.selectedMode, supplied);
     this.questions = bank.slice(0, 10).map(question => ({ ...question, options: shuffleCopy(question.options) }));
     this.qIndex = 0;
     this.correctCount = 0;
@@ -2030,6 +2051,15 @@ export class CurriculumQuizGame {
     if (!this.running) return;
     const w = getLogicalCanvasWidth(this.canvas);
     const question = this.questions[this.qIndex];
+    if (this.canvas.dataset) {
+      this.canvas.dataset.curriculumSubject = this.subject;
+      this.canvas.dataset.curriculumGrade = String(this.grade);
+      this.canvas.dataset.curriculumMode = String(this.selectedMode || 'MIXED');
+      this.canvas.dataset.questionMode = String(question.mode || 'ALL');
+    }
+    if (typeof this.canvas.setAttribute === 'function') {
+      this.canvas.setAttribute('aria-label', `${this.subject} 小学${this.grade}年。${question.prompt}。選択肢：${question.options.join('、')}`);
+    }
     this.ctx.clearRect(0, 0, w, getLogicalCanvasHeight(this.canvas));
     this.ctx.fillStyle = '#f8fafc';
     this.ctx.font = 'bold 16px sans-serif';
@@ -2079,6 +2109,30 @@ export class CurriculumQuizGame {
 export class MathCurriculumGame extends CurriculumQuizGame {
   constructor(canvas, gameData, onWin, grade = 1, level = 1) {
     super(canvas, gameData, onWin, grade, level, '算数');
+    const curriculumMode = ['NUMBER_CALCULATION', 'MEASUREMENT', 'GEOMETRY', 'DATA_WORD_PROBLEM']
+      .includes(String(this.selectedMode || '').toUpperCase())
+      ? String(this.selectedMode).toUpperCase()
+      : null;
+    if (curriculumMode) {
+      const seen = new Set();
+      const selected = [];
+      for (let attempt = 0; attempt < 5000 && selected.length < 10; attempt++) {
+        const question = this.buildQuestion(attempt % 5);
+        const identity = `${question.prompt}::${question.correct}`;
+        if (!this.questionMatchesMode(question, curriculumMode) || seen.has(identity)) continue;
+        seen.add(identity);
+        selected.push({
+          ...question,
+          id: `MATH_G${this.grade}_${curriculumMode}_${selected.length}`,
+          mode: curriculumMode,
+          subject: '算数',
+          grade: this.grade,
+          options: shuffleCopy(question.options)
+        });
+      }
+      this.questions = selected;
+      return;
+    }
     const forcedVariant = this.variantForMode(this.selectedMode);
     const variants = forcedVariant == null ? shuffleCopy([0, 1, 2, 3, 4, 0, 1, 2, 3, 4]) : Array(10).fill(forcedVariant);
     const seen = new Set();
@@ -2091,6 +2145,17 @@ export class MathCurriculumGame extends CurriculumQuizGame {
       seen.add(question.prompt);
       return { ...question, id: `MATH_G${this.grade}_L${this.level}_${index}`, options: shuffleCopy(question.options) };
     });
+  }
+
+  questionMatchesMode(question, mode) {
+    const theme = String(question?.theme || '');
+    const patterns = {
+      NUMBER_CALCULATION: /数|たし算|ひき算|かけ算|九九|わり算|乗法|除法|分数|小数|(?:^|・)比(?:$|・)|比例|四則計算/,
+      MEASUREMENT: /長さ|時刻|時間|容量|かさ|計量|重さ|面積|体積|速さ/,
+      GEOMETRY: /かたち|形|角|円|球|対称|多角形/,
+      DATA_WORD_PROBLEM: /比較|大小|表|グラフ|データ|平均|割合|百分率|単位量|統計/
+    };
+    return Boolean(patterns[mode]?.test(theme));
   }
 
   variantForMode(mode) {
@@ -2130,7 +2195,14 @@ export class MathCurriculumGame extends CurriculumQuizGame {
       else if (lane === 2) { const left = 1 + chance(9), right = 10 + chance(10); prompt = `${left} と ${right}、大きい数は？`; answer = right; distractors = [left, left + right, 10]; theme = '数の比較・大小'; }
       else if (lane === 3 && Math.random() < 0.5) { const cm = 2 + chance(8); prompt = `${cm} cm のテープと ${cm + 2} cm のテープ。長いのは何 cm？`; answer = `${cm + 2} cm`; distractors = [`${cm} cm`, `${cm + 1} cm`, `${cm + 3} cm`]; theme = '長さくらべ'; }
       else if (lane === 3) { const hour = 1 + chance(11); prompt = `短い針が ${hour}、長い針が12を指す時刻は？`; answer = `${hour}時`; distractors = [`${hour}時30分`, `${hour + 1}時`, '12時']; theme = '時刻'; }
-      else { const sides = [3, 4, 5, 6][chance(4)]; prompt = `辺が ${sides}本の形はどれ？`; const names = { 3: '三角形', 4: '四角形', 5: '五角形', 6: '六角形' }; answer = names[sides]; distractors = Object.values(names).filter(item => item !== answer).slice(0, 3); theme = 'かたち・形'; }
+      else { const cases = [
+        ['まっすぐな辺が3本ある形は？', '三角形', ['四角形', '円', '六角形']], ['まっすぐな辺が4本ある形は？', '四角形', ['三角形', '円', '五角形']],
+        ['角がなく、まるい平らな形は？', '円', ['三角形', '四角形', '正方形']], ['どの向きにも転がりやすい立体は？', '球', ['立方体', '直方体', '三角形']],
+        ['さいころと同じ形の立体は？', '立方体', ['球', '円柱', '円']], ['ティッシュ箱と同じ形の立体は？', '直方体', ['球', '円柱', '三角形']],
+        ['空き缶と同じ形の立体は？', '円柱', ['球', '立方体', '円']], ['辺の長さがすべて同じ四角形は？', '正方形', ['長方形', '三角形', '円']],
+        ['本の表紙に多い平らな形は？', '長方形', ['円', '三角形', '球']], ['車輪を横から見た形に近いものは？', '円', ['正方形', '三角形', '直方体']],
+        ['六つの面がすべて正方形の立体は？', '立方体', ['直方体', '球', '円柱']], ['上下に円の面がある立体は？', '円柱', ['球', '立方体', '三角形']]
+      ]; const selected = cases[chance(cases.length)]; [prompt, answer, distractors] = selected; theme = 'かたち・形'; }
     } else if (this.grade === 2) {
       if (lane === 0 && Math.random() < 0.5) { const a = 20 + chance(60), b = 10 + chance(40); prompt = `${a} + ${b} = ?`; answer = a + b; distractors = [a + b - 10, a + b + 10, Math.abs(a - b)]; theme = '2けたのたし算'; }
       else if (lane === 0) { const n = 100 + chance(900); prompt = `${n} の百の位の数字は？`; answer = Math.floor(n / 100); distractors = [Math.floor(n / 10) % 10, n % 10, n]; theme = '1000までの大きな数'; }
@@ -2139,7 +2211,15 @@ export class MathCurriculumGame extends CurriculumQuizGame {
       else if (lane === 2) { const counts = [3 + chance(5), 2 + chance(5), 1 + chance(5)]; prompt = `表：赤 ${counts[0]}人、青 ${counts[1]}人、黄 ${counts[2]}人。いちばん多い色は？`; const index = counts.indexOf(Math.max(...counts)); answer = ['赤', '青', '黄'][index]; distractors = ['赤', '青', '黄', '同じ'].filter(v => v !== answer); theme = '簡単な表'; }
       else if (lane === 3 && Math.random() < 0.5) { const cm = 100 + chance(190); prompt = `${cm} cm は何 m 何 cm？`; answer = `${Math.floor(cm / 100)} m ${cm % 100} cm`; distractors = [`${cm} m`, `${cm % 100} m`, `${Math.floor(cm / 10)} m ${cm % 10} cm`]; theme = '長さ'; }
       else if (lane === 3) { const dl = 10 + chance(20); prompt = `${dl} dL は何 L 何 dL？`; answer = `${Math.floor(dl / 10)} L ${dl % 10} dL`; distractors = [`${dl} L`, `${dl % 10} L`, `${Math.floor(dl / 10)} dL`]; theme = '水の容量・かさ'; }
-      else { const hour = 1 + chance(10), minutes = [10, 20, 30][chance(3)]; prompt = `${hour}時${minutes}分の 30分後は？`; const total = hour * 60 + minutes + 30; answer = `${Math.floor(total / 60)}時${total % 60}分`; distractors = [`${hour}時${minutes + 10}分`, `${hour + 1}時${minutes}分`, `${hour}時30分`]; theme = '時刻と時間'; }
+      else if (Math.random() < 0.5) { const hour = 1 + chance(10), minutes = [10, 20, 30][chance(3)]; prompt = `${hour}時${minutes}分の 30分後は？`; const total = hour * 60 + minutes + 30; answer = `${Math.floor(total / 60)}時${total % 60}分`; distractors = [`${hour}時${minutes + 10}分`, `${hour + 1}時${minutes}分`, `${hour}時30分`]; theme = '時刻と時間'; }
+      else { const cases = [
+        ['まっすぐな辺が3本の形は？', '三角形', ['四角形', '長方形', '円']], ['まっすぐな辺が4本の形の仲間は？', '四角形', ['三角形', '円', '球']],
+        ['四つの角がすべて直角の四角形は？', '長方形', ['三角形', '円', '球']], ['四つの角が直角で、辺の長さもすべて同じ形は？', '正方形', ['長方形', '三角形', '円']],
+        ['直角が一つある三角形は？', '直角三角形', ['正方形', '円', '五角形']], ['三角形を一本の線で分けてできる形の数は？', '二つ', ['一つ', '三つ', '四つ']],
+        ['正方形を一本の対角線で分けるとできる形は？', '同じ大きさの三角形二つ', ['円二つ', '長方形三つ', '球一つ']], ['長方形の向かい合う辺の長さは？', 'それぞれ同じ', ['すべて違う', '必ず0', '測れない']],
+        ['正方形を二つ横に並べるとできる形は？', '長方形', ['円', '三角形', '球']], ['三角定規にある角は？', '直角', ['平角だけ', '角はない', '360度の角だけ']],
+        ['紙をぴったり重ねて形を比べる方法は？', '直接比較', ['磁力比較', '温度比較', '重さだけの比較']], ['辺をつないで形を作るとき、すき間をなくすには？', '頂点を合わせる', ['辺を離す', '紙を丸める', '形を隠す']]
+      ]; const selected = cases[chance(cases.length)]; [prompt, answer, distractors] = selected; theme = '三角形・四角形'; }
     } else if (this.grade === 3) {
       if (lane === 0 && Math.random() < 0.34) { const a = 12 + chance(28), b = 2 + chance(7); prompt = `${a} × ${b} = ?`; answer = a * b; distractors = [a + b, a * b - b, a * b + a]; theme = '2けたのかけ算・乗法'; }
       else if (lane === 0 && Math.random() < 0.5) { const d = 2 + chance(7), n = 3 + chance(8); prompt = `${d * n} ÷ ${d} = ?`; answer = n; distractors = [d, n + 1, d * n]; theme = 'わり算・除法'; }
@@ -2148,16 +2228,16 @@ export class MathCurriculumGame extends CurriculumQuizGame {
       else if (lane === 2 && Math.random() < 0.5) { const whole = 1 + chance(8), tenths = 1 + chance(9); prompt = `${whole}と 0.${tenths} を合わせた数は？`; answer = `${whole}.${tenths}`; distractors = [`${whole + tenths}`, `0.${whole}${tenths}`, `${whole}.${tenths + 1}`]; theme = '小数'; }
       else if (lane === 2) { const minutes = 2 + chance(8); prompt = `${minutes}分は何秒？`; answer = `${minutes * 60}秒`; distractors = [`${minutes * 10}秒`, `${minutes + 60}秒`, `${minutes * 100}秒`]; theme = '時刻と時間'; }
       else if (lane === 3 && Math.random() < 0.34) { const kg = 1 + chance(5); prompt = `${kg} kg は何 g？`; answer = `${kg * 1000} g`; distractors = [`${kg * 100} g`, `${kg * 10} g`, `${kg + 1000} g`]; theme = '計量・重さ'; }
-      else if (lane === 3 && Math.random() < 0.5) { const values = [2, 3, 3, 4, 5, 5, 5, 6]; const target = [3, 5][chance(2)]; prompt = `表：${values.join('、')}。${target} はいくつある？`; answer = values.filter(value => value === target).length; distractors = [1, 2, 4]; theme = '表とデータ'; }
+      else if (lane === 3 && Math.random() < 0.5) { const target = 1 + chance(6); const values = Array.from({ length: 8 }, () => 1 + chance(6)); values[chance(values.length)] = target; prompt = `表：${values.join('、')}。${target} はいくつある？`; answer = values.filter(value => value === target).length; distractors = [1, 2, 4]; theme = '表とデータ'; }
       else if (lane === 3) { const red = 2 + chance(6), blue = red + 2; prompt = `棒グラフで赤が${red}人、青が${blue}人。何人多い？`; answer = `${blue - red}人`; distractors = [`${blue}人`, `${red}人`, `${blue + red}人`]; theme = '棒グラフ'; }
-      else { const r = 2 + chance(8); prompt = `半径 ${r} cm の円の直径は？`; answer = `${r * 2} cm`; distractors = [`${r} cm`, `${r * 3} cm`, `${r * 2 + 1} cm`]; theme = '円と球'; }
+      else { const r = 1 + chance(12); prompt = `半径 ${r} cm の円の直径は？`; answer = `${r * 2} cm`; distractors = [`${r} cm`, `${r * 3} cm`, `${r * 2 + 1} cm`]; theme = '円と球'; }
     } else if (this.grade === 4) {
       if (lane === 0) { const width = 3 + chance(12), height = 3 + chance(10); prompt = `たて ${height} cm、横 ${width} cm の長方形の面積は？`; answer = `${width * height} cm²`; distractors = [`${width + height} cm²`, `${width * height + width} cm²`, `${(width + height) * 2} cm²`]; theme = '面積'; }
       else if (lane === 1) { const denominator = [4, 5, 8, 10][chance(4)], a = 1 + chance(denominator - 2); prompt = `${a}/${denominator} + 1/${denominator} = ?`; answer = `${a + 1}/${denominator}`; distractors = [`${a + 1}/${denominator * 2}`, `${a}/${denominator}`, `${a + 2}/${denominator}`]; theme = '同分母の分数'; }
       else if (lane === 2) { const a = (10 + chance(70)) / 10, b = (10 + chance(40)) / 10; prompt = `${a} + ${b} = ?`; answer = (a + b).toFixed(1); distractors = [(a + b + 0.1).toFixed(1), Math.abs(a - b).toFixed(1), (a + b + 1).toFixed(1)]; theme = '小数の計算'; }
       else if (lane === 3 && Math.random() < 0.5) { const n = 100000 + chance(800000), divisor = [10, 100][chance(2)]; prompt = `${n} ÷ ${divisor} = ?`; answer = n / divisor; distractors = [n * divisor, n / 10, n / divisor + 10]; theme = '大きな数と四則計算'; }
       else if (lane === 3) { const mon = 10 + chance(20), tue = mon + 2 + chance(8); prompt = `折れ線グラフで月曜${mon}℃、火曜${tue}℃。何℃上がった？`; answer = `${tue - mon}℃`; distractors = [`${tue}℃`, `${mon}℃`, `${tue + mon}℃`]; theme = '折れ線グラフ'; }
-      else { const angle = [45, 90, 135, 180][chance(4)]; const labels = { 45: '鋭角', 90: '直角', 135: '鈍角', 180: '平角' }; prompt = `${angle}° の角の名前は？`; answer = labels[angle]; distractors = ['鋭角', '直角', '鈍角', '平角'].filter(label => label !== answer); theme = '角'; }
+      else { const angle = [15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180][chance(12)]; const label = angle < 90 ? '鋭角' : angle === 90 ? '直角' : angle < 180 ? '鈍角' : '平角'; prompt = `${angle}° の角の名前は？`; answer = label; distractors = ['鋭角', '直角', '鈍角', '平角'].filter(item => item !== answer); theme = '角'; }
     } else if (this.grade === 5) {
       if (lane === 0 && Math.random() < 0.5) { const percent = [10, 20, 25, 40, 50][chance(5)], base = 20 * (5 + chance(6)); prompt = `${base}人の ${percent}% は何人？`; answer = base * percent / 100; distractors = [base - answer, percent, answer + 10]; theme = '割合・百分率'; }
       else if (lane === 0) { const people = 3 + chance(8), pages = people * (2 + chance(5)); prompt = `${pages}ページを${people}人で同じ数ずつ読むと、1人あたり何ページ？`; answer = `${pages / people}ページ`; distractors = [`${pages}ページ`, `${people}ページ`, `${pages - people}ページ`]; theme = '単位量あたりの大きさ'; }
@@ -2166,7 +2246,7 @@ export class MathCurriculumGame extends CurriculumQuizGame {
       else if (lane === 2) { const a = 2 + chance(8), b = 2 + chance(8); prompt = `${a}.${b} × 10 = ?`; answer = `${a * 10 + b}`; distractors = [`${a}.${b}`, `${a * 100 + b}`, `${a + b}`]; theme = '小数の乗法'; }
       else if (lane === 3 && Math.random() < 0.5) { const base = 2 + chance(8), height = 2 + chance(8); prompt = `底辺 ${base} cm、高さ ${height} cm の三角形の面積は？`; answer = `${base * height / 2} cm²`; distractors = [`${base * height} cm²`, `${base + height} cm²`, `${(base + height) * 2} cm²`]; theme = '三角形の面積'; }
       else if (lane === 3) { const denominator = [4, 5, 8][chance(3)], a = 1 + chance(denominator - 2); prompt = `${a}/${denominator} + 1/${denominator} = ?`; answer = `${a + 1}/${denominator}`; distractors = [`${a}/${denominator}`, `${a + 2}/${denominator}`, `${a + 1}/${denominator + 1}`]; theme = '分数の加法'; }
-      else { const sides = [5, 6, 8][chance(3)]; prompt = `辺も角もすべて等しい${sides}角形の名前は？`; answer = `正${sides}角形`; distractors = [`${sides}角形`, `正${sides + 1}角形`, '円']; theme = '正多角形と円'; }
+      else { const sides = 3 + chance(11); prompt = `辺も角もすべて等しい${sides}角形の名前は？`; answer = `正${sides}角形`; distractors = [`${sides}角形`, `正${sides + 1}角形`, '円']; theme = '正多角形と円'; }
     } else {
       if (lane === 0 && Math.random() < 0.5) { const speed = 30 + chance(50), time = 2 + chance(4); prompt = `時速 ${speed} km で ${time}時間進む道のりは？`; answer = `${speed * time} km`; distractors = [`${Math.floor(speed / time)} km`, `${speed + time} km`, `${speed} km`]; theme = '速さ'; }
       else if (lane === 0) { const a = 2 + chance(7), b = 2 + chance(7), c = 2 + chance(7); prompt = `底面積${a * b} cm²、高さ${c} cmの角柱の体積は？`; answer = `${a * b * c} cm³`; distractors = [`${a * b + c} cm³`, `${a * b} cm³`, `${(a + b) * c} cm³`]; theme = '立体の体積'; }
@@ -2174,7 +2254,14 @@ export class MathCurriculumGame extends CurriculumQuizGame {
       else if (lane === 2 && Math.random() < 0.5) { const x = 2 + chance(8), k = 2 + chance(7); prompt = `y = ${k}x で、x = ${x} のとき y は？`; answer = k * x; distractors = [k + x, k * x + 1, x]; theme = '比例'; }
       else if (lane === 2) { const denominator = [3, 4, 5, 6][chance(4)], numerator = 1 + chance(denominator - 1), multiple = 2 + chance(4); prompt = `${numerator}/${denominator} × ${multiple} = ?`; answer = `${numerator * multiple}/${denominator}`; distractors = [`${numerator}/${denominator * multiple}`, `${numerator + multiple}/${denominator}`, `${numerator * multiple}/${denominator + 1}`]; theme = '分数の乗法'; }
       else if (lane === 3) { const values = shuffleCopy([2, 3, 3, 4, 4, 4, 5, 5, 6, 7]); prompt = `資料 ${values.join('、')} の最頻値は？`; answer = 4; distractors = [3, 5, 7]; theme = '統計・データ'; }
-      else { const square = Math.random() < 0.35; prompt = `${square ? '正方形' : '長方形'}の対称の軸は何本？`; answer = square ? 4 : 2; distractors = square ? [1, 2, 3] : [0, 1, 4]; theme = '対称な図形'; }
+      else { const cases = [
+        ['正方形の対称の軸は何本？', 4, [1, 2, 3]], ['長方形の対称の軸は何本？', 2, [0, 1, 4]],
+        ['正三角形の対称の軸は何本？', 3, [0, 1, 2]], ['二等辺三角形の対称の軸は何本？', 1, [0, 2, 3]],
+        ['一般的な平行四辺形は線対称？', '線対称ではない', ['対称の軸が1本', '対称の軸が2本', '対称の軸が4本']], ['平行四辺形は点対称？', '点対称である', ['点対称ではない', '線対称だけ', '判断できない']],
+        ['正六角形の対称の軸は何本？', 6, [3, 4, 5]], ['円の対称の軸は何本？', '無数にある', ['0本', '1本', '2本']],
+        ['点Oのまわりに180°回して重なる図形は？', '点対称な図形', ['線対称な図形だけ', '合同でない図形', '拡大図']], ['一本の直線で折って重なる図形は？', '線対称な図形', ['点対称な図形だけ', '縮図', '展開図']],
+        ['点対称な図形で、対応する二点を結ぶ線分の中点は？', '対称の中心', ['対称の軸', '頂点だけ', '円周']], ['線対称な図形で、対応する二点を結ぶ線分と対称の軸は？', '垂直に交わる', ['平行になる', '交わらない', '必ず45°で交わる']]
+      ]; const selected = cases[chance(cases.length)]; [prompt, answer, distractors] = selected; theme = '対称な図形'; }
     }
     return { prompt, theme, ...this.makeChoice(answer, distractors) };
   }

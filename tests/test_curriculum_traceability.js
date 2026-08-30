@@ -124,6 +124,40 @@ function register({ describe, test, assert, loadESModule }) {
         }
       }
     });
+
+    test('CT10: every subject source file exactly mirrors the master curriculum records', () => {
+      const masterNodes = loadMasterNodes();
+      const files = ['kokugo.json', 'sansu.json', 'rika.json', 'shakai.json', 'seikatsu.json', 'eigo.json'];
+      files.forEach(file => {
+        const source = JSON.parse(fs.readFileSync(path.join(rootDir, 'data', file), 'utf8'));
+        const expected = masterNodes
+          .filter(node => node.subjectId === source.subjectId)
+          .map(({ subjectId, ...node }) => node);
+        assert.deepStrictEqual(source.nodes, expected, `${file} must not drift from subjects_curriculum.json`);
+      });
+    });
+
+    test('CT11: every science card exposes exactly the grade-appropriate selectable experiments', () => {
+      const expectedModes = {
+        3: ['MAGNET_LAB', 'LIGHT_SOUND_LAB', 'LIFE_CYCLE_SORT', 'CIRCUIT_SANDBOX'],
+        4: ['AIR_WATER_LAB', 'COSMIC_ORBIT', 'MUSCLE_MODEL', 'CIRCUIT_SANDBOX'],
+        5: ['ELECTROMAGNET_LAB', 'SOLUBILITY_LAB', 'GERMINATION_LAB', 'RIVER_WEATHER_LAB'],
+        6: ['LEVER_PHYSICS', 'AQUEOUS_LAB', 'COMBUSTION_LAB', 'PHOTOSYNTHESIS_LAB', 'ENERGY_LAB', 'MOON_REASONING']
+      };
+      const scienceNodes = loadMasterNodes().filter(node => node.subject === '理科');
+      scienceNodes.forEach(node => {
+        assert.deepStrictEqual(
+          node.gameData.experimentPool,
+          expectedModes[node.grade],
+          `${node.id} experiment choices must match its grade contract`
+        );
+        assert.strictEqual(new Set(node.gameData.topicPool).size, node.gameData.topicPool.length, `${node.id} topicPool must be duplicate-free`);
+      });
+      const indexSource = fs.readFileSync(path.join(rootDir, 'index.html'), 'utf8');
+      Object.values(expectedModes).flat().forEach(mode => {
+        assert.ok(indexSource.includes(`['${mode}'`), `${mode} must be present in the actual selection UI`);
+      });
+    });
   });
 
   describe('Progress and failure safety contract', () => {

@@ -540,10 +540,10 @@
 
   <script type="module">
     import { GalaxyEngine } from './GalaxyEngine.js?v=9';
-    import { MiniGameModal, GAME_GRADE_SUPPORT_MAP } from './MiniGameSystem.js?v=7';
+    import { MiniGameModal, GAME_GRADE_SUPPORT_MAP } from './MiniGameSystem.js?v=8';
     import { EconomyManager, SHOP_CATALOG } from './EconomySystem.js?v=5';
     import { AntigravityAgentBrain, createObservationPayload } from './AgentIntegration.js?v=2';
-    import { FULL_CURRICULUM_DAG, SUBJECT_METADATA, GRADES, loadCurriculumFromJSON, graphEngineInstance } from './CurriculumData.js?v=2';
+    import { FULL_CURRICULUM_DAG, SUBJECT_METADATA, GRADES, loadCurriculumFromJSON, graphEngineInstance } from './CurriculumData.js?v=3';
     import { ErrorInterceptor } from './ErrorInterceptor.js?v=2';
     import { diagnoseAndRecommendFix } from './AgentQADiagnostics.js?v=2';
     import { getAudioSynthesizer } from './js/AudioSynthesizer.js';
@@ -1563,7 +1563,8 @@
         ['LEVER_PHYSICS', 'てこの実験', '力と支点からつり合いを考える'],
         ['AQUEOUS_LAB', '水溶液ラボ', '性質と指示薬を判断'],
         ['COMBUSTION_LAB', '燃焼ラボ', '燃える条件を検証'],
-        ['PHOTOSYNTHESIS_LAB', '植物と人体', '養分・呼吸・体の働き'],
+        ['PHOTOSYNTHESIS_LAB', '植物と体のしくみ', '養分・呼吸・消化・血液の働き'],
+        ['ENERGY_LAB', '電気の利用ラボ', '発電・蓄電とエネルギー変換'],
         ['MOON_REASONING', '月相推理', '位置関係から月の形を説明']
       ]
     };

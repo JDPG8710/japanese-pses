@@ -816,6 +816,22 @@ function register({ describe, test, it, assert, loadESModule }) {
       }
     });
 
+    test('GB6b: the visible KANJI_READING choice always launches the grade-aligned Kanji game', () => {
+      for (let grade = 1; grade <= 6; grade++) {
+        const node = {
+          id: `KOKUGO_G${grade}_KANJI_READING_TEST`,
+          subject: '国語',
+          grade,
+          gameType: 'KOKUGO_CURRICULUM',
+          gameData: { selectedMode: 'KANJI_READING', grade }
+        };
+        modal.initGameInstance('KOKUGO_CURRICULUM', node, document.createElement('canvas'), grade, 1);
+        assert.ok(modal.currentGame instanceof miniGameMod.KanjiSlashGame, `Grade ${grade} KANJI_READING must launch KanjiSlashGame`);
+        assert.strictEqual(modal.currentGame instanceof miniGameMod.CurriculumQuizGame, false, `Grade ${grade} KANJI_READING must not fall back to a generic quiz`);
+        if (modal.currentGame?.destroy) modal.currentGame.destroy();
+      }
+    });
+
     test('GB7: Right-side Game Card Linkage & Direct Stage Launching for all 6 subjects across all grades', () => {
       const subjects = ['国語', '算数', '理科', '社会', '生活', '外国語・英語'];
       const grades = [1, 2, 3, 4, 5, 6];

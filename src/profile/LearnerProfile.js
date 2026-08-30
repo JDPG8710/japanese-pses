@@ -1,5 +1,6 @@
 export const LEARNER_AGE_MIN = 5;
 export const LEARNER_AGE_MAX = 15;
+export const DEFAULT_LEARNER_NAME = 'まなびくん';
 
 export const LEARNER_GENDER_OPTIONS = Object.freeze([
   { value: 'female', label: '女の子' },

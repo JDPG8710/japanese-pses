@@ -160,9 +160,9 @@ export const SHOP_CATALOG = {
 };
 
 export class EconomyManager {
-  constructor(defaultUserName = '学習者') {
+  constructor(defaultUserName = 'まなびくん') {
     this.storageKey = 'GALAXY_ECONOMY_MULTIUSER_V1';
-    this.defaultUserName = String(defaultUserName || '').trim() || '学習者';
+    this.defaultUserName = String(defaultUserName || '').trim() || 'まなびくん';
     this.loadState();
   }
 

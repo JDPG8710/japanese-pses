@@ -12,6 +12,7 @@
   <link rel="canonical" href="https://japanese-pses.j565718319.workers.dev/" />
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   <link rel="manifest" href="/site.webmanifest" />
+  <link rel="preload" as="image" href="/assets/maps/manabi-adventure-map.webp" type="image/webp" fetchpriority="high" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="まなびぽっぷ！" />
   <meta property="og:locale" content="ja_JP" />
@@ -54,7 +55,7 @@
     }
   </script>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="css/style.css?v=20260830.2" />
+  <link rel="stylesheet" href="css/style.css?v=20260830.4" />
   <style>
     body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #8bd8ff; }
     #canvas-container { position: absolute; inset: 0; touch-action: none; z-index: 1; }
@@ -93,7 +94,7 @@
       <!-- ユーザー名ログイン & プロファイル切り替えボタン -->
       <button id="user-profile-btn" class="glass-panel px-3.5 py-1.5 rounded-full hover:bg-slate-800 text-xs font-bold text-amber-300 flex items-center gap-2 transition border border-amber-500/40 shadow-lg shadow-amber-500/10">
         <span class="text-base">👦</span>
-        <span id="current-user-name">学習者</span>
+        <span id="current-user-name">まなびくん</span>
         <span class="text-[10px] text-slate-300 bg-slate-800 px-1.5 py-0.5 rounded">きろく</span>
       </button>
 
@@ -277,7 +278,7 @@
       <div id="profile-learner-summary" class="mb-4 rounded-2xl border border-cyan-400/30 bg-cyan-500/10 p-4">
         <p class="text-[10px] font-black tracking-[0.2em] text-cyan-300">わたしのプロフィール</p>
         <div class="mt-1 flex flex-wrap items-end justify-between gap-2">
-          <div><strong id="profile-learner-name" class="text-lg text-white">ゲスト</strong><span id="profile-learner-details" class="mt-1 block text-xs font-bold text-cyan-100">あとで設定できるよ</span></div>
+          <div><strong id="profile-learner-name" class="text-lg text-white">まなびくん</strong><span id="profile-learner-details" class="mt-1 block text-xs font-bold text-cyan-100">あとで設定できるよ</span></div>
           <button id="learner-profile-edit-btn" type="button" class="min-h-11 rounded-xl border border-cyan-300/50 bg-cyan-400/15 px-4 text-xs font-black text-cyan-100">なまえ・年齢を設定</button>
         </div>
       </div>
@@ -535,9 +536,9 @@
   </div>
 
   <script type="module">
-    import { GalaxyEngine } from './GalaxyEngine.js?v=7';
+    import { GalaxyEngine } from './GalaxyEngine.js?v=8';
     import { MiniGameModal, GAME_GRADE_SUPPORT_MAP } from './MiniGameSystem.js?v=4';
-    import { EconomyManager, SHOP_CATALOG } from './EconomySystem.js?v=3';
+    import { EconomyManager, SHOP_CATALOG } from './EconomySystem.js?v=4';
     import { AntigravityAgentBrain, createObservationPayload } from './AgentIntegration.js?v=2';
     import { FULL_CURRICULUM_DAG, SUBJECT_METADATA, GRADES, loadCurriculumFromJSON, graphEngineInstance } from './CurriculumData.js?v=2';
     import { ErrorInterceptor } from './ErrorInterceptor.js?v=2';
@@ -545,14 +546,15 @@
     import { getAudioSynthesizer } from './js/AudioSynthesizer.js';
     import { getFXSystem } from './js/FXSystem.js';
     import { getErrorGuidanceSystem } from './js/ErrorGuidanceSystem.js?v=3';
-    import { AuthManager } from './src/auth/AuthManager.js?v=2';
+    import { AuthManager } from './src/auth/AuthManager.js?v=3';
     import { MembershipManager } from './src/membership/MembershipManager.js?v=1';
     import { H5AdManager } from './src/ads/H5AdManager.js?v=1';
     import { StorageAdapter } from './src/storage/StorageAdapter.js';
-    import { LearnerProfileModal, isLearnerProfileComplete, learnerGenderLabel, normalizeLearnerProfile } from './src/profile/LearnerProfile.js?v=4';
+    import { DEFAULT_LEARNER_NAME, LearnerProfileModal, isLearnerProfileComplete, learnerGenderLabel, normalizeLearnerProfile } from './src/profile/LearnerProfile.js?v=5';
     import { calculateGradeProgress, createGraduationCertificate, ELEMENTARY_GRADUATION_ACHIEVEMENT_ID } from './ProgressionSystem.js';
 
     const BRAND_SPLASH_STORAGE_KEY = 'MANABI_POP_DAILY_SPLASH_V1';
+    const LEGACY_DEFAULT_LEARNER_NAMES = new Set([DEFAULT_LEARNER_NAME, 'ゲスト', '学習者', 'ひなた', 'ローカル学習者']);
     const dailyBrandSplash = document.getElementById('daily-brand-splash');
     const dailyBrandCountdown = document.getElementById('daily-brand-countdown');
     const todayInJapan = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Tokyo' }).format(new Date());
@@ -594,10 +596,14 @@
       : await storageAdapter.getLocalSnapshot();
     const learnerProfileModal = new LearnerProfileModal();
     const storedLearnerProfile = normalizeLearnerProfile(synchronizedState?.profile || {});
+    const rawSuggestedLearnerName = String(accessSession.user?.displayName || storedLearnerProfile.name || '').trim().slice(0, 20);
+    const suggestedLearnerName = LEGACY_DEFAULT_LEARNER_NAMES.has(rawSuggestedLearnerName)
+      ? DEFAULT_LEARNER_NAME
+      : (rawSuggestedLearnerName || DEFAULT_LEARNER_NAME);
     let learnerProfile = isLearnerProfileComplete(storedLearnerProfile)
       ? storedLearnerProfile
       : {
-          name: String(accessSession.user?.displayName || storedLearnerProfile.name || 'ゲスト').trim().slice(0, 20) || 'ゲスト',
+          name: suggestedLearnerName,
           age: null,
           gender: ''
         };
@@ -609,7 +615,7 @@
     const fxSystem = getFXSystem();
     const errorGuidance = getErrorGuidanceSystem({ audio: audioSynth, fx: fxSystem });
 
-    const economy = new EconomyManager(learnerProfile.name || 'ゲスト');
+    const economy = new EconomyManager(learnerProfile.name || DEFAULT_LEARNER_NAME);
     economy.loginUser(learnerProfile.name);
     economy.activeUser.age = learnerProfile.age || null;
     economy.activeUser.gender = learnerProfile.gender || '';
@@ -676,6 +682,11 @@
       window.closeSheet();
       gameModal.openGradeExam(targetGrade);
     };
+
+    // 学年を選ぶと、各教科の全ステージを冒険マップ上から直接選べる。
+    engine.setStageCountResolver(node => gameModal.getMaxStagesForNode(node));
+    engine.setStageProgressResolver((node, stageNumber) => economy.isStageCleared(node.id, stageNumber));
+    engine.setStageLaunchHandler((node, stageNumber) => window.launchStage(node.id, stageNumber));
 
     // 学年に応じたゲームUIの同期
     function syncGameButtonsWithGrade(grade) {
@@ -1143,7 +1154,7 @@
       const independentResultCounts = getIndependentResultCounts();
 
       const profileComplete = isLearnerProfileComplete(learnerProfile);
-      document.getElementById('profile-learner-name').textContent = learnerProfile.name || 'ゲスト';
+      document.getElementById('profile-learner-name').textContent = learnerProfile.name || DEFAULT_LEARNER_NAME;
       document.getElementById('profile-learner-details').textContent = profileComplete
         ? `${learnerProfile.age}歳 · ${learnerGenderLabel(learnerProfile.gender)}`
         : 'なまえや年齢は、あそんだあとでも設定できるよ';
@@ -1278,10 +1289,10 @@
       userModal.classList.add('hidden');
       const nextProfile = await learnerProfileModal.collect({
         existingProfile: learnerProfile,
-        suggestedName: learnerProfile.name === 'ゲスト' ? '' : learnerProfile.name
+        suggestedName: learnerProfile.name || DEFAULT_LEARNER_NAME
       });
       const previousName = economy.currentUser;
-      if (previousName === 'ゲスト' && nextProfile.name !== previousName && !economy.users[nextProfile.name]) {
+      if (LEGACY_DEFAULT_LEARNER_NAMES.has(previousName) && nextProfile.name !== previousName && !economy.users[nextProfile.name]) {
         economy.users[nextProfile.name] = economy.activeUser;
         economy.users[nextProfile.name].name = nextProfile.name;
         delete economy.users[previousName];

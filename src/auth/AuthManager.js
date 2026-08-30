@@ -14,7 +14,7 @@ export class AuthManager extends EventTarget {
 
   async initialize() {
     if (this.localMode) {
-      this.session = { mode: 'local', authenticated: true, user: { id: 'local-offline', provider: 'local', displayName: 'ローカル学習者' } };
+      this.session = { mode: 'local', authenticated: true, user: { id: 'local-offline', provider: 'local', displayName: 'まなびくん' } };
       return this.session;
     }
     const session = await this.getSession();

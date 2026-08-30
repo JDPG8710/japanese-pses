@@ -13,9 +13,12 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
       assert.ok(html.includes('new LearnerProfileModal()'), '後から開ける学習者プロフィール画面が必要です');
       assert.ok(html.includes('id="learner-profile-edit-btn"'), '学習きろくからプロフィールを設定できるボタンが必要です');
       assert.ok(!html.includes('let learnerProfile = await learnerProfileModal.collect'), '初回表示でプロフィール入力を待たせないでください');
-      assert.ok(html.includes("name: String(accessSession.user?.displayName || storedLearnerProfile.name || 'ゲスト')"), '未設定時は安全な仮プロフィールで開始してください');
+      assert.ok(html.includes("DEFAULT_LEARNER_NAME = 'まなびくん'") || html.includes('DEFAULT_LEARNER_NAME,'), '未設定時は「まなびくん」で開始してください');
       assert.ok(html.includes('profile-learner-summary'), 'Profileで入力内容を確認できるようにしてください');
       assert.ok(!html.includes('id="current-user-name">ひなた</span>'), '既定名ひなたを表示しないでください');
+      assert.ok(html.includes('id="current-user-name">まなびくん</span>'), '画面上の既定名を「まなびくん」にしてください');
+      const auth = fs.readFileSync(path.join(root, 'src', 'auth', 'AuthManager.js'), 'utf8');
+      assert.ok(auth.includes("displayName: 'まなびくん'"), 'ローカル免ログイン時も既定名を統一してください');
     });
 
     test('学習者プロフィールは有効な名前・5〜15歳・性別項目を検証する', () => {
@@ -82,17 +85,26 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
       assert.ok(html.includes('好きなゲームからクリアした回数'), 'ゲーム優先モードの結果も学習記録に表示してください');
     });
 
-    test('ホーム背景はWebGLを使わない軽量カートゥーン冒険マップである', () => {
+    test('ホーム背景は制作イラストを使い、学年内の全ステージを選べる軽量冒険マップである', () => {
       const galaxy = fs.readFileSync(path.join(root, 'GalaxyEngine.js'), 'utf8');
       const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
       const css = fs.readFileSync(path.join(root, 'css', 'style.css'), 'utf8');
       const build = fs.readFileSync(path.join(root, 'scripts', 'build.mjs'), 'utf8');
-      assert.ok(galaxy.includes('cartoon-map-world') && galaxy.includes('map-stage-node'), 'カートゥーンマップとタップ可能なステージが必要です');
-      assert.ok(galaxy.includes('map-school') && galaxy.includes('map-river') && galaxy.includes('map-route'), '学校・川・道を持つ冒険マップにしてください');
+      assert.ok(galaxy.includes('cartoon-map-world') && galaxy.includes('map-stage-stop'), '冒険マップとタップ可能なステージが必要です');
+      assert.ok(galaxy.includes('createUnitRoute') && galaxy.includes('createStageButton') && galaxy.includes('getStageCount'), '各単元の全ステージを背景上へ展開してください');
+      assert.ok(html.includes('engine.setStageCountResolver') && html.includes('engine.setStageProgressResolver'), '実際の関門数とクリア状態をマップに連携してください');
       assert.ok(!galaxy.includes("from 'three'") && !galaxy.includes('requestAnimationFrame'), 'ホーム画面でThree.jsや常時描画ループを使わないでください');
       assert.ok(!html.includes('https://unpkg.com/three'), 'Three.js CDNを読み込まないでください');
-      assert.ok(css.includes('.cartoon-map-world') && css.includes('@media (max-width: 380px)'), '小画面向けのマップ調整が必要です');
+      assert.ok(css.includes("url('../assets/maps/manabi-adventure-map.webp')") && css.includes('.map-unit-route'), '制作イラストと読みやすい単元ルートが必要です');
+      assert.ok(css.includes('@media (max-width: 380px)') && css.includes('.map-node-layer { top: 178px; }'), '小画面向けのマップ調整が必要です');
+      assert.ok(build.includes("['assets', 'css', 'js', 'src']"), '背景画像をビルド成果物へ含めてください');
       assert.ok(build.includes("createHash('sha256')") && build.includes("slice(0, 12)"), '同日中の再配信でも新しい静的資産を取得できる内容ハッシュが必要です');
+    });
+
+    test('学年メニューは連続正解表示の下に配置し、重ならない', () => {
+      const css = fs.readFileSync(path.join(root, 'css', 'style.css'), 'utf8');
+      assert.ok(css.includes("top: max(4.25rem, calc(env(safe-area-inset-top) + 3.75rem)) !important"));
+      assert.ok(css.includes("#grade-tabs-container { top: max(3.75rem"), 'スマートフォンでもヘッダーの下へ配置してください');
     });
 
     test('新しいゲーム名を1日1回、5秒表示し、閉じるボタンを備える', () => {

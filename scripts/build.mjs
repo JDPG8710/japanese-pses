@@ -22,7 +22,7 @@ for (const name of rootFiles) {
   await cp(path.join(root, name), path.join(output, name));
 }
 
-for (const directory of ['css', 'js', 'src']) {
+for (const directory of ['assets', 'css', 'js', 'src']) {
   await cp(path.join(root, directory), path.join(output, directory), { recursive: true });
 }
 

@@ -234,7 +234,7 @@ async function authenticate(request, env) {
 async function handleSession(request, env) {
   const session = await authenticate(request, env);
   return session
-    ? json({ authenticated: true, user: session.user || { id: session.sub, provider: session.provider, displayName: '学習者', email: null } }, 200, request, env)
+    ? json({ authenticated: true, user: session.user || { id: session.sub, provider: session.provider, displayName: 'まなびくん', email: null } }, 200, request, env)
     : json({ authenticated: false }, 401, request, env);
 }
 

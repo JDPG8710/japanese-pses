@@ -5,12 +5,15 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
   const root = path.resolve(__dirname, '..');
 
   describe('学習入口と全学年 Profile', () => {
-    test('初回アクセスで名前・年齢・性別を入力し、既定のひなたを表示しない', () => {
+    test('初回はモード選択を先に表示し、名前・年齢・性別を後から設定できる', () => {
       const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
       for (const field of ['learner_name', 'learner_age', 'learner_gender', 'learner_profile_completed']) {
         assert.ok(html.includes(field), `${field} をプロフィールへ保存してください`);
       }
-      assert.ok(html.includes('new LearnerProfileModal()'), '認証後に学習者プロフィール入力を実行してください');
+      assert.ok(html.includes('new LearnerProfileModal()'), '後から開ける学習者プロフィール画面が必要です');
+      assert.ok(html.includes('id="learner-profile-edit-btn"'), '学習きろくからプロフィールを設定できるボタンが必要です');
+      assert.ok(!html.includes('let learnerProfile = await learnerProfileModal.collect'), '初回表示でプロフィール入力を待たせないでください');
+      assert.ok(html.includes("name: String(accessSession.user?.displayName || storedLearnerProfile.name || 'ゲスト')"), '未設定時は安全な仮プロフィールで開始してください');
       assert.ok(html.includes('profile-learner-summary'), 'Profileで入力内容を確認できるようにしてください');
       assert.ok(!html.includes('id="current-user-name">ひなた</span>'), '既定名ひなたを表示しないでください');
     });
@@ -43,8 +46,8 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
         'learning-mode-modal', 'learning-mode-game-title', 'grade-first-mode-btn', 'game-first-mode-btn',
         'independent-game-list', 'independent-grade-list'
       ]) assert.ok(html.includes(`id="${id}"`), `${id} が必要です`);
-      assert.ok(/PSES\s*<\/span>\s*<span[^>]*>Game/.test(html), '入口の上部に PSES Game のゲーム名を表示してください');
-      assert.ok(css.includes('@keyframes pses-brand-float'), 'PSES Game の軽量アニメーションが必要です');
+      assert.ok(/まなび\s*<\/span>\s*<span[^>]*>ぽっぷ！/.test(html), '入口の上部に、ひらがなのゲーム名を表示してください');
+      assert.ok(css.includes('@keyframes pses-brand-float'), 'ゲーム名の軽量アニメーションが必要です');
       assert.ok(css.includes('@media (prefers-reduced-motion: reduce)'), '動きを減らす端末設定にも対応してください');
       assert.ok(html.includes('showLearningModeModal();'), '初期化後に入口モーダルを表示する必要があります');
       assert.ok(html.includes('GAME_GRADE_SUPPORT_MAP'), 'ゲームと対応学年は共通マップから生成してください');
@@ -79,17 +82,34 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
       assert.ok(html.includes('好きなゲームからクリアした回数'), 'ゲーム優先モードの結果も学習記録に表示してください');
     });
 
-    test('銀河テーマは多層6色渦状腕・巨大ブラックホール・大判学科惑星を描画する', () => {
+    test('ホーム背景はWebGLを使わない軽量カートゥーン冒険マップである', () => {
       const galaxy = fs.readFileSync(path.join(root, 'GalaxyEngine.js'), 'utf8');
+      const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+      const css = fs.readFileSync(path.join(root, 'css', 'style.css'), 'utf8');
       const build = fs.readFileSync(path.join(root, 'scripts', 'build.mjs'), 'utf8');
-      assert.ok(galaxy.includes('spectralPalette'), '6本の渦状腕に補助色パレットが必要です');
-      assert.ok(galaxy.includes('nebulaDustPoints') && galaxy.includes('nebulaSparkPoints') && galaxy.includes('nebulaRibbons'), '星雲はダスト・星・発光リボンの多層構成にしてください');
-      assert.ok(galaxy.includes('blackHolePhotonRing') && galaxy.includes('blackHoleDisks') && galaxy.includes('blackHoleJets'), '中心に光子リング・降着円盤・双極ジェットを持つブラックホールが必要です');
-      assert.ok(galaxy.includes('new THREE.SphereGeometry(24, 64, 64)'), '事象の地平面を十分大きく描画してください');
-      assert.ok(galaxy.includes("node.status === 'CLEARED' ? 8.2 : (node.status === 'AVAILABLE' ? 7.4 : 6.2)"), '学科惑星を従来より大きくしてください');
-      assert.ok(galaxy.includes('isInteractionHitSurface') && galaxy.includes('Math.max(14, radius * 1.9)'), 'タッチ用の大判ヒット領域が必要です');
-      assert.ok(galaxy.includes('getSubjectSelectionPosition(node)'), '学年選択後は学科惑星を画面内の安定軌道へ配置してください');
+      assert.ok(galaxy.includes('cartoon-map-world') && galaxy.includes('map-stage-node'), 'カートゥーンマップとタップ可能なステージが必要です');
+      assert.ok(galaxy.includes('map-school') && galaxy.includes('map-river') && galaxy.includes('map-route'), '学校・川・道を持つ冒険マップにしてください');
+      assert.ok(!galaxy.includes("from 'three'") && !galaxy.includes('requestAnimationFrame'), 'ホーム画面でThree.jsや常時描画ループを使わないでください');
+      assert.ok(!html.includes('https://unpkg.com/three'), 'Three.js CDNを読み込まないでください');
+      assert.ok(css.includes('.cartoon-map-world') && css.includes('@media (max-width: 380px)'), '小画面向けのマップ調整が必要です');
       assert.ok(build.includes("createHash('sha256')") && build.includes("slice(0, 12)"), '同日中の再配信でも新しい静的資産を取得できる内容ハッシュが必要です');
+    });
+
+    test('新しいゲーム名を1日1回、5秒表示し、閉じるボタンを備える', () => {
+      const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+      for (const token of ['まなびぽっぷ！', 'daily-brand-splash', 'daily-brand-close', 'MANABI_POP_DAILY_SPLASH_V1']) {
+        assert.ok(html.includes(token), `${token} が必要です`);
+      }
+      assert.ok(html.includes('let brandSecondsLeft = 5'));
+      assert.ok(html.includes("timeZone: 'Asia/Tokyo'"));
+    });
+
+    test('ゲーム先行カードは難しい一文字名ではなく、親しみやすい固有名を使う', () => {
+      const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+      for (const name of ['ことばのにんじゃ', 'かんじパズルこうぼう', 'すうじのたからじま', 'ぴかぴかでんきこうぼう', 'にじいろえいごランド']) {
+        assert.ok(html.includes(name), `${name} をカードに表示してください`);
+      }
+      assert.ok(html.includes('independent-game-card'));
     });
   });
 

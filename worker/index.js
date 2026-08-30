@@ -278,8 +278,8 @@ async function handleMembershipCheckout(request, env) {
   form.set('line_items[0][price_data][currency]', 'jpy');
   form.set('line_items[0][price_data][unit_amount]', String(MEMBERSHIP_PRICE_JPY));
   form.set('line_items[0][price_data][tax_behavior]', 'inclusive');
-  form.set('line_items[0][price_data][product_data][name]', 'PSES Game 広告なしメンバー');
-  form.set('line_items[0][price_data][product_data][description]', '一度のお支払いで、PSES Gameの広告をずっと非表示にします。');
+  form.set('line_items[0][price_data][product_data][name]', 'まなびぽっぷ！ 広告なしメンバー');
+  form.set('line_items[0][price_data][product_data][description]', '一度のお支払いで、まなびぽっぷ！の広告をずっと非表示にします。');
   form.set('line_items[0][quantity]', '1');
   form.set('metadata[user_id]', session.sub);
   form.set('metadata[offer_id]', MEMBERSHIP_OFFER_ID);

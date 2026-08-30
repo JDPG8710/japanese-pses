@@ -57,10 +57,10 @@ export class LearnerProfileModal {
     element.id = 'learner-profile-modal';
     element.className = 'fixed inset-0 z-[110] hidden items-center justify-center bg-slate-950/95 p-4 backdrop-blur-xl';
     element.innerHTML = `
-      <form id="learner-profile-form" class="w-full max-w-md rounded-3xl border border-cyan-400/40 bg-slate-900 p-6 shadow-2xl sm:p-8" novalidate>
-        <p class="text-xs font-black tracking-[0.2em] text-cyan-300">はじめまして！</p>
-        <h1 class="mt-2 text-2xl font-black text-white">あそぶ人のことを教えてね</h1>
-        <p class="mt-2 text-sm leading-6 text-slate-300">ゲームで使うおなまえと年齢を選んでね。あとで「わたしの学習きろく」から確認できます。</p>
+      <form id="learner-profile-form" class="w-full max-w-md max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-3xl border border-cyan-400/40 bg-slate-900 p-5 shadow-2xl sm:p-8" novalidate>
+        <p class="text-xs font-black tracking-[0.2em] text-cyan-300">プロフィール</p>
+        <h1 class="mt-2 text-2xl font-black leading-tight text-white">あそぶ人のことを教えてね</h1>
+        <p class="mt-2 text-sm leading-6 text-slate-300">おなまえ・年齢・性別は、いつでも「わたしの学習きろく」から変えられるよ。</p>
         <div class="mt-6 space-y-4">
           <label class="block text-sm font-bold text-white">おなまえ
             <input id="learner-profile-name" name="learnerName" type="text" maxlength="20" autocomplete="nickname" required

@@ -179,18 +179,18 @@ export class MiniGameModal {
       modal.id = 'game-modal';
       modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-2 sm:p-4 hidden select-none';
       modal.innerHTML = `
-        <div class="relative w-full max-w-3xl bg-slate-900 border border-slate-700 rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[95vh]">
+        <div class="relative w-full max-w-3xl bg-slate-900 border border-slate-700 rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[calc(100dvh-1rem)] sm:max-h-[95vh]">
           <!-- ヘッダー -->
-          <div class="flex justify-between items-center px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-800 bg-slate-900/90 flex-shrink-0">
+          <div class="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 px-3 sm:px-6 py-3 sm:py-4 border-b border-slate-800 bg-slate-900/90 flex-shrink-0">
             <div class="min-w-0 pr-2">
               <div class="flex items-center gap-2 flex-wrap">
                 <span id="game-grade-badge" class="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">小学1年</span>
                 <span id="game-subject-badge" class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">国語</span>
                 <span id="game-mode-badge" class="hidden sm:inline-block text-[10px] font-medium px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">チャレンジ中</span>
               </div>
-              <h2 id="game-title" class="text-sm sm:text-base md:text-lg font-bold text-white mt-1 truncate">ゲームを用意しているよ…</h2>
+              <h2 id="game-title" class="text-sm sm:text-base md:text-lg font-bold leading-snug text-white mt-1 break-words">ゲームを用意しているよ…</h2>
             </div>
-            <div class="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+            <div class="flex max-w-[46vw] flex-wrap items-center justify-end gap-1.5 sm:max-w-none sm:gap-3 flex-shrink-0">
               <button id="game-hint-btn" class="hidden px-2.5 py-1 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 text-xs font-bold border border-sky-500/30 transition cursor-pointer min-h-[36px]">💡 ヒント</button>
               <button id="game-shuffle-btn" class="hidden px-2.5 py-1 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 text-xs font-bold border border-purple-500/30 transition cursor-pointer min-h-[36px]">🌀 シャッフル</button>
               <div id="game-timer" role="timer" aria-live="polite" class="text-xs sm:text-sm font-mono text-amber-400 font-bold bg-amber-400/10 border border-amber-400/30 px-2.5 sm:px-3 py-1 rounded-full whitespace-nowrap">⏱ 3:00</div>
@@ -205,8 +205,8 @@ export class MiniGameModal {
           </div>
 
           <!-- フッター案内とスコア -->
-          <div class="px-4 sm:px-6 py-2.5 sm:py-3 bg-slate-900/95 border-t border-slate-800 flex justify-between items-center text-xs text-slate-400 flex-shrink-0">
-            <span id="game-hint" class="truncate max-w-[65%] sm:max-w-[70%]">タップやドラッグで答えてね</span>
+          <div class="px-4 sm:px-6 py-2.5 sm:py-3 bg-slate-900/95 border-t border-slate-800 flex flex-wrap justify-between items-center gap-2 text-xs text-slate-300 flex-shrink-0">
+            <span id="game-hint" class="min-w-0 flex-1 leading-5 break-words">タップやドラッグで答えてね</span>
             <div id="game-score-box" class="font-mono text-white font-semibold flex-shrink-0 text-right">
               スコア: <span id="game-score" class="text-amber-400 font-bold">0</span>
             </div>
@@ -1231,7 +1231,7 @@ export class KanjiSlashGame {
     this.ctx.fillStyle = '#ffffff';
     this.ctx.font = 'bold 22px sans-serif';
     this.ctx.textAlign = 'center';
-    this.ctx.fillText(`【 ${this.currentKanji || ''} 】の${withKidsReading('正しい読み', 'ただしいよみ', this.grade)}は？`, getLogicalCanvasWidth(this.canvas) / 2, 42);
+    drawFittedCanvasText(this.ctx, `【 ${this.currentKanji || ''} 】の${withKidsReading('正しい読み', 'ただしいよみ', this.grade)}は？`, getLogicalCanvasWidth(this.canvas) / 2, 42, getLogicalCanvasWidth(this.canvas) - 32, 20, 12);
 
     // 流れ星描画
     this.meteors.forEach((m) => {
@@ -1504,21 +1504,21 @@ export class RadicalBuilderGame {
     this.ctx.fillStyle = '#ffffff';
     this.ctx.font = 'bold 15px sans-serif';
     this.ctx.textAlign = 'center';
-    this.ctx.fillText(`小学${this.grade}年・部首と漢字パーツ　${this.qIndex + 1} / ${this.puzzles.length}`, w / 2, 26);
+    drawFittedCanvasText(this.ctx, `小学${this.grade}年・部首と漢字パーツ　${this.qIndex + 1} / ${this.puzzles.length}`, w / 2, 26, w - 28, 16, 11);
     this.ctx.fillStyle = '#bae6fd';
     this.ctx.font = 'bold 17px sans-serif';
-    this.ctx.fillText(this.currentPuzzle?.prompt || `「${this.targetKanji}」の問題`, w / 2, 53);
+    drawFittedCanvasText(this.ctx, this.currentPuzzle?.prompt || `「${this.targetKanji}」の問題`, w / 2, 53, w - 28, 18, 11);
 
     if (this.currentPuzzle?.hint) {
       this.ctx.fillStyle = '#cbd5e1';
       this.ctx.font = '13px sans-serif';
-      this.ctx.fillText(`読み：${this.currentPuzzle.reading || '―'}　ヒント：${this.currentPuzzle.hint}`, w / 2, 77);
+      drawFittedCanvasText(this.ctx, `読み：${this.currentPuzzle.reading || '―'}　ヒント：${this.currentPuzzle.hint}`, w / 2, 77, w - 28, 13, 9);
     }
 
     if (this.feedback) {
       this.ctx.fillStyle = this.answerState === 'correct' ? '#6ee7b7' : '#fda4af';
       this.ctx.font = 'bold 14px sans-serif';
-      this.ctx.fillText(this.feedback, w / 2, 101);
+      drawFittedCanvasText(this.ctx, this.feedback, w / 2, 101, w - 28, 13, 9);
     }
 
     // スロット（合体エリア）描画
@@ -2149,7 +2149,7 @@ export class PanBalanceScaleGame {
     this.ctx.fillStyle = '#ffffff';
     this.ctx.font = 'bold 20px sans-serif';
     this.ctx.textAlign = 'center';
-    this.ctx.fillText(`${withKidsReading('宇宙船てんびん', 'うちゅうせんてんびん')}：左の結晶（${this.targetLeftWeight}g）とおもりを釣り合わせよう！`, cx, 40);
+    drawFittedCanvasText(this.ctx, `${withKidsReading('てんびん', 'てんびん')}：左（${this.targetLeftWeight}g）とおもりをつり合わせよう！`, cx, 40, w - 32, 18, 10);
 
     // Base Pillar
     this.ctx.fillStyle = '#334155';
@@ -2374,7 +2374,7 @@ export class CosmicOrbitGame {
     this.ctx.fillStyle = '#ffffff';
     this.ctx.font = 'bold 18px sans-serif';
     this.ctx.textAlign = 'center';
-    this.ctx.fillText(`${withKidsReading('天体観察', 'てんたいかんさつ')}：月を回して【 ${this.targetPhase} 】の位置に合わせよう！`, w / 2, 38);
+    drawFittedCanvasText(this.ctx, `${withKidsReading('天体観察', 'てんたいかんさつ')}：月を回して【 ${this.targetPhase} 】に合わせよう！`, w / 2, 38, w - 30, 18, 10);
 
     // Sun Rays (from Left)
     this.ctx.fillStyle = '#f59e0b';
@@ -2549,7 +2549,7 @@ export class LeverPhysicsGame {
     this.ctx.fillStyle = '#ffffff';
     this.ctx.font = 'bold 18px sans-serif';
     this.ctx.textAlign = 'center';
-    this.ctx.fillText(`てこの${withKidsReading('釣り合い', 'つりあい')}：左(${this.targetLeft}g × ${this.armLeft}) ＝ 右(${this.targetRight}g × 目盛り？)`, cx, 40);
+    drawFittedCanvasText(this.ctx, `てこの${withKidsReading('釣り合い', 'つりあい')}：左(${this.targetLeft}g × ${this.armLeft}) ＝ 右(${this.targetRight}g × 目盛り？)`, cx, 40, w - 32, 17, 9);
 
     // Fulcrum
     this.ctx.fillStyle = '#eab308';
@@ -2730,7 +2730,7 @@ export class CircuitSandboxGame {
     ctx.textBaseline = 'middle';
     ctx.fillStyle = '#e0f2fe';
     ctx.font = 'bold 18px sans-serif';
-    ctx.fillText(`小学${this.grade}年　${this.challenge.title}`, Math.floor(w / 2), 28);
+    drawFittedCanvasText(ctx, `小学${this.grade}年　${this.challenge.title}`, w / 2, 28, w - 28, 16, 10);
     this.drawCircuitDiagram(w / 2, 135, Math.min(190, w * 0.3), this.challenge.type);
   }
 
@@ -2840,6 +2840,43 @@ export class CircuitSandboxGame {
       overlay.style.pointerEvents = 'none';
     }
   }
+}
+
+function drawFittedCanvasText(ctx, text, x, y, maxWidth, maxFontSize = 18, minFontSize = 10, weight = 'bold') {
+  const value = String(text ?? '');
+  let size = maxFontSize;
+  while (size > minFontSize) {
+    ctx.font = `${weight} ${size}px sans-serif`;
+    if (ctx.measureText(value).width <= maxWidth) break;
+    size -= 1;
+  }
+  ctx.font = `${weight} ${size}px sans-serif`;
+  ctx.fillText(value, Math.floor(x), Math.floor(y), Math.max(1, Math.floor(maxWidth)));
+}
+
+function drawWrappedCanvasText(ctx, text, centerX, topY, maxWidth, { fontSize = 15, lineHeight = 20, maxLines = 2, color = null } = {}) {
+  const paragraphs = String(text ?? '').split(/\n+/);
+  const lines = [];
+  ctx.font = `bold ${fontSize}px sans-serif`;
+  for (const paragraph of paragraphs) {
+    let line = '';
+    for (const char of Array.from(paragraph)) {
+      const candidate = line + char;
+      if (line && ctx.measureText(candidate).width > maxWidth) {
+        lines.push(line);
+        line = char;
+      } else {
+        line = candidate;
+      }
+    }
+    if (line) lines.push(line);
+  }
+  const visible = lines.slice(0, maxLines);
+  if (lines.length > maxLines && visible.length) visible[visible.length - 1] = `${visible[visible.length - 1].slice(0, -1)}…`;
+  if (color) ctx.fillStyle = color;
+  ctx.textAlign = 'center';
+  visible.forEach((line, index) => ctx.fillText(line, Math.floor(centerX), Math.floor(topY + index * lineHeight), Math.floor(maxWidth)));
+  return visible.length;
 }
 
 let PREFECTURES_47_CACHE = null;
@@ -3212,11 +3249,11 @@ export class PrefectureJigsawGame {
       this.ctx.fillStyle = '#ffffff';
       this.ctx.font = 'bold 15px sans-serif';
       this.ctx.textAlign = 'center';
-      this.ctx.fillText(`${withKidsReading('4年 社会：日本47都道府県 列島パズル', 'にほんれっとう・ちほうくぶん')}　ステージ${this.level}`, w / 2, 44);
+      drawFittedCanvasText(this.ctx, `${withKidsReading('4年 社会：日本47都道府県パズル', 'にほんれっとう・ちほうくぶん')}　ステージ${this.level}`, w / 2, 44, w - 24, 16, 9);
 
       this.ctx.fillStyle = '#38bdf8';
       this.ctx.font = '11px sans-serif';
-      this.ctx.fillText('下の都道府県カードをタップし、日本地図の正しい地域枠を選んではめ込もう！', w / 2, 62);
+      drawFittedCanvasText(this.ctx, '下のカードをタップして、日本地図の正しい地域へはめよう！', w / 2, 64, w - 24, 12, 9);
 
       // 日本列島の背景輪郭
       this.ctx.fillStyle = '#1e293b';
@@ -3321,11 +3358,11 @@ export class PrefectureJigsawGame {
       this.ctx.fillStyle = '#ffffff';
       this.ctx.font = 'bold 15px sans-serif';
       this.ctx.textAlign = 'center';
-      this.ctx.fillText(`${withKidsReading(gradeTitle, 'しゃかい')}：${stage.title}`, w / 2, 44);
+      drawFittedCanvasText(this.ctx, `${withKidsReading(gradeTitle, 'しゃかい')}：${stage.title}`, w / 2, 44, w - 24, 16, 10);
 
       this.ctx.fillStyle = '#38bdf8';
       this.ctx.font = '12px sans-serif';
-      this.ctx.fillText(stage.q, w / 2, 70);
+      drawFittedCanvasText(this.ctx, stage.q, w / 2, 70, w - 24, 14, 9);
 
       // 4択選択肢カード
       const optW = w - 80;
@@ -3354,7 +3391,7 @@ export class PrefectureJigsawGame {
         this.ctx.fillStyle = '#ffffff';
         this.ctx.font = 'bold 13px sans-serif';
         this.ctx.textAlign = 'center';
-        this.ctx.fillText(optText, w / 2, oy + optH / 2 + 5);
+        drawFittedCanvasText(this.ctx, optText, w / 2, oy + optH / 2 + 5, w - 54, 13, 9);
       });
     }
 
@@ -3622,7 +3659,7 @@ class LegacyContextMatchGame {
     this.ctx.fillStyle = '#ffffff';
     this.ctx.font = 'bold 18px sans-serif';
     this.ctx.textAlign = 'center';
-    this.ctx.fillText(`${withKidsReading('英語の場面別ペア', 'えいごのばめんべつぺあ')}：左の英語と右の日本語をタップしてつなごう！`, w / 2, 38);
+    drawFittedCanvasText(this.ctx, `${withKidsReading('英語ペア', 'えいごペア')}：英語と日本語をタップしてつなごう！`, w / 2, 38, w - 24, 17, 10);
 
     const leftX = 120;
     const rightX = w - 120;
@@ -3778,7 +3815,7 @@ export class CategorySortGame {
     this.ctx.fillStyle = '#ffffff';
     this.ctx.font = 'bold 18px sans-serif';
     this.ctx.textAlign = 'center';
-    this.ctx.fillText(`${withKidsReading('生活仕分け箱', 'せいかつしわけばこ')}：下のアイテムを正しい箱に仕分けよう！`, w / 2, 38);
+    drawFittedCanvasText(this.ctx, `${withKidsReading('なかま分け', 'なかまわけ')}：アイテムを正しい箱に分けよう！`, w / 2, 38, w - 24, 17, 10);
 
     // Categories Boxes at Top
     const catW = 160;
@@ -4024,7 +4061,7 @@ export class GradeComprehensiveExamGame {
     this.ctx.fillStyle = '#f59e0b';
     this.ctx.font = 'bold 13px sans-serif';
     this.ctx.textAlign = 'center';
-    this.ctx.fillText(`🌟 小学${this.grade}年 全教科総合チャレンジ 🌟`, w / 2, 26);
+    drawFittedCanvasText(this.ctx, `小学${this.grade}年・ぜんぶの教科チャレンジ`, w / 2, 26, w - 24, 17, 10);
 
     // Subject badge + Question Title
     this.ctx.fillStyle = '#38bdf8';
@@ -4034,7 +4071,7 @@ export class GradeComprehensiveExamGame {
     // Question body
     this.ctx.fillStyle = '#ffffff';
     this.ctx.font = 'bold 15px sans-serif';
-    this.ctx.fillText(curQ.q, w / 2, 82);
+    drawWrappedCanvasText(this.ctx, curQ.q, w / 2, 74, w - 32, { fontSize: 14, lineHeight: 18, maxLines: 2 });
 
     // Options
     const optW = Math.min(480, w - 60);
@@ -4064,7 +4101,7 @@ export class GradeComprehensiveExamGame {
       this.ctx.font = optText.length > 25 ? '11px sans-serif' : 'bold 13px sans-serif';
       this.ctx.textAlign = 'center';
       this.ctx.textBaseline = 'middle';
-      this.ctx.fillText(optText, w / 2, oy + optH / 2);
+      drawFittedCanvasText(this.ctx, optText, w / 2, oy + optH / 2, w - 60, 14, 9);
       this.ctx.shadowBlur = 0;
     });
 

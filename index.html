@@ -4,23 +4,23 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta name="turnstile-site-key" content="0x4AAAAAAEZrRJQcMv2tk9IP" />
-  <title>PSES Game｜小学生向け無料学習ゲーム</title>
-  <meta name="description" content="小学1年生から6年生までの国語・算数・理科・社会・生活・英語を、星空を冒険するゲームで楽しく学べる無料のオンライン教材です。" />
+  <title>まなびぽっぷ！｜小学生向け無料学習ゲーム</title>
+  <meta name="description" content="小学1年生から6年生までの国語・算数・理科・社会・生活・英語を、かわいい冒険マップのゲームで楽しく学べる無料オンライン教材です。" />
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
-  <meta name="theme-color" content="#090b2f" />
-  <meta name="application-name" content="PSES Game" />
+  <meta name="theme-color" content="#70cdf8" />
+  <meta name="application-name" content="まなびぽっぷ！" />
   <link rel="canonical" href="https://japanese-pses.j565718319.workers.dev/" />
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   <link rel="manifest" href="/site.webmanifest" />
   <meta property="og:type" content="website" />
-  <meta property="og:site_name" content="PSES Game" />
+  <meta property="og:site_name" content="まなびぽっぷ！" />
   <meta property="og:locale" content="ja_JP" />
-  <meta property="og:title" content="PSES Game｜小学生向け無料学習ゲーム" />
-  <meta property="og:description" content="国語・算数・理科・社会・生活・英語を、星空のゲームで楽しく学ぼう。小学1〜6年生に対応。" />
+  <meta property="og:title" content="まなびぽっぷ！｜小学生向け無料学習ゲーム" />
+  <meta property="og:description" content="国語・算数・理科・社会・生活・英語を、かわいい冒険マップで楽しく学ぼう。小学1〜6年生に対応。" />
   <meta property="og:url" content="https://japanese-pses.j565718319.workers.dev/" />
   <meta name="twitter:card" content="summary" />
-  <meta name="twitter:title" content="PSES Game｜小学生向け無料学習ゲーム" />
-  <meta name="twitter:description" content="小学1〜6年生の6教科を、星空のゲームで楽しく学べるオンライン教材です。" />
+  <meta name="twitter:title" content="まなびぽっぷ！｜小学生向け無料学習ゲーム" />
+  <meta name="twitter:description" content="小学1〜6年生の6教科を、かわいい冒険マップで楽しく学べるオンライン教材です。" />
   <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -29,16 +29,16 @@
           "@type": "WebSite",
           "@id": "https://japanese-pses.j565718319.workers.dev/#website",
           "url": "https://japanese-pses.j565718319.workers.dev/",
-          "name": "PSES Game",
-          "alternateName": "日本小学星图教育游戏",
+          "name": "まなびぽっぷ！",
+          "alternateName": "小学生向け学習ゲーム",
           "inLanguage": "ja"
         },
         {
           "@type": "SoftwareApplication",
           "@id": "https://japanese-pses.j565718319.workers.dev/#app",
-          "name": "PSES Game",
+          "name": "まなびぽっぷ！",
           "url": "https://japanese-pses.j565718319.workers.dev/",
-          "description": "小学1年生から6年生までの国語・算数・理科・社会・生活・英語を、星空のゲームで学べるオンライン教材です。",
+          "description": "小学1年生から6年生までの国語・算数・理科・社会・生活・英語を、かわいい冒険マップで学べるオンライン教材です。",
           "applicationCategory": "GameApplication",
           "applicationSubCategory": "Educational game",
           "operatingSystem": "Web Browser",
@@ -54,18 +54,9 @@
     }
   </script>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="css/style.css?v=20260824.2" />
-  <!-- Three.js Import Maps -->
-  <script type="importmap">
-    {
-      "imports": {
-        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-      }
-    }
-  </script>
+  <link rel="stylesheet" href="css/style.css?v=20260830.2" />
   <style>
-    body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #020208; }
+    body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #8bd8ff; }
     #canvas-container { position: absolute; inset: 0; touch-action: none; z-index: 1; }
     .glass-panel {
       background: rgba(15, 23, 42, 0.85);
@@ -82,7 +73,18 @@
   </style>
 </head>
 <body class="text-white font-sans select-none overflow-hidden">
-  <!-- 3D WebGL キャンバスコンテナ -->
+  <div id="daily-brand-splash" class="daily-brand-splash" role="dialog" aria-modal="true" aria-labelledby="daily-brand-title">
+    <button id="daily-brand-close" type="button" class="daily-brand-close" aria-label="閉じる">✕</button>
+    <div class="daily-brand-card">
+      <div class="daily-brand-mascots" aria-hidden="true"><span>🐣</span><span>🌈</span><span>🐰</span></div>
+      <p class="daily-brand-kicker">まいにち ひとつ、できた！を ふやそう</p>
+      <h1 id="daily-brand-title" class="daily-brand-title">まなびぽっぷ！</h1>
+      <p class="daily-brand-subtitle">あそんで まなんで だいぼうけん</p>
+      <p id="daily-brand-countdown" class="daily-brand-countdown" aria-live="polite">5びょうごに はじまるよ</p>
+    </div>
+  </div>
+
+  <!-- 軽量カートゥーンマップ -->
   <div id="canvas-container"></div>
 
   <!-- トップステータスバー HUD -->
@@ -96,7 +98,7 @@
       </button>
 
       <div>
-        <h1 class="text-xs md:text-sm font-bold tracking-wider text-white hidden sm:block">PSES Game · 星空の学び</h1>
+        <h1 class="text-xs md:text-sm font-black tracking-wider text-white hidden sm:block">まなびぽっぷ！</h1>
         <p class="text-[10px] text-slate-400 hidden sm:block">小学1〜6年生の6教科を楽しく学ぼう</p>
       </div>
     </div>
@@ -124,7 +126,7 @@
         <span id="audio-mute-label" class="hidden sm:inline">音量オン</span>
       </button>
 
-      <!-- 銀河ショップボタン -->
+      <!-- ごほうびショップボタン -->
       <button id="open-shop-btn" class="glass-panel px-3.5 py-1.5 rounded-full hover:bg-slate-800 text-xs font-medium flex items-center gap-1 transition">
         <span>🛒</span>
         <span class="hidden md:inline">ショップ</span>
@@ -275,14 +277,14 @@
       <div id="profile-learner-summary" class="mb-4 rounded-2xl border border-cyan-400/30 bg-cyan-500/10 p-4">
         <p class="text-[10px] font-black tracking-[0.2em] text-cyan-300">わたしのプロフィール</p>
         <div class="mt-1 flex flex-wrap items-end justify-between gap-2">
-          <strong id="profile-learner-name" class="text-lg text-white">学習者</strong>
-          <span id="profile-learner-details" class="text-xs font-bold text-cyan-100"></span>
+          <div><strong id="profile-learner-name" class="text-lg text-white">ゲスト</strong><span id="profile-learner-details" class="mt-1 block text-xs font-bold text-cyan-100">あとで設定できるよ</span></div>
+          <button id="learner-profile-edit-btn" type="button" class="min-h-11 rounded-xl border border-cyan-300/50 bg-cyan-400/15 px-4 text-xs font-black text-cyan-100">なまえ・年齢を設定</button>
         </div>
       </div>
       <section id="profile-membership-panel" class="mb-4 rounded-2xl border border-fuchsia-400/35 bg-fuchsia-500/10 p-4" aria-labelledby="profile-membership-title">
         <div class="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <p class="text-[10px] font-black tracking-[0.2em] text-fuchsia-300">PSESメンバー</p>
+            <p class="text-[10px] font-black tracking-[0.2em] text-fuchsia-300">まなびぽっぷ！メンバー</p>
             <h3 id="profile-membership-title" class="mt-1 text-base font-black text-white">無料でプレイ中</h3>
             <p id="profile-membership-description" class="mt-1 max-w-lg text-xs leading-5 text-slate-200">実際にゲームで遊んだ時間が5分たつと、次のステージへ進む前などに広告が表示されます。</p>
           </div>
@@ -318,15 +320,15 @@
     </div>
   </div>
 
-  <!-- 認証後に必ず選ぶ学習入口モード -->
+  <!-- 最初に選ぶ学習入口モード。プロフィール入力は後から行える。 -->
   <div id="learning-mode-modal" class="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/95 backdrop-blur-xl p-4 hidden select-none">
     <div class="relative w-full max-w-3xl max-h-[92vh] overflow-y-auto custom-scroll rounded-3xl border border-indigo-400/40 bg-slate-900 p-6 sm:p-8 shadow-2xl">
-      <div class="pses-game-brand-shell" aria-label="PSES Game">
+      <div class="pses-game-brand-shell" aria-label="まなびぽっぷ！">
         <span class="pses-game-orbit pses-game-orbit-one" aria-hidden="true"></span>
         <span class="pses-game-orbit pses-game-orbit-two" aria-hidden="true"></span>
         <h1 id="learning-mode-game-title" class="pses-game-brand">
-          <span class="pses-game-brand-primary">PSES</span>
-          <span class="pses-game-brand-secondary">Game</span>
+          <span class="pses-game-brand-primary">まなび</span>
+          <span class="pses-game-brand-secondary">ぽっぷ！</span>
         </h1>
         <span class="pses-game-star pses-game-star-one" aria-hidden="true">★</span>
         <span class="pses-game-star pses-game-star-two" aria-hidden="true">✦</span>
@@ -342,7 +344,7 @@
       <div id="learning-mode-choice-panel" class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <button id="grade-first-mode-btn" class="min-h-44 rounded-3xl border-2 border-indigo-400 bg-indigo-500/15 p-6 text-left transition hover:bg-indigo-500/25 focus:ring-4 focus:ring-indigo-300/40">
           <span class="text-4xl">🎒</span><span class="mt-3 block text-xl font-black text-white">学年から選ぶ</span>
-          <span class="mt-2 block text-sm leading-6 text-slate-200">まず学年を選んで、その学年で学ぶ国語や算数などの星へ進むよ。</span>
+          <span class="mt-2 block text-sm leading-6 text-slate-200">まず学年を選んで、その学年で学ぶ国語や算数などのマップへ進むよ。</span>
           <span class="mt-3 inline-block rounded-full bg-indigo-400/20 px-3 py-1 text-xs font-bold text-indigo-200">学校の学びにそって進む</span>
         </button>
         <button id="game-first-mode-btn" class="min-h-44 rounded-3xl border-2 border-cyan-400/60 bg-cyan-500/10 p-6 text-left transition hover:bg-cyan-500/20 focus:ring-4 focus:ring-cyan-300/40">
@@ -363,8 +365,8 @@
         <div id="independent-grade-list" class="grid grid-cols-2 sm:grid-cols-3 gap-3"></div>
       </div>
 
-      <section class="mt-7 rounded-2xl border border-white/10 bg-slate-950/45 p-4 text-left text-xs leading-6 text-slate-300" aria-label="PSES Gameについて">
-        <h2 class="text-sm font-black text-white">PSES Gameで学べること</h2>
+      <section class="mt-7 rounded-2xl border border-white/10 bg-slate-950/45 p-4 text-left text-xs leading-6 text-slate-300" aria-label="まなびぽっぷ！について">
+        <h2 class="text-sm font-black text-white">まなびぽっぷ！で学べること</h2>
         <p class="mt-1">小学1年生から6年生までの国語・算数・理科・社会・生活・英語を、漢字、部首、計算、実験、地図、英語読解などのゲームで楽しく練習できます。</p>
       </section>
     </div>
@@ -374,7 +376,7 @@
   <div id="graduation-modal" class="fixed inset-0 z-[90] hidden items-center justify-center bg-slate-950/95 p-4 backdrop-blur-xl">
     <div class="w-full max-w-2xl rounded-[2rem] border-4 border-amber-300 bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 p-3 shadow-2xl shadow-amber-500/30">
       <div class="rounded-[1.5rem] border border-amber-300/60 p-6 text-center sm:p-10">
-        <p class="text-4xl">🎓</p><p class="mt-3 text-xs font-bold tracking-[0.35em] text-amber-300">JAPANESE PSES</p>
+        <p class="text-4xl">🎓</p><p class="mt-3 text-xs font-bold tracking-[0.2em] text-amber-300">まなびぽっぷ！</p>
         <h2 class="mt-3 text-3xl font-black text-white">小学校課程修了証</h2>
         <p id="graduation-learner-name" class="mt-6 text-2xl font-bold text-amber-200"></p>
         <p class="mt-3 text-sm leading-7 text-slate-200">1年生から6年生までの全教科・全関門を修了し、確かな学びと挑戦する力を身につけたことを証明します。</p>
@@ -506,13 +508,13 @@
     </div>
   </div>
 
-  <!-- 銀河ショップと報酬履歴 -->
+  <!-- ごほうびショップと報酬履歴 -->
   <div id="shop-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 hidden select-none">
     <div class="relative w-full max-w-2xl bg-slate-900 border border-slate-700 rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh]">
       <div class="flex justify-between items-center px-6 py-4 border-b border-slate-800 bg-slate-900/80">
         <div class="flex items-center gap-2">
           <span class="text-xl">🛒</span>
-          <h2 class="text-lg font-bold text-white"><ruby>銀河<rt>ぎんが</rt></ruby><ruby>知識<rt>ちしき</rt></ruby><ruby>交換<rt>こうかん</rt></ruby>ショップ・<ruby>報酬<rt>ほうしゅう</rt></ruby><ruby>履歴<rt>りれき</rt></ruby></h2>
+          <h2 class="text-lg font-bold text-white">ごほうびショップ・きろく</h2>
         </div>
         <div class="flex items-center gap-4">
           <div class="text-xs font-mono text-yellow-400 font-bold bg-yellow-400/10 px-3 py-1 rounded-full">
@@ -533,7 +535,7 @@
   </div>
 
   <script type="module">
-    import { GalaxyEngine } from './GalaxyEngine.js?v=6';
+    import { GalaxyEngine } from './GalaxyEngine.js?v=7';
     import { MiniGameModal, GAME_GRADE_SUPPORT_MAP } from './MiniGameSystem.js?v=4';
     import { EconomyManager, SHOP_CATALOG } from './EconomySystem.js?v=3';
     import { AntigravityAgentBrain, createObservationPayload } from './AgentIntegration.js?v=2';
@@ -547,8 +549,32 @@
     import { MembershipManager } from './src/membership/MembershipManager.js?v=1';
     import { H5AdManager } from './src/ads/H5AdManager.js?v=1';
     import { StorageAdapter } from './src/storage/StorageAdapter.js';
-    import { LearnerProfileModal, isLearnerProfileComplete, learnerGenderLabel } from './src/profile/LearnerProfile.js?v=3';
+    import { LearnerProfileModal, isLearnerProfileComplete, learnerGenderLabel, normalizeLearnerProfile } from './src/profile/LearnerProfile.js?v=4';
     import { calculateGradeProgress, createGraduationCertificate, ELEMENTARY_GRADUATION_ACHIEVEMENT_ID } from './ProgressionSystem.js';
+
+    const BRAND_SPLASH_STORAGE_KEY = 'MANABI_POP_DAILY_SPLASH_V1';
+    const dailyBrandSplash = document.getElementById('daily-brand-splash');
+    const dailyBrandCountdown = document.getElementById('daily-brand-countdown');
+    const todayInJapan = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Tokyo' }).format(new Date());
+    let brandSplashTimer = null;
+    const closeDailyBrandSplash = () => {
+      if (brandSplashTimer) window.clearInterval(brandSplashTimer);
+      brandSplashTimer = null;
+      dailyBrandSplash?.classList.remove('is-visible');
+    };
+    if (localStorage.getItem(BRAND_SPLASH_STORAGE_KEY) !== todayInJapan) {
+      localStorage.setItem(BRAND_SPLASH_STORAGE_KEY, todayInJapan);
+      dailyBrandSplash?.classList.add('is-visible');
+      let brandSecondsLeft = 5;
+      brandSplashTimer = window.setInterval(() => {
+        brandSecondsLeft -= 1;
+        if (dailyBrandCountdown) dailyBrandCountdown.textContent = brandSecondsLeft > 0
+          ? `${brandSecondsLeft}びょうごに はじまるよ`
+          : 'さあ、しゅっぱつ！';
+        if (brandSecondsLeft <= 0) window.setTimeout(closeDailyBrandSplash, 350);
+      }, 1000);
+    }
+    document.getElementById('daily-brand-close')?.addEventListener('click', closeDailyBrandSplash);
 
     const storageAdapter = new StorageAdapter({ apiBase: '/api' });
     await storageAdapter.initialize({ sync: false });
@@ -567,24 +593,14 @@
       ? await storageAdapter.syncNow('login').catch(() => null)
       : await storageAdapter.getLocalSnapshot();
     const learnerProfileModal = new LearnerProfileModal();
-    let learnerProfile = await learnerProfileModal.collect({
-      existingProfile: synchronizedState?.profile,
-      suggestedName: accessSession.mode === 'authenticated' ? accessSession.user?.displayName : ''
-    });
-    if (!isLearnerProfileComplete(synchronizedState?.profile)) {
-      await storageAdapter.saveProfile({
-        ...(synchronizedState?.profile || {}),
-        user_id: localStorageUserId,
-        display_name: learnerProfile.name,
-        learner_name: learnerProfile.name,
-        learner_age: learnerProfile.age,
-        learner_gender: learnerProfile.gender,
-        learner_profile_completed: true
-      });
-      synchronizedState = accessSession.mode === 'authenticated'
-        ? await storageAdapter.syncNow('learner-profile-onboarding').catch(() => storageAdapter.getLocalSnapshot())
-        : await storageAdapter.getLocalSnapshot();
-    }
+    const storedLearnerProfile = normalizeLearnerProfile(synchronizedState?.profile || {});
+    let learnerProfile = isLearnerProfileComplete(storedLearnerProfile)
+      ? storedLearnerProfile
+      : {
+          name: String(accessSession.user?.displayName || storedLearnerProfile.name || 'ゲスト').trim().slice(0, 20) || 'ゲスト',
+          age: null,
+          gender: ''
+        };
 
     // 1. 各教科の独立 JSON データを動的ロード
     const curriculumNodes = await loadCurriculumFromJSON({ cacheAdapter: storageAdapter });
@@ -593,10 +609,10 @@
     const fxSystem = getFXSystem();
     const errorGuidance = getErrorGuidanceSystem({ audio: audioSynth, fx: fxSystem });
 
-    const economy = new EconomyManager(learnerProfile.name);
+    const economy = new EconomyManager(learnerProfile.name || 'ゲスト');
     economy.loginUser(learnerProfile.name);
-    economy.activeUser.age = learnerProfile.age;
-    economy.activeUser.gender = learnerProfile.gender;
+    economy.activeUser.age = learnerProfile.age || null;
+    economy.activeUser.gender = learnerProfile.gender || '';
     if (synchronizedState?.profile?.star_coins != null) economy.starCoins = Number(synchronizedState.profile.star_coins);
     if (synchronizedState?.profile?.cleared_nodes) economy.activeUser.clearedNodes = synchronizedState.profile.cleared_nodes;
     if (synchronizedState?.profile?.cleared_stages) economy.activeUser.clearedStages = synchronizedState.profile.cleared_stages;
@@ -752,7 +768,7 @@
     }
 
     // =========================================================================
-    // 学年・教科 選択状態管理 ＆ 右側カード・3D星図 リアルタイム連動システム
+    // 学年・教科 選択状態管理 ＆ 右側カード・冒険マップ連動システム
     // =========================================================================
     const SUBJ_STYLE_CONFIG = {
       '国語': {
@@ -834,7 +850,7 @@
       // 3. 教科ボタンの高亮状態を保持・更新
       updateSubjectButtonsHighlight(currentActiveSubject);
 
-      // 4. 3D星図エンジンへの反映
+      // 4. 冒険マップへの反映
       if (engine.setGradeFilter) engine.setGradeFilter(currentActiveGrade);
       if (engine.setSubjectFilter) engine.setSubjectFilter(currentActiveSubject);
       syncGameButtonsWithGrade(currentActiveGrade);
@@ -913,25 +929,25 @@
     const learningModeTitle = document.getElementById('learning-mode-title');
     const learningModeDescription = document.getElementById('learning-mode-description');
     const INDEPENDENT_GAME_CATALOG = [
-      ['KANJI_CHALLENGE', '漢', '学年配当漢字の読み方と使い方'],
-      ['RADICAL_BUILDER', '部', '部首と漢字パーツを正しく組み立てる'],
-      ['KOKUGO_CURRICULUM', '読', '語彙・文法・読解の学年テーマ'],
-      ['KUKU_LINK', '×', '九九から計算応用までをつなぐ'],
-      ['AETHER_SCALE', '衡', '数・分数・割合をてんびんで考える'],
-      ['MATH_CURRICULUM', '算', '各学年の数・量・図形・データ'],
-      ['COSMIC_ORBIT', '月', '月相と天体の位置関係を観察する'],
-      ['LEVER_PHYSICS', '力', 'てこの規則性を実験する'],
-      ['CIRCUIT_SANDBOX', '電', '電気回路を組み立てて比較する'],
-      ['SCIENCE_CURRICULUM', '理', '各学年の理科テーマを総合練習'],
-      ['PREFECTURE_JIGSAW', '地', '都道府県・地域・産業を学ぶ'],
-      ['SOCIAL_CURRICULUM', '社', '地域・国土・産業・歴史を学ぶ'],
-      ['CONTEXT_MATCH', 'EN', '英語の語彙・会話・読解に挑戦'],
-      ['ENGLISH_CURRICULUM', '英', '学年英語を10問ランダムで練習'],
-      ['CATEGORY_SORT', '生', '生活・安全・自然を分類する'],
-      ['LIFE_CURRICULUM', '活', '1・2年生の生活科テーマを総合練習'],
-      ['GRADE_EXAM', '賞', '選んだ学年の全教科実力テスト']
-    ].map(([gameType, icon, description]) => ({
-      ...GAME_GRADE_SUPPORT_MAP[gameType], gameType, icon, description
+      ['KANJI_CHALLENGE', '🥷', 'ことばのにんじゃ', '学年でならう漢字の読み方と使い方', 'berry'],
+      ['RADICAL_BUILDER', '🧩', 'かんじパズルこうぼう', '漢字のパーツをぴったり組み立てよう', 'orange'],
+      ['KOKUGO_CURRICULUM', '📖', 'おはなしことばのもり', 'ことば・文・お話のもんだいに挑戦', 'green'],
+      ['KUKU_LINK', '⚡', 'くるくる九九つなぎ', '九九から計算へ、答えをどんどんつなごう', 'yellow'],
+      ['AETHER_SCALE', '⚖️', 'ぴったりてんびん', '数・分数・割合をつり合わせよう', 'sky'],
+      ['MATH_CURRICULUM', '🏝️', 'すうじのたからじま', '数・量・図形・データの宝を見つけよう', 'aqua'],
+      ['COSMIC_ORBIT', '🌙', 'おつきさまたんけん', '月の形と位置をじっくり観察しよう', 'violet'],
+      ['LEVER_PHYSICS', '🎢', 'ぐらぐらてこのふしぎ', 'てこを動かして、つり合いを見つけよう', 'lime'],
+      ['CIRCUIT_SANDBOX', '💡', 'ぴかぴかでんきこうぼう', '回路をつないで光や動きを試そう', 'gold'],
+      ['SCIENCE_CURRICULUM', '🔬', 'わくわくふしぎずかん', '学年ごとの理科のふしぎを集めよう', 'mint'],
+      ['PREFECTURE_JIGSAW', '🗾', 'にっぽんわくわくたび', '日本の地域・都道府県・産業を旅しよう', 'coral'],
+      ['SOCIAL_CURRICULUM', '🚂', 'まちとれきしのだいぼうけん', '地域・国土・産業・歴史をめぐろう', 'amber'],
+      ['CONTEXT_MATCH', '🤝', 'えいごでともだち', '英語のことば・会話・読解に挑戦', 'pink'],
+      ['ENGLISH_CURRICULUM', '🌈', 'にじいろえいごランド', '学年英語を10問ずつ楽しく練習', 'rainbow'],
+      ['CATEGORY_SORT', '🧺', 'なかまわけランド', '生活・安全・自然を仲間に分けよう', 'peach'],
+      ['LIFE_CURRICULUM', '🐞', 'まいにちはっけんたい', '1・2年生の生活の発見を集めよう', 'leaf'],
+      ['GRADE_EXAM', '👑', 'めざせ！がくねんおう', '選んだ学年のぜんぶの教科に挑戦', 'royal']
+    ].map(([gameType, icon, name, description, palette]) => ({
+      ...GAME_GRADE_SUPPORT_MAP[gameType], gameType, icon, name, description, palette
     })).filter(game => Array.isArray(game.grades) && game.grades.length > 0);
 
     function resetLearningModeModal() {
@@ -1004,8 +1020,8 @@
     INDEPENDENT_GAME_CATALOG.forEach((game) => {
       const button = document.createElement('button');
       button.type = 'button';
-      button.className = 'min-h-32 rounded-2xl border border-slate-600 bg-slate-800/80 p-4 text-left transition hover:border-cyan-400 hover:bg-cyan-500/15 focus:ring-4 focus:ring-cyan-300/40';
-      button.innerHTML = `<span class="text-2xl font-black text-cyan-200">${game.icon}</span><strong class="mt-2 block text-sm text-white">${game.name}</strong><span class="mt-1 block text-xs leading-5 text-slate-300">${game.description}</span><span class="mt-2 block text-[11px] font-bold text-cyan-300">あそべる学年：${game.grades.map(grade => `${grade}年`).join('・')}</span>`;
+      button.className = `independent-game-card game-card-${game.palette}`;
+      button.innerHTML = `<span class="independent-game-icon" aria-hidden="true">${game.icon}</span><strong class="independent-game-name">${game.name}</strong><span class="independent-game-description">${game.description}</span><span class="independent-game-grades">あそべる学年：${game.grades.map(grade => `${grade}年`).join('・')}</span>`;
       button.addEventListener('click', () => showIndependentGradeList(game));
       independentGameList.appendChild(button);
     });
@@ -1032,7 +1048,7 @@
     });
 
     window.addEventListener('AGENT_GRAPH_MUTATED', (e) => {
-      showAgentToast(`✨ Agent 星図自己変異：認知断層を検知し架橋ノードを自動挿入しました！`);
+      showAgentToast('学習マップを更新しました。');
       if (engine && typeof engine.updateCurriculumData === 'function') {
         engine.updateCurriculumData(curriculumNodes, SUBJECT_METADATA);
         engine.syncProgress(economy.playerMastery);
@@ -1077,7 +1093,7 @@
         learner_name: learnerProfile.name,
         learner_age: learnerProfile.age,
         learner_gender: learnerProfile.gender,
-        learner_profile_completed: true,
+        learner_profile_completed: isLearnerProfileComplete(learnerProfile),
         star_coins: economy.starCoins,
         cleared_nodes: economy.clearedNodes,
         cleared_stages: economy.clearedStages,
@@ -1126,8 +1142,11 @@
       const completedGrades = progress.filter(item => item.completed).length;
       const independentResultCounts = getIndependentResultCounts();
 
-      document.getElementById('profile-learner-name').textContent = learnerProfile.name;
-      document.getElementById('profile-learner-details').textContent = `${learnerProfile.age}歳 · ${learnerGenderLabel(learnerProfile.gender)}`;
+      const profileComplete = isLearnerProfileComplete(learnerProfile);
+      document.getElementById('profile-learner-name').textContent = learnerProfile.name || 'ゲスト';
+      document.getElementById('profile-learner-details').textContent = profileComplete
+        ? `${learnerProfile.age}歳 · ${learnerGenderLabel(learnerProfile.gender)}`
+        : 'なまえや年齢は、あそんだあとでも設定できるよ';
 
       document.getElementById('profile-total-progress').innerHTML = `
         <div class="flex items-center justify-between gap-3"><strong class="text-base">ぜんぶの学年のがんばり</strong><span class="font-black text-indigo-200">${completionRate}%</span></div>
@@ -1255,6 +1274,34 @@
     };
     document.getElementById('user-modal-close').onclick = () => userModal.classList.add('hidden');
 
+    document.getElementById('learner-profile-edit-btn').onclick = async () => {
+      userModal.classList.add('hidden');
+      const nextProfile = await learnerProfileModal.collect({
+        existingProfile: learnerProfile,
+        suggestedName: learnerProfile.name === 'ゲスト' ? '' : learnerProfile.name
+      });
+      const previousName = economy.currentUser;
+      if (previousName === 'ゲスト' && nextProfile.name !== previousName && !economy.users[nextProfile.name]) {
+        economy.users[nextProfile.name] = economy.activeUser;
+        economy.users[nextProfile.name].name = nextProfile.name;
+        delete economy.users[previousName];
+        economy.currentUser = nextProfile.name;
+        economy.saveState();
+      } else {
+        economy.loginUser(nextProfile.name);
+      }
+      learnerProfile = nextProfile;
+      economy.activeUser.age = nextProfile.age;
+      economy.activeUser.gender = nextProfile.gender;
+      economy.saveState();
+      await storageAdapter.saveProfile(buildSynchronizedProfile());
+      if (accessSession.mode === 'authenticated') {
+        await storageAdapter.syncNow('learner-profile-update').catch(() => null);
+      }
+      updateEconomyUI();
+      userModal.classList.remove('hidden');
+    };
+
     document.getElementById('user-login-confirm').onclick = () => {
       const name = document.getElementById('user-name-input').value.trim();
       if (name) {
@@ -1321,7 +1368,7 @@
       ensureGraduationReward();
       updateEconomyUI();
       engine.syncProgress(economy.playerMastery);
-      showAgentToast(`👦 学習者切り替え：【${e.detail.userName}】の星図進捗をロードしました！`);
+      showAgentToast(`学習者を「${e.detail.userName}」に切り替えました。`);
     });
 
     // 音声ミュートボタン管理
@@ -1560,7 +1607,7 @@
       updateEconomyUI();
       updateNodeCard(currentNode);
 
-      // 2. 3D星図で該当ノードを黄金に点灯＆後続ノード解放
+      // 2. 冒険マップでクリア済み表示を更新
       engine.lightUpNode(targetNodeId);
       engine.syncProgress(economy.playerMastery);
 

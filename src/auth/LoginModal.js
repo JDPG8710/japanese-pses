@@ -14,7 +14,7 @@ export class LoginModal extends EventTarget {
     this.element.className = 'fixed inset-0 z-[100] hidden items-center justify-center bg-slate-950/95 p-4 backdrop-blur-xl';
     this.element.innerHTML = `
       <section role="dialog" aria-modal="true" aria-labelledby="auth-title" class="w-full max-w-md rounded-3xl border border-indigo-300/30 bg-slate-900 p-6 text-white shadow-2xl sm:p-8">
-        <p class="mb-2 text-xs font-bold tracking-[0.25em] text-indigo-300">PSES GAME ACCOUNT</p>
+        <p class="mb-2 text-xs font-bold tracking-[0.2em] text-indigo-300">まなびぽっぷ！ アカウント</p>
         <h1 id="auth-title" class="text-2xl font-black">学習きろくを保存しよう</h1>
         <p id="auth-message" class="mt-3 text-sm leading-6 text-slate-200">ゲームはログインなしでも遊べます。Googleでログインすると、別の端末でも学習きろくを引き継げます。</p>
         <div id="auth-turnstile" class="mt-5 flex min-h-[70px] justify-center" aria-label="安全チェック"></div>

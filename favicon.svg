@@ -1,9 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="PSES Game">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="まなびぽっぷ！">
   <defs>
     <radialGradient id="space" cx="35%" cy="30%" r="75%">
-      <stop offset="0" stop-color="#4338ca"/>
-      <stop offset="0.58" stop-color="#111950"/>
-      <stop offset="1" stop-color="#030712"/>
+      <stop offset="0" stop-color="#fff176"/>
+      <stop offset="0.58" stop-color="#5dd6b3"/>
+      <stop offset="1" stop-color="#45a9ed"/>
     </radialGradient>
     <linearGradient id="star" x1="0" y1="0" x2="1" y2="1">
       <stop stop-color="#fde047"/>
@@ -12,6 +12,6 @@
   </defs>
   <rect width="64" height="64" rx="15" fill="url(#space)"/>
   <path d="M32 8l5.7 15.8L54 24.3 41.1 34.4 45.7 50 32 40.8 18.3 50l4.6-15.6L10 24.3l16.3-.5z" fill="url(#star)"/>
-  <circle cx="49" cy="13" r="3" fill="#67e8f9"/>
-  <circle cx="13" cy="47" r="2" fill="#c4b5fd"/>
+  <circle cx="49" cy="13" r="3" fill="#ffffff"/>
+  <circle cx="13" cy="47" r="2" fill="#ffffff"/>
 </svg>

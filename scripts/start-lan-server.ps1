@@ -28,7 +28,7 @@ $lanAddresses = Get-NetIPAddress -AddressFamily IPv4 -AddressState Preferred -Er
   Where-Object { $_.IPAddress -notlike '127.*' -and $_.IPAddress -notlike '169.254.*' } |
   Select-Object -ExpandProperty IPAddress -Unique
 
-Write-Host "Japanese PSES LAN サーバーを 0.0.0.0:$Port で起動します。"
+Write-Host "まなびぽっぷ！ LANサーバーを 0.0.0.0:$Port で起動します。"
 Write-Host "このPC: http://127.0.0.1:$Port/"
 foreach ($address in $lanAddresses) { Write-Host "同じLANの端末: http://${address}:$Port/" }
 Write-Host '終了するには Ctrl+C を押してください。'

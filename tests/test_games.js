@@ -273,6 +273,34 @@ function register({ describe, test, it, assert, loadESModule }) {
       assert.strictEqual(balance2.isBalanced, true);
     });
 
+    test('F8.1b: Grade 6 lever stages use 15 distinct, data-backed equilibrium challenges', () => {
+      const loader = loadESModule || require('./test_e2e_runner.js').loadESModule;
+      const { LeverPhysicsGame, LEVER_CHALLENGE_BANK, selectLeverChallenge } = loader(path.join(rootDir, 'MiniGameSystem.js'));
+      const curriculum = JSON.parse(fs.readFileSync(path.join(rootDir, 'data', 'rika.json'), 'utf8'));
+      const grade6Node = curriculum.nodes.find(node => node.id === 'RIKA_G6_LEVER_AQUEOUS');
+      const dataPool = grade6Node?.gameData?.leverChallengePool;
+
+      assert.strictEqual(LEVER_CHALLENGE_BANK.length, 15, 'fallback lever bank must cover every visible science stage');
+      assert.ok(Array.isArray(dataPool), 'Grade 6 curriculum data must own the lever challenge pool');
+      assert.strictEqual(dataPool.length, 15, 'Grade 6 lever data must contain 15 challenges');
+      assert.deepStrictEqual(dataPool, LEVER_CHALLENGE_BANK, 'D1 curriculum source and offline fallback lever data must stay identical');
+      assert.strictEqual(new Set(dataPool.map(item => item.id)).size, 15, 'lever challenge IDs must be unique');
+      assert.strictEqual(new Set(dataPool.map(item => `${item.targetLeft}:${item.armLeft}:${item.targetRight}:${item.correctSlot}`)).size, 15, 'lever configurations must be unique');
+
+      const stageIds = [];
+      for (let level = 1; level <= 15; level++) {
+        const selected = selectLeverChallenge(grade6Node.gameData, level);
+        const game = new LeverPhysicsGame(document.createElement('canvas'), grade6Node.gameData, () => {}, 6, level);
+        stageIds.push(selected.id);
+        assert.strictEqual(game.challenge.id, selected.id, `Stage ${level} must use its assigned data challenge`);
+        assert.strictEqual(selected.targetLeft * selected.armLeft, selected.targetRight * selected.correctSlot, `${selected.id} must obey W1×L1 = W2×L2`);
+        assert.ok(selected.correctSlot >= 1 && selected.correctSlot <= 5, `${selected.id} answer must fit a visible lever slot`);
+        assert.ok(selected.title && selected.prompt, `${selected.id} needs student-facing Japanese text`);
+      }
+      assert.strictEqual(new Set(stageIds).size, 15, 'all 15 stages must be duplicate-free before the cycle repeats');
+      assert.notStrictEqual(JSON.stringify(stageIds), JSON.stringify(dataPool.map(item => item.id)), 'stage order must be shuffled rather than raw source order');
+    });
+
     test('F8.2: Rika Celestial Orbits & Moon Phases angle progression', () => {
       assert.strictEqual(getMoonPhaseByAngle(0), '新月 (New Moon)');
       assert.strictEqual(getMoonPhaseByAngle(45), '三日月 (Waxing Crescent)');

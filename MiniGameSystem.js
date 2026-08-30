@@ -611,7 +611,7 @@ export class MiniGameModal {
           desc: '支点・力点・作用点と力のモーメント平衡。おもりを正しい目盛りに吊るして釣り合わせよう！',
           bloomDepth: 2.5,
           gameType: 'LEVER_PHYSICS',
-          gameData: { selectedMode: 'LEVER_PHYSICS', contentDomain: 'LEVER', targetLeft: 50, armLeft: 2, targetRight: 20, correctSlot: 5, grade: g, level: level }
+          gameData: { selectedMode: 'LEVER_PHYSICS', contentDomain: 'LEVER', grade: g, level: level, randomization: 'WITHOUT_REPLACEMENT' }
         };
       case 'CIRCUIT_SANDBOX':
         return {
@@ -2695,17 +2695,70 @@ export class CosmicOrbitGame {
 // =========================================================================
 // 5. 理科：てこの規則性物理実験室 (LeverPhysicsGame)
 // =========================================================================
+export const LEVER_CHALLENGE_BANK = [
+  { id: 'G6_LEVER_020', title: '小さな力のつり合い', prompt: '右のおもりを、つり合う目盛りへ動かそう。', targetLeft: 20, armLeft: 1, targetRight: 10, correctSlot: 2 },
+  { id: 'G6_LEVER_030', title: '支点からの距離', prompt: '重さと支点からの距離をかけて考えよう。', targetLeft: 30, armLeft: 1, targetRight: 10, correctSlot: 3 },
+  { id: 'G6_LEVER_040', title: '軽いおもりの位置', prompt: '軽いおもりは、支点からどこまで離せばいいかな。', targetLeft: 20, armLeft: 2, targetRight: 10, correctSlot: 4 },
+  { id: 'G6_LEVER_050', title: '遠い目盛りのはたらき', prompt: '支点から遠ざけると、てこへのはたらきはどう変わるかな。', targetLeft: 50, armLeft: 1, targetRight: 10, correctSlot: 5 },
+  { id: 'G6_LEVER_060', title: '左右のモーメント', prompt: '左右の「重さ×距離」が同じになる目盛りを選ぼう。', targetLeft: 30, armLeft: 2, targetRight: 20, correctSlot: 3 },
+  { id: 'G6_LEVER_080', title: '重さが半分のとき', prompt: '右が左の半分の重さなら、距離はどうすればいいかな。', targetLeft: 40, armLeft: 2, targetRight: 20, correctSlot: 4 },
+  { id: 'G6_LEVER_100', title: '100のモーメント', prompt: '計算して、ぴったりつり合う目盛りを探そう。', targetLeft: 50, armLeft: 2, targetRight: 20, correctSlot: 5 },
+  { id: 'G6_LEVER_120', title: '異なる重さのつり合い', prompt: '40gと30gのおもりがつり合う位置を見つけよう。', targetLeft: 40, armLeft: 3, targetRight: 30, correctSlot: 4 },
+  { id: 'G6_LEVER_150', title: '大きなモーメント', prompt: '左のモーメントを先に求めてから、右の位置を考えよう。', targetLeft: 50, armLeft: 3, targetRight: 30, correctSlot: 5 },
+  { id: 'G6_LEVER_160', title: '重いおもりを近くへ', prompt: '重いおもりは、支点に近いどの目盛りならつり合うかな。', targetLeft: 40, armLeft: 4, targetRight: 80, correctSlot: 2 },
+  { id: 'G6_LEVER_180', title: '60gと90gの実験', prompt: '重さが違っても、モーメントが同じならつり合うよ。', targetLeft: 60, armLeft: 3, targetRight: 90, correctSlot: 2 },
+  { id: 'G6_LEVER_200', title: '力と距離の組み合わせ', prompt: '一方の重さだけでなく、支点からの距離にも注目しよう。', targetLeft: 50, armLeft: 4, targetRight: 40, correctSlot: 5 },
+  { id: 'G6_LEVER_240', title: '二つの条件を比べる', prompt: '60g×4と同じはたらきになる80gの位置はどこかな。', targetLeft: 60, armLeft: 4, targetRight: 80, correctSlot: 3 },
+  { id: 'G6_LEVER_300', title: '支点に近い重いおもり', prompt: '重いおもりを使うときの、支点に近い位置を選ぼう。', targetLeft: 60, armLeft: 5, targetRight: 150, correctSlot: 2 },
+  { id: 'G6_LEVER_400', title: 'てこの規則性まとめ', prompt: '重さと距離の両方を使って、最後のつり合いを完成させよう。', targetLeft: 100, armLeft: 4, targetRight: 80, correctSlot: 5 }
+];
+
+function isValidLeverChallenge(challenge) {
+  if (!challenge || typeof challenge.id !== 'string' || !challenge.id.trim()) return false;
+  const values = ['targetLeft', 'armLeft', 'targetRight', 'correctSlot'].map(key => Number(challenge[key]));
+  if (values.some(value => !Number.isInteger(value) || value <= 0)) return false;
+  const [targetLeft, armLeft, targetRight, correctSlot] = values;
+  return armLeft <= 5 && correctSlot <= 5 && targetLeft * armLeft === targetRight * correctSlot;
+}
+
+function greatestCommonDivisor(a, b) {
+  let left = Math.abs(a);
+  let right = Math.abs(b);
+  while (right) [left, right] = [right, left % right];
+  return left;
+}
+
+/** Map every visible stage to one challenge in a stable shuffled, no-repeat cycle. */
+export function selectLeverChallenge(gameData = {}, level = 1) {
+  const supplied = Array.isArray(gameData?.leverChallengePool) ? gameData.leverChallengePool : [];
+  const suppliedIds = new Set(supplied.map(challenge => challenge?.id));
+  const suppliedIsComplete = supplied.length >= 15
+    && suppliedIds.size === supplied.length
+    && supplied.every(isValidLeverChallenge);
+  const pool = suppliedIsComplete ? supplied : LEVER_CHALLENGE_BANK;
+  const stageIndex = Math.max(0, Math.floor(Number(level) || 1) - 1);
+  const candidateStrides = Array.from({ length: pool.length - 1 }, (_, index) => index + 1)
+    .filter(stride => greatestCommonDivisor(stride, pool.length) === 1 && stride > 1);
+  const stride = candidateStrides.includes(7) ? 7 : (candidateStrides[0] || 1);
+  const offset = Math.min(2, pool.length - 1);
+  const challenge = pool[(offset + stageIndex * stride) % pool.length];
+  return { ...challenge, stageNumber: stageIndex + 1, bankSize: pool.length };
+}
+
 export class LeverPhysicsGame {
-  constructor(canvas, gameData, onWin) {
+  constructor(canvas, gameData, onWin, grade = 6, level = 1) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
     this.onWin = onWin;
+    this.grade = Number(grade || gameData?.grade) || 6;
+    this.level = Math.max(1, Math.floor(Number(level || gameData?.level) || 1));
     this.running = false;
 
-    this.targetLeft = gameData?.targetLeft || 50;
-    this.armLeft = gameData?.armLeft || 2; // Left Torque = 50 * 2 = 100
-    this.targetRight = gameData?.targetRight || 20;
-    this.correctSlot = gameData?.correctSlot || 5; // Right Torque = 20 * 5 = 100
+    this.challenge = selectLeverChallenge(gameData, this.level);
+    this.targetLeft = this.challenge.targetLeft;
+    this.armLeft = this.challenge.armLeft;
+    this.targetRight = this.challenge.targetRight;
+    this.correctSlot = this.challenge.correctSlot;
 
     this.placedRightWeight = 0;
     this.placedRightSlot = 0;
@@ -2721,6 +2774,12 @@ export class LeverPhysicsGame {
     this.placedRightSlot = 0;
     this.angle = 0;
     this.targetAngle = 0;
+    if (this.canvas?.dataset) {
+      this.canvas.dataset.challengeId = this.challenge.id;
+      this.canvas.dataset.questionMode = 'LEVER_PHYSICS';
+      this.canvas.dataset.stageNumber = String(this.level);
+    }
+    this.canvas?.setAttribute?.('aria-label', `小学6年理科 てこのつり合い ${this.challenge.title}。${this.challenge.prompt}`);
     this.canvas.addEventListener('pointerdown', this.boundPointer);
     this.loop();
   }
@@ -2754,16 +2813,16 @@ export class LeverPhysicsGame {
         audio.playPositive(6, 1);
         fx.spawnStarBurst(cx + clickedSlot * 30, getLogicalCanvasHeight(this.canvas) / 2 + 50, 30, '#10b981');
         fx.showFloatingScore(cx, getLogicalCanvasHeight(this.canvas) / 2 - 30, 'モーメント完全平衡！', '#34d399');
-        guidance.registerSuccess({ questionId: 'LEVER_PHYSICS' });
+        guidance.registerSuccess({ questionId: this.challenge.id });
 
         setTimeout(() => {
           this.destroy();
-          this.onWin(3, 300);
+          this.onWin(3, 300, { cleared: true, accuracy: 1, correctCount: 1, totalCount: 1, challengeMode: this.challenge.id });
         }, 500);
       } else {
         guidance.registerError({
           subject: '理科',
-          questionId: 'LEVER_PHYSICS',
+          questionId: this.challenge.id,
           questionData: {
             targetLeft: this.targetLeft,
             armLeft: this.armLeft,
@@ -2790,9 +2849,12 @@ export class LeverPhysicsGame {
 
     // Header
     this.ctx.fillStyle = '#ffffff';
-    this.ctx.font = 'bold 18px sans-serif';
+    this.ctx.font = 'bold 16px sans-serif';
     this.ctx.textAlign = 'center';
-    drawFittedCanvasText(this.ctx, `てこの${withKidsReading('釣り合い', 'つりあい')}：左(${this.targetLeft}g × ${this.armLeft}) ＝ 右(${this.targetRight}g × 目盛り？)`, cx, 40, w - 32, 17, 9);
+    drawFittedCanvasText(this.ctx, `ステージ${this.level}　${this.challenge.title}`, cx, 24, w - 32, 16, 10);
+    drawFittedCanvasText(this.ctx, `左(${this.targetLeft}g × ${this.armLeft}) ＝ 右(${this.targetRight}g × 目盛り？)`, cx, 49, w - 32, 16, 9);
+    this.ctx.fillStyle = '#bae6fd';
+    drawFittedCanvasText(this.ctx, this.challenge.prompt, cx, 72, w - 40, 13, 9);
 
     // Fulcrum
     this.ctx.fillStyle = '#eab308';
@@ -2846,11 +2908,13 @@ export class LeverPhysicsGame {
 
     this.ctx.restore();
 
-    requestAnimationFrame(() => this.loop());
+    this.frameId = requestAnimationFrame(() => this.loop());
   }
 
   destroy() {
     this.running = false;
+    if (this.frameId != null && typeof cancelAnimationFrame === 'function') cancelAnimationFrame(this.frameId);
+    this.frameId = null;
     this.canvas.removeEventListener('pointerdown', this.boundPointer);
   }
 }

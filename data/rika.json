@@ -53,7 +53,30 @@
       "mextRef": "MEXT-RIKA-G6-01",
       "learningObjectives": ["てこの規則性（支点・力点・作用点と力のモーメント W1×L1 = W2×L2）", "水溶液の液性・指示薬と金属の変化", "燃焼と空気中の気体", "植物の光合成と人体の消化・呼吸・循環", "発電・蓄電と電気エネルギーの変換", "太陽・地球・月の位置関係と月の満ち欠け"],
       "gameType": "SCIENCE_CURRICULUM",
-      "gameData": { "mode": "GRADE_6_LAB", "topicPool": ["LEVERS", "AQUEOUS_SOLUTIONS", "COMBUSTION", "PHOTOSYNTHESIS", "HUMAN_BODY_ELECTRIC_ENERGY", "MOON_PHASE_REASONING"], "experimentPool": ["LEVER_PHYSICS", "AQUEOUS_LAB", "COMBUSTION_LAB", "PHOTOSYNTHESIS_LAB", "ENERGY_LAB", "MOON_REASONING"], "sessionSize": 10, "randomization": "WITHOUT_REPLACEMENT" }
+      "gameData": {
+        "mode": "GRADE_6_LAB",
+        "topicPool": ["LEVERS", "AQUEOUS_SOLUTIONS", "COMBUSTION", "PHOTOSYNTHESIS", "HUMAN_BODY_ELECTRIC_ENERGY", "MOON_PHASE_REASONING"],
+        "experimentPool": ["LEVER_PHYSICS", "AQUEOUS_LAB", "COMBUSTION_LAB", "PHOTOSYNTHESIS_LAB", "ENERGY_LAB", "MOON_REASONING"],
+        "leverChallengePool": [
+          { "id": "G6_LEVER_020", "title": "小さな力のつり合い", "prompt": "右のおもりを、つり合う目盛りへ動かそう。", "targetLeft": 20, "armLeft": 1, "targetRight": 10, "correctSlot": 2 },
+          { "id": "G6_LEVER_030", "title": "支点からの距離", "prompt": "重さと支点からの距離をかけて考えよう。", "targetLeft": 30, "armLeft": 1, "targetRight": 10, "correctSlot": 3 },
+          { "id": "G6_LEVER_040", "title": "軽いおもりの位置", "prompt": "軽いおもりは、支点からどこまで離せばいいかな。", "targetLeft": 20, "armLeft": 2, "targetRight": 10, "correctSlot": 4 },
+          { "id": "G6_LEVER_050", "title": "遠い目盛りのはたらき", "prompt": "支点から遠ざけると、てこへのはたらきはどう変わるかな。", "targetLeft": 50, "armLeft": 1, "targetRight": 10, "correctSlot": 5 },
+          { "id": "G6_LEVER_060", "title": "左右のモーメント", "prompt": "左右の「重さ×距離」が同じになる目盛りを選ぼう。", "targetLeft": 30, "armLeft": 2, "targetRight": 20, "correctSlot": 3 },
+          { "id": "G6_LEVER_080", "title": "重さが半分のとき", "prompt": "右が左の半分の重さなら、距離はどうすればいいかな。", "targetLeft": 40, "armLeft": 2, "targetRight": 20, "correctSlot": 4 },
+          { "id": "G6_LEVER_100", "title": "100のモーメント", "prompt": "計算して、ぴったりつり合う目盛りを探そう。", "targetLeft": 50, "armLeft": 2, "targetRight": 20, "correctSlot": 5 },
+          { "id": "G6_LEVER_120", "title": "異なる重さのつり合い", "prompt": "40gと30gのおもりがつり合う位置を見つけよう。", "targetLeft": 40, "armLeft": 3, "targetRight": 30, "correctSlot": 4 },
+          { "id": "G6_LEVER_150", "title": "大きなモーメント", "prompt": "左のモーメントを先に求めてから、右の位置を考えよう。", "targetLeft": 50, "armLeft": 3, "targetRight": 30, "correctSlot": 5 },
+          { "id": "G6_LEVER_160", "title": "重いおもりを近くへ", "prompt": "重いおもりは、支点に近いどの目盛りならつり合うかな。", "targetLeft": 40, "armLeft": 4, "targetRight": 80, "correctSlot": 2 },
+          { "id": "G6_LEVER_180", "title": "60gと90gの実験", "prompt": "重さが違っても、モーメントが同じならつり合うよ。", "targetLeft": 60, "armLeft": 3, "targetRight": 90, "correctSlot": 2 },
+          { "id": "G6_LEVER_200", "title": "力と距離の組み合わせ", "prompt": "一方の重さだけでなく、支点からの距離にも注目しよう。", "targetLeft": 50, "armLeft": 4, "targetRight": 40, "correctSlot": 5 },
+          { "id": "G6_LEVER_240", "title": "二つの条件を比べる", "prompt": "60g×4と同じはたらきになる80gの位置はどこかな。", "targetLeft": 60, "armLeft": 4, "targetRight": 80, "correctSlot": 3 },
+          { "id": "G6_LEVER_300", "title": "支点に近い重いおもり", "prompt": "重いおもりを使うときの、支点に近い位置を選ぼう。", "targetLeft": 60, "armLeft": 5, "targetRight": 150, "correctSlot": 2 },
+          { "id": "G6_LEVER_400", "title": "てこの規則性まとめ", "prompt": "重さと距離の両方を使って、最後のつり合いを完成させよう。", "targetLeft": 100, "armLeft": 4, "targetRight": 80, "correctSlot": 5 }
+        ],
+        "sessionSize": 10,
+        "randomization": "WITHOUT_REPLACEMENT"
+      }
     }
   ]
 }

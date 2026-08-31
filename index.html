@@ -561,6 +561,7 @@
     import { getFXSystem } from './js/FXSystem.js';
     import { getErrorGuidanceSystem } from './js/ErrorGuidanceSystem.js?v=3';
     import { AuthManager } from './src/auth/AuthManager.js?v=3';
+    import { LoginReminderManager } from './src/auth/LoginReminderManager.js?v=1';
     import { MembershipManager } from './src/membership/MembershipManager.js?v=1';
     import { H5AdManager } from './src/ads/H5AdManager.js?v=2';
     import { StorageAdapter } from './src/storage/StorageAdapter.js';
@@ -597,6 +598,13 @@
     const turnstileSiteKey = document.querySelector('meta[name="turnstile-site-key"]')?.content || '';
     const authManager = new AuthManager({ apiBase: '/api', turnstileSiteKey, storage: storageAdapter });
     const accessSession = await authManager.initialize();
+    const loginReminderManager = new LoginReminderManager({
+      sessionMode: accessSession.mode,
+      onReminder: () => authManager.showLogin({
+        message: '5分間あそんだね！ Googleでログインすると、今の学習きろくを保存して、ほかの端末でもつづきから遊べるよ。'
+      })
+    }).start();
+    window.addEventListener('pagehide', () => loginReminderManager.destroy(), { once: true });
     const localStorageUserId = accessSession.user?.id || 'anonymous-device';
     storageAdapter.setUser(localStorageUserId, { cloudEnabled: accessSession.mode === 'authenticated' });
     const membershipManager = new MembershipManager({ apiBase: '/api', session: accessSession });

@@ -41,6 +41,35 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
       assert.ok(!manager.includes('await this.modal.show({ message: availability'));
     });
 
+    test('匿名利用者には実プレイ5分ごとに、安全な区切りでログイン案内を一度表示する', async () => {
+      const { LoginReminderManager, LOGIN_REMINDER_INTERVAL_MS } = loadESModule(path.join(root, 'src/auth/LoginReminderManager.js'));
+      assert.equal(LOGIN_REMINDER_INTERVAL_MS, 5 * 60 * 1000);
+      let now = 1000;
+      let reminders = 0;
+      const manager = new LoginReminderManager({
+        now: () => now,
+        isVisible: () => true,
+        onReminder: () => { reminders += 1; },
+        setIntervalImpl: () => 1,
+        clearIntervalImpl: () => {}
+      }).start();
+      manager.setGameActive(true);
+      for (let i = 0; i < 60; i += 1) { now += 5000; manager.tick(); }
+      assert.equal(manager.reminderDue, true);
+      assert.equal(reminders, 0, '答えを入力している途中では案内を重ねないでください');
+      manager.setGameActive(false);
+      await Promise.resolve();
+      assert.equal(reminders, 1);
+      manager.setGameActive(false);
+      assert.equal(reminders, 1, '同じ5分枠で二重表示しないでください');
+      manager.setSessionMode('authenticated');
+      now += LOGIN_REMINDER_INTERVAL_MS;
+      manager.tick();
+      manager.setGameActive(false);
+      assert.equal(reminders, 1, 'ログイン済み利用者には表示しないでください');
+      manager.destroy();
+    });
+
     test('Worker はTurnstile actionがaccessと完全一致しないトークンを拒否する', async () => {
       const worker = loadESModule(path.join(root, 'worker/index.js')).default;
       const originalFetch = global.fetch;

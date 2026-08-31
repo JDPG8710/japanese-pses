@@ -121,13 +121,21 @@ export function loadGoogleH5Ads(publisherId) {
   if (!client || typeof document === 'undefined') return Promise.resolve(false);
   if (adsLoader) return adsLoader;
   window.adsbygoogle = window.adsbygoogle || [];
-  window.adBreak = window.adConfig = function adPlacementCommand(config) { window.adsbygoogle.push(config); };
+  const adPlacementCommand = config => window.adsbygoogle.push(config);
+  window.adBreak = typeof window.adBreak === 'function' ? window.adBreak : adPlacementCommand;
+  window.adConfig = typeof window.adConfig === 'function' ? window.adConfig : adPlacementCommand;
   window.adConfig({ preloadAdBreaks: 'on', sound: 'on' });
+  const scriptUrl = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${encodeURIComponent(client)}`;
+  const existingScript = Array.from(document.scripts || []).find(script => script.src === scriptUrl);
+  if (existingScript) {
+    adsLoader = Promise.resolve(true);
+    return adsLoader;
+  }
   adsLoader = new Promise((resolve, reject) => {
     const script = document.createElement('script');
     script.async = true;
     script.crossOrigin = 'anonymous';
-    script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${encodeURIComponent(client)}`;
+    script.src = scriptUrl;
     script.onload = () => resolve(true);
     script.onerror = () => { adsLoader = null; reject(new Error('Google H5 ads failed to load')); };
     document.head.appendChild(script);

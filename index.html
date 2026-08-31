@@ -4,6 +4,17 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta name="turnstile-site-key" content="0x4AAAAAAEZrRJQcMv2tk9IP" />
+  <meta name="google-adsense-account" content="ca-pub-8738651569097071" />
+  <script>
+    (() => {
+      window.adsbygoogle = window.adsbygoogle || [];
+      const adPlacementCommand = config => window.adsbygoogle.push(config);
+      window.adBreak = window.adBreak || adPlacementCommand;
+      window.adConfig = window.adConfig || adPlacementCommand;
+    })();
+  </script>
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8738651569097071"
+    crossorigin="anonymous"></script>
   <title>まなびぽっぷ！｜小学生向け無料学習ゲーム</title>
   <meta name="description" content="小学1年生から6年生までの国語・算数・理科・社会・生活・英語を、かわいい冒険マップのゲームで楽しく学べる無料オンライン教材です。" />
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
@@ -551,7 +562,7 @@
     import { getErrorGuidanceSystem } from './js/ErrorGuidanceSystem.js?v=3';
     import { AuthManager } from './src/auth/AuthManager.js?v=3';
     import { MembershipManager } from './src/membership/MembershipManager.js?v=1';
-    import { H5AdManager } from './src/ads/H5AdManager.js?v=1';
+    import { H5AdManager } from './src/ads/H5AdManager.js?v=2';
     import { StorageAdapter } from './src/storage/StorageAdapter.js';
     import { DEFAULT_LEARNER_NAME, LearnerProfileModal, isLearnerProfileComplete, learnerGenderLabel, normalizeLearnerProfile } from './src/profile/LearnerProfile.js?v=5';
     import { calculateGradeProgress, createGraduationCertificate, ELEMENTARY_GRADUATION_ACHIEVEMENT_ID } from './ProgressionSystem.js';
@@ -590,8 +601,9 @@
     storageAdapter.setUser(localStorageUserId, { cloudEnabled: accessSession.mode === 'authenticated' });
     const membershipManager = new MembershipManager({ apiBase: '/api', session: accessSession });
     const membershipStatus = await membershipManager.initialize();
+    const embeddedAdsPublisherId = document.querySelector('meta[name="google-adsense-account"]')?.content || null;
     const adManager = new H5AdManager({
-      publisherId: membershipStatus.googleH5AdsPublisherId,
+      publisherId: membershipStatus.googleH5AdsPublisherId || embeddedAdsPublisherId,
       adFree: membershipStatus.adFree
     }).start();
     let synchronizedState = accessSession.mode === 'authenticated'

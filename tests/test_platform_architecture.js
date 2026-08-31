@@ -77,6 +77,18 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
       manager.destroy();
     });
 
+    test('AdSenseタグはPagesに一度だけ埋め込み、H5広告管理へ同じ公開IDを渡す', () => {
+      const page = read('index.html');
+      const ads = read('src/ads/H5AdManager.js');
+      const publisherId = 'ca-pub-8738651569097071';
+      assert.ok(page.includes(`<meta name="google-adsense-account" content="${publisherId}"`));
+      assert.ok(page.includes(`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${publisherId}`));
+      assert.ok(page.includes('crossorigin="anonymous"'));
+      assert.ok(page.includes('membershipStatus.googleH5AdsPublisherId || embeddedAdsPublisherId'));
+      assert.ok(ads.includes('const existingScript = Array.from(document.scripts || [])'));
+      assert.ok(ads.includes('if (existingScript)'));
+    });
+
     test('Stripe Webhook は生本文のHMAC署名と5分以内の時刻だけを受け付ける', async () => {
       const { verifyStripeWebhookSignature } = loadESModule(path.join(root, 'worker/index.js'));
       const body = JSON.stringify({ id: 'evt_test', type: 'checkout.session.completed' });

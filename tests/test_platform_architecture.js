@@ -101,7 +101,7 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
 
     test('Pages は静的フロントを配信し、Service BindingでD1 API Workerへ同一オリジン接続する', () => {
       const config = read('wrangler.toml');
-      const pagesConfig = read('wrangler.pages.jsonc');
+      const pagesConfig = read('wrangler.jsonc');
       const pagesProxy = read('functions/api/[[path]].js');
       assert.ok(config.includes('binding = "DB"'));
       assert.ok(config.includes('database_name = "japanese-pses-production"'));

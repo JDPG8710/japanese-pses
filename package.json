@@ -11,7 +11,7 @@
     "db:seed:local": "node scripts/import-game-data-d1.mjs --local",
     "db:seed": "node scripts/import-game-data-d1.mjs --remote",
     "deploy:worker": "wrangler deploy --config wrangler.toml",
-    "deploy:pages": "wrangler pages deploy --config wrangler.pages.jsonc --branch main",
+    "deploy:pages": "wrangler pages deploy --branch main",
     "deploy": "npm run test && npm run build && npm run db:migrate && npm run db:seed && npm run deploy:worker && npm run deploy:pages"
   },
   "devDependencies": {

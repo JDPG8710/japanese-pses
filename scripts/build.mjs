@@ -13,7 +13,10 @@ if (path.dirname(output) !== root || path.basename(output) !== 'dist') {
 await rm(output, { recursive: true, force: true });
 await mkdir(output, { recursive: true });
 
-const publicRootFiles = new Set(['index.html', 'robots.txt', 'sitemap.xml', 'favicon.svg', 'site.webmanifest']);
+const publicRootFiles = new Set([
+  'index.html', 'robots.txt', 'sitemap.xml', 'favicon.svg', 'site.webmanifest',
+  '_routes.json', '_headers'
+]);
 const rootFiles = (await readdir(root, { withFileTypes: true }))
   .filter(entry => entry.isFile() && (publicRootFiles.has(entry.name) || entry.name.endsWith('.js')))
   .map(entry => entry.name);

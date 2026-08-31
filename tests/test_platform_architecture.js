@@ -99,19 +99,62 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
       assert.ok(migration.includes('REFERENCES users(user_id)'));
     });
 
-    test('Wrangler はD1を唯一のクラウドデータストアとして束縛し、秘密値を平文で持たない', () => {
+    test('Pages は静的フロントを配信し、Service BindingでD1 API Workerへ同一オリジン接続する', () => {
       const config = read('wrangler.toml');
+      const pagesConfig = read('wrangler.pages.jsonc');
+      const pagesProxy = read('functions/api/[[path]].js');
       assert.ok(config.includes('binding = "DB"'));
       assert.ok(config.includes('database_name = "japanese-pses-production"'));
       assert.ok(config.includes('migrations_dir = "migrations"'));
       assert.ok(!config.includes('SESSION_KV'));
       assert.ok(!config.includes('GUEST_KV'));
       assert.ok(!config.includes('GAME_DATA_R2'));
-      assert.ok(config.includes('directory = "./dist"'));
-      assert.ok(config.includes('run_worker_first = ["/api/*"]'));
+      assert.ok(!config.includes('[assets]'), 'API Workerから静的フロントを分離してください');
+      assert.ok(pagesConfig.includes('"pages_build_output_dir": "./dist"'));
+      assert.ok(pagesConfig.includes('"binding": "API"'));
+      assert.ok(pagesConfig.includes('"service": "japanese-pses"'));
+      assert.ok(pagesProxy.includes('context.env.API.fetch(context.request)'));
+      assert.ok(config.includes('APP_ORIGIN = "https://manabi-pop.pages.dev"'));
+      assert.ok(config.includes('TURNSTILE_HOSTNAMES = "manabi-pop.pages.dev"'));
       for (const secret of ['TURNSTILE_SECRET_KEY =', 'GOOGLE_CLIENT_SECRET =', 'APPLE_CLIENT_SECRET =', 'JWT_SECRET =', 'FINGERPRINT_PEPPER =', 'STRIPE_SECRET_KEY =', 'STRIPE_WEBHOOK_SECRET =']) {
         assert.ok(!config.includes(secret), `${secret} を設定ファイルへ書かないでください`);
       }
+    });
+
+    test('Pages API proxy はURL・Cookie・レスポンスヘッダーを変えずにWorkerへ転送する', async () => {
+      const { onRequest } = loadESModule(path.join(root, 'functions/api/[[path]].js'));
+      const request = new Request('https://manabi-pop.pages.dev/api/auth/session', {
+        headers: { cookie: 'pses_session=test-token', origin: 'https://manabi-pop.pages.dev' }
+      });
+      let forwarded;
+      const response = await onRequest({
+        request,
+        env: {
+          API: {
+            fetch: async incoming => {
+              forwarded = incoming;
+              return new Response('{"authenticated":true}', {
+                headers: { 'content-type': 'application/json', 'set-cookie': 'pses_session=renewed; Path=/; Secure' }
+              });
+            }
+          }
+        }
+      });
+      assert.equal(forwarded.url, request.url);
+      assert.equal(forwarded.headers.get('cookie'), 'pses_session=test-token');
+      assert.equal(response.headers.get('set-cookie'), 'pses_session=renewed; Path=/; Secure');
+      assert.deepEqual(await response.json(), { authenticated: true });
+    });
+
+    test('旧Workerの画面URLはPagesへ恒久転送し、未知APIはJSON 404のままにする', async () => {
+      const worker = loadESModule(path.join(root, 'worker/index.js')).default;
+      const env = { APP_ORIGIN: 'https://manabi-pop.pages.dev' };
+      const page = await worker.fetch(new Request('https://old.example.test/grade/1?from=legacy'), env, {});
+      assert.equal(page.status, 308);
+      assert.equal(page.headers.get('location'), 'https://manabi-pop.pages.dev/grade/1?from=legacy');
+      const api = await worker.fetch(new Request('https://old.example.test/api/not-found'), env, {});
+      assert.equal(api.status, 404);
+      assert.equal((await api.json()).error, 'NOT_FOUND');
     });
 
     test('Worker のヘルスチェックと不正JSONが実行時に正しい状態コードを返す', async () => {

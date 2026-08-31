@@ -1,6 +1,6 @@
-# Cloudflare Worker／D1 配備手順
+# Cloudflare Pages／Worker／D1 配備手順
 
-この Worker は Turnstile付きGoogle認証、教材配信、利用者プロファイル、ステージ通過、挑戦履歴、卒業証、広告なしメンバー購入を Cloudflare D1 の一つの認証境界で提供します。未ログインでもゲームは時間制限なく利用でき、ログインはクラウド保存と広告なしメンバー購入に使います。IndexedDB はオフラインキャッシュであり、クラウド側の正本は D1 です。
+Cloudflare Pages はゲームの静的フロントエンドを配信し、Pages Function の Service Binding が `/api/*` を `japanese-pses` Worker へ同一オリジンで転送します。Worker は Turnstile付きGoogle認証、教材配信、利用者プロファイル、ステージ通過、挑戦履歴、卒業証、広告なしメンバー購入を Cloudflare D1 の一つの認証境界で提供します。未ログインでもゲームは時間制限なく利用でき、ログインはクラウド保存と広告なしメンバー購入に使います。IndexedDB はオフラインキャッシュであり、クラウド側の正本は D1 です。
 
 ## 1. D1 データベース
 
@@ -28,9 +28,9 @@ npx wrangler secret put STRIPE_WEBHOOK_SECRET
 
 ## 3. OAuth／Turnstile
 
-- Google の承認済み JavaScript 生成元：`https://japanese-pses.j565718319.workers.dev`
-- Google の承認済みリダイレクト URI：`https://japanese-pses.j565718319.workers.dev/api/auth/google`
-- Turnstile の許可ホスト：`japanese-pses.j565718319.workers.dev`
+- Google の承認済み JavaScript 生成元：`https://manabi-pop.pages.dev`
+- Google の承認済みリダイレクト URI：`https://manabi-pop.pages.dev/api/auth/google`
+- Turnstile の許可ホスト：`manabi-pop.pages.dev`（ロールバック用に旧WorkerホストもWidget側へ残してよい）
 
 ローカルホストとプライベート LAN は `Local Offline Mode` を使用し、本番の OAuth／Turnstile 状態を書き換えません。
 
@@ -43,7 +43,7 @@ npm run build
 npm run deploy
 ```
 
-`npm run deploy` はテスト、静的成果物の再構築、本番 D1 マイグレーション、教材インポート、Worker 配備を順番に実行します。公開後は `/api/health`、`/api/game-data/manifest.json`、任意のGoogleログイン、無料会員の広告間隔、広告なし会員、ステージ精算を確認してください。
+`npm run deploy` はテスト、静的成果物の再構築、本番 D1 マイグレーション、教材インポート、API Worker 配備、Pages 配備を順番に実行します。公開後は `https://manabi-pop.pages.dev/api/health`、`/api/game-data/manifest.json`、Googleログイン、無料会員の広告間隔、広告なし会員、ステージ精算を確認してください。
 
 ## 5. データ書き込み方針
 

@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://japanese-pses.j565718319.workers.dev/sitemap.xml
+Sitemap: https://manabi-pop.pages.dev/sitemap.xml

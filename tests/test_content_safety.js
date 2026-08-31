@@ -125,7 +125,7 @@ function register({ describe, test, assert, loadESModule }) {
     });
 
     test('CS8: homepage exposes complete crawl and share metadata', () => {
-      const canonical = 'https://japanese-pses.j565718319.workers.dev/';
+      const canonical = 'https://manabi-pop.pages.dev/';
       assert.match(html, /<title>まなびぽっぷ！｜小学生向け無料学習ゲーム<\/title>/);
       assert.match(html, /<meta name="description" content="[^"]+"\s*\/>/);
       assert.ok(html.includes(`<link rel="canonical" href="${canonical}" />`), 'Canonical URL must point to production');

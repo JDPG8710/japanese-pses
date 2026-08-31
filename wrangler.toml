@@ -3,17 +3,11 @@ main = "worker/index.js"
 compatibility_date = "2026-08-24"
 compatibility_flags = ["nodejs_compat"]
 
-[assets]
-directory = "./dist"
-binding = "ASSETS"
-not_found_handling = "single-page-application"
-run_worker_first = ["/api/*"]
-
 [vars]
-APP_ORIGIN = "https://japanese-pses.j565718319.workers.dev"
-API_ORIGIN = "https://japanese-pses.j565718319.workers.dev"
+APP_ORIGIN = "https://manabi-pop.pages.dev"
+API_ORIGIN = "https://manabi-pop.pages.dev"
 DEV_ORIGINS = "http://localhost:4173,http://127.0.0.1:4173"
-TURNSTILE_HOSTNAME = "japanese-pses.j565718319.workers.dev"
+TURNSTILE_HOSTNAMES = "manabi-pop.pages.dev"
 GOOGLE_CLIENT_ID = "406705820118-aa4p2gkig81k4fn9ofh4igs0v6lku7ep.apps.googleusercontent.com"
 APPLE_CLIENT_ID = "REPLACE_WITH_APPLE_SERVICES_ID"
 # Google H5 Games Ads の公開Publisher ID（例: ca-pub-123...）は取得後に設定します。

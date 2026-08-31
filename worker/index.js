@@ -46,6 +46,11 @@ async function routeRequest(request, env) {
   if (url.pathname === '/api/star-graph' && request.method === 'GET') return handleStarGraph(request, env);
   if (url.pathname === '/api/state' && request.method === 'GET') return handleStateRead(request, env);
   if (url.pathname === '/api/state' && request.method === 'PUT') return handleStateWrite(request, env);
+  if (url.pathname === '/api' || url.pathname.startsWith('/api/')) return json({ error: 'NOT_FOUND' }, 404, request, env);
+  if (env.APP_ORIGIN) {
+    const target = new URL(`${url.pathname}${url.search}`, env.APP_ORIGIN);
+    return new Response(null, { status: 308, headers: { location: target.toString(), 'cache-control': 'no-store' } });
+  }
   return json({ error: 'NOT_FOUND' }, 404, request, env);
 }
 
@@ -71,7 +76,9 @@ async function verifyTurnstile(token, request, env, expectedAction) {
   form.set('idempotency_key', crypto.randomUUID());
   const response = await fetch(TURNSTILE_VERIFY_URL, { method: 'POST', body: form });
   const result = await response.json();
-  const hostAllowed = !env.TURNSTILE_HOSTNAME || result.hostname === env.TURNSTILE_HOSTNAME;
+  const expectedHostnames = new Set(String(env.TURNSTILE_HOSTNAMES || env.TURNSTILE_HOSTNAME || '')
+    .split(',').map(hostname => hostname.trim()).filter(Boolean));
+  const hostAllowed = expectedHostnames.size > 0 && expectedHostnames.has(result.hostname);
   const actionAllowed = !expectedAction || result.action === expectedAction;
   return { ...result, success: Boolean(result.success && hostAllowed && actionAllowed) };
 }

@@ -106,6 +106,20 @@ function register({ describe, test, assert, loadESModule }) {
       radical.destroy();
       quiz.destroy();
     });
+
+    test('RB4: radical stages keep different focus sets instead of replaying the same ten puzzles', () => {
+      for (let grade = 1; grade <= 6; grade++) {
+        const focusSets = new Set();
+        for (let level = 1; level <= 12; level++) {
+          const game = new games.RadicalBuilderGame(makeCanvas(), {}, () => {}, grade, level);
+          assert.strictEqual(game.puzzles.length, 10, `Grade ${grade} level ${level} must contain ten puzzles`);
+          assert.strictEqual(new Set(game.puzzles.map(puzzle => puzzle.id)).size, 10, `Grade ${grade} level ${level} must not repeat a puzzle`);
+          focusSets.add(game.stageFocusIds.join('|'));
+          game.destroy();
+        }
+        assert.strictEqual(focusSets.size, 12, `Grade ${grade} radical levels must have 12 different focus sets`);
+      }
+    });
   });
 
   describe('Math curriculum procedural engine', () => {
@@ -198,6 +212,34 @@ function register({ describe, test, assert, loadESModule }) {
   });
 
   describe('Science and life curriculum randomness', () => {
+    test('QB6.1: Grade 1 kana node has large, separate Hiragana, Katakana and read-aloud banks', () => {
+      const expectations = {
+        HIRAGANA: { minimum: 46, correct: /^[ぁ-ん]$/ },
+        KATAKANA: { minimum: 46, correct: /^[ァ-ン]$/ },
+        READ_ALOUD: { minimum: 30, correct: /.+/ }
+      };
+      Object.entries(expectations).forEach(([mode, expectation]) => {
+        const pool = games.getCurriculumQuestionPool('国語', 1, mode);
+        assert.isAtLeast(pool.length, expectation.minimum, `${mode} must have enough content for several distinct stages`);
+        assert.strictEqual(new Set(pool.map(question => `${question.prompt}::${question.correct}`)).size, pool.length, `${mode} must not contain duplicate questions`);
+        pool.forEach((question, index) => {
+          assert.strictEqual(question.mode, mode, `${mode} question ${index} must not leak another topic`);
+          assert.ok(expectation.correct.test(question.correct), `${mode} question ${index} has an invalid answer ${question.correct}`);
+          assertQuestion(question, `${mode} question ${index}`);
+        });
+
+        const focusSets = new Set();
+        for (let level = 1; level <= 7; level++) {
+          const game = new games.CurriculumQuizGame(makeCanvas(), { selectedMode: mode }, () => {}, 1, level, '国語');
+          assert.strictEqual(game.questions.length, 10, `${mode} level ${level} must contain ten questions`);
+          assert.strictEqual(new Set(game.questions.map(question => `${question.prompt}::${question.correct}`)).size, 10, `${mode} level ${level} must not repeat content`);
+          focusSets.add(game.stageFocusIds.join('|'));
+          game.destroy();
+        }
+        assert.strictEqual(focusSets.size, 7, `${mode} must have a different focus set in every Grade 1 stage`);
+      });
+    });
+
     test('QB7: science/life pools cover every approved grade and can form 10-question sessions', () => {
       assert.strictEqual(typeof games.CurriculumQuizGame, 'function', 'CurriculumQuizGame export is required');
       const matrix = { '理科': [3, 4, 5, 6], '生活': [1, 2] };
@@ -299,6 +341,39 @@ function register({ describe, test, assert, loadESModule }) {
           }
           assert.isAbove(seenAcrossSessions.size, 10, `Grade ${grade} ${mode} must vary content across sessions`);
         });
+      }
+    });
+
+    test('QB12: every shared curriculum mode changes its focus set across all visible stages', () => {
+      const configurations = [
+        ...Object.entries(curriculumModeBank.SCIENCE_QUIZ_MODES_BY_GRADE).flatMap(([grade, modes]) => modes.map(mode => ['理科', Number(grade), mode, 15])),
+        ...[3, 4, 5, 6].flatMap(grade => ['MAP_GAME', 'SEQUENCE_GAME'].map(mode => ['社会', grade, mode, 10])),
+        ...[1, 2].flatMap(grade => ['OBSERVATION_SEQUENCE', 'COMMUNITY_MATCH'].map(mode => ['生活', grade, mode, 4])),
+        ...[1, 2, 3, 4, 5, 6].map(grade => ['国語', grade, 'READING_QUIZ', grade === 1 ? 7 : 12])
+      ];
+      configurations.forEach(([subject, grade, mode, stageCount]) => {
+        const focusSets = new Set();
+        for (let level = 1; level <= stageCount; level++) {
+          const game = new games.CurriculumQuizGame(makeCanvas(), { selectedMode: mode }, () => {}, grade, level, subject);
+          assert.strictEqual(game.questions.length, 10, `${subject} Grade ${grade} ${mode} level ${level} must contain ten questions`);
+          focusSets.add(game.stageFocusIds.join('|'));
+          game.destroy();
+        }
+        assert.strictEqual(focusSets.size, stageCount, `${subject} Grade ${grade} ${mode} must not reuse a stage focus set`);
+      });
+    });
+
+    test('QB13: life card sorting uses four different grade-aligned stage themes', () => {
+      for (let grade = 1; grade <= 2; grade++) {
+        const signatures = new Set();
+        for (let level = 1; level <= 4; level++) {
+          const game = new games.CategorySortGame(makeCanvas(), {}, () => {}, grade, level);
+          assert.strictEqual(game.items.length, 6, `Life Grade ${grade} level ${level} must contain six cards`);
+          assert.strictEqual(new Set(game.items.map(item => item.text)).size, 6, `Life Grade ${grade} level ${level} must not repeat cards`);
+          signatures.add(game.items.map(item => item.text).sort().join('|'));
+          game.destroy();
+        }
+        assert.strictEqual(signatures.size, 4, `Life Grade ${grade} must have four different card-sort stages`);
       }
     });
   });

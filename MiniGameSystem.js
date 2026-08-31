@@ -1444,11 +1444,12 @@ export class KanjiSlashGame {
 // 2. 国語：部首・漢字パーツ組み立て (RadicalBuilderGame)
 // =========================================================================
 export class RadicalBuilderGame {
-  constructor(canvas, gameData, onWin, grade = 2) {
+  constructor(canvas, gameData, onWin, grade = 2, level = 1) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
     this.onWin = onWin;
     this.grade = Math.max(1, Math.min(6, Number(grade) || 2));
+    this.level = Math.max(1, Number(level) || 1);
     this.score = 0;
     this.combo = 0;
     this.running = false;
@@ -1458,7 +1459,13 @@ export class RadicalBuilderGame {
       ? gameData.questions.map((puzzle, index) => this.normalizePuzzle(puzzle, index)).filter(Boolean)
       : [];
     const gradePuzzles = getRadicalPuzzlesForGrade(this.grade);
-    this.puzzles = shuffleCopy(suppliedPuzzles.length >= 10 ? suppliedPuzzles : gradePuzzles).slice(0, 10);
+    const selection = selectCurriculumStageQuestions(
+      suppliedPuzzles.length >= 10 ? suppliedPuzzles : gradePuzzles,
+      this.level,
+      10
+    );
+    this.stageFocusIds = selection.focusIds;
+    this.puzzles = selection.questions;
     this.placedParts = [];
     this.palette = [];
     this.animFuse = 0;
@@ -1890,7 +1897,8 @@ function getFallbackCurriculumBank(subject, grade) {
 function sanitizeCurriculumBank(records, subject, selectedMode, grade) {
   const removeEmoji = (value) => String(value ?? '').replace(/[\p{Extended_Pictographic}\uFE0F]/gu, '').replace(/\s{2,}/g, ' ').trim();
   const normalized = records.map((record, index) => {
-    const prompt = subject === '社会' ? removeEmoji(record.prompt ?? record.q) : String(record.prompt ?? record.q ?? '');
+    const rawPrompt = record.prompt ?? record.q ?? record.question ?? record.kanji;
+    const prompt = subject === '社会' ? removeEmoji(rawPrompt) : String(rawPrompt ?? '');
     const correct = subject === '社会' ? removeEmoji(record.correct) : String(record.correct ?? '');
     const rawOptions = record.options || [correct, ...(record.distractors || [])];
     const options = [...new Set(rawOptions.map(item => subject === '社会' ? removeEmoji(item) : String(item)))];
@@ -1912,7 +1920,7 @@ function sanitizeCurriculumBank(records, subject, selectedMode, grade) {
   const eligible = policy.strict
     ? unique.filter(record => policy.modes.includes(record.mode))
     : unique;
-  return shuffleCopy(eligible);
+  return eligible;
 }
 
 export function getCurriculumQuestionPool(subject, grade, selectedMode = null, supplied = []) {
@@ -1922,6 +1930,68 @@ export function getCurriculumQuestionPool(subject, grade, selectedMode = null, s
     ...getFallbackCurriculumBank(subject, grade),
     ...getSupplementalCurriculumQuestions(subject, grade)
   ], subject, selectedMode, grade);
+}
+
+function curriculumIdentity(record, index = 0) {
+  return String(record?.id || `${record?.prompt || record?.q || record?.target || 'QUESTION'}::${record?.correct || record?.target || index}`);
+}
+
+function curriculumGreatestCommonDivisor(a, b) {
+  let left = Math.abs(Number(a) || 0);
+  let right = Math.abs(Number(b) || 0);
+  while (right) [left, right] = [right, left % right];
+  return left;
+}
+
+function combinationCount(n, k) {
+  const size = Math.min(k, n - k);
+  let result = 1;
+  for (let index = 1; index <= size; index++) result = (result * (n - size + index)) / index;
+  return Math.max(1, Math.round(result));
+}
+
+function combinationAtRank(items, size, rank) {
+  const selected = [];
+  let nextIndex = 0;
+  let remainingRank = rank;
+  for (let slot = 0; slot < size; slot++) {
+    const remainingSlots = size - slot - 1;
+    for (let candidate = nextIndex; candidate <= items.length - (size - slot); candidate++) {
+      const branchCount = combinationCount(items.length - candidate - 1, remainingSlots);
+      if (remainingRank < branchCount) {
+        selected.push(items[candidate]);
+        nextIndex = candidate + 1;
+        break;
+      }
+      remainingRank -= branchCount;
+    }
+  }
+  return selected;
+}
+
+/**
+ * ステージ番号ごとに異なる重点問題を固定し、残りは再挑戦のたびに無作為抽出する。
+ * 別ステージの同一化と、同じステージで順番だけが変わる状態を同時に防ぐ。
+ */
+export function selectCurriculumStageQuestions(bank, level = 1, sessionSize = 10) {
+  const unique = [...new Map((Array.isArray(bank) ? bank : []).map((record, index) => [curriculumIdentity(record, index), record])).values()];
+  const size = Math.min(Math.max(0, Number(sessionSize) || 10), unique.length);
+  if (!size) return { questions: [], focusIds: [] };
+  const stage = Math.max(1, Number(level) || 1);
+  const focusSize = Math.min(Math.max(1, Math.ceil(size / 2)), size, unique.length);
+  const ranked = unique.map((record, index) => ({
+    record,
+    id: curriculumIdentity(record, index)
+  })).sort((a, b) => a.id.localeCompare(b.id, 'ja'));
+  const focusCombinationCount = combinationCount(ranked.length, focusSize);
+  let rankStride = Math.min(104729, Math.max(1, focusCombinationCount - 1));
+  while (rankStride > 1 && curriculumGreatestCommonDivisor(rankStride, focusCombinationCount) !== 1) rankStride--;
+  const focusRank = ((stage - 1) * rankStride) % focusCombinationCount;
+  const focus = combinationAtRank(ranked, focusSize, focusRank);
+  const focusIds = new Set(focus.map(item => item.id));
+  const flexible = shuffleCopy(ranked.filter(item => !focusIds.has(item.id))).slice(0, size - focusSize);
+  const selected = shuffleCopy([...focus, ...flexible]).map(item => item.record);
+  return { questions: selected, focusIds: focus.map(item => item.id) };
 }
 
 export class CurriculumQuizGame {
@@ -1934,9 +2004,14 @@ export class CurriculumQuizGame {
     this.subject = subject;
     this.gameData = gameData || {};
     this.selectedMode = this.gameData.selectedMode || this.gameData.mode || null;
-    const supplied = Array.isArray(this.gameData.questionBank) ? this.gameData.questionBank : [];
+    const supplied = [
+      ...(Array.isArray(this.gameData.questionBank) ? this.gameData.questionBank : []),
+      ...(Array.isArray(this.gameData.questions) ? this.gameData.questions : [])
+    ];
     const bank = getCurriculumQuestionPool(subject, this.grade, this.selectedMode, supplied);
-    this.questions = bank.slice(0, 10).map(question => ({ ...question, options: shuffleCopy(question.options) }));
+    const selection = selectCurriculumStageQuestions(bank, this.level, 10);
+    this.stageFocusIds = selection.focusIds;
+    this.questions = selection.questions.map(question => ({ ...question, options: shuffleCopy(question.options) }));
     this.qIndex = 0;
     this.correctCount = 0;
     this.locked = false;
@@ -3858,7 +3933,9 @@ export class ContextMatchGame extends CurriculumQuizGame {
     const bank = getEnglishQuestionBank(difficulty);
     super(canvas, { ...gameData, selectedMode: difficulty, questionBank: bank }, onWin, grade, level, '外国語・英語');
     this.difficulty = difficulty;
-    this.questions = shuffleCopy(bank).slice(0, ENGLISH_SESSION_SIZE).map((question, index) => ({
+    const selection = selectCurriculumStageQuestions(bank, this.level, ENGLISH_SESSION_SIZE);
+    this.stageFocusIds = selection.focusIds;
+    this.questions = selection.questions.map((question, index) => ({
       ...question,
       id: question.id || `ENGLISH_${difficulty}_${index}`,
       options: shuffleCopy([...new Set(question.options)]).slice(0, 4)
@@ -4020,6 +4097,69 @@ class LegacyContextMatchGame {
 // =========================================================================
 // 9. 生活：生活仕分け箱 (CategorySortGame)
 // =========================================================================
+const LIFE_SORT_STAGES = {
+  1: [
+    {
+      categories: [{ id: 'ready', title: 'あさの じゅんび' }, { id: 'after', title: 'かえってから' }],
+      items: [
+        ['かおを あらう', 'ready'], ['ランドセルを たしかめる', 'ready'], ['あさの あいさつを する', 'ready'],
+        ['てあらい・うがいを する', 'after'], ['しゅくだいを たしかめる', 'after'], ['つかったものを かたづける', 'after']
+      ]
+    },
+    {
+      categories: [{ id: 'safe', title: 'あんぜん' }, { id: 'danger', title: 'あぶない' }],
+      items: [
+        ['みぎ・ひだりを よく みる', 'safe'], ['おうだんほどうを わたる', 'safe'], ['てを あげて わたる', 'safe'],
+        ['どうろへ とびだす', 'danger'], ['くるまの うしろで あそぶ', 'danger'], ['しんごうを みないで わたる', 'danger']
+      ]
+    },
+    {
+      categories: [{ id: 'spring_summer', title: 'はる・なつ' }, { id: 'autumn_winter', title: 'あき・ふゆ' }],
+      items: [
+        ['さくらが さく', 'spring_summer'], ['せみが なく', 'spring_summer'], ['あさがおが さく', 'spring_summer'],
+        ['どんぐりが おちる', 'autumn_winter'], ['きの はが いろづく', 'autumn_winter'], ['ゆきが ふる', 'autumn_winter']
+      ]
+    },
+    {
+      categories: [{ id: 'school', title: 'がっこう' }, { id: 'home', title: 'おうち' }],
+      items: [
+        ['きゅうしょくを たべる', 'school'], ['としょしつで ほんを よむ', 'school'], ['せんせいと べんきょうする', 'school'],
+        ['せんたくものを たたむ', 'home'], ['しょっきを はこぶ', 'home'], ['げんかんを そろえる', 'home']
+      ]
+    }
+  ],
+  2: [
+    {
+      categories: [{ id: 'learn', title: 'しらべる ばしょ' }, { id: 'help', title: 'たすける ばしょ' }],
+      items: [
+        ['図書館', 'learn'], ['博物館', 'learn'], ['公民館', 'learn'],
+        ['消防署', 'help'], ['警察署', 'help'], ['病院', 'help']
+      ]
+    },
+    {
+      categories: [{ id: 'care', title: 'そだてる しごと' }, { id: 'record', title: 'きろくする しごと' }],
+      items: [
+        ['水を あげる', 'care'], ['日当たりを たしかめる', 'care'], ['枯れた葉を 取る', 'care'],
+        ['日付を 書く', 'record'], ['大きさを はかる', 'record'], ['花や実を 絵に かく', 'record']
+      ]
+    },
+    {
+      categories: [{ id: 'public', title: 'みんなで つかう' }, { id: 'private', title: 'じぶんで つかう' }],
+      items: [
+        ['公園の ベンチ', 'public'], ['駅の エレベーター', 'public'], ['図書館の 本', 'public'],
+        ['じぶんの えんぴつ', 'private'], ['じぶんの ぼうし', 'private'], ['じぶんの ハンカチ', 'private']
+      ]
+    },
+    {
+      categories: [{ id: 'past', title: 'むかしの じぶん' }, { id: 'now', title: 'いまの じぶん' }],
+      items: [
+        ['はいはいを していた', 'past'], ['家族に だっこ された', 'past'], ['小さな くつを はいた', 'past'],
+        ['じぶんで 本を 読む', 'now'], ['友だちと 相談する', 'now'], ['まちを 地図に まとめる', 'now']
+      ]
+    }
+  ]
+};
+
 export class CategorySortGame {
   constructor(canvas, gameData, onWin, grade = 1, level = 1) {
     this.canvas = canvas;
@@ -4029,17 +4169,12 @@ export class CategorySortGame {
     this.level = Math.max(1, Number(level) || 1);
     this.running = false;
 
-    this.categories = gameData?.categories || [
-      { id: 'morning', title: 'あさの じゅんび' },
-      { id: 'safety', title: 'あんぜんな こうどう' }
-    ];
-
-    this.items = shuffleCopy((gameData?.items || [
-      { text: 'ランドセルを せおう', category: 'morning', sorted: false },
-      { text: 'みぎ・ひだりを よくみる', category: 'safety', sorted: false },
-      { text: 'おはようと あいさつする', category: 'morning', sorted: false },
-      { text: 'てを あげて わたる', category: 'safety', sorted: false }
-    ]).map(it => ({ ...it, sorted: false })));
+    const gradeStages = LIFE_SORT_STAGES[this.grade];
+    const stage = gradeStages[(this.level - 1) % gradeStages.length];
+    this.stageThemeIndex = (this.level - 1) % gradeStages.length;
+    this.categories = (gameData?.categories || stage.categories).map(category => ({ ...category }));
+    const rawItems = gameData?.items || stage.items.map(([text, category]) => ({ text, category }));
+    this.items = shuffleCopy(rawItems.map(it => ({ ...it, sorted: false })));
 
     this.selectedItem = null;
     this.boundPointer = this.handlePointer.bind(this);

@@ -1571,6 +1571,11 @@
 
     function getGameTypeChoices(node) {
       const subject = node?.subject || '';
+      if (node?.id === 'KOKUGO_G1_KANA') return [
+        { mode: 'HIRAGANA', label: 'ひらがな たんけん', desc: 'カタカナの音を手がかりに、ひらがなを見つけよう' },
+        { mode: 'KATAKANA', label: 'カタカナ ずかん', desc: 'ひらがなの音と同じカタカナを選ぼう' },
+        { mode: 'READ_ALOUD', label: 'おんどく おはなし', desc: '短い文を声に出して読み、内容や読み方を確かめよう' }
+      ];
       if (subject === '国語') return [
         { mode: 'MIXED_CURRICULUM', label: '学年国語ミックス', desc: '漢字・ことば・文法・読解をバランスよく出題' },
         { mode: 'KANJI_READING', label: '漢字チャレンジ', desc: 'この学年の配当漢字だけを練習' },

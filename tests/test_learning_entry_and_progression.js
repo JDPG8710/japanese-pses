@@ -102,6 +102,14 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
       assert.ok(build.includes("createHash('sha256')") && build.includes("slice(0, 12)"), '同日中の再配信でも新しい静的資産を取得できる内容ハッシュが必要です');
     });
 
+    test('一年生かな単元では、ひらがな・カタカナ・音読を別々に選べる', () => {
+      const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+      assert.ok(html.includes("node?.id === 'KOKUGO_G1_KANA'"), '一年生かな単元専用の選択分岐が必要です');
+      ['HIRAGANA', 'KATAKANA', 'READ_ALOUD', 'ひらがな たんけん', 'カタカナ ずかん', 'おんどく おはなし'].forEach(text => {
+        assert.ok(html.includes(text), `一年生かな選択に ${text} が必要です`);
+      });
+    });
+
     test('ゲーム終了時の戻るボタンは現在の冒険マップ名を表示する', () => {
       const miniGameSource = fs.readFileSync(path.join(root, 'MiniGameSystem.js'), 'utf8');
       const currentLabelCount = (miniGameSource.match(/まなびのぼうけんマップへ戻る/g) || []).length;

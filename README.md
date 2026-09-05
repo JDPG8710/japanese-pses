@@ -54,7 +54,7 @@ node tests/test_e2e_runner.js
 
 ## Cloudflareへビルド・公開
 
-本番では静的ゲームを Cloudflare Pages（`https://manabi-pop.pages.dev`）から配信し、Pages Function が `/api/*` を Service Binding で認証・教材 API Worker へ同一オリジン転送します。教材、利用者、認証セッション、会員権、支払いイベント、通過状況、挑戦履歴、卒業証は Cloudflare D1 を唯一のクラウドデータベースとして扱います。`data/` の JSON はローカル開発と D1 インポート元としてだけ保持され、静的成果物には含めません。本番実行時は `/api/game-data/` が D1 を読み、JSON ファイルへフォールバックしません。
+本番では静的ゲームを Cloudflare Pages（`https://piko-game.com`）から配信し、Pages Function が `/api/*` を Service Binding で認証・教材 API Worker へ同一オリジン転送します。教材、利用者、認証セッション、会員権、支払いイベント、通過状況、挑戦履歴、卒業証は Cloudflare D1 を唯一のクラウドデータベースとして扱います。`data/` の JSON はローカル開発と D1 インポート元としてだけ保持され、静的成果物には含めません。本番実行時は `/api/game-data/` が D1 を読み、JSON ファイルへフォールバックしません。
 
 ```powershell
 npm install

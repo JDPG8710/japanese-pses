@@ -50,7 +50,7 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
         'learning-mode-modal', 'learning-mode-game-title', 'grade-first-mode-btn', 'game-first-mode-btn',
         'independent-game-list', 'independent-grade-list'
       ]) assert.ok(html.includes(`id="${id}"`), `${id} が必要です`);
-      assert.ok(/まなび\s*<\/span>\s*<span[^>]*>ぽっぷ！/.test(html), '入口の上部に、ひらがなのゲーム名を表示してください');
+      assert.ok(/ピコ\s*<\/span>\s*<span[^>]*>プレイ/.test(html), '入口の上部に、新しい読みやすいゲーム名を表示してください');
       assert.ok(css.includes('@keyframes pses-brand-float'), 'ゲーム名の軽量アニメーションが必要です');
       assert.ok(css.includes('@media (prefers-reduced-motion: reduce)'), '動きを減らす端末設定にも対応してください');
       assert.ok(html.includes('showLearningModeModal();'), '初期化後に入口モーダルを表示する必要があります');
@@ -144,7 +144,7 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
 
     test('新しいゲーム名を1日1回、5秒表示し、閉じるボタンを備える', () => {
       const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-      for (const token of ['まなびぽっぷ！', 'daily-brand-splash', 'daily-brand-close', 'MANABI_POP_DAILY_SPLASH_V1']) {
+      for (const token of ['Piko Play', 'daily-brand-splash', 'daily-brand-close', 'MANABI_POP_DAILY_SPLASH_V1']) {
         assert.ok(html.includes(token), `${token} が必要です`);
       }
       assert.ok(html.includes('let brandSecondsLeft = 5'));

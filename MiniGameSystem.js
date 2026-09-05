@@ -3874,15 +3874,15 @@ export function getEnglishQuestionBank(mode = 'BASIC') {
     ['answer the teacher', '先生に答える'], ['listen to music', '音楽を聞く'], ['make a calendar', 'カレンダーを作る'], ['check the time', '時刻を確認する'],
     ['buy a notebook', 'ノートを買う'], ['carry an umbrella', '傘を持つ'], ['meet my friend', '友達に会う'], ['learn a new word', '新しい単語を覚える'],
     ['feed the fish', '魚にえさをやる'], ['wash my hands', '手を洗う'], ['set the table', '食卓を整える'], ['read the map', '地図を読む'],
-    ['join the game', '試合に参加する'], ['share my idea', '考えを伝える'], ['plant a seed', '種を植える'], ['write my name', '名前を書く']
+    ['join the game', 'ゲームに参加する'], ['share my idea', '考えを伝える'], ['plant a seed', '種を植える'], ['write my name', '名前を書く']
   ];
   const basicFrames = [
-    ['I like to {action}.', '私は{action}ことが好きです。'], ['I want to {action}.', '私は{action}たいです。'], ['I can {action}.', '私は{action}ことができます。'],
-    ['Let us {action}.', 'いっしょに{action}ましょう。'], ['We often {action}.', '私たちはよく{action}ます。']
+    ['I like to {action}.', '私は{action}ことが好きです。'], ['I want a chance to {action}.', '私は{action}機会がほしいです。'], ['I can {action}.', '私は{action}ことができます。'],
+    ['It is fun to {action}.', '{action}ことは楽しいです。'], ['We have time to {action}.', '私たちには{action}時間があります。']
   ];
   const eiken3Actions = [
     ['study for the test', 'テストに向けて勉強する'], ['visit the history museum', '歴史博物館を訪れる'], ['help an elderly neighbor', '近所の高齢者を手伝う'], ['join the science club', '科学部に入る'],
-    ['finish the report', '報告書を仕上げる'], ['practice for the concert', '演奏会に向けて練習する'], ['take an earlier train', '早い電車に乗る'], ['prepare a healthy lunch', '健康的な昼食を用意する'],
+    ['finish the report', '報告書を仕上げる'], ['practice for the concert', '演奏会に向けて練習する'], ['take an earlier train', 'いつもより早い電車に乗る'], ['prepare a healthy lunch', '健康的な昼食を用意する'],
     ['ask the teacher for advice', '先生に助言を求める'], ['read the local news', '地域のニュースを読む'], ['protect wild animals', '野生動物を守る'], ['complete the homework before dinner', '夕食前に宿題を終える'],
     ['meet my cousin at the station', '駅でいとこに会う'], ['learn about Japanese history', '日本の歴史を学ぶ'], ['bring an umbrella tomorrow', '明日傘を持ってくる'], ['write a thank-you letter', 'お礼の手紙を書く'],
     ['watch the final game', '決勝戦を見る'], ['prepare for the school trip', '修学旅行の準備をする'], ['share my opinion clearly', '自分の意見を明確に伝える'], ['improve my English pronunciation', '英語の発音を改善する'],
@@ -3893,8 +3893,8 @@ export function getEnglishQuestionBank(mode = 'BASIC') {
     ['follow the safety instructions', '安全の指示に従う'], ['introduce my hometown', '自分の故郷を紹介する'], ['organize the sports equipment', '運動用具を整理する'], ['practice speaking slowly', 'ゆっくり話す練習をする']
   ];
   const eiken3Frames = [
-    ['I decided to {action}.', '私は{action}ことにしました。'], ['We plan to {action}.', '私たちは{action}予定です。'], ['I tried to {action}.', '私は{action}ようとしました。'],
-    ['We need to {action}.', '私たちは{action}必要があります。'], ['I hope to {action}.', '私は{action}たいと思っています。']
+    ['I decided to {action}.', '私は{action}ことにしました。'], ['We plan to {action}.', '私たちは{action}予定です。'], ['I had a chance to {action}.', '私は{action}機会がありました。'],
+    ['We need time to {action}.', '私たちには{action}時間が必要です。'], ['Our goal is to {action}.', '私たちの目標は{action}ことです。']
   ];
   const eiken2Actions = [
     ['reduce plastic waste', 'プラスチックごみを減らす'], ['improve public transportation', '公共交通を改善する'], ['protect local forests', '地域の森林を守る'], ['support elderly residents', '高齢の住民を支援する'],
@@ -3904,9 +3904,9 @@ export function getEnglishQuestionBank(mode = 'BASIC') {
     ['respond to climate change', '気候変動に対応する'], ['build safer cities', 'より安全な都市を築く'], ['promote international cooperation', '国際協力を促進する'], ['use natural resources responsibly', '天然資源を責任をもって利用する'],
     ['prevent food waste', '食品ロスを防ぐ'], ['protect personal information', '個人情報を守る'], ['provide equal opportunities', '平等な機会を提供する'], ['strengthen local businesses', '地域企業を強化する'],
     ['improve working conditions', '労働条件を改善する'], ['expand renewable energy', '再生可能エネルギーを拡大する'], ['support scientific research', '科学研究を支援する'], ['maintain public facilities', '公共施設を維持する'],
-    ['restore damaged ecosystems', '損なわれた生態系を回復する'], ['increase media literacy', 'メディアリテラシーを高める'], ['reduce economic inequality', '経済格差を縮小する'], ['prepare students for future careers', '生徒の将来の職業に備える'],
+    ['restore damaged ecosystems', '損なわれた生態系を回復する'], ['increase media literacy', 'メディアリテラシーを高める'], ['reduce economic inequality', '経済格差を縮小する'], ['prepare students for future careers', '生徒が将来の進路に備えられるようにする'],
     ['make tourism more sustainable', '観光をより持続可能にする'], ['improve emergency communication', '緊急時の情報伝達を改善する'], ['protect endangered species', '絶滅危惧種を守る'], ['encourage civic participation', '市民参加を促す'],
-    ['design inclusive public spaces', '誰もが使いやすい公共空間を設計する'], ['improve access to medical care', '医療へのアクセスを改善する'], ['support responsible consumption', '責任ある消費を支援する'], ['preserve clean water sources', 'きれいな水源を守る']
+    ['design inclusive public spaces', '誰もが使いやすい公共空間を設計する'], ['improve access to medical care', '医療を受けやすくする'], ['support responsible consumption', '責任ある消費を支援する'], ['preserve clean water sources', 'きれいな水源を守る']
   ];
   const eiken2Frames = [
     ['The project aims to {action}.', 'その計画は{action}ことを目指しています。'], ['Local leaders have proposed a plan to {action}.', '地域の指導者は{action}計画を提案しました。'],

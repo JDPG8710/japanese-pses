@@ -13,6 +13,9 @@ secrets/
 .agents/sentinel/
 .agents/teamwork_preview_*/
 .agents/victory_auditor/
+.agents/*_1/
+.agents/explorer_dim*/
+.agents/worker_*/
 
 # 自動生成されるテスト結果
 tests/test_results.json
@@ -23,3 +26,8 @@ test_b64.txt
 scripts/check.txt
 scripts/test.txt
 scripts/*.py
+
+# ローカルで生成する紹介動画・音声の作業ファイル
+video_gen/
+piko_game_intro.mp4
+test_tts.mp3

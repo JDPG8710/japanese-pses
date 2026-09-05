@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://manabi-pop.pages.dev/sitemap.xml
+Sitemap: https://piko-game.com/sitemap.xml

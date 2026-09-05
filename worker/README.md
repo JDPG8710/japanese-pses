@@ -1,5 +1,15 @@
 # Cloudflare Pages／Worker／D1 配備手順
 
+## World Play（2026-09-05追加）
+
+`/world.html` に8つの論理ゲームと中・日・英UIを追加。`migrations/0005_world_games.sql` は公開代号と認証済み挑戦を保存し、既存DBは `0008_world_games_logic_lab.sql` が旧得点を保持したまま新ゲームIDへ移行します。`GET /api/world/leaderboard?game=circuit&level=1` は匿名公開、`POST /api/world/start` と `POST /api/world/answer` は既存認証必須です。公開データはランダム代号・順位・スコアだけです。
+
+ローカル検証：`node tests/test_world_games.mjs`（16,000問の生成・解答・不正解拒否とMiniflareの隔離D1）。プレビュー：`node scripts/build.mjs` の後 `node scripts/preview-world.mjs`、起動時に表示されたローカルURLを開きます。プレビューは架空のログインやランキングを作りません。既存の `node tests/test_e2e_runner.js` も実行してください。
+
+本番反映時は既存手順でD1マイグレーション→Worker→Pagesの順に配備し、新しい公開ランキングGET、既存Googleログイン、10問のサーバー採点を確認してください。旧版へ戻す場合も追加テーブルは削除せず記録を残します。
+
+任意スコアの直接書き込みとリプレイは防止しますが、クライアントに公開するパズルを自動解答するボットまで検出する仕組みではありません。賞金や実物報酬はありません。
+
 Cloudflare Pages はゲームの静的フロントエンドを配信し、Pages Function の Service Binding が `/api/*` を `japanese-pses` Worker へ同一オリジンで転送します。Worker は Turnstile付きGoogle認証、教材配信、利用者プロファイル、ステージ通過、挑戦履歴、卒業証、広告なしメンバー購入を Cloudflare D1 の一つの認証境界で提供します。未ログインでもゲームは時間制限なく利用でき、ログインはクラウド保存と広告なしメンバー購入に使います。IndexedDB はオフラインキャッシュであり、クラウド側の正本は D1 です。
 
 ## 1. D1 データベース
@@ -28,9 +38,9 @@ npx wrangler secret put STRIPE_WEBHOOK_SECRET
 
 ## 3. OAuth／Turnstile
 
-- Google の承認済み JavaScript 生成元：`https://manabi-pop.pages.dev`
-- Google の承認済みリダイレクト URI：`https://manabi-pop.pages.dev/api/auth/google`
-- Turnstile の許可ホスト：`manabi-pop.pages.dev`（ロールバック用に旧WorkerホストもWidget側へ残してよい）
+- Google の承認済み JavaScript 生成元：`https://piko-game.com`
+- Google の承認済みリダイレクト URI：`https://piko-game.com/api/auth/google`
+- Turnstile の許可ホスト：`piko-game.com`（移行中はロールバック用に `manabi-pop.pages.dev` も残す）
 
 ローカルホストとプライベート LAN は `Local Offline Mode` を使用し、本番の OAuth／Turnstile 状態を書き換えません。
 
@@ -43,7 +53,7 @@ npm run build
 npm run deploy
 ```
 
-`npm run deploy` はテスト、静的成果物の再構築、本番 D1 マイグレーション、教材インポート、API Worker 配備、Pages 配備を順番に実行します。公開後は `https://manabi-pop.pages.dev/api/health`、`/api/game-data/manifest.json`、Googleログイン、無料会員の広告間隔、広告なし会員、ステージ精算を確認してください。
+`npm run deploy` はテスト、静的成果物の再構築、本番 D1 マイグレーション、教材インポート、API Worker 配備、Pages 配備を順番に実行します。公開後は `https://piko-game.com/api/health`、`/api/game-data/manifest.json`、Googleログイン、無料会員の広告間隔、広告なし会員、ステージ精算を確認してください。
 
 ## 5. データ書き込み方針
 

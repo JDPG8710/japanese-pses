@@ -125,8 +125,8 @@ function register({ describe, test, assert, loadESModule }) {
     });
 
     test('CS8: homepage exposes complete crawl and share metadata', () => {
-      const canonical = 'https://manabi-pop.pages.dev/';
-      assert.match(html, /<title>まなびぽっぷ！｜小学生向け無料学習ゲーム<\/title>/);
+      const canonical = 'https://piko-game.com/';
+      assert.match(html, /<title>Piko Play｜小学生向け無料学習ゲーム<\/title>/);
       assert.match(html, /<meta name="description" content="[^"]+"\s*\/>/);
       assert.ok(html.includes(`<link rel="canonical" href="${canonical}" />`), 'Canonical URL must point to production');
       assert.ok(html.includes('<meta property="og:title"') && html.includes('<meta property="og:description"'), 'Open Graph metadata is required');
@@ -135,10 +135,13 @@ function register({ describe, test, assert, loadESModule }) {
       assert.ok(jsonLdMatch, 'SoftwareApplication JSON-LD is required');
       const structured = JSON.parse(jsonLdMatch[1]);
       const app = structured['@graph'].find(item => item['@type'] === 'SoftwareApplication');
-      assert.strictEqual(app.name, 'まなびぽっぷ！');
+      assert.strictEqual(app.name, 'Piko Play');
       assert.strictEqual(app.offers.price, '0');
       assert.strictEqual(app.url, canonical);
       assert.ok(fs.readFileSync(path.join(rootDir, 'robots.txt'), 'utf8').includes('/sitemap.xml'));
+      assert.ok(fs.existsSync(path.join(rootDir, 'privacy.html')) && fs.existsSync(path.join(rootDir, 'terms.html')), 'Public privacy and terms pages are required');
+      assert.match(html, /data-tag-for-child-directed-treatment="1"/);
+      assert.match(html, /data-tag-for-under-age-of-consent="1"/);
       assert.ok(fs.readFileSync(path.join(rootDir, 'sitemap.xml'), 'utf8').includes(`<loc>${canonical}</loc>`));
       assert.ok(fs.existsSync(path.join(rootDir, 'site.webmanifest')) && fs.existsSync(path.join(rootDir, 'favicon.svg')));
     });

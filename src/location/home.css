@@ -1,0 +1,39 @@
+html:has(body.country-entry){height:auto!important;overflow:auto!important;background:#f5f2e8!important}
+body.country-entry{margin:0!important;height:auto!important;min-height:100vh!important;overflow:auto!important;background:#f5f2e8!important;color:#263e41!important}
+body.country-entry> :not(#country-home):not(script){display:none!important}
+body:not(.country-entry) #country-home{display:none}
+#country-home{font-family:ui-rounded,'Yu Gothic',system-ui,sans-serif;max-width:1240px;margin:auto;padding:28px 40px;color:#263e41;user-select:text}
+#country-home *{box-sizing:border-box}
+#country-home [hidden]{display:none!important}
+#country-home .country-nav{display:flex;justify-content:space-between;align-items:center;gap:20px;margin-bottom:45px}
+#country-home .country-brand{font-size:26px;font-weight:900;letter-spacing:-1px;color:#244b45}
+#country-home .country-brand b{color:#b25c3d}
+#country-home .language-badge{border:1px solid #d3d9ce;border-radius:25px;padding:9px 16px;font-size:14px;background:#fcfaf4}
+#country-home .country-layout{display:grid;grid-template-columns:.9fr 1.2fr;gap:18px;align-items:center;min-height:530px}
+#country-home .country-kicker{font-size:11px;color:#6c836d;letter-spacing:3px;font-weight:900;margin:0 0 20px}
+#country-home h1{font-size:clamp(32px,4.7vw,60px);line-height:1.16;letter-spacing:-1.8px;font-weight:850;margin:0 0 22px;text-wrap:balance}
+#country-home .country-intro{font-size:16px;line-height:1.9;color:#667570;max-width:430px;margin-bottom:24px}
+#country-home .country-status{font-size:13px;line-height:1.6;color:#7b806c;min-height:42px;margin:14px 0}
+#country-home select,#country-home button,#country-home .country-start{font:inherit;min-height:56px;border:1px solid #ccd6c9;border-radius:15px;padding:13px 18px;color:#294942;background:#fffdf8}
+#country-home button{cursor:pointer}#country-home button:hover{background:#e7ecdd}
+#country-home select{width:100%;margin:8px 0 14px;font-weight:700}
+#country-home label{display:block;font-size:13px;font-weight:750}
+#country-home .country-start{display:block;text-align:center;text-decoration:none;background:#2c6658;color:#fff;border-color:#2c6658;font-weight:800;transition:background .15s}
+#country-home .country-start:hover{background:#1b5045}
+#country-home .country-start[aria-disabled=true]{opacity:.5;pointer-events:none}
+#country-home .country-form{max-width:390px}
+#country-home .country-japanese{display:inline-block;margin-top:18px;text-decoration:underline;text-underline-offset:4px;font-size:13px}
+#country-home .country-globe{position:relative;min-width:0;background:radial-gradient(ellipse at 50% 47%,#d7e3cc77,transparent 68%);border-radius:50%}
+#country-home canvas{width:100%;aspect-ratio:1;display:block;touch-action:none;cursor:grab;max-height:610px}
+#country-home canvas:active{cursor:grabbing}
+#country-home .globe-tools{display:flex;gap:12px;justify-content:center;align-items:center;margin-top:-12px}
+#country-home .globe-tools button{padding:10px;width:56px;border-radius:50%;background:#ffffffa6;font-size:23px}
+#country-home .globe-hint{font-size:12px;text-align:center;line-height:1.8;color:#718073;margin:18px 30px}
+#country-home .country-footer{border-top:1px solid #dce0d4;margin-top:30px;padding-top:24px;display:flex;justify-content:space-between;gap:20px;font-size:12px;line-height:1.8;color:#7b8477}
+#country-home .country-footer a{text-decoration:underline;text-underline-offset:3px}
+#country-home .country-chiprow{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
+#country-home .country-chiprow button{min-height:44px;font-size:12px;padding:8px 12px;background:transparent;border-radius:25px}
+#country-home .country-chiprow button[aria-pressed=true]{background:#e0e9d5;border-color:#688b66}
+#country-home :focus-visible{outline:3px solid #bb7536;outline-offset:4px}
+@media(max-width:760px){#country-home{padding:20px}#country-home .country-nav{margin-bottom:20px}#country-home .country-layout{grid-template-columns:1fr;gap:0}#country-home .country-copy{text-align:center}#country-home h1{font-size:36px;letter-spacing:-1px;margin-bottom:12px}#country-home .country-intro{margin:0 auto 16px;font-size:14px}#country-home .country-form{margin:auto;max-width:460px;text-align:left}#country-home .country-globe{grid-row:2;width:100%;max-width:450px;margin:12px auto 0}#country-home .country-chiprow{justify-content:center}#country-home .country-footer{font-size:11px;flex-direction:column;gap:8px}#country-home .country-status{margin:10px 0;min-height:0}#country-home .country-kicker{margin-bottom:12px}#country-home .country-brand{font-size:23px}}
+@media(prefers-reduced-motion:reduce){#country-home *{transition:none!important}}

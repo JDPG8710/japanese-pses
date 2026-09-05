@@ -1244,7 +1244,7 @@
       "subject": "外国語・英語",
       "grade": 4,
       "name": "4年 アルファベット小文字・時刻・曜日",
-      "desc": "Alphabet a-z 小文字、曜日 (Sunday-Saturday)、時刻 (What time is it? It is 3 oclock)。",
+      "desc": "Alphabet a-z 小文字、曜日 (Sunday-Saturday)、時刻 (What time is it? It is three o'clock.)。",
       "bloomDepth": 1.4,
       "prerequisites": [
         "EIGO_G3_GREETING_COLOR"
@@ -1281,8 +1281,8 @@
             "english": "Monday"
           },
           {
-            "japanese": "いま 3時です",
-            "english": "It is 3:00"
+            "japanese": "今は3時です。",
+            "english": "It is three o'clock."
           },
           {
             "japanese": "えんぴつ",
@@ -1334,20 +1334,20 @@
         "randomization": "WITHOUT_REPLACEMENT",
         "pairs": [
           {
-            "japanese": "ぼくは算数が得意です",
-            "english": "I am good at Math"
+            "japanese": "私は算数が得意です。",
+            "english": "I am good at math."
           },
           {
-            "japanese": "朝ごはんを 7時に食べます",
-            "english": "I eat breakfast at 7:00"
+            "japanese": "朝7時に朝食を食べます。",
+            "english": "I eat breakfast at 7:00."
           },
           {
             "japanese": "いくらですか？",
             "english": "How much is it?"
           },
           {
-            "japanese": "理科が好きです",
-            "english": "I like Science"
+            "japanese": "理科が好きです。",
+            "english": "I like science."
           }
         ]
       },
@@ -1391,20 +1391,20 @@
         "randomization": "WITHOUT_REPLACEMENT",
         "pairs": [
           {
-            "japanese": "宇宙飛行士になりたい",
-            "english": "I want to be an astronaut"
+            "japanese": "宇宙飛行士になりたいです。",
+            "english": "I want to be an astronaut."
           },
           {
-            "japanese": "夏休みを楽しみました",
-            "english": "I enjoyed summer vacation"
+            "japanese": "夏休みを楽しみました。",
+            "english": "I enjoyed my summer vacation."
           },
           {
-            "japanese": "日本には折り紙があります",
-            "english": "We have origami in Japan"
+            "japanese": "折り紙は日本の伝統的な芸術です。",
+            "english": "Origami is a traditional Japanese art."
           },
           {
-            "japanese": "医者になりたい",
-            "english": "I want to be a doctor"
+            "japanese": "医者になりたいです。",
+            "english": "I want to be a doctor."
           }
         ]
       },

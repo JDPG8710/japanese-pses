@@ -14,7 +14,7 @@ await rm(output, { recursive: true, force: true });
 await mkdir(output, { recursive: true });
 
 const publicRootFiles = new Set([
-  'index.html', 'robots.txt', 'sitemap.xml', 'favicon.svg', 'site.webmanifest',
+  'index.html', 'world.html', 'grades.html', 'learn.html', 'privacy.html', 'terms.html', 'robots.txt', 'sitemap.xml', 'ads.txt', 'favicon.svg', 'site.webmanifest',
   '_routes.json', '_headers'
 ]);
 const rootFiles = (await readdir(root, { withFileTypes: true }))
@@ -36,7 +36,7 @@ for (const file of releaseFiles) {
   releaseHash.update(await readFile(file));
 }
 const releaseId = releaseHash.digest('hex').slice(0, 12);
-const versionedFiles = releaseFiles.filter(file => ['.html', '.js'].includes(path.extname(file)));
+const versionedFiles = releaseFiles.filter(file => ['.html', '.js', '.mjs'].includes(path.extname(file)));
 for (const file of versionedFiles) {
   const source = await readFile(file, 'utf8');
   await writeFile(file, source.replace(/\?v=[A-Za-z0-9._-]+/g, `?v=${releaseId}`), 'utf8');

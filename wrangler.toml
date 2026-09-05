@@ -1,13 +1,14 @@
 name = "japanese-pses"
 main = "worker/index.js"
+workers_dev = false
 compatibility_date = "2026-08-24"
 compatibility_flags = ["nodejs_compat"]
 
 [vars]
-APP_ORIGIN = "https://manabi-pop.pages.dev"
-API_ORIGIN = "https://manabi-pop.pages.dev"
+APP_ORIGIN = "https://piko-game.com"
+API_ORIGIN = "https://piko-game.com"
 DEV_ORIGINS = "http://localhost:4173,http://127.0.0.1:4173"
-TURNSTILE_HOSTNAMES = "manabi-pop.pages.dev"
+TURNSTILE_HOSTNAMES = "piko-game.com,manabi-pop.pages.dev"
 GOOGLE_CLIENT_ID = "406705820118-aa4p2gkig81k4fn9ofh4igs0v6lku7ep.apps.googleusercontent.com"
 APPLE_CLIENT_ID = "REPLACE_WITH_APPLE_SERVICES_ID"
 # Google H5 Games Ads の公開Publisher ID（例: ca-pub-123...）は取得後に設定します。

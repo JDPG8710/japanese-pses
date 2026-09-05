@@ -1,3 +1,4 @@
+import {authText,localizeAuth} from './AuthText.js';
 export class LoginModal extends EventTarget {
   constructor({ siteKey }) {
     super();
@@ -14,7 +15,7 @@ export class LoginModal extends EventTarget {
     this.element.className = 'fixed inset-0 z-[100] hidden items-center justify-center bg-slate-950/95 p-4 backdrop-blur-xl';
     this.element.innerHTML = `
       <section role="dialog" aria-modal="true" aria-labelledby="auth-title" class="w-full max-w-md rounded-3xl border border-indigo-300/30 bg-slate-900 p-6 text-white shadow-2xl sm:p-8">
-        <p class="mb-2 text-xs font-bold tracking-[0.2em] text-indigo-300">まなびぽっぷ！ アカウント</p>
+        <p class="mb-2 text-xs font-bold tracking-[0.2em] text-indigo-300">Piko Play アカウント</p>
         <h1 id="auth-title" class="text-2xl font-black">学習きろくを保存しよう</h1>
         <p id="auth-message" class="mt-3 text-sm leading-6 text-slate-200">ゲームはログインなしでも遊べます。Googleでログインすると、別の端末でも学習きろくを引き継げます。</p>
         <div id="auth-turnstile" class="mt-5 flex min-h-[70px] justify-center" aria-label="安全チェック"></div>
@@ -27,11 +28,13 @@ export class LoginModal extends EventTarget {
         <p class="mt-5 text-xs leading-5 text-slate-400">ログイン時だけ、安全のために人間による操作かを確認します。ゲームを始めるための時間制限はありません。</p>
       </section>`;
     document.body.appendChild(this.element);
+    localizeAuth(this.element);
     this.element.querySelector('[data-provider="google"]').addEventListener('click', () => this.submit('google'));
     this.element.querySelector('[data-action="close"]').addEventListener('click', () => this.hide());
   }
 
   async show({ message } = {}) {
+    localizeAuth(this.element);
     this.element.classList.remove('hidden');
     this.element.classList.add('flex');
     document.body.style.overflow = 'hidden';
@@ -59,13 +62,13 @@ export class LoginModal extends EventTarget {
 
   setVerificationStatus(message, tone = 'pending') {
     const status = this.element.querySelector('#auth-verification-status');
-    status.textContent = message;
+    status.textContent = authText(message);
     status.className = `mt-2 text-center text-sm font-bold ${tone === 'ready' ? 'text-emerald-300' : tone === 'error' ? 'text-rose-200' : 'text-amber-200'}`;
   }
 
   showError(message, { reset = true } = {}) {
     const box = this.element.querySelector('#auth-error');
-    box.textContent = message;
+    box.textContent = authText(message);
     box.classList.remove('hidden');
     if (reset) this.resetChallenge();
   }
@@ -86,6 +89,7 @@ export class LoginModal extends EventTarget {
       this.setVerificationStatus('上の安全チェックを終えてね。');
       this.widgetId = window.turnstile.render(this.element.querySelector('#auth-turnstile'), {
         sitekey: this.siteKey,
+        language: document.documentElement.lang === 'zh' ? 'zh-CN' : document.documentElement.lang === 'en' ? 'en' : 'ja',
         action: 'access',
         theme: 'dark',
         appearance: 'always',

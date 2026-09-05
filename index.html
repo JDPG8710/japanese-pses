@@ -14,24 +14,25 @@
     })();
   </script>
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8738651569097071"
-    crossorigin="anonymous"></script>
-  <title>まなびぽっぷ！｜小学生向け無料学習ゲーム</title>
+    data-ad-client="ca-pub-8738651569097071" data-tag-for-child-directed-treatment="1"
+    data-tag-for-under-age-of-consent="1" data-ad-frequency-hint="300s" crossorigin="anonymous"></script>
+  <title>Piko Play｜小学生向け無料学習ゲーム</title>
   <meta name="description" content="小学1年生から6年生までの国語・算数・理科・社会・生活・英語を、かわいい冒険マップのゲームで楽しく学べる無料オンライン教材です。" />
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
   <meta name="theme-color" content="#70cdf8" />
-  <meta name="application-name" content="まなびぽっぷ！" />
-  <link rel="canonical" href="https://manabi-pop.pages.dev/" />
+  <meta name="application-name" content="Piko Play" />
+  <link rel="canonical" href="https://piko-game.com/" />
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   <link rel="manifest" href="/site.webmanifest" />
   <link rel="preload" as="image" href="/assets/maps/manabi-adventure-map.webp" type="image/webp" fetchpriority="high" />
   <meta property="og:type" content="website" />
-  <meta property="og:site_name" content="まなびぽっぷ！" />
+  <meta property="og:site_name" content="Piko Play" />
   <meta property="og:locale" content="ja_JP" />
-  <meta property="og:title" content="まなびぽっぷ！｜小学生向け無料学習ゲーム" />
+  <meta property="og:title" content="Piko Play｜小学生向け無料学習ゲーム" />
   <meta property="og:description" content="国語・算数・理科・社会・生活・英語を、かわいい冒険マップで楽しく学ぼう。小学1〜6年生に対応。" />
-  <meta property="og:url" content="https://manabi-pop.pages.dev/" />
+  <meta property="og:url" content="https://piko-game.com/" />
   <meta name="twitter:card" content="summary" />
-  <meta name="twitter:title" content="まなびぽっぷ！｜小学生向け無料学習ゲーム" />
+  <meta name="twitter:title" content="Piko Play｜小学生向け無料学習ゲーム" />
   <meta name="twitter:description" content="小学1〜6年生の6教科を、かわいい冒険マップで楽しく学べるオンライン教材です。" />
   <script type="application/ld+json">
     {
@@ -39,17 +40,17 @@
       "@graph": [
         {
           "@type": "WebSite",
-          "@id": "https://manabi-pop.pages.dev/#website",
-          "url": "https://manabi-pop.pages.dev/",
-          "name": "まなびぽっぷ！",
+          "@id": "https://piko-game.com/#website",
+          "url": "https://piko-game.com/",
+          "name": "Piko Play",
           "alternateName": "小学生向け学習ゲーム",
           "inLanguage": "ja"
         },
         {
           "@type": "SoftwareApplication",
-          "@id": "https://manabi-pop.pages.dev/#app",
-          "name": "まなびぽっぷ！",
-          "url": "https://manabi-pop.pages.dev/",
+          "@id": "https://piko-game.com/#app",
+          "name": "Piko Play",
+          "url": "https://piko-game.com/",
           "description": "小学1年生から6年生までの国語・算数・理科・社会・生活・英語を、かわいい冒険マップで学べるオンライン教材です。",
           "applicationCategory": "GameApplication",
           "applicationSubCategory": "Educational game",
@@ -67,6 +68,7 @@
   </script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="css/style.css?v=20260830.5" />
+  <link rel="stylesheet" href="src/location/home.css?v=1" />
   <style>
     body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #8bd8ff; }
     #canvas-container { position: absolute; inset: 0; touch-action: none; z-index: 1; }
@@ -84,13 +86,14 @@
     button ruby rt, .glass-panel ruby rt { font-size: 0.4em; }
   </style>
 </head>
-<body class="text-white font-sans select-none overflow-hidden">
+<body class="text-white font-sans select-none overflow-hidden country-entry">
+  <div id="country-home"><p>Welcome · ようこそ · 欢迎</p><noscript>Please enable JavaScript to choose a country and play.</noscript></div>
   <div id="daily-brand-splash" class="daily-brand-splash" role="dialog" aria-modal="true" aria-labelledby="daily-brand-title">
     <button id="daily-brand-close" type="button" class="daily-brand-close" aria-label="閉じる">✕</button>
     <div class="daily-brand-card">
       <div class="daily-brand-mascots" aria-hidden="true"><span>🐣</span><span>🌈</span><span>🐰</span></div>
       <p class="daily-brand-kicker">まいにち ひとつ、できた！を ふやそう</p>
-      <h1 id="daily-brand-title" class="daily-brand-title">まなびぽっぷ！</h1>
+      <h1 id="daily-brand-title" class="daily-brand-title">Piko Play</h1>
       <p class="daily-brand-subtitle">あそんで まなんで だいぼうけん</p>
       <p id="daily-brand-countdown" class="daily-brand-countdown" aria-live="polite">5びょうごに はじまるよ</p>
     </div>
@@ -111,7 +114,7 @@
       </button>
 
       <div>
-        <h1 class="text-xs md:text-sm font-black tracking-wider text-white hidden sm:block">まなびぽっぷ！</h1>
+        <h1 class="text-xs md:text-sm font-black tracking-wider text-white hidden sm:block">Piko Play</h1>
         <p class="text-[10px] text-slate-400 hidden sm:block">小学1〜6年生の6教科を楽しく学ぼう</p>
       </div>
     </div>
@@ -134,6 +137,7 @@
       </button>
 
       <!-- 音声ミュート切り替えボタン (Mute Toggle) -->
+      <a href="world.html" class="glass-panel px-3 py-2 rounded-full text-xs font-bold text-cyan-100 pointer-events-auto" aria-label="せかいのゲームとランキング">🌍 <span class="hidden md:inline">せかいのゲーム</span></a>
       <button id="audio-mute-btn" class="glass-panel px-3.5 py-1.5 rounded-full hover:bg-slate-800 text-xs font-bold text-slate-200 flex items-center gap-1.5 transition border border-indigo-500/30 shadow-lg cursor-pointer" title="音声ミュート切替">
         <span id="audio-mute-icon" class="text-sm">🔊</span>
         <span id="audio-mute-label" class="hidden sm:inline">音量オン</span>
@@ -297,7 +301,7 @@
       <section id="profile-membership-panel" class="mb-4 rounded-2xl border border-fuchsia-400/35 bg-fuchsia-500/10 p-4" aria-labelledby="profile-membership-title">
         <div class="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <p class="text-[10px] font-black tracking-[0.2em] text-fuchsia-300">まなびぽっぷ！メンバー</p>
+            <p class="text-[10px] font-black tracking-[0.2em] text-fuchsia-300">Piko Playメンバー</p>
             <h3 id="profile-membership-title" class="mt-1 text-base font-black text-white">無料でプレイ中</h3>
             <p id="profile-membership-description" class="mt-1 max-w-lg text-xs leading-5 text-slate-200">実際にゲームで遊んだ時間が5分たつと、次のステージへ進む前などに広告が表示されます。</p>
           </div>
@@ -336,12 +340,12 @@
   <!-- 最初に選ぶ学習入口モード。プロフィール入力は後から行える。 -->
   <div id="learning-mode-modal" class="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/95 backdrop-blur-xl p-4 hidden select-none">
     <div class="relative w-full max-w-3xl max-h-[92vh] overflow-y-auto custom-scroll rounded-3xl border border-indigo-400/40 bg-slate-900 p-6 sm:p-8 shadow-2xl">
-      <div class="pses-game-brand-shell" aria-label="まなびぽっぷ！">
+      <div class="pses-game-brand-shell" aria-label="Piko Play">
         <span class="pses-game-orbit pses-game-orbit-one" aria-hidden="true"></span>
         <span class="pses-game-orbit pses-game-orbit-two" aria-hidden="true"></span>
         <h1 id="learning-mode-game-title" class="pses-game-brand">
-          <span class="pses-game-brand-primary">まなび</span>
-          <span class="pses-game-brand-secondary">ぽっぷ！</span>
+          <span class="pses-game-brand-primary">ピコ</span>
+          <span class="pses-game-brand-secondary">プレイ</span>
         </h1>
         <span class="pses-game-star pses-game-star-one" aria-hidden="true">★</span>
         <span class="pses-game-star pses-game-star-two" aria-hidden="true">✦</span>
@@ -378,8 +382,8 @@
         <div id="independent-grade-list" class="grid grid-cols-2 sm:grid-cols-3 gap-3"></div>
       </div>
 
-      <section class="mt-7 rounded-2xl border border-white/10 bg-slate-950/45 p-4 text-left text-xs leading-6 text-slate-300" aria-label="まなびぽっぷ！について">
-        <h2 class="text-sm font-black text-white">まなびぽっぷ！で学べること</h2>
+      <section class="mt-7 rounded-2xl border border-white/10 bg-slate-950/45 p-4 text-left text-xs leading-6 text-slate-300" aria-label="Piko Playについて">
+        <h2 class="text-sm font-black text-white">Piko Playで学べること</h2>
         <p class="mt-1">小学1年生から6年生までの国語・算数・理科・社会・生活・英語を、漢字、部首、計算、実験、地図、英語読解などのゲームで楽しく練習できます。</p>
       </section>
     </div>
@@ -389,7 +393,7 @@
   <div id="graduation-modal" class="fixed inset-0 z-[90] hidden items-center justify-center bg-slate-950/95 p-4 backdrop-blur-xl">
     <div class="w-full max-w-2xl rounded-[2rem] border-4 border-amber-300 bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 p-3 shadow-2xl shadow-amber-500/30">
       <div class="rounded-[1.5rem] border border-amber-300/60 p-6 text-center sm:p-10">
-        <p class="text-4xl">🎓</p><p class="mt-3 text-xs font-bold tracking-[0.2em] text-amber-300">まなびぽっぷ！</p>
+        <p class="text-4xl">🎓</p><p class="mt-3 text-xs font-bold tracking-[0.2em] text-amber-300">Piko Play</p>
         <h2 class="mt-3 text-3xl font-black text-white">小学校課程修了証</h2>
         <p id="graduation-learner-name" class="mt-6 text-2xl font-bold text-amber-200"></p>
         <p class="mt-3 text-sm leading-7 text-slate-200">1年生から6年生までの全教科・全関門を修了し、確かな学びと挑戦する力を身につけたことを証明します。</p>
@@ -567,6 +571,9 @@
     import { StorageAdapter } from './src/storage/StorageAdapter.js';
     import { DEFAULT_LEARNER_NAME, LearnerProfileModal, isLearnerProfileComplete, learnerGenderLabel, normalizeLearnerProfile } from './src/profile/LearnerProfile.js?v=5';
     import { calculateGradeProgress, createGraduationCertificate, ELEMENTARY_GRADUATION_ACHIEVEMENT_ID } from './ProgressionSystem.js';
+    import { showCountryHome } from './src/location/CountryHome.mjs?v=1';
+
+    await showCountryHome();
 
     const BRAND_SPLASH_STORAGE_KEY = 'MANABI_POP_DAILY_SPLASH_V1';
     const LEGACY_DEFAULT_LEARNER_NAMES = new Set([DEFAULT_LEARNER_NAME, 'ゲスト', '学習者', 'ひなた', 'ローカル学習者']);

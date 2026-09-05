@@ -96,7 +96,17 @@ try {
   const sqlPath = path.join(temporaryDirectory, 'seed-game-data.sql');
   await writeFile(sqlPath, `${statements.join('\n')}\n`, 'utf8');
   const wranglerCli = path.join(root, 'node_modules', 'wrangler', 'bin', 'wrangler.js');
-  const result = spawnSync(process.execPath, [wranglerCli, 'd1', 'execute', databaseName, target, '--file', sqlPath], {
+  const result = spawnSync(process.execPath, [
+    wranglerCli,
+    'd1',
+    'execute',
+    databaseName,
+    target,
+    '--config',
+    path.join(root, 'wrangler.toml'),
+    '--file',
+    sqlPath
+  ], {
     cwd: root,
     encoding: 'utf8',
     maxBuffer: 50 * 1024 * 1024,

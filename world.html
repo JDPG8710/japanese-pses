@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#f7f4eb">
+  <meta name="turnstile-site-key" content="0x4AAAAAAEZrRJQcMv2tk9IP">
+  <title>World Play · Piko Play</title>
+  <link rel="icon" href="favicon.svg">
+  <link rel="stylesheet" href="src/world/world.css?v=1">
+  <link rel="stylesheet" href="src/world/quest-adventure.css?v=1">
+</head>
+<body>
+  <header class="topbar">
+    <a href="index.html" class="brand">✳ <span>Piko <span class="brand-pop">Play</span></span></a>
+    <div class="top-actions"><a id="grade-entry-link" class="pill" href="grades.html">School year</a><button id="sound-toggle" type="button" aria-pressed="false">🔊 Sound</button><label><span class="sr-only">Language / 语言 / ことば</span><select id="locale"><option value="ja">日本語</option><option value="en">English</option><option value="zh">中文</option></select></label><button id="login" type="button">ログイン</button></div>
+  </header>
+  <main id="app"></main>
+  <footer>PIKO PLAY · <span id="footer-text"></span> · <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a></footer>
+  <script type="module" src="src/world/WorldPlay.mjs?v=3"></script>
+</body>
+</html>

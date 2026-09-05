@@ -147,6 +147,7 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
       assert.ok(config.includes('binding = "DB"'));
       assert.ok(config.includes('database_name = "japanese-pses-production"'));
       assert.ok(config.includes('migrations_dir = "migrations"'));
+      assert.ok(config.includes('workers_dev = false'), 'API Worker は Pages の Service Binding だけから公開してください');
       assert.ok(!config.includes('SESSION_KV'));
       assert.ok(!config.includes('GUEST_KV'));
       assert.ok(!config.includes('GAME_DATA_R2'));
@@ -155,17 +156,37 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
       assert.ok(pagesConfig.includes('"binding": "API"'));
       assert.ok(pagesConfig.includes('"service": "japanese-pses"'));
       assert.ok(pagesProxy.includes('context.env.API.fetch(context.request)'));
-      assert.ok(config.includes('APP_ORIGIN = "https://manabi-pop.pages.dev"'));
-      assert.ok(config.includes('TURNSTILE_HOSTNAMES = "manabi-pop.pages.dev"'));
+      assert.ok(config.includes('APP_ORIGIN = "https://piko-game.com"'));
+      assert.ok(config.includes('API_ORIGIN = "https://piko-game.com"'));
+      assert.ok(config.includes('TURNSTILE_HOSTNAMES = "piko-game.com,manabi-pop.pages.dev"'));
+      const packageScripts = JSON.parse(read('package.json')).scripts;
+      const dataImporter = read('scripts/import-game-data-d1.mjs');
+      assert.ok(packageScripts['db:migrate'].includes('--config wrangler.toml'));
+      assert.ok(packageScripts['db:migrate:local'].includes('--config wrangler.toml'));
+      assert.ok(dataImporter.includes("path.join(root, 'wrangler.toml')"));
       for (const secret of ['TURNSTILE_SECRET_KEY =', 'GOOGLE_CLIENT_SECRET =', 'APPLE_CLIENT_SECRET =', 'JWT_SECRET =', 'FINGERPRINT_PEPPER =', 'STRIPE_SECRET_KEY =', 'STRIPE_WEBHOOK_SECRET =']) {
         assert.ok(!config.includes(secret), `${secret} を設定ファイルへ書かないでください`);
       }
     });
 
+    test('ローカルプレビューは正式ビルドへ教材を混ぜず、日本の学年教材だけを安全に配信する', () => {
+      const preview = read('scripts/preview-world.mjs');
+      const build = read('scripts/build.mjs');
+      const loader = read('CurriculumData.js');
+      assert.ok(preview.includes("const dataRoot=path.resolve('data')"));
+      assert.ok(preview.includes("url.pathname.startsWith('/data/')"));
+      assert.ok(preview.includes("/^[a-z0-9_-]+\\.json$/i.test(name)"), '教材パスは単一の安全なJSON名だけを許可してください');
+      assert.ok(preview.includes('path.dirname(file)!==dataRoot'), '教材ディレクトリ外への移動を拒否してください');
+      assert.ok(preview.includes("readdir('migrations')"), 'ローカルD1も全マイグレーションを順番に適用してください');
+      assert.ok(!build.includes("['assets', 'css', 'data', 'js', 'src']"), '本番の静的成果物へ教材JSONを混ぜないでください');
+      assert.ok(loader.includes("fetch(localPath, { cache: 'no-store' })"));
+      assert.ok(loader.includes('安全のため空の知識グラフを返します'), '欠損時に別学年の問題へフォールバックしないでください');
+    });
+
     test('Pages API proxy はURL・Cookie・レスポンスヘッダーを変えずにWorkerへ転送する', async () => {
       const { onRequest } = loadESModule(path.join(root, 'functions/api/[[path]].js'));
-      const request = new Request('https://manabi-pop.pages.dev/api/auth/session', {
-        headers: { cookie: 'pses_session=test-token', origin: 'https://manabi-pop.pages.dev' }
+      const request = new Request('https://piko-game.com/api/auth/session', {
+        headers: { cookie: 'pses_session=test-token', origin: 'https://piko-game.com' }
       });
       let forwarded;
       const response = await onRequest({
@@ -189,10 +210,10 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
 
     test('旧Workerの画面URLはPagesへ恒久転送し、未知APIはJSON 404のままにする', async () => {
       const worker = loadESModule(path.join(root, 'worker/index.js')).default;
-      const env = { APP_ORIGIN: 'https://manabi-pop.pages.dev' };
+      const env = { APP_ORIGIN: 'https://piko-game.com' };
       const page = await worker.fetch(new Request('https://old.example.test/grade/1?from=legacy'), env, {});
       assert.equal(page.status, 308);
-      assert.equal(page.headers.get('location'), 'https://manabi-pop.pages.dev/grade/1?from=legacy');
+      assert.equal(page.headers.get('location'), 'https://piko-game.com/grade/1?from=legacy');
       const api = await worker.fetch(new Request('https://old.example.test/api/not-found'), env, {});
       assert.equal(api.status, 404);
       assert.equal((await api.json()).error, 'NOT_FOUND');

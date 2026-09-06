@@ -1,12 +1,13 @@
 {
-  "name": "Piko Play｜小学生向け学習ゲーム",
+  "name": "Piko Play｜Multilingual Learning Games",
   "short_name": "Piko Play",
-  "description": "小学1〜6年生の国語・算数・理科・社会・生活・英語を楽しく学べるゲーム",
-  "lang": "ja",
+  "description": "Free-to-start multilingual learning and logic games for primary students",
+  "lang": "en",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#8bd8ff",
   "theme_color": "#70cdf8",
+  "categories": ["education", "games", "kids"],
   "icons": [
     {
       "src": "/favicon.svg",

@@ -9,6 +9,7 @@
     "test:country": "node tests/test_country_home.mjs",
     "test:grades": "node tests/test_grade_paths.mjs && node tests/test_grade_journey.mjs",
     "test:foundations": "node tests/test_foundations.mjs && node tests/test_foundation_api.mjs",
+    "test:seo": "node tests/test_seo.mjs",
     "build": "node scripts/build.mjs",
     "db:migrate:local": "wrangler d1 migrations apply japanese-pses-production --local --config wrangler.toml",
     "db:migrate": "wrangler d1 migrations apply japanese-pses-production --remote --config wrangler.toml",

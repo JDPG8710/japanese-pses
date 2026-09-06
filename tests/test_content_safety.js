@@ -126,7 +126,7 @@ function register({ describe, test, assert, loadESModule }) {
 
     test('CS8: homepage exposes complete crawl and share metadata', () => {
       const canonical = 'https://piko-game.com/';
-      assert.match(html, /<title>Piko Play｜小学生向け無料学習ゲーム<\/title>/);
+      assert.match(html, /<title>Piko Play \| Multilingual Learning Games for Primary Students<\/title>/);
       assert.match(html, /<meta name="description" content="[^"]+"\s*\/>/);
       assert.ok(html.includes(`<link rel="canonical" href="${canonical}" />`), 'Canonical URL must point to production');
       assert.ok(html.includes('<meta property="og:title"') && html.includes('<meta property="og:description"'), 'Open Graph metadata is required');

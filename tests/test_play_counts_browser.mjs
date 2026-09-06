@@ -43,5 +43,19 @@ try{
   await page.waitForFunction(()=>document.querySelector('[data-play-count="lesson:add20"]')?.textContent.includes('次游玩'));
   assert.ok(counts['lesson:add20']>0);assert.deepEqual(errors,[]);await page.close();
  }
- console.log(`${channel}: play counters visible, K/M compact, same-session repeat, guest sharing, no tutorial/home double counting and mobile layout passed.`);
+ const initial=counts['world:robot'],pages=[];
+ for(const [index,locale] of ['zh','ja','en'].entries()){
+  const page=await browser.newPage();pages.push(page);
+  await page.addInitScript(()=>Object.defineProperty(crypto,'randomUUID',{value:undefined}));
+  await page.goto(`${origin}/world.html?country=US&locale=${locale}`);
+  await page.locator('[data-action="play:robot"]').waitFor();
+  await page.locator('[data-action="play:robot"]').click();await page.locator('dialog[open]').waitFor();
+  await page.locator('dialog .pt-start').click();await page.locator('[data-action="home"]').click();
+  await page.waitForFunction(expected=>document.querySelector('[data-play-count="world:robot"]')?.title.startsWith(expected.toLocaleString('en-US')),initial+index+1);
+ }
+ assert.equal(counts['world:robot'],initial+3,'three independent language sessions share one total');
+ await pages[0].evaluate(()=>window.dispatchEvent(new Event('focus')));
+ await pages[0].waitForFunction(expected=>document.querySelector('[data-play-count="world:robot"]')?.title.startsWith(expected.toLocaleString('en-US')),initial+3);
+ for(const page of pages)await page.close();
+ console.log(`${channel}: shared totals across languages/sessions, UUID compatibility, focus refresh, same-session clicks and mobile count layout passed.`);
 }finally{await browser.close();await new Promise(r=>server.close(r));}

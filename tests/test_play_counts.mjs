@@ -8,7 +8,7 @@ assert.equal(new Set(PLAY_KEYS).size,PLAY_KEYS.length);
 assert.equal(japanesePlayKey('KANJI_CHALLENGE'),japanesePlayKey('KOKUGO_CURRICULUM','KANJI_READING'));
 assert.equal(validPlayKey('world:unknown'),false);
 const compiled=await build({entryPoints:['worker/index.js'],bundle:true,write:false,format:'esm',platform:'browser'});
-const origin='http://localhost:4173',options={modules:true,script:compiled.outputFiles[0].text,compatibilityDate:'2026-08-24',d1Databases:['DB'],bindings:{APP_ORIGIN:origin},port:0};
+const origin='http://localhost:4173',options={modules:true,script:compiled.outputFiles[0].text,compatibilityDate:'2026-08-24',d1Databases:['DB'],bindings:{APP_ORIGIN:origin,PLAY_COUNT_ORIGINS:'https://manabi-pop.pages.dev'},port:0};
 const mf=new miniflare.Miniflare(miniflare.convertV4MiniflareOptions?miniflare.convertV4MiniflareOptions(options):options);
 try{
  const db=await mf.getD1Database('DB'),sql=await readFile('migrations/0010_game_play_counts.sql','utf8');
@@ -37,5 +37,10 @@ try{
  assert.equal((await db.prepare('SELECT COUNT(*) AS n FROM game_play_events').first()).n,1);
  assert.equal((await post({key:'lesson:add20',eventId:crypto.randomUUID()})).count,1);
  assert.equal((await post({key:'jp:RADICAL_BUILDER',eventId:crypto.randomUUID()})).count,1);
+ for(const [index,language] of ['zh','ja','en'].entries()){
+  const r=await post({key:'world:robot',eventId:crypto.randomUUID()},{origin:index===1?'https://manabi-pop.pages.dev':origin,'accept-language':language});
+  assert.equal(r.status,200);assert.equal(r.count,34+index,'all languages and supported site origins share one game total');
+ }
+ assert.equal((await get('world:robot')).counts['world:robot'],36);
  console.log('Play counts: compact boundaries, guest/member clicks, 30 concurrent events, replay, origin, validation and retention passed with real D1.');
 }finally{await mf.dispose();}

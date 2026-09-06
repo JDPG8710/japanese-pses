@@ -838,6 +838,7 @@ export class MiniGameModal {
     const effectiveGrade = customGrade || targetNode.grade || 1;
     const levelNum = Number(customLevel) || 1;
     const selectedMode = targetNode.gameData?.selectedMode || targetNode.gameData?.mode || null;
+    void recordPlay(japanesePlayKey(gameType, selectedMode));
 
     const failClosed = (message) => {
       this.currentGame = null;
@@ -1023,7 +1024,6 @@ export class MiniGameModal {
     }
 
     if (this.currentGame && typeof this.currentGame.start === 'function') {
-      void recordPlay(japanesePlayKey(gameType, selectedMode));
       this.attachStandardSaveState(this.currentGame, gameType, targetNode, levelNum);
       const game = this.currentGame;
       this.tutorialNode = targetNode;

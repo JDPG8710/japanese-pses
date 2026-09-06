@@ -14,7 +14,8 @@ export async function playCountsRoute(request,env,{json,HttpError}){
  }
  if(request.method!=='POST')throw new HttpError(405,'METHOD_NOT_ALLOWED');
  const origin=request.headers.get('Origin');
- if(!origin||![env.APP_ORIGIN,...(env.DEV_ORIGINS||'').split(',')].includes(origin))throw new HttpError(403,'INVALID_ORIGIN');
+ const allowedOrigins=[env.APP_ORIGIN,...(env.PLAY_COUNT_ORIGINS||'').split(','),...(env.DEV_ORIGINS||'').split(',')].map(value=>value?.trim()).filter(Boolean);
+ if(!origin||!allowedOrigins.includes(origin))throw new HttpError(403,'INVALID_ORIGIN');
  if(!(request.headers.get('content-type')||'').startsWith('application/json'))throw new HttpError(415,'JSON_REQUIRED');
  const reader=request.body?.getReader();if(!reader)throw new HttpError(400,'INVALID_JSON');
  let size=0,text='';const decoder=new TextDecoder();

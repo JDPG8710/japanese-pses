@@ -28,9 +28,12 @@ export async function refreshPlayCounts(root=document){
  paint(root);
 }
 export async function recordPlay(key){
- if(!validPlayKey(key)||typeof window==='undefined'||!globalThis.crypto?.randomUUID)return;
+ if(!validPlayKey(key)||typeof window==='undefined'||!globalThis.crypto?.getRandomValues)return;
  // Session単位では重複排除しない。通信再送だけ同じイベントIDを使う。
- const body=JSON.stringify({key,eventId:crypto.randomUUID()});
+ const bytes=crypto.getRandomValues(new Uint8Array(16));bytes[6]=(bytes[6]&15)|64;bytes[8]=(bytes[8]&63)|128;
+ const hex=[...bytes].map(n=>n.toString(16).padStart(2,'0')).join('');
+ const eventId=`${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20)}`;
+ const body=JSON.stringify({key,eventId});
  for(let attempt=0;attempt<2;attempt++){
   try{
    const response=await fetch('/api/play-counts',{method:'POST',headers:{'content-type':'application/json'},credentials:'omit',keepalive:true,body,signal:AbortSignal.timeout(6000)});
@@ -38,4 +41,11 @@ export async function recordPlay(key){
    const data=await response.json();if(Number.isSafeInteger(data.count)&&data.count>=0){counts.set(key,Math.max(counts.get(key)||0,data.count));paint();}return;
   }catch{/* 最大1回のみ再送。同じクリックを二重に数えない。 */}
  }
+}
+
+// 別の端末・言語で増えた累計も、タブや履歴へ戻ったときに取得する。
+if(typeof window!=='undefined'&&typeof window.addEventListener==='function'&&typeof document?.addEventListener==='function'){
+ window.addEventListener('pageshow',()=>void refreshPlayCounts());
+ window.addEventListener('focus',()=>void refreshPlayCounts());
+ document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')void refreshPlayCounts();});
 }

@@ -7,6 +7,7 @@ compatibility_flags = ["nodejs_compat"]
 [vars]
 APP_ORIGIN = "https://piko-game.com"
 API_ORIGIN = "https://piko-game.com"
+PLAY_COUNT_ORIGINS = "https://piko-game.com,https://manabi-pop.pages.dev"
 DEV_ORIGINS = "http://localhost:4173,http://127.0.0.1:4173"
 TURNSTILE_HOSTNAMES = "piko-game.com,manabi-pop.pages.dev"
 GOOGLE_CLIENT_ID = "406705820118-aa4p2gkig81k4fn9ofh4igs0v6lku7ep.apps.googleusercontent.com"

@@ -25,7 +25,9 @@ for (const name of rootFiles) {
   await cp(path.join(root, name), path.join(output, name));
 }
 
-for (const directory of ['assets', 'css', 'js', 'src']) {
+// Pages Function も配信ディレクトリに含める。これにより /api/* は
+// 同一オリジンの Service Binding 経由で japanese-pses Worker へ届く。
+for (const directory of ['assets', 'css', 'js', 'src', 'functions']) {
   await cp(path.join(root, directory), path.join(output, directory), { recursive: true });
 }
 

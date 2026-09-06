@@ -1,6 +1,9 @@
 import { VERSION, validGame, makeRounds, evaluate, solution } from '../src/world/WorldRules.mjs';
 import { tutorialPause } from './tutorial-pause.mjs';
 
+// ロジックラボ（world.html）の1セッションは、会員・ゲストとも5分間。
+const WORLD_GAME_TIME_LIMIT_MS = 5 * 60 * 1000;
+
 export async function worldRoute(request, env, { authenticate, json, HttpError }) {
   const url = new URL(request.url), db = env.DB;
   if (!db) throw new HttpError(503, 'DATABASE_UNAVAILABLE');
@@ -35,7 +38,7 @@ export async function worldRoute(request, env, { authenticate, json, HttpError }
     const recent = await db.prepare('SELECT COUNT(*) AS count FROM world_runs WHERE user_id=?1 AND started_at>?2').bind(session.sub, now - 60000).first();
     if (recent.count >= 6) throw new HttpError(429, 'TRY_LATER');
     const id = crypto.randomUUID(), seed = crypto.getRandomValues(new Uint32Array(1))[0];
-    const rounds = makeRounds(body.game, body.level, seed), expiresAt = now + 180000;
+    const rounds = makeRounds(body.game, body.level, seed), expiresAt = now + WORLD_GAME_TIME_LIMIT_MS;
     await db.batch([
       db.prepare('INSERT INTO world_players(user_id,public_name) VALUES(?1,?2) ON CONFLICT(user_id) DO NOTHING').bind(session.sub, `Explorer-${crypto.randomUUID().replaceAll('-', '').slice(0, 12)}`),
       db.prepare('INSERT INTO world_runs(run_id,user_id,game,level,version,rounds_json,started_at,expires_at) VALUES(?1,?2,?3,?4,?5,?6,?7,?8)').bind(id, session.sub, body.game, body.level, VERSION, JSON.stringify(rounds), now, expiresAt)

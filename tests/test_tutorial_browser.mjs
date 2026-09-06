@@ -40,6 +40,7 @@ try{
    assert.ok(fit.width<=fit.client+1&&fit.left>=0&&fit.right<=viewport.width,JSON.stringify(fit));checks++;
    if(game==='robot')await page.screenshot({path:path.join(artifacts,`${channel}-${viewport.width}-tutorial.png`)});
    await page.locator('dialog .pt-start').click();await page.locator('#clock').waitFor();
+   assert.equal(await page.locator('#clock').innerText(),'5:00','guest world game begins with a five-minute timer');checks++;
    await page.clock.fastForward(5000);
    const before=await page.locator('#clock').innerText();
    await page.locator('[data-tutorial-help]').click();await page.locator('dialog[open]').waitFor();

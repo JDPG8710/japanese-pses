@@ -11,6 +11,9 @@ import {helpButton} from '../tutorial/GameTutorial.js';
 import {worldTutorial} from '../tutorial/TutorialContent.js';
 import {countBadge,refreshPlayCounts,recordPlay} from '../stats/PlayCounts.js';
 
+// 世界ゲームはランキング参加の有無に関係なく、1回の挑戦を5分間に統一する。
+const WORLD_GAME_TIME_LIMIT_MS=5*60*1000;
+
 const app=document.querySelector('#app'),localeSelect=document.querySelector('#locale'),params=new URLSearchParams(location.search);
 let locale='en',country=null,localeTouched=false;
 try{country=normalizeCountry(params.get('country'))||readCountry(localStorage);if(country)saveCountry(localStorage,country);locale=country?languageForCountry(country):localStorage.getItem('world-locale')||'en';}catch{country=normalizeCountry(params.get('country'));locale=languageForCountry(country);}
@@ -112,7 +115,7 @@ async function start(id){
  try{
   let state;
   if(member)state={...await api('start',{game,level,stage:gradeRoute?.stage||1}),ranked:true,tries:0};
-  else{const seed=(crypto.getRandomValues(new Uint32Array(1))[0]^Math.imul(gradeRoute?.stage||1,0x9E3779B1))>>>0,rounds=makeRounds(game,level,seed);state={rounds,question:rounds[0],index:0,score:0,tries:0,ranked:false,expiresAt:Date.now()+180000};}
+  else{const seed=(crypto.getRandomValues(new Uint32Array(1))[0]^Math.imul(gradeRoute?.stage||1,0x9E3779B1))>>>0,rounds=makeRounds(game,level,seed);state={rounds,question:rounds[0],index:0,score:0,tries:0,ranked:false,expiresAt:Date.now()+WORLD_GAME_TIME_LIMIT_MS};}
   if(token!==epoch)return;run=state;answer=initialAnswer(run.question);localeSelect.disabled=true;
   if(!await tutorial.open(run,worldTutorial(game,locale,t()))||token!==epoch)return;
   view='play';feedback='';feedbackGood=false;render();window.scrollTo(0,0);timer=setInterval(tick,250);

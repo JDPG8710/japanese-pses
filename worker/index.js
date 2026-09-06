@@ -98,7 +98,7 @@ async function handleOAuth(provider, request, env) {
   if (provider === 'apple' && request.method === 'POST' && (request.headers.get('content-type') || '').includes('application/x-www-form-urlencoded')) {
     return finishOAuth(provider, request, env, Object.fromEntries(await request.formData()));
   }
-  if (request.method === 'GET' && url.searchParams.get('code')) {
+  if (request.method === 'GET' && (url.searchParams.has('code') || url.searchParams.has('error'))) {
     return finishOAuth(provider, request, env, Object.fromEntries(url.searchParams));
   }
   if (request.method !== 'POST') return json({ error: 'METHOD_NOT_ALLOWED' }, 405, request, env);

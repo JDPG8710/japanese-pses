@@ -1,0 +1,15 @@
+{
+  "action": "redirect",
+  "action_parameters": {
+    "from_value": {
+      "preserve_query_string": true,
+      "status_code": 301,
+      "target_url": {
+        "expression": "concat(\"https://piko-game.com\", http.request.uri.path)"
+      }
+    }
+  },
+  "description": "Redirect www.piko-game.com to canonical root",
+  "enabled": true,
+  "expression": "(http.host eq \"www.piko-game.com\")"
+}

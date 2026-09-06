@@ -40,6 +40,8 @@ npx wrangler secret put STRIPE_WEBHOOK_SECRET
 
 - Google の承認済み JavaScript 生成元：`https://piko-game.com`
 - Google の承認済みリダイレクト URI：`https://piko-game.com/api/auth/google`
+- `www` の301転送は `config/cloudflare-www-redirect.json` のホスト名条件だけを使います。`http.request.full_uri` に `http*://www.*` を適用すると、Google が `scope` に返す URL にも一致し、OAuth の戻り先を別ドメインへ誤転送します。Cloudflare Rules の設定は Worker/Pages の配備とは別管理です。
+- 認証変更時は `npm run test:auth`、公開後は `npm run verify:auth:production` と実際の Google ログインを確認します。
 - Turnstile の許可ホスト：`piko-game.com`（移行中はロールバック用に `manabi-pop.pages.dev` も残す）
 
 ローカルホストとプライベート LAN は `Local Offline Mode` を使用し、本番の OAuth／Turnstile 状態を書き換えません。

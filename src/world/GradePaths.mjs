@@ -18,6 +18,7 @@ export const TASKS={
   circuit:{subject:'coding',objective:'CT02',minimum:1,skill:{en:'Rotate and debug a connected route',zh:'旋转、连通与调试路径',ja:'つないで みちを なおす'}},
   sudoku:{subject:'math',objective:'MA09',minimum:1,skill:{en:'Use row, column and region constraints',zh:'运用行、列与宫格约束',ja:'たて・よこ・ブロックの すいり'}},
   code:{subject:'thinking',objective:'CG11',minimum:2,skill:{en:'Deduce a hidden code from feedback',zh:'根据反馈推断隐藏密码',ja:'ヒントから あんごうを とく'}},
+  robot:{subject:'coding',objective:'CT03',minimum:1,skill:{en:'Plan a shortest safe route around obstacles',zh:'绕开障碍规划最短安全路线',ja:'しょうがいを よけて さいたんルートを つくる'}},
   set:{subject:'thinking',objective:'CG12',minimum:1,skill:{en:'Classify three-feature relationships',zh:'辨认三个特征的组合关系',ja:'3つの とくちょうを くらべる'}},
   balance:{subject:'math',objective:'MA10',minimum:2,skill:{en:'Infer unknown weights from equations',zh:'根据等式推断未知重量',ja:'しきから おもさを すいりする'}},
   order:{subject:'language',objective:'LA-LOG',minimum:1,skill:{en:'Read clues and build a logical order',zh:'阅读线索并排列合理顺序',ja:'ことばの ヒントで ならべる'}},

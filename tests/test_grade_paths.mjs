@@ -17,7 +17,7 @@ for(const [profile,p]of Object.entries(PROFILES))for(const year of p.years)for(c
 assert.equal(validateGradeRoute(new URLSearchParams()),null);
 assert.equal(validateGradeRoute(new URLSearchParams('curriculum=CN54&year=Y6&game=cafe&level=2')),false);
 for(const locale of ['en','zh','ja']){
-  const names=Object.values(TEXT[locale].games).map(game=>game[0]);assert.equal(new Set(names).size,8);
+  const names=Object.values(TEXT[locale].games).map(game=>game[0]);assert.equal(new Set(names).size,9);
   assert.ok(names.every(Boolean));
 }
 const home=await readFile('src/location/CountryHome.mjs','utf8');assert.ok(home.includes('grades.html?country='));

@@ -16,7 +16,7 @@ let profile=params.get('curriculum')||saved?.profile||defaultProfile(country)||'
 if(!allowed.includes(profile))profile='';if(!PROFILES[profile]?.years.includes(year))year='';
 const app=document.querySelector('#grade-app'),icons=['🌱','🪁','🚀','🌈','🪐','⭐','🌻','🧭','🎈'];
 const escape=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const gateArt={circuit:'🔌',sudoku:'▦',code:'🔐',set:'◈',balance:'⚖️',order:'🚉',water:'💧',network:'⚡'};
+const gateArt={circuit:'🔌',sudoku:'▦',code:'🔐',robot:'🤖',set:'◈',balance:'⚖️',order:'🚉',water:'💧',network:'⚡'};
 const subjectArt={math:'🔢',english:'🔤',language:'📖',science:'🔬',coding:'🤖',art:'🎨',music:'🎵',thinking:'🧠'};
 document.documentElement.lang=locale;document.title=`Piko Play · ${w.title}`;
 document.querySelector('#free-play').textContent=w.free;document.querySelector('#free-play').href=`world.html${country?`?country=${country}`:''}`;

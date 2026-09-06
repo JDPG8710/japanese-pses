@@ -90,12 +90,15 @@ module.exports=({describe,test,assert,loadESModule})=>{
    const worldHtml=fs.readFileSync(path.join(root,'world.html'),'utf8');
    const learnHtml=fs.readFileSync(path.join(root,'learn.html'),'utf8');
    for(const source of [world,foundation])assert.ok(source.includes('createInteractionFeedback')&&source.includes('interaction.tap()'));
+   assert.ok(foundation.includes('<output id="quest-answer"')&&!foundation.includes('<input id="quest-answer"'));
+   assert.ok(!foundation.includes('input.focus('));
    for(const source of [worldHtml,learnHtml])assert.ok(source.includes('id="sound-toggle"'));
    assert.ok(feedback.includes('playClick()')&&feedback.includes('playSuccess')&&feedback.includes('playGentleError')&&feedback.includes('navigator.vibrate'));
    assert.ok(css.includes('button:active')&&css.includes('scale(.97)'));
    assert.ok(css.includes('.order-card button{width:56px;min-width:56px;min-height:56px'));
    assert.ok(css.includes('.pipe{width:56px;min-width:56px;height:56px'));
    assert.ok(css.includes('.sudoku-cell{width:56px;min-width:56px;height:56px'));
+   assert.ok(css.includes('.robot-directions button{width:56px;min-width:56px;min-height:56px'));
   });
  });
 };

@@ -1,5 +1,5 @@
 export const VERSION = 3;
-export const GAMES = ['circuit','sudoku','code','set','balance','order','water','network'];
+export const GAMES = ['circuit','sudoku','code','robot','set','balance','order','water','network'];
 export function validGame(game, level) { return GAMES.includes(game) && [1,2].includes(level); }
 
 export function random(seed) {
@@ -94,6 +94,46 @@ function makeCode(rng,level){
 }
 function codeSolution(q){return allCodes(q.length,q.symbols).find(candidate=>q.clues.every(clue=>{const [exact,color]=codeFeedback(candidate,clue.guess,q.symbols);return exact===clue.exact&&color===clue.color;}))||null;}
 
+const ROBOT_DIRS=[[0,-1],[1,0],[0,1],[-1,0]];
+export function robotState(q,moves){
+  const blocked=new Set(q.blocks.map(cell=>cell.join(','))),position=[...q.start];
+  for(let index=0;index<moves.length;index++){
+    const direction=moves[index],delta=ROBOT_DIRS[direction];
+    if(!delta)return{position,valid:false,blockedAt:index};
+    const next=[position[0]+delta[0],position[1]+delta[1]];
+    if(next[0]<0||next[1]<0||next[0]>=q.size||next[1]>=q.size||blocked.has(next.join(',')))return{position,valid:false,blockedAt:index};
+    position[0]=next[0];position[1]=next[1];
+  }
+  return{position,valid:true,blockedAt:-1};
+}
+function robotSolution(q){
+  const blocked=new Set(q.blocks.map(cell=>cell.join(','))),queue=[{position:[...q.start],moves:[]}],seen=new Set([q.start.join(',')]);
+  while(queue.length){
+    const current=queue.shift();
+    if(current.position[0]===q.goal[0]&&current.position[1]===q.goal[1])return current.moves;
+    for(let direction=0;direction<ROBOT_DIRS.length;direction++){
+      const delta=ROBOT_DIRS[direction],position=[current.position[0]+delta[0],current.position[1]+delta[1]],key=position.join(',');
+      if(position[0]<0||position[1]<0||position[0]>=q.size||position[1]>=q.size||blocked.has(key)||seen.has(key))continue;
+      seen.add(key);queue.push({position,moves:[...current.moves,direction]});
+    }
+  }
+  return null;
+}
+function makeRobot(rng,level){
+  const size=level===1?4:5,blockCount=level===1?4+pick(rng,2):8+pick(rng,3),minimum=level===1?5:8,maximum=level===1?10:16;
+  for(let guard=0;guard<1000;guard++){
+    const start=[0,pick(rng,size)],goal=[size-1,pick(rng,size)],reserved=new Set([start.join(','),goal.join(',')]);
+    const cells=shuffle(Array.from({length:size*size},(_,index)=>[index%size,Math.floor(index/size)]).filter(cell=>!reserved.has(cell.join(','))),rng);
+    const question={size,start,goal,blocks:cells.slice(0,blockCount),limit:maximum},moves=robotSolution(question),direct=Math.abs(goal[0]-start[0])+Math.abs(goal[1]-start[1]);
+    if(moves&&moves.length>=minimum&&moves.length>direct&&moves.length<=maximum){question.limit=moves.length;return question;}
+  }
+  throw new Error('ROBOT_GENERATION_FAILED');
+}
+function robotValid(q,answer){
+  if(answer.length!==q.limit||answer.some(direction=>direction<0||direction>=ROBOT_DIRS.length))return false;
+  const state=robotState(q,answer);return state.valid&&state.position[0]===q.goal[0]&&state.position[1]===q.goal[1];
+}
+
 const decodeCard=n=>[Math.floor(n/9),Math.floor(n/3)%3,n%3];
 export function isSet(cards){return cards.length===3&&[0,1,2].every(feature=>{const count=new Set(cards.map(card=>card[feature])).size;return count===1||count===3;});}
 function makeSet(rng,level){const count=level===1?9:12,a=pick(rng,27);let b=pick(rng,27);while(b===a)b=pick(rng,27);const ca=decodeCard(a),cb=decodeCard(b),cc=ca.map((value,i)=>value===cb[i]?value:3-value-cb[i]),chosen=new Set([a,b,cc[0]*9+cc[1]*3+cc[2]]);while(chosen.size<count)chosen.add(pick(rng,27));return {cards:shuffle([...chosen].map(decodeCard),rng)};}
@@ -117,9 +157,9 @@ function networkValid(q,answer){if(answer.length!==q.count-1||new Set(answer).si
 
 export function makeRounds(game,level,seed){
   if(!validGame(game,level))throw new Error('INVALID_GAME');const rng=random(seed),rounds=[],seen=new Set();
-  while(rounds.length<10){let q;if(game==='circuit')q=makeCircuit(rng,level);if(game==='sudoku')q=makeSudoku(rng,level);if(game==='code')q=makeCode(rng,level);if(game==='set')q=makeSet(rng,level);if(game==='balance')q=makeBalance(rng,level);if(game==='order')q=makeOrder(rng,level);if(game==='water')q=makeWater(rng,level);if(game==='network')q=makeNetwork(rng,level);const key=JSON.stringify(q);if(!seen.has(key)){seen.add(key);rounds.push(q);}}
+  while(rounds.length<10){let q;if(game==='circuit')q=makeCircuit(rng,level);if(game==='sudoku')q=makeSudoku(rng,level);if(game==='code')q=makeCode(rng,level);if(game==='robot')q=makeRobot(rng,level);if(game==='set')q=makeSet(rng,level);if(game==='balance')q=makeBalance(rng,level);if(game==='order')q=makeOrder(rng,level);if(game==='water')q=makeWater(rng,level);if(game==='network')q=makeNetwork(rng,level);const key=JSON.stringify(q);if(!seen.has(key)){seen.add(key);rounds.push(q);}}
   return rounds;
 }
-export function solution(game,q){if(game==='circuit')return circuitSolution(q);if(game==='sudoku')return sudokuSolution(q);if(game==='code')return codeSolution(q);if(game==='set')return setSolution(q);if(game==='balance')return balanceSolution(q);if(game==='order')return orderSolution(q);if(game==='water')return waterSolution(q);if(game==='network')return networkSolution(q);return null;}
-export function checkAnswer(game,q,answer){if(!Array.isArray(answer)||answer.some(n=>!Number.isInteger(n)))return false;if(game==='circuit')return circuitValid(q,answer);if(game==='sudoku')return sudokuValid(q,answer);if(game==='code'){const expected=codeSolution(q);return !!expected&&answer.length===expected.length&&answer.every((n,i)=>n===expected[i]);}if(game==='set')return answer.length===3&&new Set(answer).size===3&&answer.every(n=>n>=0&&n<q.cards.length)&&isSet(answer.map(i=>q.cards[i]));if(game==='balance')return answer.length===1&&answer[0]===balanceSolution(q)?.[0];if(game==='order')return orderValid(q,answer);if(game==='water')return waterValid(q,answer);if(game==='network')return networkValid(q,answer);return false;}
+export function solution(game,q){if(game==='circuit')return circuitSolution(q);if(game==='sudoku')return sudokuSolution(q);if(game==='code')return codeSolution(q);if(game==='robot')return robotSolution(q);if(game==='set')return setSolution(q);if(game==='balance')return balanceSolution(q);if(game==='order')return orderSolution(q);if(game==='water')return waterSolution(q);if(game==='network')return networkSolution(q);return null;}
+export function checkAnswer(game,q,answer){if(!Array.isArray(answer)||answer.some(n=>!Number.isInteger(n)))return false;if(game==='circuit')return circuitValid(q,answer);if(game==='sudoku')return sudokuValid(q,answer);if(game==='code'){const expected=codeSolution(q);return !!expected&&answer.length===expected.length&&answer.every((n,i)=>n===expected[i]);}if(game==='robot')return robotValid(q,answer);if(game==='set')return answer.length===3&&new Set(answer).size===3&&answer.every(n=>n>=0&&n<q.cards.length)&&isSet(answer.map(i=>q.cards[i]));if(game==='balance')return answer.length===1&&answer[0]===balanceSolution(q)?.[0];if(game==='order')return orderValid(q,answer);if(game==='water')return waterValid(q,answer);if(game==='network')return networkValid(q,answer);return false;}
 export function evaluate(game,q,answer,tries){const correct=checkAnswer(game,q,answer),done=correct||tries>=2;return{correct,done,points:correct?[100,70,40][tries]:0,tries:done?0:tries+1};}

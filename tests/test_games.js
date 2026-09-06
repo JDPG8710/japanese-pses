@@ -895,10 +895,14 @@ function register({ describe, test, it, assert, loadESModule }) {
         assert.strictEqual(examNode.gameType, 'GRADE_EXAM');
 
         modal.openGradeExam(g);
-        assert.ok(modal.currentGame, `Exam game instance must start for Grade ${g}`);
-        assert.strictEqual(modal.currentGame.grade, g);
-        assert.ok(modal.currentGame.questions.length >= 6, `Grade ${g} exam must have at least 6 questions`);
-        if (modal.currentGame?.destroy) modal.currentGame.destroy();
+        try {
+          assert.ok(modal.currentGame, `Exam game instance must start for Grade ${g}`);
+          assert.strictEqual(modal.currentGame.grade, g);
+          assert.ok(modal.currentGame.questions.length >= 6, `Grade ${g} exam must have at least 6 questions`);
+        } finally {
+          // ゲームだけでなく、管理側のステージ時計も必ず片づける。
+          modal.close();
+        }
       }
     });
   });

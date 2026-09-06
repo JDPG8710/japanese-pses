@@ -17,6 +17,8 @@ import { getErrorGuidanceSystem } from './ErrorGuidanceSystem.js?v=3';
 import { getRadicalPuzzlesForGrade } from './RadicalQuestionBank.js';
 import { getCurriculumModePolicy, getSupplementalCurriculumQuestions } from './CurriculumModeBank.js';
 import { HDCanvasRenderer, getLogicalCanvasWidth, getLogicalCanvasHeight } from './src/render/HDCanvasRenderer.js';
+import { GameTutorial } from './src/tutorial/GameTutorial.js';
+import { japaneseTutorial } from './src/tutorial/TutorialContent.js';
 
 const UNIFIED_STAGE_TIME_LIMIT_SECONDS = 3 * 60;
 
@@ -159,6 +161,8 @@ export class MiniGameModal {
     this.safeBreakHandler = null;
     this.shopItemAdapter = null;
     this.itemMessageTimer = null;
+    this.gameTutorial = new GameTutorial();
+    this.tutorialPaused = false;
     this.createModalDOM();
     this.currentGame = null;
     this.boundCanvasResize = () => this.handleCanvasResize();
@@ -194,6 +198,7 @@ export class MiniGameModal {
               <h2 id="game-title" class="text-sm sm:text-base md:text-lg font-bold leading-snug text-white mt-1 break-words">ゲームを用意しているよ…</h2>
             </div>
             <div class="flex max-w-[46vw] flex-wrap items-center justify-end gap-1.5 sm:max-w-none sm:gap-3 flex-shrink-0">
+              <button id="game-tutorial-btn" type="button" hidden class="min-h-12 rounded-xl border border-emerald-300 bg-emerald-950 px-3 text-xs font-bold text-white">あそびかた</button>
               <button id="game-hint-btn" class="hidden px-2.5 py-1 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 text-xs font-bold border border-sky-500/30 transition cursor-pointer min-h-[36px]">💡 ヒント</button>
               <button id="game-shuffle-btn" class="hidden px-2.5 py-1 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 text-xs font-bold border border-purple-500/30 transition cursor-pointer min-h-[36px]">🌀 シャッフル</button>
               <div id="game-timer" role="timer" aria-live="polite" class="text-xs sm:text-sm font-mono text-amber-400 font-bold bg-amber-400/10 border border-amber-400/30 px-2.5 sm:px-3 py-1 rounded-full whitespace-nowrap">⏱ 3:00</div>
@@ -227,22 +232,17 @@ export class MiniGameModal {
         document.body.appendChild(modal);
       }
 
-      const closeBtn = document.getElementById('game-close-btn');
-      if (closeBtn) closeBtn.addEventListener('click', () => this.runAtSafeBreak(() => this.close()));
-      const hintBtn = document.getElementById('game-hint-btn');
-      if (hintBtn) {
-        hintBtn.addEventListener('click', () => {
-          if (this.currentGame?.useHint) this.currentGame.useHint();
-        });
-      }
-      const shuffleBtn = document.getElementById('game-shuffle-btn');
-      if (shuffleBtn) {
-        shuffleBtn.addEventListener('click', () => {
-          if (this.currentGame?.useShuffle) this.currentGame.useShuffle();
-        });
-      }
     }
     this.modal = modal;
+    // 既存DOMを再利用する場合も、現在のゲーム管理インスタンスに接続する。
+    const tutorialButton = document.getElementById('game-tutorial-btn');
+    if (tutorialButton) tutorialButton.onclick = () => this.reopenTutorial();
+    const closeButton = document.getElementById('game-close-btn');
+    if (closeButton) closeButton.onclick = () => this.runAtSafeBreak(() => this.close());
+    const hintButton = document.getElementById('game-hint-btn');
+    if (hintButton) hintButton.onclick = () => this.currentGame?.useHint?.();
+    const shuffleButton = document.getElementById('game-shuffle-btn');
+    if (shuffleButton) shuffleButton.onclick = () => this.currentGame?.useShuffle?.();
     const timeTicketButton = document.getElementById('game-time-ticket-btn');
     const hintRadarButton = document.getElementById('game-hint-radar-btn');
     if (timeTicketButton) timeTicketButton.onclick = () => this.useTimeExtensionItem();
@@ -440,7 +440,7 @@ export class MiniGameModal {
   }
 
   updateStageCountdown(node) {
-    if (this.stageSettled || !this.currentGame) return;
+    if (this.stageSettled || !this.currentGame || this.tutorialPaused) return;
     const remainingSeconds = Math.max(0, Math.ceil((this.stageDeadline - this.now()) / 1000));
     this.currentGame.timeLeft = remainingSeconds;
     this.currentGame.remainingTime = remainingSeconds;
@@ -813,6 +813,10 @@ export class MiniGameModal {
   }
 
   initGameInstance(gameType, targetNode, canvas, customGrade = null, customLevel = 1) {
+    this.gameTutorial?.cancel();
+    this.tutorialPaused = false;
+    const tutorialButton = document.getElementById('game-tutorial-btn');
+    if (tutorialButton) tutorialButton.hidden = true;
     this.stopStageCountdown();
     this.stageSettled = false;
     const hintBtn = document.getElementById('game-hint-btn');
@@ -1018,8 +1022,56 @@ export class MiniGameModal {
 
     if (this.currentGame && typeof this.currentGame.start === 'function') {
       this.attachStandardSaveState(this.currentGame, gameType, targetNode, levelNum);
-      this.currentGame.start();
-      if (!this.stageSettled && this.currentGame) this.startStageCountdown(targetNode);
+      const game = this.currentGame;
+      this.tutorialNode = targetNode;
+      this.tutorialDescription = japaneseTutorial(game, targetNode.name || 'チャレンジ');
+      // 見本を閉じるまでゲーム本体と時計を起動しない。
+      const begin = () => {
+        if (this.currentGame !== game || this.stageSettled) return;
+        this.installTutorialPause(game);
+        game.start();
+        if (!this.stageSettled && this.currentGame === game) {
+          this.startStageCountdown(targetNode);
+          if (tutorialButton) tutorialButton.hidden = false;
+        }
+      };
+      if (GameTutorial.supported()) {
+        this.gameTutorial.show(this.tutorialDescription).then(accepted => { if (accepted) begin(); });
+      } else begin();
+    }
+  }
+
+  installTutorialPause(game) {
+    // アニメーションの更新を止める。キャンバスの入力はdialogのモーダル性で遮断する。
+    for (const name of ['loop', 'renderLoop']) {
+      if (typeof game[name] !== 'function') continue;
+      const original = game[name].bind(game);
+      game[name] = (...args) => {
+        if (this.currentGame === game && this.tutorialPaused && game.running) {
+          game.tutorialFrame = requestAnimationFrame(() => game[name](...args));
+          return;
+        }
+        return original(...args);
+      };
+    }
+    const destroy = game.destroy.bind(game);
+    game.destroy = () => { if (game.tutorialFrame != null) cancelAnimationFrame(game.tutorialFrame); destroy(); };
+  }
+
+  async reopenTutorial() {
+    const game = this.currentGame;
+    if (!game || this.stageSettled || this.tutorialPaused || !this.stageDeadline) return;
+    this.updateStageCountdown(this.tutorialNode);
+    if (this.stageSettled) return;
+    const started = this.now();
+    this.tutorialPaused = true;
+    this.setPlayActivity(false);
+    const accepted = await this.gameTutorial.show(this.tutorialDescription);
+    if (this.currentGame !== game || this.stageSettled) return;
+    this.tutorialPaused = false;
+    if (accepted) {
+      this.stageDeadline += Math.max(0, this.now() - started);
+      this.setPlayActivity(true);
     }
   }
 
@@ -1059,6 +1111,10 @@ export class MiniGameModal {
   }
 
   onGameOver(node, stars = 3, score = 100, result = {}) {
+    this.gameTutorial?.cancel();
+    this.tutorialPaused = false;
+    const tutorialButton = document.getElementById('game-tutorial-btn');
+    if (tutorialButton) tutorialButton.hidden = true;
     this.stopStageCountdown();
     const cleared = result?.cleared ?? result?.is_success ?? (Number(stars) > 0);
     const accuracy = Number.isFinite(Number(result?.accuracy))
@@ -1144,6 +1200,10 @@ export class MiniGameModal {
   }
 
   close() {
+    this.gameTutorial?.cancel();
+    this.tutorialPaused = false;
+    const tutorialButton = document.getElementById('game-tutorial-btn');
+    if (tutorialButton) tutorialButton.hidden = true;
     this.stopStageCountdown();
     this.stageSettled = true;
     if (this.currentGame) {

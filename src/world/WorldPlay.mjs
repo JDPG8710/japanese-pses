@@ -6,6 +6,9 @@ import {validateGradeRoute,availableTasks,yearLabel} from './GradePaths.mjs';
 import {gameGateId,gateUrl,journeyProgressKey,journeyState,nextGate,readJourneyScores} from './GradeJourney.mjs';
 import {createInteractionFeedback} from './InteractionFeedback.mjs';
 import {isEarlyPrimaryChinese,rubyPinyin} from './PinyinRuby.mjs';
+import {RunTutorial} from '../tutorial/RunTutorial.js';
+import {helpButton} from '../tutorial/GameTutorial.js';
+import {worldTutorial} from '../tutorial/TutorialContent.js';
 
 const app=document.querySelector('#app'),localeSelect=document.querySelector('#locale'),params=new URLSearchParams(location.search);
 let locale='en',country=null,localeTouched=false;
@@ -24,6 +27,7 @@ const t=()=>TEXT[locale],esc=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&
 const button=(action,text,cls='')=>`<button type="button" data-action="${action}" class="${cls}">${esc(text)}</button>`;
 const auth=new AuthManager({apiBase:'/api',turnstileSiteKey:document.querySelector('meta[name="turnstile-site-key"]').content});let member=false;
 const interaction=createInteractionFeedback(),soundToggle=document.querySelector('#sound-toggle');
+const tutorial=new RunTutorial(api);
 
 render();
 if(!country)fetch('/api/location',{cache:'no-store',signal:AbortSignal.timeout(4000)}).then(r=>r.json()).then(data=>{if(view==='home'&&!country&&!localeTouched){country=normalizeCountry(data.country);locale=languageForCountry(country);render();}}).catch(()=>{});
@@ -35,7 +39,7 @@ localeSelect.onchange=()=>{interaction.tap();localeTouched=true;locale=localeSel
 
 async function api(path,body){const response=await fetch(`/api/world/${path}`,{method:body?'POST':'GET',credentials:'include',headers:body?{'content-type':'application/json'}:{},body:body?JSON.stringify(body):undefined,signal:AbortSignal.timeout(12000)}),data=await response.json();if(!response.ok){const error=new Error(data.error||'API_ERROR');error.status=response.status;throw error;}return data;}
 function syncSoundToggle(){const muted=interaction.isMuted();soundToggle.setAttribute('aria-pressed',String(muted));soundToggle.textContent=`${muted?'🔇':'🔊'} ${muted?t().soundOff:t().soundOn}`;}
-function leave(){epoch++;clearInterval(timer);run=null;nextState=null;busy=false;fatal=false;feedback='';localeSelect.disabled=false;}
+function leave(){tutorial.cancel();epoch++;clearInterval(timer);run=null;nextState=null;busy=false;fatal=false;feedback='';localeSelect.disabled=false;}
 function gradeMapUrl(){const query=new URLSearchParams({curriculum:gradeRoute.profile,year:gradeRoute.year,locale});if(country)query.set('country',country);return`grades.html?${query}`;}
 function goHome(){if(gradeRoute){leave();location.assign(gradeMapUrl());return;}leave();view='home';render();window.scrollTo(0,0);}
 function saveGradeProgress(){if(!gradeRoute||!run||run.timedOut||run.score<800)return false;try{const key=journeyProgressKey(gradeRoute.profile,gradeRoute.year,gameGateId(game,gradeRoute.stage));localStorage.setItem(key,String(Math.max(Number(localStorage.getItem(key)||0),run.score)));return true;}catch{return false;}}
@@ -63,6 +67,7 @@ function answerReady(){if(!interacted)return false;if(game==='sudoku')return ans
 function renderPlay(){
  const pinyin=isEarlyPrimaryChinese(gradeRoute?.profile,gradeRoute?.year),instruction=rubyPinyin(t().games[game][3],pinyin),stageLabel=gradeRoute?` · ${t().stage} ${gradeRoute.stage}`:'';
  app.innerHTML=`<div class="play-head">${button('home',`← ${t().home}`)}<h1>${t().games[game][0]}</h1></div><section class="board game-shell game-${game} ${pinyin?'with-pinyin':''}"><div class="fx-layer" aria-hidden="true"></div><div class="hud"><span>${t().mission} ${Math.min(run.index+1,10)}/10${stageLabel}</span><span>${t().score}: ${run.score}</span><span>${t().time}: <span id="clock"></span></span></div><div class="progress"><span style="width:${run.index*10}%"></span></div><p class="muted">${t().levels[level-1]} · ${run.ranked?t().member:t().guest}</p><p class="instruction">${instruction}</p><div class="stage" id="stage">${stageMarkup()}</div><div class="feedback ${feedbackGood?'good':''}" role="status">${esc(feedback||t().rules)}</div><div class="controls">${fatal?button(`play:${game}`,t().newRun,'primary'):nextState?button('next',nextState.complete?t().solved:t().next,'primary'):button('check',t().check,'primary')}${!nextState&&!fatal?button('clear',t().clear):''}</div></section>`;
+ if(!fatal&&!nextState?.complete)helpButton(app.querySelector('.play-head'),locale,()=>void showTutorial());
  const check=app.querySelector('[data-action="check"]');if(check&&!answerReady())check.disabled=true;app.querySelectorAll('button').forEach(el=>{if(busy&&el.dataset.action!=='home')el.disabled=true;});if(gradeRoute){const task=availableTasks(gradeRoute.profile,gradeRoute.year,gradeRoute.subject).find(item=>item.game===game),context=document.createElement('p');context.className='grade-note';context.textContent=`${yearLabel(gradeRoute.year,locale)} · ${task.skill[locale]}${task.review?locale==='zh'?' · 基础复习':locale==='ja'?' · きほんの ふくしゅう':' · Foundation review':''}`;app.querySelector('.board').prepend(context);}if(nextState||fatal)app.querySelectorAll('#stage button').forEach(el=>{el.disabled=true;});tick();
 }
 
@@ -88,8 +93,30 @@ function stageMarkup(){
 }
 
 function initialAnswer(q){interacted=false;if(game==='circuit')return Array(q.tiles.length).fill(0);if(game==='sudoku')return[...q.givens];if(game==='code')return Array(q.length).fill(-1);if(game==='robot'||game==='set'||game==='water'||game==='network')return[];if(game==='balance')return[-1];if(game==='order')return Array.from({length:q.count},(_,i)=>i);return[];}
-async function start(id){if(gradeRoute&&!availableTasks(gradeRoute.profile,gradeRoute.year,gradeRoute.subject).some(task=>task.game===id))return;if(gradeRoute){const query=new URLSearchParams(location.search);query.set('game',id);history.replaceState(null,'',`world.html?${query}`);level=gradeRoute.level;}leave();game=id;const token=epoch;view='home';feedback=t().loading;render();let session=null;try{session=await auth.getSession();}catch{}if(token!==epoch)return;if(member&&!session?.authenticated){member=false;feedback=t().noAuth;render();return;}member=!!session?.authenticated;try{let state;if(member)state={...await api('start',{game,level,stage:gradeRoute?.stage||1}),ranked:true,tries:0};else{const seed=(crypto.getRandomValues(new Uint32Array(1))[0]^Math.imul(gradeRoute?.stage||1,0x9E3779B1))>>>0,rounds=makeRounds(game,level,seed);state={rounds,question:rounds[0],index:0,score:0,tries:0,ranked:false,expiresAt:Date.now()+180000};}if(token!==epoch)return;run=state;answer=initialAnswer(run.question);view='play';feedback='';feedbackGood=false;localeSelect.disabled=true;render();window.scrollTo(0,0);timer=setInterval(tick,250);}catch{if(token===epoch){feedback=t().error;view='home';render();}}}
-function tick(){if(!run||view!=='play')return;if(nextState?.complete){clearInterval(timer);const clock=app.querySelector('#clock');if(clock)clock.textContent='✓';return;}const seconds=Math.max(0,Math.ceil((run.expiresAt-Date.now())/1000)),clock=app.querySelector('#clock');if(clock)clock.textContent=`${Math.floor(seconds/60)}:${String(seconds%60).padStart(2,'0')}`;if(!seconds&&!busy){run.timedOut=true;view='result';clearInterval(timer);localeSelect.disabled=false;interaction.error();render();}}
+async function start(id){
+ if(gradeRoute&&!availableTasks(gradeRoute.profile,gradeRoute.year,gradeRoute.subject).some(task=>task.game===id))return;
+ if(gradeRoute){const query=new URLSearchParams(location.search);query.set('game',id);history.replaceState(null,'',`world.html?${query}`);level=gradeRoute.level;}
+ leave();game=id;const token=epoch;view='home';feedback=t().loading;render();let session=null;
+ try{session=await auth.getSession();}catch{}if(token!==epoch)return;
+ if(member&&!session?.authenticated){member=false;feedback=t().noAuth;render();return;}member=!!session?.authenticated;
+ try{
+  let state;
+  if(member)state={...await api('start',{game,level,stage:gradeRoute?.stage||1}),ranked:true,tries:0};
+  else{const seed=(crypto.getRandomValues(new Uint32Array(1))[0]^Math.imul(gradeRoute?.stage||1,0x9E3779B1))>>>0,rounds=makeRounds(game,level,seed);state={rounds,question:rounds[0],index:0,score:0,tries:0,ranked:false,expiresAt:Date.now()+180000};}
+  if(token!==epoch)return;run=state;answer=initialAnswer(run.question);localeSelect.disabled=true;
+  if(!await tutorial.open(run,worldTutorial(game,locale,t()))||token!==epoch)return;
+  view='play';feedback='';feedbackGood=false;render();window.scrollTo(0,0);timer=setInterval(tick,250);
+ }catch{if(token===epoch){leave();feedback=t().error;view='home';render();}}
+}
+async function showTutorial(){
+ if(!run||busy||fatal||tutorial.paused||nextState?.complete)return;
+ tick();if(view!=='play')return;
+ const token=epoch;busy=true;
+ try{await tutorial.open(run,worldTutorial(game,locale,t()));}
+ catch{if(token===epoch){fatal=true;feedback=t().ended;clearInterval(timer);}}
+ finally{if(token===epoch){busy=false;if(fatal)render();else tick();}}
+}
+function tick(){if(!run||view!=='play'||tutorial.paused)return;if(nextState?.complete){clearInterval(timer);const clock=app.querySelector('#clock');if(clock)clock.textContent='✓';return;}const seconds=Math.max(0,Math.ceil((run.expiresAt-Date.now())/1000)),clock=app.querySelector('#clock');if(clock)clock.textContent=`${Math.floor(seconds/60)}:${String(seconds%60).padStart(2,'0')}`;if(!seconds&&!busy){run.timedOut=true;view='result';clearInterval(timer);localeSelect.disabled=false;interaction.error();render();}}
 function burstFx(kind){const shell=app.querySelector('.game-shell');if(!shell)return;shell.classList.add(`fx-${kind}`);setTimeout(()=>shell.classList.remove(`fx-${kind}`),500);if(window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;const layer=shell.querySelector('.fx-layer');for(let i=0;i<(kind==='good'?14:6);i++){const spark=document.createElement('i');spark.style.setProperty('--i',i);spark.textContent=kind==='good'?['✦','●','★'][i%3]:'·';layer.append(spark);setTimeout(()=>spark.remove(),800);}}
 async function submit(){if(!run||busy||nextState||fatal||!answerReady())return;const token=epoch;let effect='bad';busy=true;renderPlay();try{let result;if(run.ranked)result=await api('answer',{id:run.id,revision:run.revision,answer});else{const verdict=evaluate(game,run.question,answer,run.tries),index=run.index+(verdict.done?1:0);result={...verdict,index,score:run.score+verdict.points,complete:index===10,question:run.rounds[index]||null,explanation:verdict.done&&!verdict.correct?solution(game,run.question):null};}if(token!==epoch)return;run.score=result.score;run.tries=result.tries;run.revision=result.revision;feedbackGood=result.correct;effect=result.correct?'good':'bad';feedback=result.correct?t().correct:result.done?`${t().explain} ${formatSolution(result.explanation)}`:result.tries===1?t().first:t().games[game][4];if(result.done)nextState=result;}catch(error){if(token!==epoch)return;fatal=[401,404,409,410].includes(error.status);feedback=fatal?t().ended:t().unsaved;}busy=false;renderPlay();if(effect==='good')interaction.correct();else interaction.error();burstFx(effect);}
 function formatSolution(value){if(!value)return'';if(game==='circuit')return value.map(n=>'↻'.repeat(n)||'·').join(' ');if(game==='sudoku')return value.join(' ');if(game==='code')return value.map(n=>codeMarks[n]).join(' ');if(game==='robot')return value.map(n=>moveMarks[n]).join(' ');if(game==='set')return value.map(n=>`#${n+1}`).join(' · ');if(game==='balance')return`${value[0]}`;if(game==='order')return value.map(n=>mascots[n]).join(' → ');if(game==='water')return value.map(n=>t().ops[n]).join(' → ');if(game==='network')return value.map(i=>{const edge=run.question.edges[i];return`${String.fromCharCode(65+edge[0])}–${String.fromCharCode(65+edge[1])}`;}).join(' · ');return value.join(' / ');}

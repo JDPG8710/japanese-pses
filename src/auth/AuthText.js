@@ -1,4 +1,8 @@
 const copy={
+ 'メールで登録・ログイン（準備中）':['Email sign-up / login (coming soon)','邮箱注册／登录（准备中）'],
+ 'WeChatで登録・ログイン（準備中）':['WeChat sign-up / login (coming soon)','微信注册／登录（准备中）'],
+ 'メールの登録・ログインは準備中です。今はGoogleでログインするか、そのまま遊んでね。':['Email sign-up and login are not available yet. Use Google or keep playing without an account.','邮箱注册与登录尚未开通。现在可以使用Google登录，或直接继续游玩。'],
+ 'WeChatの登録・ログインは準備中です。今はGoogleでログインするか、そのまま遊んでね。':['WeChat sign-up and login are not available yet. Use Google or keep playing without an account.','微信注册与登录尚未开通。现在可以使用Google登录，或直接继续游玩。'],
  'Piko Play アカウント':['Piko Play account','Piko Play 账户'],
  '学習きろくを保存しよう':['Save your learning progress','保存你的学习记录'],
  'ゲームはログインなしでも遊べます。Googleでログインすると、別の端末でも学習きろくを引き継げます。':['Play without logging in. Sign in with Google to use your learning record on another device.','无需登录也能游玩。通过Google登录后，可以在其他设备上继续使用学习记录。'],

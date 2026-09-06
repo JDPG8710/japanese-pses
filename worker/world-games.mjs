@@ -1,4 +1,5 @@
 import { VERSION, validGame, makeRounds, evaluate, solution } from '../src/world/WorldRules.mjs';
+import { tutorialPause } from './tutorial-pause.mjs';
 
 export async function worldRoute(request, env, { authenticate, json, HttpError }) {
   const url = new URL(request.url), db = env.DB;
@@ -14,7 +15,7 @@ export async function worldRoute(request, env, { authenticate, json, HttpError }
     let rank = 0, prior = -1;
     return reply({ entries: result.results.map((row, i) => { if (row.score !== prior) rank = i + 1; prior = row.score; return { rank, name: row.name, score: row.score }; }) });
   }
-  if (request.method !== 'POST' || !['/api/world/start', '/api/world/answer'].includes(url.pathname)) throw new HttpError(404, 'NOT_FOUND');
+  if (request.method !== 'POST' || !['/api/world/start', '/api/world/answer', '/api/world/tutorial'].includes(url.pathname)) throw new HttpError(404, 'NOT_FOUND');
   const origin = request.headers.get('Origin');
   if (origin && ![env.APP_ORIGIN, ...(env.DEV_ORIGINS || '').split(',')].includes(origin)) throw new HttpError(403, 'INVALID_ORIGIN');
   const session = await authenticate(request, env);
@@ -28,6 +29,7 @@ export async function worldRoute(request, env, { authenticate, json, HttpError }
   let body; try { body = JSON.parse(new TextDecoder().decode(bytes)); } catch { throw new HttpError(400, 'INVALID_JSON'); }
   if (!body || typeof body !== 'object') throw new HttpError(400, 'INVALID_JSON');
   const now = Date.now();
+  if (url.pathname === '/api/world/tutorial') return reply(await tutorialPause(db, 'world_runs', body, session.sub, now, HttpError));
   if (url.pathname === '/api/world/start') {
     if (!validGame(body.game, body.level)) throw new HttpError(400, 'INVALID_GAME');
     const recent = await db.prepare('SELECT COUNT(*) AS count FROM world_runs WHERE user_id=?1 AND started_at>?2').bind(session.sub, now - 60000).first();
@@ -43,13 +45,14 @@ export async function worldRoute(request, env, { authenticate, json, HttpError }
   if (typeof body.id !== 'string' || body.id.length > 50 || !Number.isInteger(body.revision) || !Array.isArray(body.answer) || body.answer.length > 64 || body.answer.some(x => !Number.isInteger(x))) throw new HttpError(400, 'INVALID_ANSWER');
   const run = await db.prepare('SELECT * FROM world_runs WHERE run_id=?1 AND user_id=?2').bind(body.id, session.sub).first();
   if (!run) throw new HttpError(404, 'RUN_NOT_FOUND');
+  if (run.tutorial_paused_at != null) throw new HttpError(409, 'TUTORIAL_OPEN');
   if (run.expires_at <= now) throw new HttpError(410, 'RUN_EXPIRED');
   if (run.completed_at || run.revision !== body.revision) throw new HttpError(409, 'STALE_ROUND');
   const rounds = JSON.parse(run.rounds_json), q = rounds[run.round_index];
   const verdict = evaluate(run.game, q, body.answer, run.tries);
   const index = run.round_index + (verdict.done ? 1 : 0), score = run.score + verdict.points;
   const updated = await db.prepare(`UPDATE world_runs SET round_index=?1,tries=?2,score=?3,revision=revision+1,completed_at=?4
-    WHERE run_id=?5 AND user_id=?6 AND revision=?7 AND completed_at IS NULL AND expires_at>?8`).bind(index, verdict.tries, score, index === 10 ? now : null, run.run_id, session.sub, body.revision, now).run();
+    WHERE run_id=?5 AND user_id=?6 AND revision=?7 AND completed_at IS NULL AND tutorial_paused_at IS NULL AND expires_at>?8`).bind(index, verdict.tries, score, index === 10 ? now : null, run.run_id, session.sub, body.revision, now).run();
   if (updated.meta.changes !== 1) throw new HttpError(409, 'STALE_ROUND');
   return reply({ ...verdict, index, score, revision: run.revision + 1, complete: index === 10, question: rounds[index] || null,
     explanation: verdict.done && !verdict.correct ? solution(run.game, q) : null });

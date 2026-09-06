@@ -98,7 +98,8 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
       assert.ok(!html.includes('https://unpkg.com/three'), 'Three.js CDNを読み込まないでください');
       assert.ok(css.includes("url('../assets/maps/manabi-adventure-map.webp')") && css.includes('.map-unit-route'), '制作イラストと読みやすい単元ルートが必要です');
       assert.ok(css.includes('@media (max-width: 380px)') && css.includes('.map-node-layer { top: 178px; }'), '小画面向けのマップ調整が必要です');
-      assert.ok(build.includes("['assets', 'css', 'js', 'src']"), '背景画像をビルド成果物へ含めてください');
+      const copiedDirectories = build.match(/for \(const directory of \[([^\]]+)\]\)/)?.[1] || '';
+      for (const directory of ['assets', 'css', 'js', 'src']) assert.ok(copiedDirectories.includes(`'${directory}'`), '背景画像をビルド成果物へ含めてください');
       assert.ok(build.includes("createHash('sha256')") && build.includes("slice(0, 12)"), '同日中の再配信でも新しい静的資産を取得できる内容ハッシュが必要です');
     });
 

@@ -1,7 +1,8 @@
 import {GAMES,makeRounds,evaluate,solution,rotateMask,robotState} from './WorldRules.mjs';
 import {TEXT} from './WorldText.mjs';
 import {AuthManager} from '../auth/AuthManager.js?v=3';
-import {readCountry,saveCountry,normalizeCountry,languageForCountry} from '../location/Country.mjs';
+import {readCountry,normalizeCountry,languageForCountry} from '../location/Country.mjs';
+import {gradeEntryUrl} from './StudyNavigation.mjs';
 import {validateGradeRoute,availableTasks,yearLabel} from './GradePaths.mjs';
 import {gameGateId,gateUrl,journeyProgressKey,journeyState,nextGate,readJourneyScores} from './GradeJourney.mjs';
 import {createInteractionFeedback} from './InteractionFeedback.mjs';
@@ -16,8 +17,8 @@ const WORLD_GAME_TIME_LIMIT_MS=5*60*1000;
 
 const app=document.querySelector('#app'),localeSelect=document.querySelector('#locale'),params=new URLSearchParams(location.search);
 let locale='en',country=null,localeTouched=false;
-try{country=normalizeCountry(params.get('country'))||readCountry(localStorage);if(country)saveCountry(localStorage,country);locale=country?languageForCountry(country):localStorage.getItem('world-locale')||'en';}catch{country=normalizeCountry(params.get('country'));locale=languageForCountry(country);}
-if(!TEXT[locale])locale='en';if(TEXT[params.get('locale')])locale=params.get('locale');
+try{country=normalizeCountry(params.get('country'))||readCountry(localStorage);const saved=localStorage.getItem('world-locale');locale=TEXT[saved]?saved:languageForCountry(country);localeTouched=!!TEXT[saved];}catch{country=normalizeCountry(params.get('country'));locale=languageForCountry(country);}
+if(!TEXT[locale])locale='en';if(TEXT[params.get('locale')]){locale=params.get('locale');localeTouched=true;}
 let level=1,view='home',game='circuit',run=null,answer=[],timer,epoch=0,busy=false,interacted=false;
 let feedback='',feedbackGood=false,nextState=null,fatal=false;
 const gradeCandidate=validateGradeRoute(params);let gradeScores={};try{if(gradeCandidate)gradeScores=readJourneyScores(localStorage,gradeCandidate.profile,gradeCandidate.year,locale);}catch{}
@@ -39,7 +40,7 @@ auth.initialize().then(session=>{member=session.mode==='authenticated';document.
 if(gradeRoute)void start(gradeRoute.game);
 document.querySelector('#login').onclick=()=>{if(!member){if(auth.localMode){feedback=t().noAuth;render();}else auth.showLogin({message:t().privacy});}};
 soundToggle.onclick=()=>{interaction.toggle();syncSoundToggle();};
-localeSelect.onchange=()=>{interaction.tap();localeTouched=true;locale=localeSelect.value;try{localStorage.setItem('world-locale',locale);}catch{}feedback='';render();if(view==='board')loadBoard();};
+localeSelect.onchange=()=>{interaction.tap();localeTouched=true;locale=localeSelect.value;try{localStorage.setItem('world-locale',locale);}catch{}const q=new URLSearchParams(location.search);q.set('locale',locale);history.replaceState(null,'',`world.html?${q}`);feedback='';render();if(view==='board')loadBoard();};
 
 async function api(path,body){const response=await fetch(`/api/world/${path}`,{method:body?'POST':'GET',credentials:'include',headers:body?{'content-type':'application/json'}:{},body:body?JSON.stringify(body):undefined,signal:AbortSignal.timeout(12000)}),data=await response.json();if(!response.ok){const error=new Error(data.error||'API_ERROR');error.status=response.status;throw error;}return data;}
 function syncSoundToggle(){const muted=interaction.isMuted();soundToggle.setAttribute('aria-pressed',String(muted));soundToggle.textContent=`${muted?'🔇':'🔊'} ${muted?t().soundOff:t().soundOn}`;}
@@ -59,7 +60,7 @@ function render(){
  });
  document.documentElement.lang=locale;localeSelect.value=locale;document.body.dataset.game=view==='play'?game:'';document.title=`Piko Play · ${locale==='zh'?'逻辑实验室':locale==='ja'?'ロジックラボ':'Logic Lab'}`;
  syncSoundToggle();
- const gradeLink=document.querySelector('#grade-entry-link');gradeLink.textContent=locale==='zh'?'按年级学习':locale==='ja'?'がくねん':'School year';const back=new URLSearchParams();if(country)back.set('country',country);if(gradeRoute){back.set('curriculum',gradeRoute.profile);back.set('year',gradeRoute.year);}back.set('locale',locale);gradeLink.href=country==='JP'?'index.html?course=jp':`grades.html?${back}`;
+ const gradeLink=document.querySelector('#grade-entry-link');gradeLink.textContent=locale==='zh'?'按年级学习':locale==='ja'?'がくねん':'School year';gradeLink.href=gradeEntryUrl({country,locale,profile:gradeRoute?.profile||params.get('returnCurriculum'),year:gradeRoute?.year||params.get('returnYear')});
  document.querySelector('#login').textContent=member?t().logged:t().login;document.querySelector('#footer-text').textContent=t().footer;
  if(view==='home'){
   app.innerHTML=`<section class="hero"><div><p class="eyebrow">${t().kicker}</p><h1>${t().title}</h1><p>${t().intro}</p></div><div class="orbit" aria-hidden="true"><span>🧩</span><small>DEDUCE · PLAN · SOLVE</small></div></section><div class="section-top"><div><h2>${t().choose}</h2><p class="muted">${t().skills}</p></div><label>${t().level} <select id="level">${t().levels.map((name,i)=>`<option value="${i+1}" ${level===i+1?'selected':''}>${name}</option>`).join('')}</select></label></div>${feedback?`<p class="status" role="status">${esc(feedback)}</p>`:''}<div class="cards">${GAMES.map(id=>`<article class="card"><div class="card-art" style="--tint:${art[id][1]}" aria-hidden="true">${art[id][0]}</div><div class="card-body"><span class="tag">${t().games[id][1]}</span><h3>${t().games[id][0]}</h3><p>${t().games[id][2]}</p><div class="actions">${button(`play:${id}`,t().play,'primary')}${button(`board:${id}`,t().board)}</div></div></article>`).join('')}</div><aside class="rules"><p><b>${t().rules}</b></p><p>${t().privacy}</p></aside>`;

@@ -4,6 +4,7 @@ import {TEXT} from './WorldText.mjs';
 import {FOUNDATION_TEXT} from './FoundationText.mjs';
 import {gateUrl,journeyState,readJourneyScores} from './GradeJourney.mjs';
 import {countBadge,refreshPlayCounts} from '../stats/PlayCounts.js';
+import {freePlayUrl} from './StudyNavigation.mjs';
 
 const strings={
  zh:{title:'选择你的学年冒险',intro:'每个年级都有自己的学习地图。选一门学科，从第一关开始收集星星。',profile:'学校学制',choose:'请选择学制',free:'自由选游戏',subjects:{all:'全部地图',math:'数学港',english:'英语挑战岛',coding:'编程基地',art:'图形工坊',music:'节奏花园',language:'语文花园',science:'科学实验室',thinking:'脑力训练舱'},pick:'先选一个年级',empty:'这个年级的学习地图还在准备中。',review:'基础复习',note:'每套学制按自己的学年路径选取学习目标，不把日本题目翻译后冒充本地课程；目前是经过标注的补充练习，尚未覆盖全年课程。',US:'美国各州和学校的课程安排不同，Grade 6 仅在学校适用时选择。',INT:'使用国际通用年级标签，不代表所在国家的正式课程。',start:'进入关卡',back:'重新选择国家',current:'学习星图',progress:'本年级进度',cleared:'关已通过',gate:'关卡',knowledge:'年级任务',action:'操作挑战',locked:'通过上一关解锁',complete:'已通关',open:'可以挑战',map:'年级闯关地图',learning:'学习语言',stages:'小关',englishGoal:'原创英检风格题：词汇、对话、句序与阅读，按 CEFR 逐级进阶。'},
@@ -12,15 +13,15 @@ const strings={
 };
 const params=new URLSearchParams(location.search);let storage;try{storage=localStorage;}catch{}
 const country=normalizeCountry(params.get('country'))||readCountry(storage),locale=['en','zh','ja'].includes(params.get('locale'))?params.get('locale'):languageForCountry(country),w=strings[locale],names=TEXT[locale],fw=FOUNDATION_TEXT[locale];
-const allowed=profileOptions(country);let saved;try{saved=JSON.parse(storage.getItem(`piko-grade-${country||'INT'}`));}catch{}
-let profile=params.get('curriculum')||saved?.profile||defaultProfile(country)||'',year=params.get('year')||saved?.year||'',subject='all';
+const allowed=profileOptions(country||undefined);let saved;try{saved=JSON.parse(storage.getItem(`piko-grade-${country||'INT'}`));}catch{}
+let profile=params.get('curriculum')||saved?.profile||defaultProfile(country)||((country==='JP'||!country)&&locale==='zh'?'CN63':''),year=params.get('year')||saved?.year||'',subject='all';
 if(!allowed.includes(profile))profile='';if(!PROFILES[profile]?.years.includes(year))year='';
 const app=document.querySelector('#grade-app'),icons=['🌱','🪁','🚀','🌈','🪐','⭐','🌻','🧭','🎈'];
 const escape=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const gateArt={circuit:'🔌',sudoku:'▦',code:'🔐',robot:'🤖',set:'◈',balance:'⚖️',order:'🚉',water:'💧',network:'⚡'};
 const subjectArt={math:'🔢',english:'🔤',language:'📖',science:'🔬',coding:'🤖',art:'🎨',music:'🎵',thinking:'🧠'};
 document.documentElement.lang=locale;document.title=`Piko Play · ${w.title}`;
-document.querySelector('#free-play').textContent=w.free;document.querySelector('#free-play').href=`world.html${country?`?country=${country}`:''}`;
+document.querySelector('#free-play').textContent=w.free;
 
 function save(){try{storage.setItem(`piko-grade-${country||'INT'}`,JSON.stringify({profile,year}));}catch{}const q=new URLSearchParams();if(country)q.set('country',country);if(profile)q.set('curriculum',profile);if(year)q.set('year',year);q.set('locale',locale);history.replaceState(null,'',`grades.html?${q}`);}
 function scoreSummary(targetYear){const scores=readJourneyScores(storage,profile,targetYear,locale),gates=journeyState(profile,targetYear,scores);return {done:gates.filter(gate=>gate.complete).length,total:gates.length};}
@@ -36,6 +37,7 @@ function renderWorld(subjectId,gates){
  }).join('')}</div></section>`;
 }
 function render(){
+ document.querySelector('#free-play').href=freePlayUrl({country,locale,profile,year});
  queueMicrotask(()=>void refreshPlayCounts(app));
  const allScores=year?readJourneyScores(storage,profile,year,locale):{},allGates=year?journeyState(profile,year,allScores):[],shown=subject==='all'?allGates:journeyState(profile,year,allScores,subject),summary={done:allGates.filter(gate=>gate.complete).length,total:allGates.length};
  const worlds=[...new Set(shown.map(gate=>gate.subject))].map(subjectId=>renderWorld(subjectId,shown.filter(gate=>gate.subject===subjectId))).join('');

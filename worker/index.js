@@ -1,6 +1,7 @@
 import { worldRoute } from './world-games.mjs';
 import { foundationRoute } from './foundation-games.mjs';
 import { countryResponse } from '../src/location/Country.mjs';
+import { playCountsRoute } from './play-counts.mjs';
 const TURNSTILE_VERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
 const GOOGLE_AUTHORIZE_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
@@ -37,6 +38,7 @@ async function routeRequest(request, env) {
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: corsHeaders(request, env) });
 
   if (url.pathname === '/api/health') return handleHealth(request, env);
+  if (url.pathname === '/api/play-counts') return playCountsRoute(request, env, { json, HttpError });
   if (url.pathname === '/api/location' && request.method === 'GET') return countryResponse(request);
   if (url.pathname.startsWith('/api/world/')) return worldRoute(request, env, { authenticate, json, HttpError });
   if (url.pathname.startsWith('/api/foundation/')) return foundationRoute(request, env, { authenticate, json, HttpError });

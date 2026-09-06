@@ -556,6 +556,8 @@
   <script type="module">
     import { GalaxyEngine } from './GalaxyEngine.js?v=9';
     import { MiniGameModal, GAME_GRADE_SUPPORT_MAP } from './MiniGameSystem.js?v=10';
+    import { countBadge, refreshPlayCounts } from './src/stats/PlayCounts.js';
+    import { japanesePlayKey } from './src/stats/PlayKeys.mjs';
     import { EconomyManager, SHOP_CATALOG } from './EconomySystem.js?v=5';
     import { AntigravityAgentBrain, createObservationPayload } from './AgentIntegration.js?v=2';
     import { FULL_CURRICULUM_DAG, SUBJECT_METADATA, GRADES, loadCurriculumFromJSON, graphEngineInstance } from './CurriculumData.js?v=3';
@@ -1019,6 +1021,7 @@
     }
 
     function showIndependentGameList() {
+      void refreshPlayCounts(independentGameList);
       learningModeChoicePanel.classList.add('hidden');
       learningModeChoicePanel.classList.remove('grid');
       independentGradePanel.classList.add('hidden');
@@ -1069,6 +1072,7 @@
       button.type = 'button';
       button.className = `independent-game-card game-card-${game.palette}`;
       button.innerHTML = `<span class="independent-game-icon" aria-hidden="true">${game.icon}</span><strong class="independent-game-name">${game.name}</strong><span class="independent-game-description">${game.description}</span><span class="independent-game-grades">あそべる学年：${game.grades.map(grade => `${grade}年`).join('・')}</span>`;
+      button.insertAdjacentHTML('beforeend', countBadge(japanesePlayKey(game.gameType)));
       button.addEventListener('click', () => showIndependentGradeList(game));
       independentGameList.appendChild(button);
     });
@@ -1672,10 +1676,12 @@
         button.type = 'button';
         button.className = 'min-h-20 p-4 rounded-2xl bg-indigo-500/15 hover:bg-indigo-500/30 border border-indigo-400/40 text-left transition';
         button.innerHTML = `<span class="block text-sm font-bold text-white">${choice.label}</span><span class="block mt-1 text-xs leading-relaxed text-slate-300">${choice.desc}</span>`;
+        button.insertAdjacentHTML('beforeend', countBadge(japanesePlayKey(choice.gameType || node.gameType, choice.mode)));
         button.addEventListener('click', () => startGameWithChoice(node, stageNum, choice));
         gameTypeOptions.appendChild(button);
       });
       gameTypeModal.classList.remove('hidden');
+      void refreshPlayCounts(gameTypeOptions);
     }
 
     function launchGame() {

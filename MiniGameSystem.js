@@ -19,6 +19,8 @@ import { getCurriculumModePolicy, getSupplementalCurriculumQuestions } from './C
 import { HDCanvasRenderer, getLogicalCanvasWidth, getLogicalCanvasHeight } from './src/render/HDCanvasRenderer.js';
 import { GameTutorial } from './src/tutorial/GameTutorial.js';
 import { japaneseTutorial } from './src/tutorial/TutorialContent.js';
+import { recordPlay } from './src/stats/PlayCounts.js';
+import { japanesePlayKey } from './src/stats/PlayKeys.mjs';
 
 const UNIFIED_STAGE_TIME_LIMIT_SECONDS = 3 * 60;
 
@@ -1021,6 +1023,7 @@ export class MiniGameModal {
     }
 
     if (this.currentGame && typeof this.currentGame.start === 'function') {
+      void recordPlay(japanesePlayKey(gameType, selectedMode));
       this.attachStandardSaveState(this.currentGame, gameType, targetNode, levelNum);
       const game = this.currentGame;
       this.tutorialNode = targetNode;

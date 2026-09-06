@@ -9,6 +9,7 @@ import {isEarlyPrimaryChinese,rubyPinyin} from './PinyinRuby.mjs';
 import {RunTutorial} from '../tutorial/RunTutorial.js';
 import {helpButton} from '../tutorial/GameTutorial.js';
 import {worldTutorial} from '../tutorial/TutorialContent.js';
+import {countBadge,refreshPlayCounts,recordPlay} from '../stats/PlayCounts.js';
 
 const app=document.querySelector('#app'),localeSelect=document.querySelector('#locale'),params=new URLSearchParams(location.search);
 let locale='en',country=null,localeTouched=false;
@@ -45,6 +46,14 @@ function goHome(){if(gradeRoute){leave();location.assign(gradeMapUrl());return;}
 function saveGradeProgress(){if(!gradeRoute||!run||run.timedOut||run.score<800)return false;try{const key=journeyProgressKey(gradeRoute.profile,gradeRoute.year,gameGateId(game,gradeRoute.stage));localStorage.setItem(key,String(Math.max(Number(localStorage.getItem(key)||0),run.score)));return true;}catch{return false;}}
 
 function render(){
+ queueMicrotask(()=>{
+  if(view==='play')return;
+  app.querySelectorAll('[data-action^="play:"]').forEach(button=>{
+   const parent=button.closest('.card-body')||button.parentElement;
+   if(!parent.querySelector('[data-play-count]'))parent.insertAdjacentHTML('beforeend',countBadge(`world:${button.dataset.action.split(':')[1]}`));
+  });
+  void refreshPlayCounts(app);
+ });
  document.documentElement.lang=locale;localeSelect.value=locale;document.body.dataset.game=view==='play'?game:'';document.title=`Piko Play · ${locale==='zh'?'逻辑实验室':locale==='ja'?'ロジックラボ':'Logic Lab'}`;
  syncSoundToggle();
  const gradeLink=document.querySelector('#grade-entry-link');gradeLink.textContent=locale==='zh'?'按年级学习':locale==='ja'?'がくねん':'School year';const back=new URLSearchParams();if(country)back.set('country',country);if(gradeRoute){back.set('curriculum',gradeRoute.profile);back.set('year',gradeRoute.year);}back.set('locale',locale);gradeLink.href=country==='JP'?'index.html?course=jp':`grades.html?${back}`;
@@ -95,6 +104,7 @@ function stageMarkup(){
 function initialAnswer(q){interacted=false;if(game==='circuit')return Array(q.tiles.length).fill(0);if(game==='sudoku')return[...q.givens];if(game==='code')return Array(q.length).fill(-1);if(game==='robot'||game==='set'||game==='water'||game==='network')return[];if(game==='balance')return[-1];if(game==='order')return Array.from({length:q.count},(_,i)=>i);return[];}
 async function start(id){
  if(gradeRoute&&!availableTasks(gradeRoute.profile,gradeRoute.year,gradeRoute.subject).some(task=>task.game===id))return;
+ void recordPlay(`world:${id}`);
  if(gradeRoute){const query=new URLSearchParams(location.search);query.set('game',id);history.replaceState(null,'',`world.html?${query}`);level=gradeRoute.level;}
  leave();game=id;const token=epoch;view='home';feedback=t().loading;render();let session=null;
  try{session=await auth.getSession();}catch{}if(token!==epoch)return;

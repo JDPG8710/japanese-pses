@@ -10,6 +10,7 @@ import {isEarlyPrimaryChinese,rubyPinyin} from './PinyinRuby.mjs';
 import {RunTutorial} from '../tutorial/RunTutorial.js';
 import {helpButton} from '../tutorial/GameTutorial.js';
 import {foundationTutorial} from '../tutorial/TutorialContent.js';
+import {countBadge,refreshPlayCounts,recordPlay} from '../stats/PlayCounts.js';
 const params=new URLSearchParams(location.search);let storage;try{storage=localStorage;}catch{}
 const country=normalizeCountry(params.get('country'))||readCountry(storage),locale=['en','zh','ja'].includes(params.get('locale'))?params.get('locale'):languageForCountry(country);
 const input={profile:params.get('curriculum'),year:params.get('year'),lesson:params.get('lesson'),stage:params.get('stage')||'1',locale},candidate=validateFoundation(input),candidateScores=candidate?readJourneyScores(storage,candidate.profile,candidate.year,locale):{},candidateGate=candidate?journeyState(candidate.profile,candidate.year,candidateScores).find(gate=>gate.id===lessonGateId(candidate.lesson,candidate.stage)):null,route=candidateGate?.unlocked?candidate:null,w=FOUNDATION_TEXT[locale],app=document.querySelector('#foundation-app');
@@ -32,6 +33,12 @@ void auth.getSession().then(session=>{member=!!session?.authenticated;document.q
 function rich(value){return rubyPinyin(value,withPinyin);}
 function context(){return `<p class="eyebrow">${rich(w.title)} · ${rich(yearLabel(route.year,locale))} · ${rich(w.stage)} ${route.stage}</p><h1>${rich(TOPICS[route.lesson].title[locale])}</h1>${['language','english'].includes(route.subject)?`<p class="quest-note">${rich(w.learning)}: ${route.learningLanguage==='zh'?'中文':'English'}${route.subject==='english'?` · ${esc(TOPICS[route.lesson].cefr)}`:''}</p>`:''}`;}
 function render(){
+ queueMicrotask(()=>{
+  if(!route||view==='play')return;
+  const board=app.querySelector('.board');
+  if(board&&!board.querySelector('[data-play-count]'))board.insertAdjacentHTML('beforeend',countBadge(`lesson:${route.lesson}`));
+  void refreshPlayCounts(app);
+ });
  if(!route){app.innerHTML=`<p role="alert">${w.invalid}</p>`;return;}
  if(view==='intro'){
   let best=0;try{best=Number(storage.getItem(progressKey)||0);}catch{}
@@ -52,7 +59,7 @@ async function api(path,body){const response=await fetch(`/api/foundation/${path
 function stop(){tutorial.cancel();epoch++;clearInterval(timer);busy=false;}
 function finish(timedOut=false){stop();run.timedOut=timedOut;view='result';run.localSaved=false;try{storage.setItem(`${progressKey}:last`,JSON.stringify({score:run.score,passed:!timedOut&&run.score>=800,timedOut,finishedAt:Date.now()}));if(!timedOut&&run.score>=800){storage.setItem(progressKey,String(Math.max(Number(storage.getItem(progressKey)||0),run.score)));storage.setItem(journeyKey,String(Math.max(Number(storage.getItem(journeyKey)||0),run.score)));}run.localSaved=true;}catch{}render();if(!timedOut&&run.score>=800)interaction.victory();else if(timedOut)interaction.error();}
 function tick(){if(view!=='play'||!run||tutorial.paused)return;const left=Math.max(0,Math.ceil((run.expiresAt-Date.now())/1000));const clock=document.querySelector('#quest-clock');if(clock)clock.textContent=`${Math.floor(left/60)}:${String(left%60).padStart(2,'0')}`;if(left===0){if(run.pending?.complete){run.index=10;finish();}else finish(true);}}
-async function start(){stop();const token=epoch;busy=true;view='intro';feedback=w.loading;render();try{
+async function start(){void recordPlay(`lesson:${route.lesson}`);stop();const token=epoch;busy=true;view='intro';feedback=w.loading;render();try{
  const session=await auth.getSession();if(token!==epoch)return;if(member&&!session?.authenticated)throw new Error('SESSION_LOST');member=!!session?.authenticated;
  const state=member?{...await api('start',route),ranked:true}:(()=>{const rounds=makeFoundationRounds(route,crypto.getRandomValues(new Uint32Array(1))[0]);return {rounds,question:publicQuestion(rounds[0]),index:0,score:0,tries:0,ranked:false,expiresAt:Date.now()+180000};})();
  if(token!==epoch)return;run=state;

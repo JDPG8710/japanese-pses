@@ -10,6 +10,7 @@ import {isEarlyPrimaryChinese,rubyPinyin} from './PinyinRuby.mjs';
 import {RunTutorial} from '../tutorial/RunTutorial.js';
 import {helpButton} from '../tutorial/GameTutorial.js';
 import {foundationTutorial} from '../tutorial/TutorialContent.js';
+import {initSiteVisits} from '../stats/SiteVisits.js';
 import {countBadge,refreshPlayCounts,recordPlay} from '../stats/PlayCounts.js';
 const params=new URLSearchParams(location.search);let storage;try{storage=localStorage;}catch{}
 const country=normalizeCountry(params.get('country'))||readCountry(storage),locale=['en','zh','ja'].includes(params.get('locale'))?params.get('locale'):languageForCountry(country);
@@ -85,3 +86,4 @@ async function board(){stop();view='board';boardEntries=null;feedback='';render(
 app.addEventListener('click',e=>{const target=e.target.closest('button,[data-action]');if(target&&!target.disabled)interaction.tap();const choice=e.target.closest('[data-choice]');if(choice&&!busy&&!verdict?.done){app.querySelectorAll('[data-choice]').forEach(el=>el.setAttribute('aria-pressed',String(el===choice)));return;}const key=e.target.closest('[data-key]')?.dataset.key,input=app.querySelector('#quest-answer');if(key&&input&&!busy&&!verdict?.done){if(key==='⌫')input.value=input.value.slice(0,-1);else if(key==='−')input.value=input.value.startsWith('-')?input.value.slice(1):`-${input.value}`;else if(input.value.length<40)input.value+=key;return;}const action=e.target.closest('[data-action]')?.dataset.action;if(!route||busy)return;if(action==='start')void start();if(action==='check')void check();if(action==='board')void board();if(action==='intro'){stop();view='intro';feedback='';render();}if(action==='next'&&run?.pending){if(run.pending.complete){run.index=10;finish();}else{run.index=run.pending.index;run.question=run.pending.question;run.pending=null;verdict=null;feedback='';render();}}});
 app.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='quest-answer'){e.preventDefault();void check();}});
 window.addEventListener('pagehide',stop);render();
+initSiteVisits(document.querySelector('.topbar'));

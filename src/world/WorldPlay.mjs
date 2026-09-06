@@ -1,5 +1,6 @@
 import {GAMES,makeRounds,evaluate,solution,rotateMask,robotState} from './WorldRules.mjs';
 import {TEXT} from './WorldText.mjs';
+import {initSiteVisits} from '../stats/SiteVisits.js';
 import {AuthManager} from '../auth/AuthManager.js?v=3';
 import {readCountry,normalizeCountry,languageForCountry} from '../location/Country.mjs';
 import {gradeEntryUrl} from './StudyNavigation.mjs';
@@ -35,6 +36,7 @@ const interaction=createInteractionFeedback(),soundToggle=document.querySelector
 const tutorial=new RunTutorial(api);
 
 render();
+initSiteVisits(document.querySelector('.topbar'));
 if(!country)fetch('/api/location',{cache:'no-store',signal:AbortSignal.timeout(4000)}).then(r=>r.json()).then(data=>{if(view==='home'&&!country&&!localeTouched){country=normalizeCountry(data.country);locale=languageForCountry(country);render();}}).catch(()=>{});
 auth.initialize().then(session=>{member=session.mode==='authenticated';document.querySelector('#login').textContent=member?t().logged:t().login;}).catch(()=>{});
 if(gradeRoute)void start(gradeRoute.game);

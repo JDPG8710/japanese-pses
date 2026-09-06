@@ -5,6 +5,7 @@ import {FOUNDATION_TEXT} from './FoundationText.mjs';
 import {gateUrl,journeyState,readJourneyScores} from './GradeJourney.mjs';
 import {countBadge,refreshPlayCounts} from '../stats/PlayCounts.js';
 import {freePlayUrl} from './StudyNavigation.mjs';
+import {initSiteVisits} from '../stats/SiteVisits.js';
 
 const strings={
  zh:{title:'选择你的学年冒险',intro:'每个年级都有自己的学习地图。选一门学科，从第一关开始收集星星。',profile:'学校学制',choose:'请选择学制',free:'自由选游戏',subjects:{all:'全部地图',math:'数学港',english:'英语挑战岛',coding:'编程基地',art:'图形工坊',music:'节奏花园',language:'语文花园',science:'科学实验室',thinking:'脑力训练舱'},pick:'先选一个年级',empty:'这个年级的学习地图还在准备中。',review:'基础复习',note:'每套学制按自己的学年路径选取学习目标，不把日本题目翻译后冒充本地课程；目前是经过标注的补充练习，尚未覆盖全年课程。',US:'美国各州和学校的课程安排不同，Grade 6 仅在学校适用时选择。',INT:'使用国际通用年级标签，不代表所在国家的正式课程。',start:'进入关卡',back:'重新选择国家',current:'学习星图',progress:'本年级进度',cleared:'关已通过',gate:'关卡',knowledge:'年级任务',action:'操作挑战',locked:'通过上一关解锁',complete:'已通关',open:'可以挑战',map:'年级闯关地图',learning:'学习语言',stages:'小关',englishGoal:'原创英检风格题：词汇、对话、句序与阅读，按 CEFR 逐级进阶。'},
@@ -48,3 +49,4 @@ function render(){
 }
 app.addEventListener('click',e=>{const yearButton=e.target.closest('[data-year]'),subjectButton=e.target.closest('[data-subject]');if(yearButton){year=yearButton.dataset.year;subject='all';save();render();}else if(subjectButton){subject=subjectButton.dataset.subject;render();}});
 render();
+initSiteVisits(document.querySelector('.topbar'));

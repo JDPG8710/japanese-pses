@@ -1,0 +1,14 @@
+.site-visits{position:relative;margin-left:auto;min-width:0;max-width:100%;color:#173f39;font:600 14px/1.5 system-ui,sans-serif;z-index:5}
+.site-visits summary{display:flex;align-items:center;justify-content:center;gap:10px;min-height:48px;padding:10px 14px;border:1px solid #accfc1;border-radius:16px;background:#f4fff9;cursor:pointer;list-style:none}
+.site-visits summary::-webkit-details-marker{display:none}
+.site-visits summary:after{content:'';width:6px;height:6px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);margin-left:4px}
+.site-visits summary:focus-visible{outline:3px solid #268d79;outline-offset:3px}
+.visits-title{overflow-wrap:anywhere}.visits-total{font-variant-numeric:tabular-nums}
+.site-visits summary{flex-wrap:wrap;gap:8px}.visits-preview{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}.visits-chip{display:inline-flex;align-items:center;gap:4px}
+.visits-countries{position:absolute;right:0;top:100%;margin:6px 0 0;padding:12px;list-style:none;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;width:min(320px,calc(100vw - 32px));max-height:260px;overflow:auto;border:1px solid #accfc1;border-radius:16px;background:#f4fff9;box-shadow:0 12px 28px #102b3b33}
+.visits-countries li{display:flex;align-items:center;justify-content:center;gap:6px;min-height:44px;min-width:0;border-radius:10px;background:#e4f3ee;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.visits-flag{font-size:24px;font-family:'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif}
+.visits-flag{display:inline-flex;align-items:center}.visits-flag img{display:block;width:28px;height:21px;object-fit:contain}
+#country-home .country-nav{flex-wrap:wrap;gap:12px}#country-home .site-visits{margin-left:auto}
+.topbar .site-visits{flex-basis:100%;max-width:320px}
+@media(max-width:480px){#country-home .country-nav{margin-bottom:24px}#country-home .site-visits{flex-basis:100%}.topbar .site-visits{max-width:none}}

@@ -12,18 +12,18 @@ export const CEFR_BY_STAGE=['Pre-A1','Pre-A1','Pre-A1','A1','A1','A1+','A2 bridg
 // translations by attaching tense endings to an unconjugated word fragment.
 export const EN_ZH_TRANSLATIONS=[
  ['Hello.','你好。','Pre-A1'],['Good morning.','早上好。','Pre-A1'],['Thank you.','谢谢。','Pre-A1'],['Goodbye.','再见。','Pre-A1'],
- ['My name is Mia.','我叫米娅。','Pre-A1'],['I am eight years old.','我八岁。','Pre-A1'],['This is my bag.','这是我的书包。','Pre-A1'],['I like apples.','我喜欢苹果。','Pre-A1'],
+ ['My name is Mia.','我叫米娅。','Pre-A1'],['I am eight years old.','我八岁。','Pre-A1'],['This is my schoolbag.','这是我的书包。','Pre-A1'],['I like apples.','我喜欢苹果。','Pre-A1'],
  ['It is a red ball.','这是一个红色的球。','Pre-A1'],['I have a dog.','我有一只狗。','Pre-A1'],['Please sit down.','请坐下。','Pre-A1'],['Please stand up.','请起立。','Pre-A1'],
  ['Open your book.','打开你的书。','Pre-A1'],['Close the door.','关上门。','Pre-A1'],['See you tomorrow.','明天见。','Pre-A1'],['How are you?','你好吗？','Pre-A1'],
  ['I am fine.','我很好。','Pre-A1'],['What is this?','这是什么？','Pre-A1'],
 
  ['I go to school at eight.','我八点去上学。','A1'],['She plays tennis on Sunday.','她星期日打网球。','A1'],['We eat lunch at school.','我们在学校吃午饭。','A1'],['He can swim well.','他游泳游得很好。','A1'],
  ['There are two books on the desk.','桌子上有两本书。','A1'],['Where is the library?','图书馆在哪里？','A1'],['It is next to the park.','它在公园旁边。','A1'],['What time is it?','现在几点？','A1'],
- ["It is half past three.",'现在三点半。','A1'],['I want some water.','我想喝点水。','A1'],['Do you like music?','你喜欢音乐吗？','A1'],['Yes, I do.','是的，我喜欢。','A1'],
- ['My sister is reading a book.','我姐姐正在读书。','A1'],['We visited the zoo yesterday.','我们昨天去了动物园。','A1'],['Please help me with this box.','请帮我搬这个箱子。','A1'],['Turn left at the bank.','在银行左转。','A1'],
+ ["It is half past three.",'现在三点半。','A1'],['I want some water.','我想喝点水。','A1'],['Do you like music?','你喜欢音乐吗？','A1'],['A: Do you like music? B: Yes, I do.','甲：你喜欢音乐吗？乙：是的，我喜欢。','A1'],
+ ['My older sister is reading a book.','我姐姐正在读书。','A1'],['We visited the zoo yesterday.','我们昨天去了动物园。','A1'],['Please help me carry this box.','请帮我搬这个箱子。','A1'],['Turn left at the bank.','在银行左转。','A1'],
  ['The bus stop is in front of the store.','公共汽车站在商店前面。','A1'],['I usually get up at seven.','我通常七点起床。','A1'],
 
- ['If it rains, we will stay inside.','如果下雨，我们就待在室内。','A2'],['I have never been to London.','我从未去过伦敦。','A2'],['The blue bag is cheaper than the red one.','蓝色书包比红色书包便宜。','A2'],['Could you tell me the way to the museum?','你能告诉我去博物馆的路吗？','A2'],
+ ['If it rains, we will stay inside.','如果下雨，我们就待在室内。','A2'],['I have never been to London.','我从未去过伦敦。','A2'],['The blue schoolbag is cheaper than the red one.','蓝色书包比红色书包便宜。','A2'],['Could you tell me the way to the museum?','你能告诉我去博物馆的路吗？','A2'],
  ['We should save water at home.','我们应该在家节约用水。','A2'],['She was tired, but she finished her homework.','她很累，但还是完成了作业。','A2'],['I chose this book because I like science.','我选这本书是因为我喜欢科学。','A2'],['The train arrived ten minutes late.','火车晚到了十分钟。','A2'],
  ['This park is popular with local families.','这个公园很受当地家庭欢迎。','A2'],['Please remember to bring your umbrella.','请记得带伞。','A2'],['I am looking forward to the school trip.','我很期待学校旅行。','A2'],['We worked together to solve the problem.','我们一起解决了这个问题。','A2'],
  ['The library closes earlier on Fridays.','图书馆每周五会早些关门。','A2'],['He has lived here for three years.','他在这里住了三年。','A2'],['Would you like to join our team?','你愿意加入我们队吗？','A2'],['The weather may change this afternoon.','今天下午天气可能会变。','A2'],
@@ -59,11 +59,11 @@ const WORD_ORDERS=[
  ['Put the words in order: is / This / my bag','This is my bag.',['Is this my bag.','My bag this is.','This my is bag.'],'Pre-A1','Use “This is” before the object.'],
  ['Put the words in order: like / I / apples','I like apples.',['Like I apples.','Apples like I.','I apples like.'],'Pre-A1','The order is subject, verb, then object.'],
  ['Put the words in order: your / Open / book','Open your book.',['Your open book.','Book your open.','Open book your.'],'Pre-A1','An instruction begins with the action word.'],
- ['Put the words in order: school / at eight / I / go to','I go to school at eight.',['I at eight go to school.','Go to I school at eight.','At school I eight go to.'],'A1','Place the subject first and the time expression last.'],
+ ['Put the words in order: school / at eight / I / go to','I go to school at eight.',['I go at school to eight.','Go to I school at eight.','At school I eight go to.'],'A1','Place the subject first and the time expression last.'],
  ['Put the words in order: tennis / on Sunday / She / plays','She plays tennis on Sunday.',['She tennis plays on Sunday.','On Sunday plays she tennis.','Plays she on Sunday tennis.'],'A1','A statement uses subject, verb, object, then time.'],
  ['Put the words in order: the library / Where / is','Where is the library?',['Where the library is?','Is where the library?','The library where is?'],'A1','A where-question puts “is” before the subject.'],
  ['Put the words in order: some water / want / I','I want some water.',['I some water want.','Want I some water.','Some water I want?'],'A1','Use subject, verb, then object.'],
- ['Put the words in order: because / science / I / like / it','I chose it because I like science.',['Because science I chose it like.','I because chose it science like.','I chose because science it like.'],'A2','Join the choice and its reason with “because”.'],
+ ['Put the words in order: because / science / I / like / it / chose / I','I chose it because I like science.',['Because science I chose it I like.','I because chose it I science like.','I chose because science it I like.'],'A2','Join the choice and its reason with “because”.'],
  ['Put the words in order: has lived / for three years / He / here','He has lived here for three years.',['He here has lived three years for.','For three years has he here lived.','He lived has for here three years.'],'A2','Use present perfect, place, then duration.'],
  ['Put the words in order: should / at home / save water / We','We should save water at home.',['We save should at home water.','Should we at home save water.','At home should water we save.'],'A2','Place the modal before the main verb.']
 ];

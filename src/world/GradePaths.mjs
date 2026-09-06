@@ -20,7 +20,7 @@ export const TASKS={
   code:{subject:'thinking',objective:'CG11',minimum:2,skill:{en:'Deduce a hidden code from feedback',zh:'根据反馈推断隐藏密码',ja:'ヒントから あんごうを とく'}},
   robot:{subject:'coding',objective:'CT03',minimum:1,skill:{en:'Plan a shortest safe route around obstacles',zh:'绕开障碍规划最短安全路线',ja:'しょうがいを よけて さいたんルートを つくる'}},
   set:{subject:'thinking',objective:'CG12',minimum:1,skill:{en:'Classify three-feature relationships',zh:'辨认三个特征的组合关系',ja:'3つの とくちょうを くらべる'}},
-  balance:{subject:'math',objective:'MA10',minimum:2,skill:{en:'Infer unknown weights from equations',zh:'根据等式推断未知重量',ja:'しきから おもさを すいりする'}},
+  balance:{subject:'math',objective:'MA10',minimum:2,skill:{en:'Infer unknown shape values from equations',zh:'根据等式推断图形代表的数',ja:'しきから かたちの かずを すいりする'}},
   order:{subject:'language',objective:'LA-LOG',minimum:1,skill:{en:'Read clues and build a logical order',zh:'阅读线索并排列合理顺序',ja:'ことばの ヒントで ならべる'}},
   water:{subject:'science',objective:'SC03',minimum:2,skill:{en:'Plan volume transformations',zh:'规划容量变化步骤',ja:'みずの うつしかたを けいかくする'}},
   network:{subject:'thinking',objective:'CG14',minimum:2,skill:{en:'Connect a network at minimum cost',zh:'以最低成本连通网络',ja:'いちばん すくない コストで つなぐ'}}

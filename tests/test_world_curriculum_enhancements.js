@@ -8,10 +8,9 @@ module.exports=({describe,test,assert,loadESModule})=>{
  const rules=loadESModule(path.join(root,'src/world/FoundationRules.mjs'));
  const words=loadESModule(path.join(root,'src/world/FoundationWords.mjs'));
  const english=loadESModule(path.join(root,'src/world/FoundationEnglish.mjs'));
- const pinyin=loadESModule(path.join(root,'src/world/PinyinRuby.mjs'));
  const japaneseGames=loadESModule(path.join(root,'MiniGameSystem.js'));
 
- describe('世界模式：同年级关卡、英语挑战与拼音辅助',()=>{
+ describe('世界模式：同年级关卡、英语挑战与文案准确性',()=>{
   test('中国1—6年级总关卡与日本同年级实际关卡数一致',()=>{
    for(let grade=1;grade<=6;grade++){
     const gates=journey.journeyFor('CN63',`Y${grade}`);
@@ -70,16 +69,46 @@ module.exports=({describe,test,assert,loadESModule})=>{
    assert.ok(eiken3.some(question=>question.prompt.includes('I had a chance to study for the test.')&&question.correct==='私はテストに向けて勉強する機会がありました。'));
   });
 
-  test('中国低年级题面、选项、提示与讲解的汉字都有ruby拼音',()=>{
-   const records=[...words.wordPool(0,'zh'),...words.wordPool(1,'zh'),...words.wordPool(2,'zh'),...english.englishPool(1,'zh'),...english.englishPool(2,'zh')];
-   for(const question of records)for(const value of [question.prompt,question.correct,...question.choices,question.hint,question.explanation]){
-    const coverage=pinyin.pinyinCoverage(value);assert.strictEqual(coverage.complete,true,`${value}: ${coverage.missing.join('')}`);
+  test('全球课程不再自动加ruby，拼音学习题仍然保留',()=>{
+   for(const file of ['FoundationPlay.mjs','WorldPlay.mjs']){
+    const source=fs.readFileSync(path.join(root,'src/world',file),'utf8');
+    assert.ok(!/rubyPinyin|with-pinyin|<ruby/.test(source));
    }
-   const html=pinyin.rubyPinyin('选择“书”的正确读音。');
-   assert.ok(html.includes('<ruby>')&&html.includes('<rt>'));
-   assert.ok(!html.includes('<script>'));
-   const worldText=loadESModule(path.join(root,'src/world/WorldText.mjs')).TEXT.zh;
-   for(const game of Object.values(worldText.games))assert.strictEqual(pinyin.pinyinCoverage(game[3]).complete,true,game[3]);
+   assert.ok(words.wordPool(0,'zh').some(question=>question.id.startsWith('pinyin-')));
+  });
+
+  test('英语组句题的所有选项与题目提供的词数量完全一致',()=>{
+   const tokens=value=>(value.toLowerCase().match(/[a-z]+/g)||[]).sort().join(' ');
+   for(const question of english.englishPool(6,'zh').filter(q=>q.format==='word-order')){
+    const supplied=tokens(question.prompt.split(':')[1]);
+    for(const choice of question.choices)assert.strictEqual(tokens(choice),supplied,`${question.id}: ${choice}`);
+   }
+  });
+
+  test('英中句对保留书包、姐姐、搬运和回答所需语境',()=>{
+   const pairs=english.EN_ZH_TRANSLATIONS;
+   assert.ok(pairs.some(p=>p.en==='This is my schoolbag.'&&p.zh==='这是我的书包。'));
+   assert.ok(pairs.some(p=>p.en==='My older sister is reading a book.'&&p.zh==='我姐姐正在读书。'));
+   assert.ok(pairs.some(p=>p.en==='Please help me carry this box.'&&p.zh==='请帮我搬这个箱子。'));
+   assert.ok(!pairs.some(p=>p.en==='Yes, I do.'));
+   for(const q of english.englishPool(6,'zh').filter(q=>q.format.startsWith('translation')&&q.id.startsWith('T30-'))){
+    assert.ok(q.prompt.includes('?')||q.prompt.includes('？'));
+    assert.ok(q.correct.includes('?')||q.correct.includes('？'));
+   }
+  });
+
+  test('游戏教程引用实际按钮名称且规则时长一致',()=>{
+   const text=loadESModule(path.join(root,'src/world/WorldText.mjs')).TEXT;
+   const tutorials=loadESModule(path.join(root,'src/tutorial/TutorialContent.js'));
+   for(const [locale,copy] of Object.entries(text))for(const game of Object.keys(copy.games)){
+    const tutorial=tutorials.worldTutorial(game,locale,copy);
+    assert.ok(tutorial.steps[2].includes(copy.check));
+    assert.strictEqual(tutorial.rule,copy.rules);
+    assert.ok(copy.rules.includes('5'));
+   }
+   assert.strictEqual(text.zh.games.balance[0],'图形数字谜');
+   assert.ok(text.zh.games.water[3].includes('最少步骤'));
+   assert.ok(text.zh.games.set[3].includes('填充样式'));
   });
 
   test('世界游戏和年级题目都有可关闭的声音、触觉点击与可见按压反馈',()=>{

@@ -34,13 +34,13 @@ export function japaneseTutorial(game, title) {
 }
 
 const controls = {
- en:{circuit:'Tap a pipe to turn it a quarter turn.',sudoku:'Tap an empty cell repeatedly to choose its number.',code:'Tap each code slot to cycle its symbol.',robot:'Tap the arrows to build your route. Undo removes the last move.',set:'Tap three cards. Tap again to remove a selection.',balance:'Tap the number for the requested object’s weight.',order:'Use the left and right arrows to move each traveller.',water:'Choose fill, empty or pour. Watch both tank levels change.',network:'Tap the links you want to build. Tap again to remove one.'},
- ja:{circuit:'パイプをタップすると、90度回るよ。',sudoku:'空いたマスをタップして、数字をかえよう。',code:'答えのマスをタップして、記号をかえよう。',robot:'矢印で道順を作ろう。「もどす」で一つ取り消せるよ。',set:'3枚をタップ！ もう一度タップすると取り消せるよ。',balance:'聞かれている形のおもさを、数字から選ぼう。',order:'左右の矢印で、ならび順をかえよう。',water:'入れる・空にする・うつすを選んで、水の量を見よう。',network:'つなぎたい線をタップ。もう一度タップで取り消せるよ。'},
- zh:{circuit:'点击管道，每次旋转90度。',sudoku:'重复点击空白格，切换要填入的数字。',code:'点击密码格，切换其中的符号。',robot:'点击方向键编排路线，“撤销”可取消最后一步。',set:'点击选中三张卡片，再次点击可以取消。',balance:'点击数字，回答所问物体的重量。',order:'用左右箭头移动角色，调整队列顺序。',water:'选择装满、倒空或倾倒，观察两个水箱的水量。',network:'点击选中要修建的连线，再次点击可以取消。'}
+ en:{circuit:'Tap a pipe to turn it a quarter turn.',sudoku:'Tap an empty cell repeatedly to choose its number.',code:'Tap each code slot to cycle its symbol.',robot:'Tap the arrows to build your route. Undo removes the last move.',set:'Tap three cards. Tap again to remove a selection.',balance:'Tap the number represented by the requested shape.',order:'Use the left and right arrows to move each traveller.',water:'Choose fill, empty or pour. Watch both tank levels change.',network:'Tap the links you want to build. Tap again to remove one.'},
+ ja:{circuit:'パイプをタップすると、90度回るよ。',sudoku:'空いたマスをタップして、数字をかえよう。',code:'答えのマスをタップして、記号をかえよう。',robot:'矢印で道順を作ろう。「もどす」で一つ取り消せるよ。',set:'3枚をタップ！ もう一度タップすると取り消せるよ。',balance:'聞かれている形が表す数を、数字から選ぼう。',order:'左右の矢印で、ならび順をかえよう。',water:'入れる・空にする・うつすを選んで、水の量を見よう。',network:'つなぎたい線をタップ。もう一度タップで取り消せるよ。'},
+ zh:{circuit:'点击管道，每次旋转90度。',sudoku:'重复点击空白格，切换要填入的数字。',code:'点击密码格，切换其中的符号。',robot:'点击方向键编排路线，“撤销”可取消最后一步。',set:'点击选中三张卡片，再次点击可以取消。',balance:'点击数字，回答所问图形代表的数。',order:'用左右箭头移动角色，调整队列顺序。',water:'选择装满、倒空或倾倒，观察两个水箱的水量。',network:'点击选中要修建的连线，再次点击可以取消。'}
 };
 export function worldTutorial(game, locale, text) {
   const lang = ui[locale] ? locale : 'en';
-  const submit={en:'Check all the rules, then press “Submit solution”. Solve 10 puzzles and reach 800 points to clear.',ja:'ルールを全部たしかめて「答え合わせ」。10問で800点をめざそう！',zh:'检查所有条件后点击“提交答案”。完成10道题，达到800分即可通关。'}[lang];
+  const submit={en:`Check all the rules, then press “${text.check}”. Solve 10 puzzles and reach 800 points to clear.`,ja:`ルールを全部たしかめて「${text.check}」。10問で800点をめざそう！`,zh:`检查所有条件后点击“${text.check}”。完成10道题，达到800分即可通关。`}[lang];
   return {title:text.games[game][0],locale:lang,steps:[text.games[game][3],controls[lang][game],submit],demo:demos[game],kind:game==='circuit'?'rotate':'choice',rule:text.rules};
 }
 export function foundationTutorial(title, locale, kind, rules) {

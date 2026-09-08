@@ -14,7 +14,7 @@ import {countBadge,refreshPlayCounts,recordPlay} from '../stats/PlayCounts.js';
 const params=new URLSearchParams(location.search);let storage;try{storage=localStorage;}catch{}
 const country=normalizeCountry(params.get('country'))||readCountry(storage),locale=['en','zh','ja'].includes(params.get('locale'))?params.get('locale'):languageForCountry(country);
 const input={profile:params.get('curriculum'),year:params.get('year'),lesson:params.get('lesson'),stage:params.get('stage')||'1',locale},candidate=validateFoundation(input),candidateScores=candidate?readJourneyScores(storage,candidate.profile,candidate.year,locale):{},candidateGate=candidate?journeyState(candidate.profile,candidate.year,candidateScores).find(gate=>gate.id===lessonGateId(candidate.lesson,candidate.stage)):null,route=candidateGate?.unlocked?candidate:null,w=FOUNDATION_TEXT[locale],app=document.querySelector('#foundation-app');
-document.documentElement.lang=locale;document.title=`${w.title} · Piko Play`;
+document.documentElement.lang=locale;document.title=`${w.title} · Piko Game`;
 const backQ=new URLSearchParams({country:country||'',curriculum:route?.profile||'',year:route?.year||'',locale});
 const back=document.querySelector('#grade-back');back.href=`grades.html?${backQ}`;back.textContent=w.back;
 const auth=new AuthManager({apiBase:'/api',turnstileSiteKey:document.querySelector('meta[name="turnstile-site-key"]').content});

@@ -59,7 +59,7 @@ function render(){
   });
   void refreshPlayCounts(app);
  });
- document.documentElement.lang=locale;localeSelect.value=locale;document.body.dataset.game=view==='play'?game:'';document.title=`Piko Play · ${locale==='zh'?'逻辑实验室':locale==='ja'?'ロジックラボ':'Logic Lab'}`;
+ document.documentElement.lang=locale;localeSelect.value=locale;document.body.dataset.game=view==='play'?game:'';document.title=`Piko Game · ${locale==='zh'?'逻辑实验室':locale==='ja'?'ロジックラボ':'Logic Lab'}`;
  syncSoundToggle();
  const gradeLink=document.querySelector('#grade-entry-link');gradeLink.textContent=locale==='zh'?'按年级学习':locale==='ja'?'がくねん':'School year';gradeLink.href=gradeEntryUrl({country,locale,profile:gradeRoute?.profile||params.get('returnCurriculum'),year:gradeRoute?.year||params.get('returnYear')});
  document.querySelector('#login').textContent=member?t().logged:t().login;document.querySelector('#footer-text').textContent=t().footer;

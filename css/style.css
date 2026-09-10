@@ -61,30 +61,20 @@ button {
   font-family: "Arial Rounded MT Bold", "Hiragino Maru Gothic ProN", "Noto Sans JP", system-ui, sans-serif;
 }
 
-.cartoon-map-world[data-theme="skin_nebula_aurora"] {
-  background-image:
-    linear-gradient(125deg, rgba(28,255,181,.28), rgba(42,151,255,.08) 45%, rgba(117,74,255,.3)),
-    url('../assets/maps/manabi-adventure-map.webp');
-  background-blend-mode: screen, normal;
+.cartoon-map-world[data-theme],.shop-map-preview[data-theme]{background-size:100% auto,cover;background-position:center;background-repeat:no-repeat}
+/* Keep purchased IDs stable while giving the illustrated map matching decorations. */
+.cartoon-map-world[data-theme="skin_nebula_aurora"],.shop-map-preview[data-theme="skin_nebula_aurora"] {
+  background-position:center bottom,center;
+  background-image:url('../assets/maps/garden-decoration.svg'),url('../assets/maps/manabi-adventure-map.webp');
 }
-.cartoon-map-world[data-theme="skin_cyber_neon"] {
-  background-image:
-    linear-gradient(135deg, rgba(255,39,170,.34), rgba(35,202,255,.12) 48%, rgba(104,54,255,.38)),
-    url('../assets/maps/manabi-adventure-map.webp');
-  background-blend-mode: color, normal;
+.cartoon-map-world[data-theme="skin_cyber_neon"],.shop-map-preview[data-theme="skin_cyber_neon"] {
+  background-position:center top,center;
+  background-image:url('../assets/maps/festival-decoration.svg'),url('../assets/maps/manabi-adventure-map.webp');
 }
-.cartoon-map-world[data-theme="skin_nebula_aurora"] .map-art-shade {
-  background: linear-gradient(115deg, rgba(51,255,190,.22), transparent 38%, rgba(83,122,255,.26));
-  animation: map-theme-shimmer 5s ease-in-out infinite alternate;
-}
-.cartoon-map-world[data-theme="skin_cyber_neon"] .map-art-shade {
-  background:
-    linear-gradient(115deg, rgba(255,37,184,.24), transparent 42%, rgba(40,213,255,.26)),
-    radial-gradient(circle at 70% 42%, transparent 16%, rgba(35,7,88,.34) 100%);
-  animation: map-theme-shimmer 3.4s ease-in-out infinite alternate;
-}
-.cartoon-map-world[data-theme="skin_nebula_aurora"] .map-sparkles span { background:#b8ffe8; box-shadow:0 0 0 3px rgba(105,255,207,.25),0 0 22px 7px rgba(74,255,196,.7); }
-.cartoon-map-world[data-theme="skin_cyber_neon"] .map-sparkles span { background:#ff9fe6; box-shadow:0 0 0 3px rgba(255,70,200,.25),0 0 24px 8px rgba(66,215,255,.72); }
+.cartoon-map-world[data-theme="skin_nebula_aurora"] .map-art-shade {background:linear-gradient(180deg,#ffe5ec18,transparent 55%,#97b95820)}
+.cartoon-map-world[data-theme="skin_cyber_neon"] .map-art-shade {background:linear-gradient(180deg,#fff1c52b,transparent 55%,#ffc68a20)}
+.shop-map-preview{width:104px;height:72px;flex-shrink:0;border:2px solid #fff2cf;border-radius:12px;background:#6dc6e8 center/cover no-repeat;background-image:url('../assets/maps/manabi-adventure-map.webp')}
+@media(max-width:480px){.shop-map-preview{width:72px;height:64px}}
 
 .map-art-shade {
   position: absolute; inset: 0; pointer-events: none;
@@ -176,45 +166,6 @@ button {
 @keyframes map-sparkle-pulse { to { opacity: .28; transform: scale(.6) rotate(45deg); } }
 @keyframes map-theme-shimmer { to { opacity: .58; transform: scale(1.025); } }
 
-/* 1日1回だけ表示する、5秒のゲーム名イントロ。 */
-.daily-brand-splash {
-  position: fixed; inset: 0; z-index: 140; display: none; align-items: center; justify-content: center;
-  padding: 1rem; overflow: hidden; background: linear-gradient(145deg, #66d7ff, #9d7cff 48%, #ff83b5);
-}
-.daily-brand-splash.is-visible { display: flex; }
-.daily-brand-splash::before,
-.daily-brand-splash::after {
-  content: ''; position: absolute; width: 58vmax; height: 58vmax; border-radius: 48%;
-  background: rgba(255,255,255,.16); animation: daily-brand-spin 7s linear infinite;
-}
-.daily-brand-splash::before { left: -26vmax; top: -34vmax; }
-.daily-brand-splash::after { right: -27vmax; bottom: -36vmax; animation-direction: reverse; }
-.daily-brand-card { position: relative; z-index: 2; width: min(94vw, 48rem); text-align: center; }
-.daily-brand-mascots { display: flex; justify-content: center; align-items: center; gap: clamp(.5rem, 4vw, 2rem); font-size: clamp(3rem, 11vw, 6rem); }
-.daily-brand-mascots span { display: inline-block; filter: drop-shadow(0 8px 0 rgba(51,49,113,.22)); animation: daily-brand-hop 1s ease-in-out infinite alternate; }
-.daily-brand-mascots span:nth-child(2) { animation-delay: -.45s; }
-.daily-brand-mascots span:nth-child(3) { animation-delay: -.2s; }
-.daily-brand-kicker, .daily-brand-subtitle, .daily-brand-countdown { color: #fff; font-weight: 900; text-shadow: 0 2px 0 rgba(54,44,107,.35); }
-.daily-brand-kicker { margin-top: .6rem; font-size: clamp(.78rem, 2.4vw, 1.1rem); letter-spacing: .08em; }
-.daily-brand-title {
-  margin: .25rem auto; padding: 0 .1em; color: transparent; font-family: "Arial Rounded MT Bold", "Hiragino Maru Gothic ProN", "Noto Sans JP", system-ui, sans-serif;
-  font-size: clamp(3rem, 13vw, 7.5rem); font-weight: 1000; line-height: 1.15; letter-spacing: .01em;
-  background: linear-gradient(90deg, #fff264, #fff, #7affca, #fff, #ffec69); background-size: 240% auto;
-  -webkit-background-clip: text; background-clip: text; -webkit-text-stroke: 2px #6a3fa0;
-  filter: drop-shadow(0 8px 0 #6a3fa0) drop-shadow(0 15px 25px rgba(64,45,128,.3));
-  animation: daily-brand-color 2.2s linear infinite;
-}
-.daily-brand-subtitle { font-size: clamp(1rem, 3vw, 1.5rem); }
-.daily-brand-countdown { display: inline-block; margin-top: 1.25rem; padding: .6rem 1rem; border-radius: 999px; background: rgba(48,35,105,.35); font-size: .8rem; }
-.daily-brand-close {
-  position: absolute; z-index: 4; top: max(1rem, env(safe-area-inset-top)); right: max(1rem, env(safe-area-inset-right));
-  display: grid; place-items: center; width: 3rem; min-height: 3rem; padding: 0; border: 3px solid #fff;
-  border-radius: 50%; color: #573786; background: #fff; font-size: 1.1rem; font-weight: 1000; box-shadow: 0 5px 0 rgba(74,45,120,.3);
-}
-@keyframes daily-brand-spin { to { transform: rotate(360deg); } }
-@keyframes daily-brand-hop { to { transform: translateY(-10px) rotate(4deg); } }
-@keyframes daily-brand-color { to { background-position: 240% center; } }
-
 /* ゲーム先行モードの、読みやすいカラフルなカード。 */
 .independent-game-card {
   --card-a: #7657e8; --card-b: #b16cff; --card-ink: #fff;
@@ -267,6 +218,7 @@ button {
 
 /* Canvas games must not inherit a bright/complex scene through transparency. */
 #game-canvas {
+  display: block;
   background: #08111f;
 }
 
@@ -680,8 +632,8 @@ button {
   #learning-mode-choice-panel > button { min-height: 0 !important; padding: 1rem !important; }
   #independent-game-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   #independent-game-list > button { min-height: 9.5rem !important; padding: .8rem !important; }
-  #game-modal > div { max-height: calc(100dvh - .5rem) !important; border-radius: 1.25rem; }
-  #game-stage { height: min(60dvh, 420px) !important; min-height: 300px; }
+  #game-modal > div { max-height: calc(100dvh - .5rem) !important; overflow-y: auto; border-radius: 1.25rem; }
+  #game-stage { flex: 0 0 auto; height: min(60dvh, 420px) !important; min-height: 300px; }
   #game-title { white-space: normal !important; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.25; }
   #game-hint { white-space: normal !important; overflow: visible !important; text-overflow: clip !important; line-height: 1.35; }
 }
@@ -705,7 +657,6 @@ button {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .map-stage-stop, .map-node-celebrate, .map-sparkles span, .map-art-shade, .daily-brand-splash::before, .daily-brand-splash::after,
-  .daily-brand-mascots span, .daily-brand-title { animation: none !important; transition: none !important; }
+  .map-stage-stop, .map-node-celebrate, .map-sparkles span, .map-art-shade { animation: none !important; transition: none !important; }
   .shop-hint-flash { animation: none !important; outline: 4px solid rgba(34,211,238,.7); outline-offset: -4px; }
 }

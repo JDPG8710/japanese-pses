@@ -20,10 +20,15 @@ export class ErrorInterceptor {
     this.currentFps = 60;
     this.lowFpsDurationMs = 0;
     this.lastFrameTime = performance.now();
+    this.fpsFrameId = null;
 
     // UI 応答停止の監視
     this.pendingNodeClick = null;
     this.clickWatchdogTimer = null;
+    this.onPointerDown = this.recordAction.bind(this);
+    this.onNodeClickStart = this.watchNodeClick.bind(this);
+    this.onNodeInteractionComplete = this.clearNodeClickWatch.bind(this);
+    this.onVisibilityChange = this.resetFpsMonitor.bind(this);
 
     this.initActionTracker();
     this.initGlobalErrorHandlers();
@@ -33,10 +38,11 @@ export class ErrorInterceptor {
 
   // 1. 直近5件の利用者操作を記録
   initActionTracker() {
-    window.addEventListener(
-      'pointerdown',
-      (e) => {
-        const action = {
+    window.addEventListener('pointerdown', this.onPointerDown, true);
+  }
+
+  recordAction(e) {
+    const action = {
           timestamp: new Date().toISOString(),
           type: e.pointerType || 'mouse',
           x: Math.round(e.clientX),
@@ -44,14 +50,9 @@ export class ErrorInterceptor {
           targetTag: e.target?.tagName || 'UNKNOWN',
           targetId: e.target?.id || '',
           targetClass: (e.target?.className || '').toString().slice(0, 50)
-        };
-        this.recentActions.push(action);
-        if (this.recentActions.length > this.maxActions) {
-          this.recentActions.shift();
-        }
-      },
-      true
-    );
+    };
+    this.recentActions.push(action);
+    if (this.recentActions.length > this.maxActions) this.recentActions.shift();
   }
 
   // 2. 全体の JavaScript 例外と Promise 拒否を捕捉
@@ -102,6 +103,11 @@ export class ErrorInterceptor {
     let lastTime = performance.now();
 
     const checkFpsLoop = (now) => {
+      if (document.hidden) {
+        this.resetFpsMonitor();
+        this.fpsFrameId = requestAnimationFrame(checkFpsLoop);
+        return;
+      }
       frameCount++;
       const delta = now - lastTime;
 
@@ -126,48 +132,49 @@ export class ErrorInterceptor {
         }
       }
 
-      requestAnimationFrame(checkFpsLoop);
+      this.fpsFrameId = requestAnimationFrame(checkFpsLoop);
     };
 
-    requestAnimationFrame(checkFpsLoop);
+    document.addEventListener('visibilitychange', this.onVisibilityChange);
+    this.fpsFrameId = requestAnimationFrame(checkFpsLoop);
+  }
+
+  resetFpsMonitor() {
+    this.lowFpsDurationMs = 0;
+    this.lastFrameTime = performance.now();
   }
 
   // 5. UI 応答停止を監視（星図ノード選択後2秒以内に画面変化がない場合）
   initDeadlockWatchdog() {
-    window.addEventListener('GALAXY_NODE_CLICK_START', (e) => {
-      const nodeId = e.detail?.nodeId || 'UNKNOWN';
-      this.currentNodeId = nodeId;
-      this.pendingNodeClick = {
-        nodeId,
-        startTime: performance.now(),
-        initialDomSignature: this.getDomSignature()
-      };
+    window.addEventListener('GALAXY_NODE_CLICK_START', this.onNodeClickStart);
+    window.addEventListener('GALAXY_NODE_SELECTED', this.onNodeInteractionComplete);
+    window.addEventListener('GALAXY_NODE_INTERACTION_COMPLETE', this.onNodeInteractionComplete);
+  }
 
-      if (this.clickWatchdogTimer) clearTimeout(this.clickWatchdogTimer);
+  watchNodeClick(e) {
+    const nodeId = e.detail?.nodeId || 'UNKNOWN';
+    this.currentNodeId = nodeId;
+    this.pendingNodeClick = { nodeId, startTime: performance.now() };
 
-      this.clickWatchdogTimer = setTimeout(() => {
-        if (this.pendingNodeClick) {
-          const currentSignature = this.getDomSignature();
-          const modalVisible = !document.getElementById('mobile-sheet')?.classList.contains('translate-y-full') ||
-                               !document.getElementById('game-modal')?.classList.contains('hidden');
+    if (this.clickWatchdogTimer) clearTimeout(this.clickWatchdogTimer);
 
-          if (currentSignature === this.pendingNodeClick.initialDomSignature && !modalVisible) {
-            const errorLog = this.buildErrorPayload({
-              category: 'UI_DEADLOCK_HANG',
-              message: `UI が応答していません。ノード [${nodeId}] の選択から2000ms経過しても画面またはダイアログに変化がありません。`,
-              stackTrace: `NodeClick at: ${this.pendingNodeClick.startTime}, Timeout: 2000ms, ModalVisible: false`
-            });
-            this.dispatchBugReport(errorLog);
-          }
-          this.pendingNodeClick = null;
-        }
-      }, 2000);
-    });
+    this.clickWatchdogTimer = setTimeout(() => {
+      if (this.pendingNodeClick && !document.hidden) {
+        const errorLog = this.buildErrorPayload({
+          category: 'UI_DEADLOCK_HANG',
+          message: `UI が応答していません。ノード [${nodeId}] の選択から2000ms経過しても完了イベントがありません。`,
+          stackTrace: `NodeClick at: ${this.pendingNodeClick.startTime}, Timeout: 2000ms`
+        });
+        this.dispatchBugReport(errorLog);
+        this.pendingNodeClick = null;
+      }
+    }, 2000);
+  }
 
-    window.addEventListener('GALAXY_NODE_SELECTED', () => {
-      this.pendingNodeClick = null;
-      if (this.clickWatchdogTimer) clearTimeout(this.clickWatchdogTimer);
-    });
+  clearNodeClickWatch() {
+    this.pendingNodeClick = null;
+    if (this.clickWatchdogTimer) clearTimeout(this.clickWatchdogTimer);
+    this.clickWatchdogTimer = null;
   }
 
   getDomSignature() {
@@ -208,5 +215,15 @@ export class ErrorInterceptor {
   dispatchBugReport(errorPayload) {
     console.error(`[ErrorInterceptor 不具合検出] ${JSON.stringify(errorPayload)}`);
     window.dispatchEvent(new CustomEvent('AGENT_BUG_CAPTURED', { detail: errorPayload }));
+  }
+
+  destroy() {
+    window.removeEventListener('pointerdown', this.onPointerDown, true);
+    window.removeEventListener('GALAXY_NODE_CLICK_START', this.onNodeClickStart);
+    window.removeEventListener('GALAXY_NODE_SELECTED', this.onNodeInteractionComplete);
+    window.removeEventListener('GALAXY_NODE_INTERACTION_COMPLETE', this.onNodeInteractionComplete);
+    document.removeEventListener('visibilitychange', this.onVisibilityChange);
+    if (this.fpsFrameId != null) cancelAnimationFrame(this.fpsFrameId);
+    if (this.clickWatchdogTimer) clearTimeout(this.clickWatchdogTimer);
   }
 }

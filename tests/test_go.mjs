@@ -1,0 +1,70 @@
+import assert from 'node:assert/strict';
+import { createHmac } from 'node:crypto';
+import { newGame, play, score, markDead, resume, sgf } from '../src/arena/GoRules.mjs';
+import { chooseMove } from '../src/arena/GoAI.mjs';
+import { goHarness } from './go-harness.mjs';
+let checks=0; const check=(v,m)=>{assert.ok(v,m);checks++;};
+let game=newGame();game.board[0]=2;game.board[1]=1;game.history=[game.board.join('')];game=play(game,9);check(game.board[0]===0&&game.captures[0]===1,'capture on edge');
+game=newGame();game.board[1]=2;game.board[9]=2;assert.throws(()=>play(game,0),/SUICIDE/);checks++;
+game=newGame();const next=play(game,40);game.history.push(next.board.join(''));assert.throws(()=>play(game,40),/SUPERKO/);checks++;
+game=play(play(newGame(),null),null);check(game.phase==='scoring','two passes score');check(score(game).black===0&&score(game).white===7.5,'empty neutral area and komi');
+game=resume(game);check(game.phase==='playing'&&game.passes===0,'resume dispute');
+game=play(game,40);game=play(play(game,null),null);game=markDead(game,40);check(game.dead.includes(40)&&score(game).black===0,'dead stones excluded');game.accepted=[1];game=markDead(game,40);check(!game.accepted.length,'dead edits reset acceptance');check(sgf(game).includes(';B[ee]'),'SGF coordinates');
+game=newGame();game.board.fill(1);game.board[40]=0;check(score(game).black===81,'stones plus surrounded area');
+for(const level of ['beginner','easy','medium','hard']) {game=newGame();const start=performance.now();for(let i=0;i<30&&game.phase==='playing';i++)game=play(game,chooseMove(game,level));check(game.moves.length>0,`${level} makes legal moves`);console.log(`${level}: 30 plies ${Math.round(performance.now()-start)}ms`);}
+
+const {mf,db}=await goHarness(); const origin='http://localhost:4173';
+try {
+  async function api(path,body,cookie='',extra={}) {
+    const r=await mf.dispatchFetch(`${origin}/api/arena/${path}`,{method:body===undefined?'GET':'POST',headers:{origin,cookie,...(body===undefined?{}:{'content-type':'application/json'}),...extra},body:body===undefined?undefined:JSON.stringify(body)});
+    return {status:r.status,cookie:r.headers.get('set-cookie')?.split(';')[0],data:await r.json()};
+  }
+  const a=(await api('identity',{})).cookie,b=(await api('identity',{})).cookie,c=(await api('identity',{})).cookie;
+  check(a&&b&&a!==b,'server issues independent guest cookies');check((await api('identity',{},a)).data.name,'guest identity restored');
+  check((await api('rooms',{mode:'invite'},'',{origin:'https://evil.example'})).status===403,'cross-origin create blocked');
+  check((await api('rooms',{mode:'invite'},'go_guest=forged')).status===401,'forged guest rejected');
+  let r=(await api('rooms',{mode:'invite'},a)).data;const id=r.id;
+  check(r.phase==='waiting'&&r.seat===1,'host waits');
+  check((await api(`rooms/${id}`,undefined,c)).status===403,'non-player cannot read private room');
+  r=(await api(`rooms/${id}`,{type:'join'},b)).data;check(r.phase==='ready'&&r.seat===2,'guest joins via room ID');
+  check((await api(`rooms/${id}`,{type:'join'},c)).data.error==='ROOM_FULL','third player blocked');
+  const wsResponse=await mf.dispatchFetch(`${origin}/api/arena/rooms/${id}/socket`,{headers:{origin,cookie:a,Upgrade:'websocket'}});
+  check(wsResponse.status===101,'authenticated websocket upgrade');const ws=wsResponse.webSocket;ws.accept();const messages=[];ws.addEventListener('message',e=>{if(e.data!=='pong')messages.push(JSON.parse(e.data));});
+  r=(await api(`rooms/${id}`,{type:'ready',revision:r.revision},a)).data;
+  r=(await api(`rooms/${id}`,{type:'ready',revision:r.revision},b)).data;check(r.phase==='playing','both ready starts clock');
+  check((await api(`rooms/${id}`,{type:'move',revision:r.revision,point:40},b)).data.error==='NOT_YOUR_TURN','wrong turn rejected');
+  const duplicate=await Promise.all([api(`rooms/${id}`,{type:'move',revision:r.revision,point:40},a),api(`rooms/${id}`,{type:'move',revision:r.revision,point:40},a)]);
+  check(duplicate.filter(x=>!x.data.error).length===1,'concurrent duplicate accepted only once');r=duplicate.find(x=>!x.data.error).data;
+  check((await api(`rooms/${id}`,undefined,a)).data.game.board[40]===1,'reload restores board');
+  r=(await api(`rooms/${id}`,{type:'move',revision:r.revision,point:null},b)).data;
+  r=(await api(`rooms/${id}`,{type:'move',revision:r.revision,point:null},a)).data;check(r.phase==='scoring','server scoring phase');
+  r=(await api(`rooms/${id}`,{type:'dead',revision:r.revision,point:40},b)).data;
+  r=(await api(`rooms/${id}`,{type:'accept',revision:r.revision},a)).data;check(r.phase==='scoring','one approval not enough');
+  r=(await api(`rooms/${id}`,{type:'accept',revision:r.revision},b)).data;check(r.phase==='finished'&&r.game.result.winner===2,'agreed dead stones determine result');
+  await new Promise(resolve=>setTimeout(resolve,150));check(messages.some(m=>m.game.board[40]===1),'opponent receives broadcast');ws.close();
+  const stored=await db.prepare('SELECT mode FROM go_games WHERE room_id=?').bind(id).first();check(stored?.mode==='invite','finished game archived');
+  const matchedA=(await api('match',{},a)).data,matchedB=(await api('match',{},b)).data;check(matchedA.id===matchedB.id&&matchedB.phase==='ready','match pairs distinct guests');
+  check((await api('match',{},a)).data.id===matchedA.id,'match retries remain in paired room');
+  const ns=await mf.getDurableObjectNamespace('GO_ROOMS');
+  const matchStub=ns.getByName(matchedA.id);
+  const matchStorage=await mf.unsafeGetDurableObjectStorage('go-backend','GoRoom',{name:matchedA.id});
+  let internal=JSON.parse((await matchStorage.exec('SELECT value FROM room WHERE id=1'))[0].value);internal.expires=Date.now()-1;await matchStorage.exec('UPDATE room SET value=? WHERE id=1',JSON.stringify(internal));await matchStub.schedule(internal);await new Promise(resolve=>setTimeout(resolve,400));
+  check((await api(`rooms/${matchedA.id}`,undefined,a)).data.phase==='expired','abandoned ready room expires');
+  let bot=(await api('rooms',{mode:'ai',difficulty:'hard'},c)).data;
+  bot=(await api(`rooms/${bot.id}`,{type:'ready',revision:bot.revision},c)).data;
+  bot=(await api(`rooms/${bot.id}`,{type:'move',point:40,revision:bot.revision},c)).data;
+  await new Promise(resolve=>setTimeout(resolve,1600));bot=(await api(`rooms/${bot.id}`,undefined,c)).data;check(bot.game.moves.length===2&&bot.game.turn===1,'alarm executes computer move');
+  await mf.unsafeEvictDurableObject('go-backend','GoRoom',{name:bot.id,webSockets:'hibernate'});
+  check((await api(`rooms/${bot.id}`,undefined,c)).data.game.moves.length===2,'durable storage survives eviction');
+  const botStub=ns.getByName(bot.id),botStorage=await mf.unsafeGetDurableObjectStorage('go-backend','GoRoom',{name:bot.id});internal=JSON.parse((await botStorage.exec('SELECT value FROM room WHERE id=1'))[0].value);internal.turnAt=Date.now()-16*60000;await botStorage.exec('UPDATE room SET value=? WHERE id=1',JSON.stringify(internal));await botStub.schedule(internal);await new Promise(resolve=>setTimeout(resolve,400));
+  bot=(await api(`rooms/${bot.id}`,undefined,c)).data;check(bot.phase==='finished'&&bot.game.result.reason==='timeout'&&bot.game.result.winner===2,'server alarm adjudicates timeout');
+  const now=Date.now();await db.prepare("INSERT INTO users(user_id,display_name,email,primary_provider,status,created_at,updated_at,last_login_at) VALUES('go-user','PRIVATE','private@example.test','google','ACTIVE',?1,?1,?1)").bind(now).run();
+  await db.prepare("INSERT INTO auth_sessions(jti,user_id,provider,created_at,expires_at) VALUES('go-session','go-user','google',?1,?2)").bind(now,now+3600000).run();
+  const head=Buffer.from(JSON.stringify({alg:'HS256',typ:'JWT'})).toString('base64url'),payload=Buffer.from(JSON.stringify({sub:'go-user',jti:'go-session',exp:Math.floor(now/1000)+3600})).toString('base64url'),token=`${head}.${payload}.${createHmac('sha256','go-local-development-only-secret').update(`${head}.${payload}`).digest('base64url')}`,cookie=`pses_session=${token}`;
+  let signed=(await api('rooms',{mode:'ai'},cookie)).data;check(!JSON.stringify(signed).includes('PRIVATE')&&!JSON.stringify(signed).includes('@'),'room hides account personal data');
+  signed=(await api(`rooms/${signed.id}`,{type:'ready',revision:signed.revision},cookie)).data;
+  signed=(await api(`rooms/${signed.id}`,{type:'resign',revision:signed.revision},cookie)).data;await new Promise(resolve=>setTimeout(resolve,100));
+  check((await api('history',undefined,cookie)).data.entries.some(x=>x.room_id===signed.id),'signed-in history');check((await api('history',undefined,a)).data.entries.length===0,'guest cannot retrieve account history');
+  await db.prepare("UPDATE auth_sessions SET revoked_at=1 WHERE jti='go-session'").run();check((await api(`rooms/${signed.id}`,undefined,cookie)).status===401,'revoked login cannot act');
+  console.log(`Go: ${checks} checks passed, real SQLite DO / D1 / websocket / AI alarm.`);
+} finally {await mf.dispose();}

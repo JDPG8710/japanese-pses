@@ -98,6 +98,80 @@ export class StorageAdapter extends EventTarget {
     });
   }
 
+
+  /**
+   * On Google login, fold any local anonymous/guest IndexedDB snapshot into the
+   * authenticated userId via LWW mergeSnapshots, then leave syncNow to the caller.
+   * Does not invent a multi-child cloud model — one Google account, one cloud profile.
+   */
+  async adoptAnonymousProgress(guestUserIds = ['anonymous-device', 'local', 'local-offline']) {
+    if (!this.userId) return this.getLocalSnapshot();
+    const guests = (Array.isArray(guestUserIds) ? guestUserIds : [guestUserIds])
+      .map(id => String(id || '').trim())
+      .filter(id => id && id !== this.userId);
+    if (!guests.length) return this.getLocalSnapshot();
+
+    const profiles = await this.getAll('user_profile');
+    const allNodeProgress = await this.getAll('node_progress');
+    const allAttempts = await this.getAll('game_attempts');
+
+    let guestCombined = {
+      version: 2,
+      storage: 'indexeddb-cache',
+      userId: this.userId,
+      updatedAt: 0,
+      profile: null,
+      nodeProgress: [],
+      attempts: []
+    };
+
+    for (const guestId of guests) {
+      const profile = profiles.find(item => item.user_id === guestId) || null;
+      const nodeProgress = allNodeProgress
+        .filter(node => node.user_id === guestId && node.node_id)
+        .map(node => ({
+          ...structuredCloneSafe(node),
+          user_id: this.userId,
+          progress_key: `${this.userId}:${node.node_id}`
+        }));
+      const attempts = allAttempts
+        .filter(attempt => attempt.user_id === guestId)
+        .map(attempt => ({ ...structuredCloneSafe(attempt), user_id: this.userId }));
+      const guestSnapshot = {
+        version: 2,
+        storage: 'indexeddb-cache',
+        userId: this.userId,
+        updatedAt: Math.max(
+          0,
+          Number(profile?.updated_at || 0),
+          ...nodeProgress.map(node => Number(node.updated_at || 0)),
+          ...attempts.map(attempt => Number(attempt.attempted_at || 0))
+        ),
+        profile: profile ? { ...structuredCloneSafe(profile), user_id: this.userId } : null,
+        nodeProgress,
+        attempts
+      };
+      guestCombined = {
+        ...mergeSnapshots(guestCombined, guestSnapshot, this.userId),
+        attempts: [...(guestCombined.attempts || []), ...(guestSnapshot.attempts || [])]
+      };
+    }
+
+    const current = await this.getLocalSnapshot();
+    const merged = mergeSnapshots(guestCombined, current, this.userId);
+    await this.persistSnapshot(merged);
+    for (const attempt of guestCombined.attempts || []) {
+      await this.put('game_attempts', attempt);
+    }
+    if (guestCombined.profile || (guestCombined.nodeProgress || []).length || (guestCombined.attempts || []).length) {
+      this.markDirty();
+    }
+    return {
+      ...merged,
+      attempts: [...(current.attempts || []), ...(guestCombined.attempts || [])]
+    };
+  }
+
   async getLocalSnapshot() {
     const profiles = await this.getAll('user_profile');
     const allNodeProgress = await this.getAll('node_progress');

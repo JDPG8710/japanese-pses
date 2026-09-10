@@ -1,5 +1,12 @@
 export const LOGIN_REMINDER_INTERVAL_MS = 5 * 60 * 1000;
 
+export const LOGIN_SOFT_PROMPT_REASONS = Object.freeze([
+  'interval',
+  'stage-clear',
+  'learner-name',
+  'before-ad'
+]);
+
 export class LoginReminderManager {
   constructor({
     sessionMode = 'anonymous',
@@ -22,6 +29,7 @@ export class LoginReminderManager {
     this.gameActive = false;
     this.reminderDue = false;
     this.showing = false;
+    this.onceShown = new Set();
     this.boundPlayState = event => this.setGameActive(event?.detail?.active);
   }
 
@@ -46,6 +54,7 @@ export class LoginReminderManager {
       this.gameActive = false;
       this.reminderDue = false;
       this.accumulatedMs = 0;
+      this.onceShown.clear();
     }
   }
 
@@ -62,11 +71,32 @@ export class LoginReminderManager {
     if (this.sessionMode !== 'anonymous' || !this.reminderDue || this.showing) return false;
     this.reminderDue = false;
     this.accumulatedMs = Math.max(0, this.accumulatedMs - this.intervalMs);
-    this.showing = true;
-    Promise.resolve(this.onReminder())
-      .catch(() => {})
-      .finally(() => { this.showing = false; });
+    void this.openPrompt('interval');
     return true;
+  }
+
+  /**
+   * Soft, dismissible prompts. stage-clear / learner-name / before-ad fire at most once per anonymous session.
+   * Returns true when a prompt was opened (awaitable until the UI callback settles).
+   */
+  async maybePrompt(reason, { force = false } = {}) {
+    if (this.sessionMode !== 'anonymous' || this.showing) return false;
+    if (!LOGIN_SOFT_PROMPT_REASONS.includes(reason)) return false;
+    if (reason !== 'interval' && !force && this.onceShown.has(reason)) return false;
+    if (reason !== 'interval') this.onceShown.add(reason);
+    await this.openPrompt(reason);
+    return true;
+  }
+
+  async openPrompt(reason) {
+    this.showing = true;
+    try {
+      await Promise.resolve(this.onReminder(reason));
+    } catch {
+      // Soft prompts must never break play.
+    } finally {
+      this.showing = false;
+    }
   }
 
   destroy() {

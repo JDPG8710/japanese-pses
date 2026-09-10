@@ -53,6 +53,58 @@ function register({ describe, test, assert, loadESModule }) {
     return game.sessionQuestions || game.questionSet || game.questions || null;
   }
 
+  describe('September user feedback regressions', () => {
+    test('Grade 6 uses unique prompts and exhausts unseen reading questions before review', () => {
+      const first = new games.CurriculumQuizGame(makeCanvas(), {selectedMode:'READING_QUIZ'}, () => {}, 6, 1, '国語');
+      const second = new games.CurriculumQuizGame(makeCanvas(), {selectedMode:'READING_QUIZ'}, () => {}, 6, 2, '国語');
+      assert.strictEqual(first.questions.length, 10);
+      assert.strictEqual(second.questions.length, 10);
+      const prompts = first.questions.map(q => q.prompt);
+      assert.strictEqual(new Set(prompts).size, 10);
+      assert.ok(second.questions.every(q => !prompts.includes(q.prompt)));
+      const mixed = games.getCurriculumQuestionPool('国語', 6, 'LOGIC_ESSAY');
+      assert.strictEqual(new Set(mixed.map(q => q.prompt)).size, mixed.length);
+      assert.strictEqual(mixed.filter(q => q.prompt === '随筆の特徴は？').length, 1);
+    });
+    test('Grade 2 radical cards and answer slots remain below the prompt on a 320px mobile canvas', () => {
+      const canvas = makeCanvas(); canvas.width = 320; canvas.height = 300;
+      const game = new games.RadicalBuilderGame(canvas, {}, () => {}, 2, 1);
+      game.setupPuzzle();
+      assert.strictEqual(game.puzzles.length, 10);
+      for (const card of game.palette) {
+        assert.ok(card.x - card.size / 2 >= 0);
+        assert.ok(card.x + card.size / 2 <= 320);
+        assert.ok(card.y - card.size / 2 >= 88, 'cards must not cover the question and reading');
+        assert.ok(card.y + card.size / 2 <= 300, 'cards must stay inside the stage');
+        assert.ok(card.size >= 56);
+      }
+      const paletteTop = Math.min(...game.palette.map(card => card.y - card.size / 2));
+      const slotY = Math.max(118, Math.min(canvas.height / 2 + 10, paletteTop - 64 / 2 - 18));
+      assert.ok(slotY - 32 >= 86, 'answer slots must start below the prompt and reading');
+      assert.ok(slotY + 32 < paletteTop, 'answer slots must not overlap the palette');
+    });
+
+    test('Life-studies answers use two non-overlapping rows on a 320px mobile canvas', () => {
+      const canvas = makeCanvas(); canvas.width = 320; canvas.height = 300;
+      for (const grade of [1, 2]) {
+        const game = new games.CurriculumQuizGame(canvas, { selectedMode: 'COMMUNITY_MATCH' }, () => {}, grade, 1, '生活');
+        const layout = game.getOptionLayout();
+        assert.strictEqual(layout.columns, 2, 'small life-studies stages need a two-column answer grid');
+        const rectangles = game.questions[0].options.map((_, index) => game.getOptionRect(layout, index));
+        rectangles.forEach(rectangle => {
+          assert.ok(rectangle.x >= 0 && rectangle.y >= 0, 'answer must start inside the canvas');
+          assert.ok(rectangle.x + rectangle.w <= canvas.width, 'answer must not overflow horizontally');
+          assert.ok(rectangle.y + rectangle.h <= canvas.height, 'answer must not overflow vertically');
+        });
+        for (let i = 0; i < rectangles.length; i++) for (let j = i + 1; j < rectangles.length; j++) {
+          const a = rectangles[i], b = rectangles[j];
+          assert.ok(a.x + a.w <= b.x || b.x + b.w <= a.x || a.y + a.h <= b.y || b.y + b.h <= a.y, 'answers must not overlap');
+        }
+        game.destroy();
+      }
+    });
+  });
+
   describe('Grade-aligned radical and component bank', () => {
     test('RB1: every grade has 12 valid assigned-kanji puzzles across three question types', () => {
       const kanjiDb = JSON.parse(fs.readFileSync(path.join(rootDir, 'data', 'kanji_1026.json'), 'utf8'));

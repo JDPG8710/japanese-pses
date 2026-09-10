@@ -143,13 +143,13 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
       }
     });
 
-    test('新しいゲーム名を1日1回、5秒表示し、閉じるボタンを備える', () => {
+    test('本番入口に daily-brand splash は置かず、Piko Game ブランドと play-now を保つ', () => {
       const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-      for (const token of ['Piko Play', 'daily-brand-splash', 'daily-brand-close', 'MANABI_POP_DAILY_SPLASH_V1']) {
-        assert.ok(html.includes(token), `${token} が必要です`);
-      }
-      assert.ok(html.includes('let brandSecondsLeft = 5'));
-      assert.ok(html.includes("timeZone: 'Asia/Tokyo'"));
+      assert.ok(html.includes('Piko Game'), 'Piko Game ブランドが必要です');
+      assert.ok(html.includes('id="country-home-play-now"'), 'play-now CTA が必要です');
+      assert.ok(!html.includes('daily-brand-splash'), 'daily-brand splash を再導入しない');
+      assert.ok(!html.includes('MANABI_POP_DAILY_SPLASH'));
+      assert.ok(!html.includes('let brandSecondsLeft = 5'));
     });
 
     test('ゲーム先行カードは難しい一文字名ではなく、親しみやすい固有名を使う', () => {

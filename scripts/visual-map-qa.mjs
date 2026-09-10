@@ -66,7 +66,7 @@ const inspectLayout = `(() => {
 await send('Page.enable');
 await send('Runtime.enable');
 await new Promise(resolve => setTimeout(resolve, 2500));
-await evaluate(`document.getElementById('daily-brand-close')?.click(); document.getElementById('grade-first-mode-btn')?.click(); true`);
+await evaluate(`document.getElementById('grade-first-mode-btn')?.click(); true`);
 await new Promise(resolve => setTimeout(resolve, 100));
 await evaluate(`document.querySelector('.grade-tab-btn[data-grade="4"]')?.click(); true`);
 await new Promise(resolve => setTimeout(resolve, 700));

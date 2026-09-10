@@ -405,7 +405,19 @@ export class MiniGameModal {
     if (!canvas || !container) return null;
     const width = container.clientWidth || 640;
     const height = container.clientHeight || 384;
-    return HDCanvasRenderer.setup(canvas, width, height);
+    const renderer = HDCanvasRenderer.setup(canvas, width, height);
+    // Opening a constrained mobile dialog can finish after this method. Read
+    // its final stage size on the next paint so the canvas never keeps a
+    // shorter, stale height that clips the second answer row.
+    if (typeof requestAnimationFrame === 'function') {
+      requestAnimationFrame(() => {
+        if (!this.modal || this.modal.classList.contains('hidden')) return;
+        const finalWidth = container.clientWidth;
+        const finalHeight = container.clientHeight;
+        if (finalWidth > 0 && finalHeight > 0) HDCanvasRenderer.setup(canvas, finalWidth, finalHeight);
+      });
+    }
+    return renderer;
   }
 
   handleCanvasResize() {
@@ -927,12 +939,12 @@ export class MiniGameModal {
       case 'KOKUGO_CURRICULUM':
         if (selectedMode === 'KANJI_SLASH' || selectedMode === 'KANJI_READING') {
           this.currentGame = new KanjiSlashGame(canvas, { ...targetNode.gameData, manageCountdown: false }, onWinCallback, effectiveGrade, levelNum);
-        } else if (selectedMode === 'RADICAL_BUILDER') {
+        } else if (['RADICAL_BUILDER', 'RADICAL_ASSEMBLY'].includes(selectedMode)) {
           this.currentGame = new RadicalBuilderGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum);
         } else {
           this.currentGame = new CurriculumQuizGame(canvas, targetNode.gameData, onWinCallback, effectiveGrade, levelNum, '国語');
         }
-        if (hintEl) hintEl.innerText = selectedMode === 'RADICAL_BUILDER'
+        if (hintEl) hintEl.innerText = ['RADICAL_BUILDER', 'RADICAL_ASSEMBLY'].includes(selectedMode)
           ? '漢字の形をよく見て、ぴったりのカードを選ぼう！'
           : '国語の問題が10問。ことばをよく読んで答えよう！';
         break;
@@ -1271,15 +1283,21 @@ export class KanjiSlashGame {
     this.timeLeft = 50;
     this.manageCountdown = gameData?.manageCountdown !== false;
     this.running = false;
-    this.questions = gameData?.questions ? [...gameData.questions] : [];
+    // A curriculum node can carry radical/grammar questions. The reading choice
+    // must use its grade's reading bank, not inherit that other mode's payload.
+    this.questions = gameData?.selectedMode === 'KANJI_READING' ? [] : [...(gameData?.questions || [])];
     this.qIndex = 0;
     this.meteors = [];
     this.trail = [];
+    this.frameId = null;
+    this.spawnTimer = null;
+    this.sessionId = 0;
     this.boundHandlePointer = this.handlePointer.bind(this);
     this.boundHandlePointerMove = this.handlePointerMove.bind(this);
   }
 
   async start() {
+    const sessionId = ++this.sessionId;
     this.running = true;
     this.score = 0;
     this.combo = 0;
@@ -1287,18 +1305,14 @@ export class KanjiSlashGame {
 
     if (this.questions.length === 0) {
       const db = await fetchKanji1026();
+      if (!this.running || sessionId !== this.sessionId) return;
       const gradeData = db?.grades?.[String(this.grade)];
       if (gradeData?.kanjiList && gradeData.kanjiList.length > 0) {
-        const pool = [...gradeData.kanjiList].sort(() => Math.random() - 0.5);
-        for (let i = 0; i < Math.min(5, pool.length); i++) {
+        const pool = shuffleCopy(gradeData.kanjiList);
+        for (let i = 0; i < Math.min(10, pool.length); i++) {
           const item = pool[i];
-          const wrongPool = pool.filter(p => p.k !== item.k);
-          const options = [
-            item.r,
-            wrongPool[0]?.r || 'みず',
-            wrongPool[1]?.r || 'やま',
-            wrongPool[2]?.r || 'そら'
-          ].sort(() => Math.random() - 0.5);
+          const wrongReadings = shuffleCopy([...new Set(pool.filter(p => p.r !== item.r).map(p => p.r))]);
+          const options = shuffleCopy([item.r, ...wrongReadings.slice(0, 3)]);
 
           this.questions.push({
             kanji: item.k,
@@ -1307,14 +1321,20 @@ export class KanjiSlashGame {
           });
         }
       } else {
-        this.questions = [
-          { kanji: '花', correct: 'はな', options: ['はな', 'か', 'くさ', 'き'] },
-          { kanji: '空', correct: 'そら', options: ['そら', 'くう', 'あめ', 'ほし'] },
-          { kanji: '山', correct: 'やま', options: ['やま', 'かわ', 'もり', 'うみ'] }
-        ];
+        this.questions = [];
       }
     }
 
+    if (!this.questions.length || this.questions.some(q =>
+      !q.kanji?.trim() || !q.correct?.trim() || !Array.isArray(q.options) ||
+      !q.options.includes(q.correct) || new Set(q.options).size !== q.options.length
+    )) {
+      this.destroy();
+      drawFittedCanvasText(this.ctx, '漢字の問題を読み込めませんでした。もう一度開いてください。',
+        getLogicalCanvasWidth(this.canvas) / 2, 42, getLogicalCanvasWidth(this.canvas) - 32, 20, 12);
+      this.onWin(0, 0, { cleared: false, accuracy: 0, correctCount: 0, totalCount: 0 });
+      return;
+    }
     this.spawnQuestion();
 
     this.canvas.addEventListener('pointerdown', this.boundHandlePointer);
@@ -1404,7 +1424,7 @@ export class KanjiSlashGame {
             const scoreEl = document.getElementById('game-score');
             if (scoreEl) scoreEl.innerText = this.score;
             this.qIndex++;
-            setTimeout(() => this.spawnQuestion(), 350);
+            this.spawnTimer = setTimeout(() => { if (this.running) this.spawnQuestion(); }, 350);
           } else {
             this.combo = 0;
             const res = guidance.registerError({
@@ -1492,12 +1512,16 @@ export class KanjiSlashGame {
     }
     this.trail = this.trail.filter((p) => p.life > 0);
 
-    requestAnimationFrame(() => this.loop());
+    this.frameId = requestAnimationFrame(() => this.loop());
   }
 
   destroy() {
     this.running = false;
+    this.sessionId++;
     clearInterval(this.timerInterval);
+    clearTimeout(this.spawnTimer);
+    if (this.frameId != null) cancelAnimationFrame(this.frameId);
+    this.frameId = null;
     this.canvas.removeEventListener('pointerdown', this.boundHandlePointer);
     this.canvas.removeEventListener('pointermove', this.boundHandlePointerMove);
   }
@@ -1593,18 +1617,21 @@ export class RadicalBuilderGame {
     this.requiredParts = [...p.parts];
 
     const opts = p.options || [...this.requiredParts, '木', '日'];
-    const shuffled = [...opts].sort(() => Math.random() - 0.5);
+    const shuffled = shuffleCopy(opts);
 
     const w = getLogicalCanvasWidth(this.canvas);
     const h = getLogicalCanvasHeight(this.canvas);
-    const btnSize = 58; // min 56px hitbox
-    const totalW = shuffled.length * (btnSize + 14);
+    const btnSize = 56; // min 56px hitbox
+    const tileGap = 10;
+    const columns = Math.max(1, Math.min(shuffled.length, Math.floor((w - 16) / (btnSize + tileGap))));
+    const rows = Math.ceil(shuffled.length / columns);
+    const totalW = columns * (btnSize + tileGap) - tileGap;
     const startX = (w - totalW) / 2 + btnSize / 2;
 
     this.palette = shuffled.map((text, idx) => ({
       text,
-      x: startX + idx * (btnSize + 14),
-      y: h - 65,
+      x: startX + (idx % columns) * (btnSize + tileGap),
+      y: h - 42 - (rows - 1 - Math.floor(idx / columns)) * (btnSize + tileGap),
       size: btnSize,
       used: false,
       highlight: false
@@ -1623,7 +1650,7 @@ export class RadicalBuilderGame {
 
     // 1. Check tap on bottom radical palette
     for (const item of this.palette) {
-      if (!item.used && Math.abs(item.x - x) < item.size / 2 + 10 && Math.abs(item.y - y) < item.size / 2 + 10) {
+      if (!item.used && Math.abs(item.x - x) <= item.size / 2 && Math.abs(item.y - y) <= item.size / 2) {
         audio.playClick();
         item.used = true;
         this.placedParts.push(item.text);
@@ -1690,7 +1717,8 @@ export class RadicalBuilderGame {
     }
 
     // 2. Check tap on placed slot to return piece
-    const slotY = getLogicalCanvasHeight(this.canvas) / 2 + 10;
+    const paletteTop = Math.min(...this.palette.map(item => item.y - item.size / 2));
+    const slotY = Math.max(118, Math.min(getLogicalCanvasHeight(this.canvas) / 2 + 10, paletteTop - 64 / 2 - 18));
     const slotSize = 64;
     const slotCount = this.requiredParts.length;
     const totalSlotW = slotCount * (slotSize + 16);
@@ -1726,7 +1754,7 @@ export class RadicalBuilderGame {
     if (this.currentPuzzle?.hint) {
       this.ctx.fillStyle = '#cbd5e1';
       this.ctx.font = '13px sans-serif';
-      drawFittedCanvasText(this.ctx, `読み：${this.currentPuzzle.reading || '―'}　ヒント：${this.currentPuzzle.hint}`, w / 2, 77, w - 28, 13, 9);
+      drawFittedCanvasText(this.ctx, `よみ：${this.currentPuzzle.reading || '―'}　かたちを よく みて えらぼう`, w / 2, 77, w - 28, 13, 9);
     }
 
     if (this.feedback) {
@@ -1736,8 +1764,9 @@ export class RadicalBuilderGame {
     }
 
     // スロット（合体エリア）描画
-    const slotY = h / 2 + 10;
     const slotSize = 64;
+    const paletteTop = Math.min(...this.palette.map(item => item.y - item.size / 2));
+    const slotY = Math.max(118, Math.min(h / 2 + 10, paletteTop - slotSize / 2 - 18));
     const slotCount = this.requiredParts.length;
     const totalSlotW = slotCount * (slotSize + 16);
     const slotStartX = (w - totalSlotW) / 2 + slotSize / 2;
@@ -1978,12 +2007,10 @@ function sanitizeCurriculumBank(records, subject, selectedMode, grade) {
     };
   }).filter(record => record.prompt && record.correct && record.options.length >= 4)
     .filter(record => subject !== '社会' || !record.prompt.toLocaleLowerCase().includes(record.correct.toLocaleLowerCase()));
-  const unique = [...new Map(normalized.map(record => [`${record.prompt}::${record.correct}`, record])).values()];
   const policy = getCurriculumModePolicy(subject, selectedMode);
-  const eligible = policy.strict
-    ? unique.filter(record => policy.modes.includes(record.mode))
-    : unique;
-  return eligible;
+  const eligible = policy.strict ? normalized.filter(record => policy.modes.includes(record.mode)) : normalized;
+  // Different answer wording does not make an identical prompt a new question.
+  return [...new Map(eligible.map(record => [record.prompt.normalize('NFKC').replace(/\s+/g, ''), record])).values()];
 }
 
 export function getCurriculumQuestionPool(subject, grade, selectedMode = null, supplied = []) {
@@ -2057,6 +2084,8 @@ export function selectCurriculumStageQuestions(bank, level = 1, sessionSize = 10
   return { questions: selected, focusIds: focus.map(item => item.id) };
 }
 
+const recentCurriculumQuestions = new Map();
+
 export class CurriculumQuizGame {
   constructor(canvas, gameData, onWin, grade = 1, level = 1, subject = '国語') {
     this.canvas = canvas;
@@ -2072,7 +2101,16 @@ export class CurriculumQuizGame {
       ...(Array.isArray(this.gameData.questions) ? this.gameData.questions : [])
     ];
     const bank = getCurriculumQuestionPool(subject, this.grade, this.selectedMode, supplied);
-    const selection = selectCurriculumStageQuestions(bank, this.level, 10);
+    const poolKey = `${subject}:${this.grade}:${this.selectedMode || 'ALL'}`;
+    const recent = recentCurriculumQuestions.get(poolKey) || [];
+    const unseen = bank.filter(question => !recent.includes(question.prompt));
+    const recycled = recent.map(prompt => bank.find(question => question.prompt === prompt)).filter(Boolean);
+    const candidates = subject === '国語' && this.grade === 6
+      ? (unseen.length >= 10 ? unseen : [...unseen, ...recycled.slice(0, 10 - unseen.length)])
+      : bank;
+    const selection = selectCurriculumStageQuestions(candidates, this.level, 10);
+    const chosen = selection.questions.map(question => question.prompt);
+    recentCurriculumQuestions.set(poolKey, [...recent.filter(prompt => !chosen.includes(prompt) && bank.some(question => question.prompt === prompt)), ...chosen]);
     this.stageFocusIds = selection.focusIds;
     this.questions = selection.questions.map(question => ({ ...question, options: shuffleCopy(question.options) }));
     this.qIndex = 0;
@@ -2097,11 +2135,34 @@ export class CurriculumQuizGame {
   }
 
   getOptionLayout() {
+    const w = getLogicalCanvasWidth(this.canvas);
     const h = getLogicalCanvasHeight(this.canvas);
+    // A four-row answer list cannot fit into the 300–360px game stage on a
+    // phone.  Use two child-sized columns there, preserving every option.
+    if (w <= 430 || h < 400) {
+      const x = 16;
+      const gap = 8;
+      const columns = 2;
+      const rows = 2;
+      const startY = 132;
+      const optionH = Math.max(56, Math.floor((h - startY - 12 - gap * (rows - 1)) / rows));
+      return { x, w: Math.floor((w - x * 2 - gap) / columns), startY, gap, optionH, columns };
+    }
     const startY = 154;
     const gap = 8;
     const optionH = Math.max(56, Math.floor((h - startY - 12 - gap * 3) / 4));
-    return { x: 24, w: getLogicalCanvasWidth(this.canvas) - 48, startY, gap, optionH };
+    return { x: 24, w: w - 48, startY, gap, optionH, columns: 1 };
+  }
+
+  getOptionRect(layout, index) {
+    const column = index % layout.columns;
+    const row = Math.floor(index / layout.columns);
+    return {
+      x: layout.x + column * (layout.w + layout.gap),
+      y: layout.startY + row * (layout.optionH + layout.gap),
+      w: layout.w,
+      h: layout.optionH
+    };
   }
 
   useHint() {
@@ -2121,9 +2182,9 @@ export class CurriculumQuizGame {
     const layout = this.getOptionLayout();
     const question = this.questions[this.qIndex];
     question.options.forEach((option, index) => {
-      const optionY = layout.startY + index * (layout.optionH + layout.gap);
+      const optionRect = this.getOptionRect(layout, index);
       if (option === this.hintEliminatedOption) return;
-      if (this.locked || x < layout.x || x > layout.x + layout.w || y < optionY || y > optionY + layout.optionH) return;
+      if (this.locked || x < optionRect.x || x > optionRect.x + optionRect.w || y < optionRect.y || y > optionRect.y + optionRect.h) return;
       this.locked = true;
       const correct = option === question.correct;
       this.selectedOption = option;
@@ -2135,7 +2196,7 @@ export class CurriculumQuizGame {
         this.correctCount++;
         this.feedback = '正解！';
         audio.playPositive(this.grade, this.correctCount);
-        fx.spawnStarBurst(getLogicalCanvasWidth(this.canvas) / 2, optionY + layout.optionH / 2, 24, '#34d399');
+        fx.spawnStarBurst(optionRect.x + optionRect.w / 2, optionRect.y + optionRect.h / 2, 24, '#34d399');
         guidance.registerSuccess({ questionId: question.id });
       } else {
         this.feedback = `正解は「${question.correct}」`;
@@ -2205,10 +2266,10 @@ export class CurriculumQuizGame {
     this.ctx.fillText(`${this.subject}・小学${this.grade}年　${this.qIndex + 1} / ${this.questions.length}`, w / 2, 28);
     this.ctx.fillStyle = '#38bdf8';
     this.ctx.fillRect(24, 40, (w - 48) * (this.qIndex / this.questions.length), 5);
-    this.drawWrappedText(question.prompt, 28, 52, w - 56, 86, 17, '#e0f2fe');
     const layout = this.getOptionLayout();
+    this.drawWrappedText(question.prompt, 28, 52, w - 56, layout.columns === 2 ? 66 : 86, 17, '#e0f2fe');
     question.options.forEach((option, index) => {
-      const optionY = layout.startY + index * (layout.optionH + layout.gap);
+      const optionRect = this.getOptionRect(layout, index);
       const isSelected = option === this.selectedOption;
       const isCorrectReveal = this.locked && option === question.correct;
       const isWrongSelected = isSelected && this.selectionCorrect === false;
@@ -2221,16 +2282,16 @@ export class CurriculumQuizGame {
         this.ctx.shadowBlur = 14;
       }
       this.ctx.beginPath();
-      safeRoundRect(this.ctx, layout.x, optionY, layout.w, layout.optionH, 12);
+      safeRoundRect(this.ctx, optionRect.x, optionRect.y, optionRect.w, optionRect.h, 12);
       this.ctx.fill();
       this.ctx.stroke();
-      this.drawWrappedText(`${isHintEliminated ? '×' : String.fromCharCode(65 + index)}. ${option}`, layout.x + 8, optionY + 2, layout.w - 16, layout.optionH - 4, option.length > 30 ? 12 : 14, isHintEliminated ? '#94a3b8' : '#ffffff');
+      this.drawWrappedText(`${isHintEliminated ? '×' : String.fromCharCode(65 + index)}. ${option}`, optionRect.x + 8, optionRect.y + 2, optionRect.w - 16, optionRect.h - 4, option.length > 30 ? 12 : 14, isHintEliminated ? '#94a3b8' : '#ffffff');
       this.ctx.shadowBlur = 0;
     });
     if (this.feedback) {
       this.ctx.fillStyle = this.selectionCorrect ? '#6ee7b7' : '#fda4af';
       this.ctx.font = 'bold 13px sans-serif';
-      this.ctx.fillText(this.feedback, w / 2, 146);
+      this.ctx.fillText(this.feedback, w / 2, layout.columns === 2 ? 124 : 146);
     }
     requestAnimationFrame(() => this.loop());
   }

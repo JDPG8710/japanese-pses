@@ -11,6 +11,7 @@ import {helpButton} from '../tutorial/GameTutorial.js';
 import {foundationTutorial} from '../tutorial/TutorialContent.js';
 import {initSiteVisits} from '../stats/SiteVisits.js';
 import {countBadge,refreshPlayCounts,recordPlay} from '../stats/PlayCounts.js';
+import {LESSON_COMICS,comicButtonLabel,openMathComic} from '../comics/MathComic.mjs';
 const params=new URLSearchParams(location.search);let storage;try{storage=localStorage;}catch{}
 const country=normalizeCountry(params.get('country'))||readCountry(storage),locale=['en','zh','ja'].includes(params.get('locale'))?params.get('locale'):languageForCountry(country);
 const input={profile:params.get('curriculum'),year:params.get('year'),lesson:params.get('lesson'),stage:params.get('stage')||'1',locale},candidate=validateFoundation(input),candidateScores=candidate?readJourneyScores(storage,candidate.profile,candidate.year,locale):{},candidateGate=candidate?journeyState(candidate.profile,candidate.year,candidateScores).find(gate=>gate.id===lessonGateId(candidate.lesson,candidate.stage)):null,route=candidateGate?.unlocked?candidate:null,w=FOUNDATION_TEXT[locale],app=document.querySelector('#foundation-app');
@@ -42,7 +43,7 @@ function render(){
  if(!route){app.innerHTML=`<p role="alert">${w.invalid}</p>`;return;}
  if(view==='intro'){
   let best=0;try{best=Number(storage.getItem(progressKey)||0);}catch{}
-  app.innerHTML=`<section class="board quest-intro">${context()}<p>${w.intro}</p><p>${w.rules}</p><p>${w.anonymous}</p>${best?`<p>${w.progress}: ${best}/1000</p>`:''}<div class="quest-controls">${button('start',w.start)}${button('board',w.board)}</div><p role="status">${esc(feedback)}</p><p class="quest-note">${w.review}</p></section>`;
+  app.innerHTML=`<section class="board quest-intro">${context()}<p>${w.intro}</p><p>${w.rules}</p><p>${w.anonymous}</p>${best?`<p>${w.progress}: ${best}/1000</p>`:''}<div class="quest-controls">${LESSON_COMICS[route.lesson]?button('comic',comicButtonLabel(locale)):''}${button('start',w.start)}${button('board',w.board)}</div><p role="status">${esc(feedback)}</p><p class="quest-note">${w.review}</p></section>`;
  }else if(view==='board'){
   app.innerHTML=`<section class="board">${context()}<h2>${w.board}</h2><p class="quest-note">${w.privacy}</p>${boardEntries?boardEntries.length?`<div class="quest-board-wrap"><table class="quest-board"><thead><tr><th>#</th><th>Piko</th><th>${w.score}</th></tr></thead><tbody>${boardEntries.map(r=>`<tr><td>${r.rank}</td><td>${esc(r.name)}</td><td>${r.score}</td></tr>`).join('')}</tbody></table></div>`:`<p>${w.empty}</p>`:`<p role="status">${esc(feedback||w.loading)}</p>`}<div class="quest-controls">${button('board',w.board)}${button('intro',w.back)}${button('start',w.start)}</div></section>`;
  }else if(view==='result'){
@@ -83,6 +84,7 @@ async function showTutorial(){
 }
 async function board(){stop();view='board';boardEntries=null;feedback='';render();const token=epoch;try{const data=await api(`leaderboard?${new URLSearchParams(route)}`);if(token!==epoch)return;boardEntries=data.entries;render();}catch{if(token!==epoch)return;feedback=w.boardError;render();}}
 app.addEventListener('click',e=>{const target=e.target.closest('button,[data-action]');if(target&&!target.disabled)interaction.tap();const choice=e.target.closest('[data-choice]');if(choice&&!busy&&!verdict?.done){app.querySelectorAll('[data-choice]').forEach(el=>el.setAttribute('aria-pressed',String(el===choice)));return;}const key=e.target.closest('[data-key]')?.dataset.key,input=app.querySelector('#quest-answer');if(key&&input&&!busy&&!verdict?.done){if(key==='⌫')input.value=input.value.slice(0,-1);else if(key==='−')input.value=input.value.startsWith('-')?input.value.slice(1):`-${input.value}`;else if(input.value.length<40)input.value+=key;return;}const action=e.target.closest('[data-action]')?.dataset.action;if(!route||busy)return;if(action==='start')void start();if(action==='check')void check();if(action==='board')void board();if(action==='intro'){stop();view='intro';feedback='';render();}if(action==='next'&&run?.pending){if(run.pending.complete){run.index=10;finish();}else{run.index=run.pending.index;run.question=run.pending.question;run.pending=null;verdict=null;feedback='';render();}}});
+app.addEventListener('click',e=>{if(e.target.closest('[data-action="comic"]')&&!busy&&view==='intro')openMathComic(LESSON_COMICS[route.lesson],locale);});
 app.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='quest-answer'){e.preventDefault();void check();}});
 window.addEventListener('pagehide',stop);render();
 initSiteVisits(document.querySelector('.topbar'));

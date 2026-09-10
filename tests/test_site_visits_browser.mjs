@@ -17,7 +17,7 @@ const channel=process.env.BROWSER_CHANNEL||'chrome',browser=await chromium.launc
 try{
  for(const width of [320,390,1280]){
   const page=await browser.newPage({viewport:{width,height:844}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
-  for(const route of ['/home-fixture','/world.html?country=CN&locale=zh']){
+  for(const route of ['/home-fixture?choose-country=1','/world.html?country=CN&locale=zh']){
    const before=writes;await page.goto(origin+route);await page.waitForFunction(()=>document.querySelector('.visits-total')?.textContent==='12K');
    assert.equal(writes,before+1);assert.equal(await page.locator('.visits-preview .visits-chip').count(),3);
    await page.locator('.site-visits summary').click();

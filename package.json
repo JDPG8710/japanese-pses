@@ -2,15 +2,23 @@
   "name": "japanese-pses",
   "version": "2026.8.24",
   "private": true,
-  "description": "日本の小学生向け星図教育ゲーム",
+  "description": "譌･譛ｬ縺ｮ蟆丞ｭｦ逕溷髄縺第弌蝗ｳ謨呵ご繧ｲ繝ｼ繝",
   "scripts": {
     "test": "node tests/test_e2e_runner.js",
+    "test:go": "node tests/test_go.mjs && node tests/test_go_capacity.mjs && node tests/test_go_19.mjs",
+    "test:go:browser": "node tests/test_go_browser.mjs",
+    "test:playroom": "node tests/test_playroom.mjs",
+    "test:playroom:browser": "node tests/test_playroom_browser.mjs",
+    "test:chess": "node tests/test_chess.mjs",
+    "test:chess:browser": "node tests/test_chess_browser.mjs",
+    "preview:go": "node scripts/preview-go.mjs",
     "test:world": "node tests/test_world_games.mjs",
     "test:country": "node tests/test_country_home.mjs",
     "test:grades": "node tests/test_grade_paths.mjs && node tests/test_grade_journey.mjs",
     "test:foundations": "node tests/test_foundations.mjs && node tests/test_foundation_api.mjs",
     "test:seo": "node tests/test_seo.mjs",
     "test:auth": "node tests/test_oauth.mjs",
+    "test:privacy": "node tests/test_privacy_consent.mjs",
     "verify:auth:production": "node scripts/verify-auth-redirects.mjs",
     "build": "node scripts/build.mjs",
     "db:migrate:local": "wrangler d1 migrations apply japanese-pses-production --local --config wrangler.toml",
@@ -19,9 +27,14 @@
     "db:seed": "node scripts/import-game-data-d1.mjs --remote",
     "deploy:worker": "wrangler deploy --config wrangler.toml",
     "deploy:pages": "wrangler pages deploy --branch main",
-    "deploy": "npm run test && npm run build && npm run db:migrate && npm run db:seed && npm run deploy:worker && npm run deploy:pages"
+    "deploy": "npm run test && npm run build && npm run db:migrate && npm run db:seed && npm run deploy:worker && npm run deploy:pages",
+    "monitor:production": "node scripts/monitor-production.mjs"
   },
   "devDependencies": {
+    "playwright-core": "^1.63.0",
     "wrangler": "4.125.0"
+  },
+  "dependencies": {
+    "chess.js": "^1.4.0"
   }
 }

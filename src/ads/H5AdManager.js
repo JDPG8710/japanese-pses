@@ -4,6 +4,7 @@ export class H5AdManager extends EventTarget {
   constructor({
     publisherId = null,
     adFree = false,
+    advertisingAllowed = false,
     intervalMs = FREE_AD_INTERVAL_MS,
     now = () => Date.now(),
     setIntervalImpl = (callback, delay) => globalThis.setInterval(callback, delay),
@@ -12,6 +13,7 @@ export class H5AdManager extends EventTarget {
     super();
     this.publisherId = normalizePublisherId(publisherId);
     this.adFree = Boolean(adFree);
+    this.advertisingAllowed = Boolean(advertisingAllowed);
     this.intervalMs = intervalMs;
     this.now = now;
     this.setIntervalImpl = setIntervalImpl;
@@ -22,19 +24,21 @@ export class H5AdManager extends EventTarget {
     this.adDue = false;
     this.showing = false;
     this.boundPlayState = event => this.setGameActive(event?.detail?.active);
+    this.boundPrivacyChoice = event => this.setAdvertisingAllowed(event?.detail?.advertisingAllowed);
   }
 
   start() {
     if (typeof window !== 'undefined') window.addEventListener('GAME_PLAY_STATE_CHANGED', this.boundPlayState);
+    if (typeof window !== 'undefined') window.addEventListener('PIKO_PRIVACY_CHOICE_CHANGED', this.boundPrivacyChoice);
     this.lastTickAt = this.now();
     this.timerId = this.setIntervalImpl(() => this.tick(), 1000);
-    if (!this.adFree && this.publisherId) loadGoogleH5Ads(this.publisherId).catch(() => {});
+    if (!this.adFree && this.advertisingAllowed && this.publisherId) loadGoogleH5Ads(this.publisherId).catch(() => {});
     return this;
   }
 
   setGameActive(active) {
     this.tick();
-    this.gameActive = Boolean(active) && !this.adFree;
+    this.gameActive = Boolean(active) && !this.adFree && this.advertisingAllowed;
     this.lastTickAt = this.now();
   }
 
@@ -48,11 +52,23 @@ export class H5AdManager extends EventTarget {
     }
   }
 
+  setAdvertisingAllowed(allowed) {
+    this.tick();
+    this.advertisingAllowed = Boolean(allowed);
+    if (!this.advertisingAllowed) {
+      this.gameActive = false;
+      this.adDue = false;
+      this.accumulatedMs = 0;
+      return;
+    }
+    if (!this.adFree && this.publisherId) loadGoogleH5Ads(this.publisherId).catch(() => {});
+  }
+
   tick() {
     const current = this.now();
     const delta = Math.max(0, Math.min(5000, current - this.lastTickAt));
     this.lastTickAt = current;
-    if (!this.adFree && this.gameActive && typeof document !== 'undefined' && document.visibilityState !== 'hidden') {
+    if (!this.adFree && this.advertisingAllowed && this.gameActive && typeof document !== 'undefined' && document.visibilityState !== 'hidden') {
       this.accumulatedMs += delta;
       if (this.accumulatedMs >= this.intervalMs && !this.adDue) {
         this.adDue = true;
@@ -63,7 +79,7 @@ export class H5AdManager extends EventTarget {
 
   runAtSafeBreak(continueAction = () => {}) {
     this.tick();
-    if (this.adFree || !this.adDue || this.showing) {
+    if (this.adFree || !this.advertisingAllowed || !this.adDue || this.showing) {
       continueAction();
       return false;
     }
@@ -103,6 +119,7 @@ export class H5AdManager extends EventTarget {
     if (this.timerId != null) this.clearIntervalImpl(this.timerId);
     this.timerId = null;
     if (typeof window !== 'undefined') window.removeEventListener('GAME_PLAY_STATE_CHANGED', this.boundPlayState);
+    if (typeof window !== 'undefined') window.removeEventListener('PIKO_PRIVACY_CHOICE_CHANGED', this.boundPrivacyChoice);
   }
 
   emit(type, detail = {}) {
@@ -135,6 +152,10 @@ export function loadGoogleH5Ads(publisherId) {
     const script = document.createElement('script');
     script.async = true;
     script.crossOrigin = 'anonymous';
+    script.dataset.adClient = client;
+    script.dataset.tagForChildDirectedTreatment = '1';
+    script.dataset.tagForUnderAgeOfConsent = '1';
+    script.dataset.adFrequencyHint = '300s';
     script.src = scriptUrl;
     script.onload = () => resolve(true);
     script.onerror = () => { adsLoader = null; reject(new Error('Google H5 ads failed to load')); };

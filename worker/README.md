@@ -1,5 +1,15 @@
 # Cloudflare Pages／Worker／D1 配備手順
 
+## Piko Playroom（2026-09-09）
+
+共通入口、ニックネーム、オンライン一覧、家族の部屋、再戦、囲碁入門を追加。`0013_playroom_profiles.sql` と `playroom-v1`（`PlayroomSpace` / `PLAYROOMS`）が必要です。[実装・検証・公開記録](../docs/PLAYROOM_IMPLEMENTATION.md)を参照してください。
+
+国際象棋真人对局、家庭房棋种切换、PGN 复盘与 8 步儿童新手课使用 `0014_chess.sql` 和 `chess-v1`（`ChessRoom` / `CHESS_ROOMS`）。详细说明与验证命令见 [CHESS_IMPLEMENTATION.md](../docs/CHESS_IMPLEMENTATION.md)。
+
+## 9路囲碁（2026-09-08）
+
+`/arena.html` はゲスト・ログイン利用者の招待対戦、マッチング、4段階のコンピューター練習に対応します。Worker の入口は `worker/arena-entry.mjs`。`0012_go_games.sql` と `go-v1` Durable Object migration が必要です。ローカル検証・仕様・公開前の確認は [GO_ARENA.md](../docs/GO_ARENA.md) を参照してください。
+
 ## World Play（2026-09-05追加）
 
 `/world.html` に8つの論理ゲームと中・日・英UIを追加。`migrations/0005_world_games.sql` は公開代号と認証済み挑戦を保存し、既存DBは `0008_world_games_logic_lab.sql` が旧得点を保持したまま新ゲームIDへ移行します。`GET /api/world/leaderboard?game=circuit&level=1` は匿名公開、`POST /api/world/start` と `POST /api/world/answer` は既存認証必須です。公開データはランダム代号・順位・スコアだけです。

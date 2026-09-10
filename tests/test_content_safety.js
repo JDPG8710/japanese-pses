@@ -126,7 +126,7 @@ function register({ describe, test, assert, loadESModule }) {
 
     test('CS8: homepage exposes complete crawl and share metadata', () => {
       const canonical = 'https://piko-game.com/';
-      assert.match(html, /<title>Piko Play \| Multilingual Learning Games for Primary Students<\/title>/);
+      assert.match(html, /<title>Piko Game \| Multilingual Learning Games for Primary Students<\/title>/);
       assert.match(html, /<meta name="description" content="[^"]+"\s*\/>/);
       assert.ok(html.includes(`<link rel="canonical" href="${canonical}" />`), 'Canonical URL must point to production');
       assert.ok(html.includes('<meta property="og:title"') && html.includes('<meta property="og:description"'), 'Open Graph metadata is required');
@@ -135,13 +135,16 @@ function register({ describe, test, assert, loadESModule }) {
       assert.ok(jsonLdMatch, 'SoftwareApplication JSON-LD is required');
       const structured = JSON.parse(jsonLdMatch[1]);
       const app = structured['@graph'].find(item => item['@type'] === 'SoftwareApplication');
-      assert.strictEqual(app.name, 'Piko Play');
+      assert.strictEqual(app.name, 'Piko Game');
       assert.strictEqual(app.offers.price, '0');
       assert.strictEqual(app.url, canonical);
       assert.ok(fs.readFileSync(path.join(rootDir, 'robots.txt'), 'utf8').includes('/sitemap.xml'));
       assert.ok(fs.existsSync(path.join(rootDir, 'privacy.html')) && fs.existsSync(path.join(rootDir, 'terms.html')), 'Public privacy and terms pages are required');
-      assert.match(html, /data-tag-for-child-directed-treatment="1"/);
-      assert.match(html, /data-tag-for-under-age-of-consent="1"/);
+      assert.ok(html.includes('/src/privacy/ConsentManager.mjs'), 'Every visit must expose privacy choices before optional ads load');
+      assert.strictEqual(/<script[^>]+pagead2\.googlesyndication\.com/i.test(html), false, 'AdSense must not load before the visitor opts in');
+      const adsManager = fs.readFileSync(path.join(rootDir, 'src/ads/H5AdManager.js'), 'utf8');
+      assert.match(adsManager, /script\.dataset\.tagForChildDirectedTreatment = '1'/);
+      assert.match(adsManager, /script\.dataset\.tagForUnderAgeOfConsent = '1'/);
       assert.ok(fs.readFileSync(path.join(rootDir, 'sitemap.xml'), 'utf8').includes(`<loc>${canonical}</loc>`));
       assert.ok(fs.existsSync(path.join(rootDir, 'site.webmanifest')) && fs.existsSync(path.join(rootDir, 'favicon.svg')));
     });

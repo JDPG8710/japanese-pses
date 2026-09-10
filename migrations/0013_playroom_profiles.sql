@@ -1,0 +1,8 @@
+CREATE TABLE IF NOT EXISTS playroom_profiles (
+  actor_id TEXT PRIMARY KEY,
+  public_id TEXT NOT NULL UNIQUE,
+  nickname TEXT NOT NULL,
+  avatar TEXT NOT NULL DEFAULT '🌱',
+  visible INTEGER NOT NULL DEFAULT 0,
+  tutorial INTEGER NOT NULL DEFAULT 0
+);

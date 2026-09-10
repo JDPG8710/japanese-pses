@@ -27,7 +27,7 @@ function shortNodeName(node) {
 }
 
 function dispatchNodeSelected(node) {
-  window.dispatchEvent(new CustomEvent('GALAXY_NODE_CLICK_START', { detail: { time: Date.now() } }));
+  window.dispatchEvent(new CustomEvent('GALAXY_NODE_CLICK_START', { detail: { nodeId: node.id, source: 'unit', time: Date.now() } }));
   window.dispatchEvent(new CustomEvent('GALAXY_NODE_SELECTED', { detail: node }));
 }
 
@@ -157,9 +157,10 @@ export class GalaxyEngine {
     button.innerHTML = `<span aria-hidden="true">${cleared ? '✓' : stageNumber}</span>`;
     button.addEventListener('click', event => {
       event.stopPropagation();
-      window.dispatchEvent(new CustomEvent('GALAXY_NODE_CLICK_START', { detail: { time: Date.now() } }));
+      window.dispatchEvent(new CustomEvent('GALAXY_NODE_CLICK_START', { detail: { nodeId: node.id, stage: stageNumber, source: 'stage', time: Date.now() } }));
       if (this.stageLaunchHandler) this.stageLaunchHandler(node, stageNumber);
       else if (typeof window.launchStage === 'function') window.launchStage(node.id, stageNumber);
+      window.dispatchEvent(new CustomEvent('GALAXY_NODE_INTERACTION_COMPLETE', { detail: { nodeId: node.id, stage: stageNumber, source: 'stage' } }));
     });
     return button;
   }
@@ -205,6 +206,25 @@ export class GalaxyEngine {
     scrollHint.textContent = '横にスライド →';
 
     row.append(unitButton, track, scrollHint);
+    const comicTopics = {
+      MATH_G3_DIV_FRACTION: ['fractions'], MATH_G4_AREA_DECIMAL: ['area'],
+      MATH_G5_RATIO: ['volume', 'percent'], MATH_G6_PROPORTION_SPEED: ['ratio']
+    };
+    if (node.subject === '算数' && status !== 'LOCKED') {
+      for (const topic of comicTopics[node.id] || []) {
+        const comic = document.createElement('button');
+        comic.type = 'button';
+        comic.className = 'math-comic-entry';
+        comic.textContent = `まんが：${({fractions:'ぶんすう',area:'めんせき',volume:'たいせき',percent:'ひゃくぶんりつ',ratio:'ひ'})[topic]}`;
+        comic.style.cssText = 'min-height:56px;padding:10px 16px;border:2px solid #245653;border-radius:12px;background:#fffaf0;color:#193e3b;font:inherit;cursor:pointer';
+        comic.addEventListener('click', async event => {
+          event.stopPropagation();
+          const {openMathComic} = await import('./src/comics/MathComic.mjs');
+          openMathComic(topic, 'ja');
+        });
+        track.prepend(comic);
+      }
+    }
     return row;
   }
 

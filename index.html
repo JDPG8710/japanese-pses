@@ -5,17 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta name="turnstile-site-key" content="0x4AAAAAAEZrRJQcMv2tk9IP" />
   <meta name="google-adsense-account" content="ca-pub-8738651569097071" />
-  <script>
-    (() => {
-      window.adsbygoogle = window.adsbygoogle || [];
-      const adPlacementCommand = config => window.adsbygoogle.push(config);
-      window.adBreak = window.adBreak || adPlacementCommand;
-      window.adConfig = window.adConfig || adPlacementCommand;
-    })();
-  </script>
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8738651569097071"
-    data-ad-client="ca-pub-8738651569097071" data-tag-for-child-directed-treatment="1"
-    data-tag-for-under-age-of-consent="1" data-ad-frequency-hint="300s" crossorigin="anonymous"></script>
+  <script type="module" src="/src/privacy/ConsentManager.mjs?v=aed480fe2fd5"></script>
   <title>Piko Game | Multilingual Learning Games for Primary Students</title>
   <meta name="description" content="Free-to-start browser learning games for primary students in English, Chinese and Japanese. Explore school-year practice, playful logic challenges and an international learning adventure." />
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
@@ -37,14 +27,14 @@
   <meta property="og:title" content="Piko Game | One Planet. Many Ways to Learn." />
   <meta property="og:description" content="Multilingual learning games, international school-year practice and playful logic challenges for primary students." />
   <meta property="og:url" content="https://piko-game.com/" />
-  <meta property="og:image" content="https://piko-game.com/assets/seo/piko-play-en.png" />
+  <meta property="og:image" content="https://piko-game.com/assets/seo/piko-game-en.png" />
   <meta property="og:image:width" content="1920" />
   <meta property="og:image:height" content="1080" />
   <meta property="og:image:alt" content="Piko Game star mascot on a cosmic learning adventure" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Piko Game | One Planet. Many Ways to Learn." />
   <meta name="twitter:description" content="Free-to-start multilingual learning games for primary students." />
-  <meta name="twitter:image" content="https://piko-game.com/assets/seo/piko-play-en.png" />
+  <meta name="twitter:image" content="https://piko-game.com/assets/seo/piko-game-en.png" />
   <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -87,8 +77,8 @@
     }
   </script>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="css/style.css?v=20260830.5" />
-  <link rel="stylesheet" href="src/location/home.css?v=1" />
+  <link rel="stylesheet" href="css/style.css?v=aed480fe2fd5" />
+  <link rel="stylesheet" href="src/location/home.css?v=aed480fe2fd5" />
   <style>
     body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #8bd8ff; }
     #canvas-container { position: absolute; inset: 0; touch-action: none; z-index: 1; }
@@ -107,16 +97,15 @@
   </style>
 </head>
 <body class="text-white font-sans select-none overflow-hidden country-entry">
-  <div id="country-home"><p>Welcome · ようこそ · 欢迎</p><noscript>Please enable JavaScript to choose a country and play.</noscript></div>
-  <div id="daily-brand-splash" class="daily-brand-splash" role="dialog" aria-modal="true" aria-labelledby="daily-brand-title">
-    <button id="daily-brand-close" type="button" class="daily-brand-close" aria-label="閉じる">✕</button>
-    <div class="daily-brand-card">
-      <div class="daily-brand-mascots" aria-hidden="true"><span>🐣</span><span>🌈</span><span>🐰</span></div>
-      <p class="daily-brand-kicker">まいにち ひとつ、できた！を ふやそう</p>
-      <h1 id="daily-brand-title" class="daily-brand-title">Piko Game</h1>
-      <p class="daily-brand-subtitle">あそんで まなんで だいぼうけん</p>
-      <p id="daily-brand-countdown" class="daily-brand-countdown" aria-live="polite">5びょうごに はじまるよ</p>
-    </div>
+  <div id="country-home">
+    <a class="about-skip" href="#about-main">Skip to content</a>
+    <header class="about-nav"><a class="about-brand" href="/" aria-label="Piko Game home">✦ Piko Game</a><nav><a href="/en/">English</a><a href="/ja/" lang="ja">日本語</a><a href="/zh/" lang="zh-Hans">中文</a></nav></header>
+    <main id="about-main" class="about-main">
+      <section class="about-hero"><div><p class="about-eyebrow">LEARNING THROUGH PLAY</p><h1>One planet.<br><em>Many ways to learn.</em></h1><p>Piko Game turns primary-school practice and logic challenges into welcoming multilingual adventures for children everywhere.</p><div class="about-play-actions"><button id="country-home-play-now" class="about-play" type="button">Play now <span aria-hidden="true">→</span></button><a class="about-play" href="/arena.html?lang=en">Piko Playroom →</a></div><ul><li>No download</li><li>Start without an account</li><li>English · 日本語 · 中文</li></ul></div><div class="about-orbit" aria-hidden="true"><span>⭐</span><b>Explore</b><i>Think</i><strong>Try again</strong></div></section>
+      <section class="about-features"><article><span>🌐</span><h2>Made for many starting points</h2><p>Choose a country or region, language and learning path when you are ready to play.</p></article><article><span>🧭</span><h2>Clear next steps</h2><p>Short challenges and visible progress help children decide what to try next.</p></article><article><span>✨</span><h2>Kind feedback</h2><p>Hints and retry-friendly game design help learners adjust their thinking with confidence.</p></article></section>
+    </main>
+    <footer class="about-footer">© 2026 Piko Game · <a href="/updates.html">Updates</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a></footer>
+    <noscript>Please enable JavaScript to choose a country and play.</noscript>
   </div>
 
   <!-- 軽量カートゥーンマップ -->
@@ -157,7 +146,7 @@
       </button>
 
       <!-- 音声ミュート切り替えボタン (Mute Toggle) -->
-      <a href="world.html" class="glass-panel px-3 py-2 rounded-full text-xs font-bold text-cyan-100 pointer-events-auto" aria-label="せかいのゲームとランキング">🌍 <span class="hidden md:inline">せかいのゲーム</span></a>
+      <a href="arena.html?lang=ja" class="glass-panel px-3 py-2 rounded-full text-xs font-bold text-cyan-100 pointer-events-auto">Piko Playroom</a><a href="world" class="glass-panel px-3 py-2 rounded-full text-xs font-bold text-cyan-100 pointer-events-auto" aria-label="せかいのゲームとランキング">🌍 <span class="hidden md:inline">せかいのゲーム</span></a>
       <button id="audio-mute-btn" class="glass-panel px-3.5 py-1.5 rounded-full hover:bg-slate-800 text-xs font-bold text-slate-200 flex items-center gap-1.5 transition border border-indigo-500/30 shadow-lg cursor-pointer" title="音声ミュート切替">
         <span id="audio-mute-icon" class="text-sm">🔊</span>
         <span id="audio-mute-label" class="hidden sm:inline">音量オン</span>
@@ -327,9 +316,27 @@
           </div>
           <span id="profile-membership-badge" class="rounded-full border border-slate-500 bg-slate-800 px-3 py-1 text-xs font-black text-slate-200">FREE</span>
         </div>
+        <div id="login-benefits-panel" class="mt-3 grid gap-2 sm:grid-cols-3" aria-label="ログインの特典">
+          <article class="rounded-xl border border-indigo-300/30 bg-indigo-500/10 p-3">
+            <p class="text-[10px] font-black tracking-wider text-indigo-200">CLOUD</p>
+            <strong class="mt-1 block text-xs font-black text-white">クラウドに学習きろくを保存</strong>
+            <p class="mt-1 text-[11px] leading-4 text-slate-300">別の端末でもつづきから遊べるよ</p>
+          </article>
+          <article class="rounded-xl border border-cyan-300/30 bg-cyan-500/10 p-3">
+            <p class="text-[10px] font-black tracking-wider text-cyan-200">REPORT</p>
+            <strong class="mt-1 block text-xs font-black text-white">保護者向けの学習概要</strong>
+            <p class="mt-1 text-[11px] leading-4 text-slate-300">ログイン後に学習概要（保護者向け）を見られるよ</p>
+          </article>
+          <article class="rounded-xl border border-amber-300/30 bg-amber-500/10 p-3">
+            <p class="text-[10px] font-black tracking-wider text-amber-200">CERT</p>
+            <strong class="mt-1 block text-xs font-black text-white">修了証の番号を保存</strong>
+            <p class="mt-1 text-[11px] leading-4 text-slate-300">ログイン後に修了証番号を保存し、あとでシェアしやすくするよ</p>
+          </article>
+        </div>
         <div class="mt-3 flex flex-wrap gap-2">
           <button id="account-login-btn" type="button" class="min-h-11 rounded-xl border border-white/20 bg-white px-4 text-xs font-black text-slate-900">Googleでログイン</button>
           <button id="membership-upgrade-btn" type="button" class="min-h-11 rounded-xl bg-gradient-to-r from-fuchsia-400 to-amber-300 px-4 text-xs font-black text-slate-950">一度だけ500円で広告をなくす</button>
+          <a id="account-privacy-link" href="privacy.html" target="_blank" rel="noopener" data-piko-privacy-settings class="inline-flex min-h-11 items-center rounded-xl border border-slate-500 bg-slate-800 px-4 text-xs font-black text-slate-100">プライバシー・データの扱い</a>
         </div>
         <p id="membership-message" role="status" class="mt-2 hidden rounded-lg bg-slate-950/60 px-3 py-2 text-xs text-slate-200"></p>
       </section>
@@ -574,63 +581,48 @@
   </div>
 
   <script type="module">
-    import { GalaxyEngine } from './GalaxyEngine.js?v=9';
-    import { MiniGameModal, GAME_GRADE_SUPPORT_MAP } from './MiniGameSystem.js?v=10';
+    import { GalaxyEngine } from './GalaxyEngine.js?v=aed480fe2fd5';
+    import { MiniGameModal, GAME_GRADE_SUPPORT_MAP } from './MiniGameSystem.js?v=aed480fe2fd5';
     import { countBadge, refreshPlayCounts } from './src/stats/PlayCounts.js';
     import { japanesePlayKey } from './src/stats/PlayKeys.mjs';
-    import { EconomyManager, SHOP_CATALOG } from './EconomySystem.js?v=5';
-    import { AntigravityAgentBrain, createObservationPayload } from './AgentIntegration.js?v=2';
-    import { FULL_CURRICULUM_DAG, SUBJECT_METADATA, GRADES, loadCurriculumFromJSON, graphEngineInstance } from './CurriculumData.js?v=3';
-    import { ErrorInterceptor } from './ErrorInterceptor.js?v=2';
-    import { diagnoseAndRecommendFix } from './AgentQADiagnostics.js?v=2';
+    import { EconomyManager, SHOP_CATALOG } from './EconomySystem.js?v=aed480fe2fd5';
+    import { AntigravityAgentBrain, createObservationPayload } from './AgentIntegration.js?v=aed480fe2fd5';
+    import { FULL_CURRICULUM_DAG, SUBJECT_METADATA, GRADES, loadCurriculumFromJSON, graphEngineInstance } from './CurriculumData.js?v=aed480fe2fd5';
+    import { ErrorInterceptor } from './ErrorInterceptor.js?v=aed480fe2fd5';
+    import { diagnoseAndRecommendFix } from './AgentQADiagnostics.js?v=aed480fe2fd5';
     import { getAudioSynthesizer } from './js/AudioSynthesizer.js';
     import { getFXSystem } from './js/FXSystem.js';
-    import { getErrorGuidanceSystem } from './js/ErrorGuidanceSystem.js?v=3';
-    import { AuthManager } from './src/auth/AuthManager.js?v=3';
-    import { LoginReminderManager } from './src/auth/LoginReminderManager.js?v=1';
-    import { MembershipManager } from './src/membership/MembershipManager.js?v=1';
-    import { H5AdManager } from './src/ads/H5AdManager.js?v=2';
+    import { getErrorGuidanceSystem } from './js/ErrorGuidanceSystem.js?v=aed480fe2fd5';
+    import { AuthManager } from './src/auth/AuthManager.js?v=aed480fe2fd5';
+    import { LoginReminderManager } from './src/auth/LoginReminderManager.js?v=aed480fe2fd5';
+    import { authText } from './src/auth/AuthText.js?v=aed480fe2fd5';
+    import { MembershipManager } from './src/membership/MembershipManager.js?v=aed480fe2fd5';
+    import { H5AdManager } from './src/ads/H5AdManager.js?v=aed480fe2fd5';
     import { StorageAdapter } from './src/storage/StorageAdapter.js';
-    import { DEFAULT_LEARNER_NAME, LearnerProfileModal, isLearnerProfileComplete, learnerGenderLabel, normalizeLearnerProfile } from './src/profile/LearnerProfile.js?v=5';
+    import { DEFAULT_LEARNER_NAME, LearnerProfileModal, isLearnerProfileComplete, learnerGenderLabel, normalizeLearnerProfile } from './src/profile/LearnerProfile.js?v=aed480fe2fd5';
     import { calculateGradeProgress, createGraduationCertificate, ELEMENTARY_GRADUATION_ACHIEVEMENT_ID } from './ProgressionSystem.js';
-    import { showCountryHome } from './src/location/CountryHome.mjs?v=1';
+    import { showCountryHome } from './src/location/CountryHome.mjs?v=aed480fe2fd5';
+    import { advertisingAllowedForCurrentVisitor } from './src/privacy/ConsentManager.mjs?v=aed480fe2fd5';
 
     await showCountryHome();
 
-    const BRAND_SPLASH_STORAGE_KEY = 'MANABI_POP_DAILY_SPLASH_V1';
     const LEGACY_DEFAULT_LEARNER_NAMES = new Set([DEFAULT_LEARNER_NAME, 'ゲスト', '学習者', 'ひなた', 'ローカル学習者']);
-    const dailyBrandSplash = document.getElementById('daily-brand-splash');
-    const dailyBrandCountdown = document.getElementById('daily-brand-countdown');
-    const todayInJapan = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Tokyo' }).format(new Date());
-    let brandSplashTimer = null;
-    const closeDailyBrandSplash = () => {
-      if (brandSplashTimer) window.clearInterval(brandSplashTimer);
-      brandSplashTimer = null;
-      dailyBrandSplash?.classList.remove('is-visible');
-    };
-    if (localStorage.getItem(BRAND_SPLASH_STORAGE_KEY) !== todayInJapan) {
-      localStorage.setItem(BRAND_SPLASH_STORAGE_KEY, todayInJapan);
-      dailyBrandSplash?.classList.add('is-visible');
-      let brandSecondsLeft = 5;
-      brandSplashTimer = window.setInterval(() => {
-        brandSecondsLeft -= 1;
-        if (dailyBrandCountdown) dailyBrandCountdown.textContent = brandSecondsLeft > 0
-          ? `${brandSecondsLeft}びょうごに はじまるよ`
-          : 'さあ、しゅっぱつ！';
-        if (brandSecondsLeft <= 0) window.setTimeout(closeDailyBrandSplash, 350);
-      }, 1000);
-    }
-    document.getElementById('daily-brand-close')?.addEventListener('click', closeDailyBrandSplash);
 
     const storageAdapter = new StorageAdapter({ apiBase: '/api' });
     await storageAdapter.initialize({ sync: false });
     const turnstileSiteKey = document.querySelector('meta[name="turnstile-site-key"]')?.content || '';
     const authManager = new AuthManager({ apiBase: '/api', turnstileSiteKey, storage: storageAdapter });
     const accessSession = await authManager.initialize();
+    const softLoginMessages = {
+      interval: '5分間あそんだね！ Googleでログインすると、今の学習きろくをクラウドに保存して、ほかの端末でもつづきから遊べるよ。',
+      'stage-clear': 'ステージクリアおめでとう！ Googleでログインすると、このきろくをクラウドに残せるよ。',
+      'learner-name': 'おなまえを登録できたよ！ Googleでログインすると、学習きろくをクラウドに保存できるよ。',
+      'before-ad': 'まもなく広告が表示されます。ログインすると学習きろくをクラウドに残せます。このまま本機であそぶこともできます。'
+    };
     const loginReminderManager = new LoginReminderManager({
       sessionMode: accessSession.mode,
-      onReminder: () => authManager.showLogin({
-        message: '5分間あそんだね！ Googleでログインすると、今の学習きろくを保存して、ほかの端末でもつづきから遊べるよ。'
+      onReminder: reason => authManager.showLogin({
+        message: softLoginMessages[reason] || softLoginMessages.interval
       })
     }).start();
     window.addEventListener('pagehide', () => loginReminderManager.destroy(), { once: true });
@@ -641,11 +633,17 @@
     const embeddedAdsPublisherId = document.querySelector('meta[name="google-adsense-account"]')?.content || null;
     const adManager = new H5AdManager({
       publisherId: membershipStatus.googleH5AdsPublisherId || embeddedAdsPublisherId,
-      adFree: membershipStatus.adFree
+      adFree: membershipStatus.adFree,
+      advertisingAllowed: await advertisingAllowedForCurrentVisitor()
     }).start();
-    let synchronizedState = accessSession.mode === 'authenticated'
-      ? await storageAdapter.syncNow('login').catch(() => null)
-      : await storageAdapter.getLocalSnapshot();
+    let synchronizedState = null;
+    if (accessSession.mode === 'authenticated') {
+      // P0-1: fold anonymous-device (or prior guest) IndexedDB progress into google:{sub} via LWW, then sync.
+      await storageAdapter.adoptAnonymousProgress().catch(() => null);
+      synchronizedState = await storageAdapter.syncNow('login').catch(() => null);
+    } else {
+      synchronizedState = await storageAdapter.getLocalSnapshot();
+    }
     const learnerProfileModal = new LearnerProfileModal();
     const storedLearnerProfile = normalizeLearnerProfile(synchronizedState?.profile || {});
     const rawSuggestedLearnerName = String(storedLearnerProfile.name || accessSession.user?.displayName || '').trim().slice(0, 20);
@@ -687,7 +685,22 @@
     errorInterceptor.bindWebGLCanvas(engine.renderer.domElement);
 
     const gameModal = new MiniGameModal();
-    gameModal.setSafeBreakHandler(continueAction => adManager.runAtSafeBreak(continueAction));
+    gameModal.setSafeBreakHandler(continueAction => {
+      const runAdBreak = () => adManager.runAtSafeBreak(continueAction);
+      if (accessSession.mode !== 'anonymous' || membershipManager.status.adFree) {
+        runAdBreak();
+        return;
+      }
+      // Soft login prompt before an ad is due; never blocks play if dismissed.
+      adManager.tick();
+      if (!adManager.adDue) {
+        runAdBreak();
+        return;
+      }
+      Promise.resolve(loginReminderManager.maybePrompt('before-ad'))
+        .catch(() => {})
+        .finally(runAdBreak);
+    });
     gameModal.setShopItemAdapter({
       getQuantity: itemId => economy.getItemQuantity(itemId),
       consume: itemId => economy.consumeItem(itemId),
@@ -1256,19 +1269,38 @@
       const messageBox = document.getElementById('membership-message');
       if (!title || !description || !badge || !loginButton || !upgradeButton || !messageBox) return;
 
+      const benefitsPanel = document.getElementById('login-benefits-panel');
+      const privacyLink = document.getElementById('account-privacy-link');
+      if (privacyLink) privacyLink.textContent = authText('プライバシー・データの扱い');
+      if (benefitsPanel) {
+        const cards = benefitsPanel.querySelectorAll('article');
+        if (cards[0]) {
+          cards[0].querySelector('strong').textContent = authText('クラウドに学習きろくを保存');
+          cards[0].querySelector('p:last-child').textContent = authText('別の端末でもつづきから遊べるよ');
+        }
+        if (cards[1]) {
+          cards[1].querySelector('strong').textContent = authText('保護者向けの学習概要');
+          cards[1].querySelector('p:last-child').textContent = authText('ログイン後に学習概要（保護者向け）を見られるよ');
+        }
+        if (cards[2]) {
+          cards[2].querySelector('strong').textContent = authText('修了証の番号を保存');
+          cards[2].querySelector('p:last-child').textContent = authText('ログイン後に修了証番号を保存し、あとでシェアしやすくするよ');
+        }
+      }
       if (status.adFree) {
         title.textContent = '広告なしメンバー';
-        description.textContent = '一度のお支払いが完了しています。これからも広告なしで、すべての学年とゲームを遊べます。';
+        description.textContent = '一度だけ500円のお支払いが完了しています。広告は表示されません。学習きろくのクラウド保存は無料ログインの特典です。';
         badge.textContent = 'AD FREE';
         badge.className = 'rounded-full border border-emerald-300/60 bg-emerald-400/15 px-3 py-1 text-xs font-black text-emerald-200';
         upgradeButton.classList.add('hidden');
       } else {
         title.textContent = accessSession.mode === 'anonymous' ? 'ログインなしで無料プレイ中' : '無料メンバー';
-        description.textContent = '実際にゲームで遊んだ時間が5分たつと、次のステージへ進む前などに広告が表示されます。ログインしても無料メンバーには広告が表示されます。';
+        description.textContent = '実際にゲームで遊んだ時間が5分たつと、次のステージへ進む前などに広告が表示されます。広告をなくすのは一度だけ500円のメンバー特典です（ログインのクラウド保存とは別）。';
         badge.textContent = 'FREE';
         upgradeButton.classList.remove('hidden');
       }
       loginButton.classList.toggle('hidden', accessSession.mode !== 'anonymous');
+      if (benefitsPanel) benefitsPanel.classList.toggle('hidden', accessSession.mode !== 'anonymous');
       if (accessSession.mode === 'local') upgradeButton.classList.add('hidden');
       if (message) {
         messageBox.textContent = message;
@@ -1360,7 +1392,7 @@
               return `
               <div class="p-3 rounded-2xl ${equipped ? 'bg-emerald-950/60 border-emerald-500/60' : 'bg-slate-950/60 border-slate-800'} border flex items-center justify-between gap-3">
                 <div class="flex items-center gap-3">
-                  <div class="text-2xl">${item.icon}</div>
+                  <div class="${item.type === 'SKIN' ? 'shop-map-preview' : 'text-2xl'}" ${item.type === 'SKIN' ? `data-theme="${item.id}" role="img" aria-label="${item.title}"` : ''}>${item.type === 'SKIN' ? '' : item.icon}</div>
                   <div>
                     <div class="text-xs font-bold text-white">${item.title}</div>
                     <div class="text-[10px] text-slate-400">${item.description}</div>
@@ -1434,6 +1466,7 @@
       } else {
         economy.loginUser(nextProfile.name);
       }
+      const wasIncomplete = !isLearnerProfileComplete(learnerProfile);
       learnerProfile = nextProfile;
       economy.activeUser.age = nextProfile.age;
       economy.activeUser.gender = nextProfile.gender;
@@ -1444,6 +1477,9 @@
       }
       updateEconomyUI();
       userModal.classList.remove('hidden');
+      if (wasIncomplete && isLearnerProfileComplete(nextProfile) && accessSession.mode === 'anonymous') {
+        void loginReminderManager.maybePrompt('learner-name');
+      }
     };
 
     async function activateLearnerProfile(name) {
@@ -1464,19 +1500,23 @@
 
     document.getElementById('user-login-confirm').onclick = async () => {
       const name = document.getElementById('user-name-input').value.trim();
+      const firstNamed = Boolean(name) && LEGACY_DEFAULT_LEARNER_NAMES.has(economy.currentUser);
       if (await activateLearnerProfile(name)) {
         userModal.classList.add('hidden');
         document.getElementById('user-name-input').value = '';
+        if (firstNamed && accessSession.mode === 'anonymous') {
+          void loginReminderManager.maybePrompt('learner-name');
+        }
       }
     };
 
     document.getElementById('account-login-btn').onclick = () => authManager.showLogin({
-      message: 'Googleでログインすると学習きろくをクラウドに保存でき、広告なしメンバーも購入できます。ゲームはログインしなくても遊べます。'
+      message: 'Googleでログインすると、学習きろくをクラウドに保存して、別の端末でもつづきから遊べます。ゲームはログインなしでも遊べます。'
     });
 
     document.getElementById('membership-upgrade-btn').onclick = async () => {
       if (accessSession.mode === 'anonymous') {
-        await authManager.showLogin({ message: '広告なしメンバーを購入するには、先にGoogleでログインしてください。' });
+        await authManager.showLogin({ message: '広告なしメンバーを購入するには、先にGoogleでログインしてください。ログインは無料で、広告なしは別の500円プランです。' });
         return;
       }
       const button = document.getElementById('membership-upgrade-btn');
@@ -1788,6 +1828,10 @@
         showAgentToast(`📖 第${stageLevel}関 復習完了！【${currentNode.name}】の習熟度を更新しました！`);
       }
 
+      if (accessSession.mode === 'anonymous' && (awardResult.isFirstClear || isFinalStage || isExam)) {
+        void loginReminderManager.maybePrompt('stage-clear');
+      }
+
       // 3. AI Agent テレメトリ観測
       const observation = createObservationPayload({
         userId: economy.currentUser,
@@ -1828,5 +1872,5 @@
       }
     });
   </script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3870f788c2dfa14',t:'MTc4ODk2NjAwNA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

@@ -14,16 +14,32 @@ const escape=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&g
 export async function showCountryHome(){
   if(new URLSearchParams(location.search).get('course')==='jp'){initSiteVisits(null);document.body.classList.remove('country-entry');return;}
   const host=document.querySelector('#country-home');
+  const query=new URLSearchParams(location.search);
+  // The public route is the About page.  Keep the globe behind its explicit
+  // call to action so the country choice happens only when a learner starts.
+  if(query.get('choose-country')!=='1'){
+    await new Promise(resolve=>{
+      const begin=event=>{
+        event?.preventDefault();
+        query.set('choose-country','1');
+        history.replaceState(null,'',`${location.pathname}?${query.toString()}`);
+        resolve();
+      };
+      host?.querySelector('#country-home-play-now')?.addEventListener('click',begin,{once:true});
+    });
+  }
   let storage;try{storage=localStorage;}catch{}
+  host.classList.add('country-picker');
   let chosen=readCountry(storage),locale=languageForCountry(chosen),manual=!!chosen,status=chosen?'saved':'loading',countries=fallback,globe,alive=true,mapFailed=false;
   const current=()=>words[locale];
   const select=code=>{chosen=normalizeCountry(code);if(!chosen)return;manual=true;saveCountry(storage,chosen);locale=languageForCountry(chosen);status='selected';renderText();globe?.select(chosen);};
-  host.innerHTML=`<nav class="country-nav"><span class="country-brand">✳ Piko <b>Game</b></span><span class="language-badge" id="country-language"></span></nav><main class="country-layout"><section class="country-copy"><p class="country-kicker" data-home="kicker"></p><h1 data-home="title"></h1><p class="country-intro" data-home="intro"></p><div class="country-form"><label for="country-select" data-home="label"></label><select id="country-select"></select><p class="country-status" id="country-status" role="status"></p><a class="country-start" id="country-start" data-home="start" href="world.html" aria-disabled="true"></a><a class="country-japanese" id="country-japanese" href="?course=jp" data-home="japanese" hidden></a></div></section><section class="country-globe"><canvas id="country-canvas" tabindex="0" role="img"></canvas><div class="globe-tools"><button type="button" id="globe-left">←</button><button type="button" id="globe-reset">◎</button><button type="button" id="globe-right">→</button></div><p class="globe-hint" data-home="hint"></p><div class="country-chiprow" id="country-chips"></div></section></main><footer class="country-footer"><div><span data-home="footer"></span><br><span data-home="privacy"></span></div><div><a href="/en/" lang="en">About</a> · <a href="/ja/" lang="ja">日本語</a> · <a href="/zh/" lang="zh-Hans">中文</a><br><a href="privacy.html" data-home="privacyLink"></a> · <a href="terms.html" data-home="termsLink"></a> · <a href="https://www.naturalearthdata.com/about/terms-of-use/" target="_blank" rel="noopener" data-home="source"></a></div></footer>`;
+  host.innerHTML=`<nav class="country-nav"><span class="country-brand">✳ Piko <b>Game</b></span><span class="language-badge" id="country-language"></span></nav><main class="country-layout"><section class="country-copy"><p class="country-kicker" data-home="kicker"></p><h1 data-home="title"></h1><p class="country-intro" data-home="intro"></p><div class="country-form"><label for="country-select" data-home="label"></label><select id="country-select"></select><p class="country-status" id="country-status" role="status"></p><a class="country-start" id="country-start" data-home="start" href="world.html" aria-disabled="true"></a><a class="country-japanese" id="country-arena" href="arena.html">Piko Playroom</a><a class="country-japanese" id="country-japanese" href="?course=jp" data-home="japanese" hidden></a></div></section><section class="country-globe"><canvas id="country-canvas" tabindex="0" role="img"></canvas><div class="globe-tools"><button type="button" id="globe-left">←</button><button type="button" id="globe-reset">◎</button><button type="button" id="globe-right">→</button></div><p class="globe-hint" data-home="hint"></p><div class="country-chiprow" id="country-chips"></div></section></main><footer class="country-footer"><div><span data-home="footer"></span><br><span data-home="privacy"></span></div><div><a href="/en/" lang="en">About</a> · <a href="/ja/" lang="ja">日本語</a> · <a href="/zh/" lang="zh-Hans">中文</a><br><a href="privacy.html" data-home="privacyLink"></a> · <a href="terms.html" data-home="termsLink"></a> · <a href="https://www.naturalearthdata.com/about/terms-of-use/" target="_blank" rel="noopener" data-home="source"></a></div></footer>`;
   initSiteVisits(host.querySelector('.country-nav'));
   function renderText(){
     const w=current();document.documentElement.lang=locale;document.title=`Piko Game · ${w.title}`;
     host.querySelectorAll('[data-home]').forEach(el=>{el.textContent=w[el.dataset.home];});
     host.querySelector('#country-language').textContent=w.language;
+    const arenaLink=host.querySelector("#country-arena");arenaLink.textContent={zh:"Piko Playroom",ja:"Piko Playroom",en:"Piko Playroom"}[locale];arenaLink.href=`arena.html?lang=${locale}`;
     host.querySelector('#country-status').textContent=mapFailed?w.mapError:w[status];
     const list=host.querySelector('#country-select');
     list.innerHTML=`<option value="">${escape(w.placeholder)}</option>`+[...countries].filter((c,i)=>c.code&&countries.findIndex(other=>other.code===c.code)===i).map(c=>({...c,nativeName:nativeRegionName(c.code)})).sort((a,b)=>a.nativeName.localeCompare(b.nativeName)).map(c=>`<option value="${c.code}">${escape(c.nativeName)}</option>`).join('');list.value=chosen||'';

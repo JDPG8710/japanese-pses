@@ -80,18 +80,18 @@ export const SHOP_CATALOG = {
       items: [
         {
           id: 'skin_nebula_aurora',
-          title: 'オーロラの光',
-          description: '冒険マップが、緑と青にきらめくオーロラカラーになるよ。',
+          title: 'お花いっぱいの冒険ガーデン',
+          description: '冒険マップの両側に大きな花が咲くよ。交換するとすぐに飾れるよ。',
           price: 600,
-          icon: '🌌',
+          icon: '🌸',
           type: 'SKIN'
         },
         {
           id: 'skin_cyber_neon',
-          title: 'ネオンフェスティバル',
-          description: '冒険マップが、紫と青に光る特別カラーになるよ。',
+          title: '空と気球のおまつり',
+          description: '冒険マップの空に気球とカラフルな旗を飾るよ。交換するとすぐに使えるよ。',
           price: 1200,
-          icon: '✨',
+          icon: '🎈',
           type: 'SKIN'
         }
       ]
@@ -292,7 +292,7 @@ export class EconomyManager {
       return candidate.equipped === true && item?.type === normalizedType;
     });
     const item = entry ? this.getCatalogItem(entry.itemId) : null;
-    return item ? { ...item, ...entry } : null;
+    return item ? { ...entry, ...item } : null;
   }
 
   equipItem(itemId) {

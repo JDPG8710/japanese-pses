@@ -1,4 +1,4 @@
-import { LoginModal } from './LoginModal.js?v=4';
+import { LoginModal } from './LoginModal.js?v=aed480fe2fd5';
 import { isLocalDevelopmentHost } from '../runtime/LocalEnvironment.js';
 
 export class AuthManager extends EventTarget {
@@ -33,8 +33,8 @@ export class AuthManager extends EventTarget {
 
   async showLogin({ message } = {}) {
     if (this.localMode) return this.session;
-    await this.modal.show({ message });
-    return null;
+    if (!this.modal) return null;
+    return this.modal.show({ message });
   }
 
   async handleSubmit({ provider, turnstileToken }) {

@@ -32,7 +32,9 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
       assert.ok(modal.includes("action: 'access'"));
       assert.ok(modal.includes("appearance: 'always'"));
       assert.ok(modal.includes('data-provider="google" disabled'));
-      assert.ok(modal.includes('今はログインしない'));
+      assert.ok(modal.includes('この端末でつづける') || modal.includes('今はログインしない'));
+      assert.ok(modal.includes('auth-benefit') || modal.includes('ログインの特典') || modal.includes('クラウドに学習きろくを保存'));
+      assert.ok(modal.includes('data-piko-privacy-settings'));
       assert.ok(!modal.includes('data-action="guest"'));
       assert.ok(!modal.includes('data-provider="apple"'));
       assert.ok(manager.includes("mode: 'anonymous'"));
@@ -67,6 +69,27 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
       manager.tick();
       manager.setGameActive(false);
       assert.equal(reminders, 1, 'ログイン済み利用者には表示しないでください');
+      manager.destroy();
+    });
+
+    test('匿名利用者のソフトログイン案内はクリア・起名・広告前で各1回まで', async () => {
+      const { LoginReminderManager } = loadESModule(path.join(root, 'src/auth/LoginReminderManager.js'));
+      const reasons = [];
+      const manager = new LoginReminderManager({
+        sessionMode: 'anonymous',
+        onReminder: reason => { reasons.push(reason); },
+        setIntervalImpl: () => 1,
+        clearIntervalImpl: () => {}
+      }).start();
+      assert.equal(await manager.maybePrompt('stage-clear'), true);
+      assert.equal(await manager.maybePrompt('stage-clear'), false, 'クリア案内はセッションで一度だけ');
+      assert.equal(await manager.maybePrompt('learner-name'), true);
+      assert.equal(await manager.maybePrompt('learner-name'), false);
+      assert.equal(await manager.maybePrompt('before-ad'), true);
+      assert.equal(await manager.maybePrompt('before-ad'), false);
+      assert.deepEqual(reasons, ['stage-clear', 'learner-name', 'before-ad']);
+      manager.setSessionMode('authenticated');
+      assert.equal(await manager.maybePrompt('stage-clear'), false, 'ログイン済みには案内しない');
       manager.destroy();
     });
 
@@ -106,14 +129,44 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
       manager.destroy();
     });
 
-    test('AdSenseタグはPagesに一度だけ埋め込み、H5広告管理へ同じ公開IDを渡す', () => {
+    test('ログイン案内はクラウド保存だけを売り、500円は広告なしだけを売る', () => {
+      const page = read('index.html');
+      assert.ok(page.includes('学習きろくをクラウドに保存して、別の端末でもつづきから遊べます'));
+      assert.ok(!page.includes('広告なしメンバーも購入できます'));
+      assert.ok(page.includes('一度だけ500円で広告をなくす'));
+      assert.ok(page.includes('広告なしは別の500円プラン'));
+      assert.ok(page.includes('login-benefits-panel'));
+      assert.ok(page.includes('data-piko-privacy-settings'));
+      assert.ok(page.includes('adoptAnonymousProgress'));
+      assert.ok(page.includes("maybePrompt('stage-clear')"));
+      assert.ok(page.includes("maybePrompt('learner-name')"));
+      assert.ok(page.includes("maybePrompt('before-ad')"));
+    });
+
+    test('本番入口は play-now / ConsentManager を保ち、daily-brand splash を入れない', () => {
+      const page = read('index.html');
+      const home = read('src/location/CountryHome.mjs');
+      assert.ok(page.includes('id="country-home-play-now"'), 'About CTA button must exist for CountryHome await');
+      assert.ok(page.includes('ConsentManager'), 'production consent wiring required');
+      assert.ok(page.includes('advertisingAllowedForCurrentVisitor'));
+      assert.ok(!page.includes('daily-brand-splash'), 'do not reintroduce daily-brand splash');
+      assert.ok(!page.includes('MANABI_POP_DAILY_SPLASH'));
+      assert.ok(home.includes("get('course')==='jp'"), 'Japanese path must skip country entry');
+      assert.ok(home.includes("get('choose-country')!=='1'"), 'About→choose-country gate required');
+      assert.ok(home.includes('#country-home-play-now'), 'CountryHome must wait for play-now');
+    });
+
+    test('AdSense公開IDはPagesメタに埋め込み、H5広告管理が同意後に同じIDで読み込む', () => {
       const page = read('index.html');
       const ads = read('src/ads/H5AdManager.js');
       const publisherId = 'ca-pub-8738651569097071';
       assert.ok(page.includes(`<meta name="google-adsense-account" content="${publisherId}"`));
-      assert.ok(page.includes(`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${publisherId}`));
-      assert.ok(page.includes('crossorigin="anonymous"'));
+      // Production loads the AdSense script dynamically after consent (not a static head tag).
+      assert.ok(!page.includes('pagead2.googlesyndication.com/pagead/js/adsbygoogle.js'), 'static AdSense script must stay out of index (ConsentManager path)');
       assert.ok(page.includes('membershipStatus.googleH5AdsPublisherId || embeddedAdsPublisherId'));
+      assert.ok(page.includes('advertisingAllowedForCurrentVisitor'));
+      assert.ok(ads.includes('function loadGoogleH5Ads'));
+      assert.ok(ads.includes('pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client='));
       assert.ok(ads.includes('const existingScript = Array.from(document.scripts || [])'));
       assert.ok(ads.includes('if (existingScript)'));
     });
@@ -278,6 +331,21 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
   });
 
   describe('IndexedDB と D1 の競合マージ', () => {
+    test('ログイン時に anonymous-device のローカル進捗を認証ユーザーへ LWW で取り込む', async () => {
+      const { StorageAdapter } = loadESModule(path.join(root, 'src/storage/StorageAdapter.js'));
+      const storage = new StorageAdapter({ fetchImpl: null });
+      storage.setUser('anonymous-device', { cloudEnabled: false });
+      await storage.saveProfile({ user_id: 'anonymous-device', star_coins: 42, updated_at: 50 });
+      await storage.saveNodeProgress({ node_id: 'MATH-1', mastery_score: 0.8, updated_at: 50 });
+      storage.setUser('google:sub-1', { cloudEnabled: false });
+      await storage.saveProfile({ user_id: 'google:sub-1', star_coins: 10, updated_at: 20 });
+      const adopted = await storage.adoptAnonymousProgress();
+      assert.equal(adopted.profile.user_id, 'google:sub-1');
+      assert.equal(adopted.profile.star_coins, 42, '新しい anonymous 側の profile を採用');
+      assert.equal(adopted.nodeProgress.find(node => node.node_id === 'MATH-1').mastery_score, 0.8);
+      assert.equal(adopted.nodeProgress.find(node => node.node_id === 'MATH-1').user_id, 'google:sub-1');
+    });
+
     test('profile と node_progress は updated_at が新しい側を採用する', () => {
       const { mergeSnapshots } = loadESModule(path.join(root, 'src/storage/StorageAdapter.js'));
       const merged = mergeSnapshots(

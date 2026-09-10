@@ -1,10 +1,13 @@
 name = "japanese-pses"
-main = "worker/index.js"
+main = "worker/arena-entry.mjs"
 workers_dev = false
 compatibility_date = "2026-08-24"
 compatibility_flags = ["nodejs_compat"]
 
 [vars]
+GO_AI_MAX_ROOMS = "8"
+GO_AI_MAX_UNITS = "16"
+GO_AI_SLOW_MS = "250"
 APP_ORIGIN = "https://piko-game.com"
 API_ORIGIN = "https://piko-game.com"
 PLAY_COUNT_ORIGINS = "https://piko-game.com,https://manabi-pop.pages.dev"
@@ -25,6 +28,34 @@ database_name = "japanese-pses-production"
 database_id = "b04eb538-8972-4650-a3bf-56236fde9b41"
 preview_database_id = "b04eb538-8972-4650-a3bf-56236fde9b41"
 migrations_dir = "migrations"
+
+[[durable_objects.bindings]]
+name = "GO_ROOMS"
+class_name = "GoRoom"
+
+[[durable_objects.bindings]]
+name = "GO_LOBBY"
+class_name = "GoLobby"
+
+[[migrations]]
+tag = "go-v1"
+new_sqlite_classes = ["GoRoom", "GoLobby"]
+
+[[durable_objects.bindings]]
+name = "PLAYROOMS"
+class_name = "PlayroomSpace"
+
+[[migrations]]
+tag = "playroom-v1"
+new_sqlite_classes = ["PlayroomSpace"]
+
+[[durable_objects.bindings]]
+name = "CHESS_ROOMS"
+class_name = "ChessRoom"
+
+[[migrations]]
+tag = "chess-v1"
+new_sqlite_classes = ["ChessRoom"]
 
 # 機密値はコミットせず、次のコマンドで登録してください。
 # npx wrangler secret put TURNSTILE_SECRET_KEY

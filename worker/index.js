@@ -1,7 +1,7 @@
 import { worldRoute } from './world-games.mjs';
 import { goRoute } from './go-api.mjs';
 import { foundationRoute } from './foundation-games.mjs';
-import { countryResponse } from '../src/location/Country.mjs';
+import { countryResponse, isCnSafeModeActive, normalizeCountry } from '../src/location/Country.mjs';
 import { playCountsRoute } from './play-counts.mjs';
 import { siteVisitsRoute } from './site-visits.mjs';
 const TURNSTILE_VERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
@@ -43,7 +43,7 @@ async function routeRequest(request, env) {
   if (url.pathname.startsWith('/api/arena/')) return goRoute(request, env, { authenticate, signJwt, verifyJwt, parseCookies, HttpError });
   if (url.pathname === '/api/play-counts') return playCountsRoute(request, env, { json, HttpError });
   if (url.pathname === '/api/site-visits') return siteVisitsRoute(request, env, { json, HttpError });
-  if (url.pathname === '/api/location' && request.method === 'GET') return countryResponse(request);
+  if (url.pathname === '/api/location' && request.method === 'GET') return countryResponse(request, env);
   if (url.pathname.startsWith('/api/world/')) return worldRoute(request, env, { authenticate, json, HttpError });
   if (url.pathname.startsWith('/api/foundation/')) return foundationRoute(request, env, { authenticate, json, HttpError });
   if (url.pathname === '/api/auth/turnstile-verify' && request.method === 'POST') return handleTurnstile(request, env);
@@ -58,6 +58,7 @@ async function routeRequest(request, env) {
   if (url.pathname === '/api/star-graph' && request.method === 'GET') return handleStarGraph(request, env);
   if (url.pathname === '/api/state' && request.method === 'GET') return handleStateRead(request, env);
   if (url.pathname === '/api/state' && request.method === 'PUT') return handleStateWrite(request, env);
+  if (url.pathname === '/api/state' && request.method === 'DELETE') return handleStateDelete(request, env);
   if (url.pathname === '/api' || url.pathname.startsWith('/api/')) return json({ error: 'NOT_FOUND' }, 404, request, env);
   if (env.APP_ORIGIN) {
     const target = new URL(`${url.pathname}${url.search}`, env.APP_ORIGIN);
@@ -270,13 +271,19 @@ async function handleMembership(request, env) {
     membership = await requiredDatabase(env).prepare(`SELECT plan, ad_free, price_paid_jpy, purchased_at
       FROM memberships WHERE user_id = ?1 LIMIT 1`).bind(session.sub).first();
   }
+  const country = normalizeCountry(request.cf?.country);
+  const cnSafeMode = isCnSafeModeActive(env, country);
+  const paymentConfigured = Boolean(env.STRIPE_SECRET_KEY && env.STRIPE_WEBHOOK_SECRET);
   return json({
     authenticated: Boolean(session),
     plan: membership?.ad_free ? 'AD_FREE_LIFETIME' : 'FREE',
     adFree: Boolean(membership?.ad_free),
     priceJpy: MEMBERSHIP_PRICE_JPY,
     purchasedAt: membership?.purchased_at == null ? null : Number(membership.purchased_at),
-    paymentAvailable: Boolean(env.STRIPE_SECRET_KEY && env.STRIPE_WEBHOOK_SECRET),
+    paymentAvailable: paymentConfigured,
+    checkoutAllowed: paymentConfigured && !cnSafeMode,
+    cnSafeMode,
+    country,
     googleH5AdsPublisherId: publicGoogleAdsPublisherId(env.GOOGLE_H5_ADS_CLIENT)
   }, 200, request, env);
 }
@@ -284,6 +291,11 @@ async function handleMembership(request, env) {
 async function handleMembershipCheckout(request, env) {
   const session = await authenticate(request, env);
   if (!session) return json({ error: 'UNAUTHORIZED' }, 401, request, env);
+  const country = normalizeCountry(request.cf?.country);
+  if (isCnSafeModeActive(env, country)) return json({ error: 'CN_SAFE_MODE' }, 403, request, env);
+  const body = await readJson(request).catch(() => ({}));
+  if (!body?.parentalGateAck) return json({ error: 'PARENTAL_GATE_REQUIRED' }, 403, request, env);
+  if (!body?.termsAccepted) return json({ error: 'TERMS_REQUIRED' }, 400, request, env);
   const existing = await requiredDatabase(env).prepare('SELECT ad_free FROM memberships WHERE user_id = ?1 LIMIT 1').bind(session.sub).first();
   if (existing?.ad_free) return json({ error: 'ALREADY_AD_FREE' }, 409, request, env);
   if (!env.STRIPE_SECRET_KEY || !env.STRIPE_WEBHOOK_SECRET) return json({ error: 'PAYMENT_NOT_CONFIGURED' }, 503, request, env);
@@ -297,8 +309,8 @@ async function handleMembershipCheckout(request, env) {
   form.set('line_items[0][price_data][currency]', 'jpy');
   form.set('line_items[0][price_data][unit_amount]', String(MEMBERSHIP_PRICE_JPY));
   form.set('line_items[0][price_data][tax_behavior]', 'inclusive');
-  form.set('line_items[0][price_data][product_data][name]', 'まなびぽっぷ！ 広告なしメンバー');
-  form.set('line_items[0][price_data][product_data][description]', '一度のお支払いで、まなびぽっぷ！の広告をずっと非表示にします。');
+  form.set('line_items[0][price_data][product_data][name]', 'Piko Game Ad-Free Membership');
+  form.set('line_items[0][price_data][product_data][description]', 'One-time JPY payment that permanently hides ads in Piko Game. Digital goods for a parent/guardian purchase.');
   form.set('line_items[0][quantity]', '1');
   form.set('metadata[user_id]', session.sub);
   form.set('metadata[offer_id]', MEMBERSHIP_OFFER_ID);
@@ -422,6 +434,19 @@ function d1DocumentResponse(document, request, env, maxAge) {
   return new Response(document.body, { headers });
 }
 
+
+async function handleStateDelete(request, env) {
+  const session = await authenticate(request, env);
+  if (!session) return json({ error: 'UNAUTHORIZED' }, 401, request, env);
+  const database = requiredDatabase(env);
+  await database.batch([
+    database.prepare('DELETE FROM node_progress WHERE user_id = ?1').bind(session.sub),
+    database.prepare('DELETE FROM game_attempts WHERE user_id = ?1').bind(session.sub),
+    database.prepare('DELETE FROM user_profiles WHERE user_id = ?1').bind(session.sub)
+  ]);
+  return json({ deleted: true, userId: session.sub }, 200, request, env);
+}
+
 async function handleStateRead(request, env) {
   const session = await authenticate(request, env);
   if (!session) return json({ error: 'UNAUTHORIZED' }, 401, request, env);
@@ -520,6 +545,11 @@ function validateGameState(state) {
   if (!state || typeof state !== 'object' || (state.nodeProgress && !Array.isArray(state.nodeProgress))) throw new HttpError(400, 'INVALID_GAME_STATE');
   if (state.attempts && !Array.isArray(state.attempts)) throw new HttpError(400, 'INVALID_GAME_ATTEMPTS');
   if (JSON.stringify(state).length > 1_000_000) throw new HttpError(413, 'GAME_STATE_TOO_LARGE');
+  if (state.profile && typeof state.profile === 'object') {
+    // Stop accepting precise ages; prefer age-band enums only.
+    if ('learner_age' in state.profile) delete state.profile.learner_age;
+    if ('age' in state.profile && typeof state.profile.age === 'number') delete state.profile.age;
+  }
 }
 
 function mergeGameState(existing, incoming, userId) {

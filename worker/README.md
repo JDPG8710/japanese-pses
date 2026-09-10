@@ -34,6 +34,16 @@ npm run db:seed
 
 `migrations/` はテーブル変更、`scripts/import-game-data-d1.mjs` は `data/*.json` の検証・正規化・D1投入を担当します。JSON は移行元であり、本番ランタイムから直接読みません。
 
+
+## 児童安全／CN_SAFE_MODE／保護者ゲート（2026-09-10）
+
+- Worker 変数 `CN_SAFE_MODE`（`wrangler.toml` 既定 `"true"`）：`country===CN` のとき広告なし・Stripe Checkout 拒否。`"false"` で解除。
+- `/api/location` は `cnSafeMode` / `adsBlocked` / `checkoutBlocked` を返す。
+- `/api/membership` は `checkoutAllowed`・`cnSafeMode`・`country` を返す。Checkout は `parentalGateAck` と `termsAccepted` が必須。商品名は **Piko Game Ad-Free Membership**。
+- 保護者ゲート版はクライアント `src/privacy/ParentalGate.mjs`（`PARENTAL_GATE_VERSION`）。同意版は `PRIVACY_NOTICE_VERSION`。
+- Arena：公開マッチ／公開 presence は `parentalGateAck` 必須。`migrations/0015_arena_safety.sql` で report/block 表。
+- ログイン利用者は `DELETE /api/state` でクラウド学習資料を削除可能。
+
 ## 2. 機密値
 
 ```powershell

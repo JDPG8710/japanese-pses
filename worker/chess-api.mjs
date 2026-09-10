@@ -14,7 +14,9 @@ export async function chessRoute(request,env,actor,path,body,reply,HttpError){
   if(request.method!=='POST')throw new HttpError(404,'NOT_FOUND');
   if(path==='chess/match/cancel'){await env.GO_LOBBY.getByName('chess:match').cancel(actor.id);return reply({ok:true});}
   if(path==='chess/rooms'||path==='chess/match'){
-    const mode=path.endsWith('match')?'match':'invite';let room=crypto.randomUUID();
+    const mode=path.endsWith('match')?'match':'invite';
+    if(mode==='match'&&body?.parentalGateAck!==true)return reply({error:'PARENTAL_GATE_REQUIRED'},403);
+    let room=crypto.randomUUID();
     if(mode==='match')room=(await env.GO_LOBBY.getByName('chess:match').match(actor.id)).room;
     const result=await env.CHESS_ROOMS.getByName(room).execute(actor,{type:'create',room,mode});return reply(result,result.error?409:200);
   }

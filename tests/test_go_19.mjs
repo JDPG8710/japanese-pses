@@ -22,7 +22,7 @@ try {
   const a=(await api('identity',{})).cookie,b=(await api('identity',{})).cookie,c=(await api('identity',{})).cookie;
   check((await api('rooms',{size:13},a)).status===400,'unsupported size rejected');
   check((await api('rooms',{size:19,rules:'japanese',komi:0},a)).status===400,'client cannot forge komi');
-  const cn=await api('match',{size:19,rules:'chinese'},a),jp=await api('match',{size:19,rules:'japanese'},b),small=await api('match',{size:9,rules:'chinese'},c);
+  const cn=await api('match',{size:19,rules:'chinese',parentalGateAck:true},a),jp=await api('match',{size:19,rules:'japanese',parentalGateAck:true},b),small=await api('match',{size:9,rules:'chinese',parentalGateAck:true},c);
   check(new Set([cn.id,jp.id,small.id]).size===3,'matchmaking isolates size and scoring');
   let room=await api(`rooms/${jp.id}`,{type:'join',size:9,rules:'chinese'},a);
   check(room.game.size===19&&room.game.komi===6.5,'join cannot replace room settings');

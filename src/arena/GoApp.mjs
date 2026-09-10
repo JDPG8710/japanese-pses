@@ -3,6 +3,7 @@ import { newGame, play, score, sgf } from './GoRules.mjs';
 import { AuthManager } from '../auth/AuthManager.js';
 import { createPlayroom } from './PlayroomUI.mjs';
 import { playroomText } from './PlayroomText.mjs';
+import { hasParentalAck, requireParentalGate } from '../privacy/ParentalGate.mjs';
 
 const app = document.querySelector('#app'), notice = document.querySelector('#notice');
 const params = new URLSearchParams(location.search);
@@ -138,7 +139,12 @@ function clocks() {
   }
 }
 async function start(mode) {
-  const next = await api(mode==='match'?'match':'rooms',{mode,difficulty:level,...settings()});
+  let parentalGateAck = hasParentalAck();
+  if (mode==='match') {
+    parentalGateAck = parentalGateAck || await requireParentalGate({ purpose: 'arena-match', locale });
+    if (!parentalGateAck) { message(t().parentGateNeeded || 'Parent approval required for public matchmaking.'); return; }
+  }
+  const next = await api(mode==='match'?'match':'rooms',{mode,difficulty:level,...settings(),parentalGateAck: mode==='match' ? parentalGateAck : true});
   matchingAt = mode==='match'?Date.now():0; fallbackShown = false; message(); enter(next);
 }
 async function switchAI() {

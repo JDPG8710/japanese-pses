@@ -43,8 +43,8 @@ try {
   r=(await api(`rooms/${id}`,{type:'accept',revision:r.revision},b)).data;check(r.phase==='finished'&&r.game.result.winner===2,'agreed dead stones determine result');
   await new Promise(resolve=>setTimeout(resolve,150));check(messages.some(m=>m.game.board[40]===1),'opponent receives broadcast');ws.close();
   const stored=await db.prepare('SELECT mode FROM go_games WHERE room_id=?').bind(id).first();check(stored?.mode==='invite','finished game archived');
-  const matchedA=(await api('match',{},a)).data,matchedB=(await api('match',{},b)).data;check(matchedA.id===matchedB.id&&matchedB.phase==='ready','match pairs distinct guests');
-  check((await api('match',{},a)).data.id===matchedA.id,'match retries remain in paired room');
+  const matchedA=(await api('match',{parentalGateAck:true,},a)).data,matchedB=(await api('match',{parentalGateAck:true,},b)).data;check(matchedA.id===matchedB.id&&matchedB.phase==='ready','match pairs distinct guests');
+  check((await api('match',{parentalGateAck:true,},a)).data.id===matchedA.id,'match retries remain in paired room');
   const ns=await mf.getDurableObjectNamespace('GO_ROOMS');
   const matchStub=ns.getByName(matchedA.id);
   const matchStorage=await mf.unsafeGetDurableObjectStorage('go-backend','GoRoom',{name:matchedA.id});

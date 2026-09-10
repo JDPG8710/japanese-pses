@@ -20,9 +20,26 @@ export function saveCountry(storage, country) {
   if (!code) return false;
   try { storage.setItem(COUNTRY_KEY, JSON.stringify({country:code})); storage.setItem('world-locale',languageForCountry(code)); return true; } catch { return false; }
 }
-export function countryResponse(request) {
+/** CN_SAFE_MODE defaults true: when country is CN, ads/checkout are blocked. */
+export function isCnSafeModeEnabled(env) {
+  return String(env?.CN_SAFE_MODE ?? 'true').toLowerCase() !== 'false';
+}
+export function isCnSafeModeActive(env, country) {
+  return isCnSafeModeEnabled(env) && normalizeCountry(country) === 'CN';
+}
+export function countryResponse(request, env = {}) {
   const country = normalizeCountry(request.cf?.country);
-  return Response.json({country,locale:languageForCountry(country),source:country?'ip':'unavailable'}, {
+  const cnSafeModeEnabled = isCnSafeModeEnabled(env);
+  const cnSafeMode = Boolean(country === 'CN' && cnSafeModeEnabled);
+  return Response.json({
+    country,
+    locale: languageForCountry(country),
+    source: country ? 'ip' : 'unavailable',
+    cnSafeModeEnabled,
+    cnSafeMode,
+    adsBlocked: cnSafeMode,
+    checkoutBlocked: cnSafeMode
+  }, {
     headers:{'cache-control':'private, no-store','x-content-type-options':'nosniff'}
   });
 }

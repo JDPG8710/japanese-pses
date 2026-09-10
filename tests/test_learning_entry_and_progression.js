@@ -7,7 +7,7 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
   describe('学習入口と全学年 Profile', () => {
     test('初回はモード選択を先に表示し、名前・年齢・性別を後から設定できる', () => {
       const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-      for (const field of ['learner_name', 'learner_age', 'learner_gender', 'learner_profile_completed']) {
+      for (const field of ['learner_name', 'learner_age_band', 'learner_gender', 'learner_profile_completed']) {
         assert.ok(html.includes(field), `${field} をプロフィールへ保存してください`);
       }
       assert.ok(html.includes('new LearnerProfileModal()'), '後から開ける学習者プロフィール画面が必要です');
@@ -22,15 +22,19 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
       assert.ok(auth.includes("displayName: 'まなびくん'"), 'ローカル免ログイン時も既定名を統一してください');
     });
 
-    test('学習者プロフィールは有効な名前・5〜15歳・性別項目を検証する', () => {
+    test('学習者プロフィールは名前・年齢帯を検証し、性別は任意', () => {
       const profile = loadESModule(path.join(root, 'src/profile/LearnerProfile.js'));
-      const valid = profile.validateLearnerProfile({ name: 'あおい', age: '9', gender: 'female' });
+      const valid = profile.validateLearnerProfile({ name: 'あおい', ageBand: '9_11', gender: 'female' });
       assert.strictEqual(valid.valid, true);
-      assert.deepStrictEqual(valid.profile, { name: 'あおい', age: 9, gender: 'female' });
-      assert.strictEqual(profile.validateLearnerProfile({ name: '', age: 9, gender: 'female' }).valid, false);
-      assert.strictEqual(profile.validateLearnerProfile({ name: 'あおい', age: 4, gender: 'female' }).valid, false);
-      assert.strictEqual(profile.validateLearnerProfile({ name: 'あおい', age: 9, gender: '' }).valid, false);
-      assert.strictEqual(profile.validateLearnerProfile({ name: 'あ'.repeat(21), age: 9, gender: 'female' }).valid, false);
+      assert.strictEqual(valid.profile.name, 'あおい');
+      assert.strictEqual(valid.profile.ageBand, '9_11');
+      assert.strictEqual(valid.profile.age, null);
+      assert.strictEqual(valid.profile.gender, 'female');
+      assert.strictEqual(profile.validateLearnerProfile({ name: '', ageBand: '9_11' }).valid, false);
+      assert.strictEqual(profile.validateLearnerProfile({ name: 'あおい', ageBand: '' }).valid, false);
+      assert.strictEqual(profile.validateLearnerProfile({ name: 'あおい', ageBand: '9_11', gender: '' }).valid, true, '性別は任意');
+      assert.strictEqual(profile.validateLearnerProfile({ name: 'あ'.repeat(21), ageBand: '9_11' }).valid, false);
+      assert.strictEqual(profile.mapLegacyAgeToBand(9), '9_11');
       assert.strictEqual(profile.isLearnerProfileComplete(null), false, '新規利用者のnullプロフィールを安全に扱ってください');
     });
 

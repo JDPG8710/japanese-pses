@@ -1,6 +1,7 @@
 import { playroomText } from './PlayroomText.mjs';
 import { mountGoLearn } from './GoLearn.mjs';
 import { mountChessLearn } from './ChessLearn.mjs';
+import { hasParentalAck, requireParentalGate } from '../privacy/ParentalGate.mjs';
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const avatars = ['🌱','🐼','🐱','🦊','🐧','🐻','🐰','⭐'];
@@ -23,7 +24,8 @@ export function createPlayroom({ api, getLocale, getIdentity, setIdentity, getRo
   }
   function profileHTML() {
     const i=getIdentity()||{};
-    return `<details class="profile-panel" ${!i.configured?'open':''}><summary>${esc(text().profile)} · ${esc(i.avatar||'🌱')} ${esc(i.name)}</summary><form id="playroom-profile"><label>${esc(text().name)}<input name="nickname" maxlength="40" required value="${esc(i.configured?i.name:'')}" autocomplete="nickname"></label><label>${esc(text().avatar)}<select name="avatar">${avatars.map(a=>`<option ${a===i.avatar?'selected':''}>${a}</option>`).join('')}</select></label><label class="toggle"><input name="visible" type="checkbox" ${i.visible?'checked':''}>${esc(text().visible)}</label><p class="muted">${esc(text().privacy)}</p><button class="primary">${esc(text().save)}</button></form></details>`;
+    const gate=hasParentalAck();
+    return `<details class="profile-panel" ${!i.configured?'open':''}><summary>${esc(text().profile)} · ${esc(i.avatar||'🌱')} ${esc(i.name)}</summary><form id="playroom-profile"><label>${esc(text().name)}<input name="nickname" maxlength="20" required value="${esc(i.configured?i.name:'')}" autocomplete="nickname"></label><label>${esc(text().avatar)}<select name="avatar">${avatars.map(a=>`<option ${a===i.avatar?'selected':''}>${a}</option>`).join('')}</select></label><label class="toggle"><input name="visible" type="checkbox" ${i.visible&&gate?'checked':''}>${esc(text().visible)}</label><p class="muted">${esc(text().privacy)} ${esc(text().parentGateHint||'')}</p><button class="primary">${esc(text().save)}</button></form></details>`;
   }
   function familyHTML() {
     if (!family) return `<section class="panel"><p class="eyebrow">TOGETHER</p><h2>${esc(text().family)}</h2><p>${esc(text().familyHint)}</p>${b('family-create','createFamily')}<form id="family-join" class="join"><input name="code" aria-label="${esc(text().code)}" placeholder="${esc(text().code)}" value="${esc(familyId||'')}" required><button>${esc(text().joinFamily)}</button></form></section>`;
@@ -42,7 +44,7 @@ export function createPlayroom({ api, getLocale, getIdentity, setIdentity, getRo
     const chessProgress=i?.tutorials?.chess||0;
     const catalog=`<section class="game-catalog"><h2>${esc(more().games)}</h2><div class="cards game-choice"><article class="card"><span class="icon">⚫ ⚪</span><h2>${esc(t.go)}</h2><p>${esc(t.learnHint)}</p><button data-pr="open-go">${esc(more().open)}</button></article><article class="card"><span class="icon">♔ ♚</span><h2>${esc(more().chess)}</h2><p>${esc(more().chessHint)}</p><button data-pr="open-chess" class="primary">${esc(more().open)}</button></article></div></section>`;
     const lessons=`<section class="panel learn-card"><p class="eyebrow">LEARN BY PLAYING</p><h2>${esc(t.learn)}</h2><p>${esc(t.learnHint)}</p><p>${esc(t.progress)} ${Math.max(i?.tutorial||0,learned)} / 5</p>${b('learn','learn','class="primary"')}<hr><h2>${esc(more().chessLearn)}</h2><p>${esc(more().chessLearnHint)}</p><p>${esc(t.progress)} ${chessProgress} / 8</p><button data-pr="learn-chess">${esc(more().chessLearn)}</button></section>`;
-    const markup = `${profileHTML()}${catalog}<div class="playroom-grid">${familyHTML()}${lessons}</div><section class="panel public-panel"><div class="learn-top"><h2>${esc(t.public)} (${directory.players.length})</h2>${b('refresh','refresh')}</div><p class="muted">${esc(t.privacy)}</p><div class="member-list">${directory.players.length?directory.players.map(p=>`<div class="member"><span class="avatar">${esc(p.avatar)}</span><div><strong>${esc(p.name)}</strong><small>${esc(statusLabel(p))}</small></div>${p.key!==self()&&p.status==='idle'&&i?.visible&&!family?b('invite','invite',`data-target="${esc(p.key)}"`):''}</div>`).join(''):`<p>${esc(t.empty)}</p>`}</div><div class="invitations">${directory.invites.map(v=>`<div class="invitation"><strong>${esc(v.from.name)}</strong> ${esc(t[v.accepted?'accepted':'incoming'])}${v.accepted?b('open-invite','openFamily',`data-family="${v.family}"`):v.incoming?`${b('accept','accept',`data-invite="${v.id}"`)} ${b('decline','decline',`data-invite="${v.id}"`)}`:''}</div>`).join('')}</div></section>`;
+    const markup = `${profileHTML()}${catalog}<div class="playroom-grid">${familyHTML()}${lessons}</div><section class="panel public-panel"><div class="learn-top"><h2>${esc(t.public)} (${directory.players.length})</h2>${b('refresh','refresh')}</div><p class="muted">${esc(t.privacy)}</p><div class="member-list">${directory.players.length?directory.players.map(p=>`<div class="member"><span class="avatar">${esc(p.avatar)}</span><div><strong>${esc(p.name)}</strong><small>${esc(statusLabel(p))}</small></div><div class="actions">${p.key!==self()&&p.status==='idle'&&i?.visible&&hasParentalAck()&&!family?b('invite','invite',`data-target="${esc(p.key)}"`):''}${p.key!==self()?`<button data-pr="report" data-target="${esc(p.key)}">${esc(t.report||'Report')}</button><button data-pr="block" data-target="${esc(p.key)}">${esc(t.block||'Block')}</button>`:''}</div></div>`).join(''):`<p>${esc(t.empty)}</p>`}</div><div class="invitations">${directory.invites.map(v=>`<div class="invitation"><strong>${esc(v.from.name)}</strong> ${esc(t[v.accepted?'accepted':'incoming'])}${v.accepted?b('open-invite','openFamily',`data-family="${v.family}"`):v.incoming?`${b('accept','accept',`data-invite="${v.id}"`)} ${b('decline','decline',`data-invite="${v.id}"`)}`:''}</div>`).join('')}</div></section>`;
     // Presence updates must not erase a nickname or settings being edited.
     if(markup!==lastMarkup && !host.contains(document.activeElement?.closest('input,select'))) { host.innerHTML=markup;lastMarkup=markup; }
     if(pending)host.querySelectorAll('button').forEach(el=>el.disabled=true);
@@ -52,7 +54,7 @@ export function createPlayroom({ api, getLocale, getIdentity, setIdentity, getRo
     polling=true;
     try {
       const room=getRoom();
-      directory=await api('presence',{tab,status:room&&['playing','scoring'].includes(room.phase)?'playing':room&&['waiting','ready'].includes(room.phase)?'waiting':'idle',game:room?.gameType||new URLSearchParams(location.search).get('game')||'go',private:!!familyId});
+      directory=await api('presence',{tab,status:room&&['playing','scoring'].includes(room.phase)?'playing':room&&['waiting','ready'].includes(room.phase)?'waiting':'idle',game:room?.gameType||new URLSearchParams(location.search).get('game')||'go',private:!!familyId,parentalGateAck:hasParentalAck()});
       render();
     } catch(e) { if(!disposed)onError(e); } finally {polling=false;}
   }
@@ -66,7 +68,13 @@ export function createPlayroom({ api, getLocale, getIdentity, setIdentity, getRo
     e.preventDefault();const data=new FormData(e.target);
     void run(async()=>{
       if(e.target.id==='playroom-profile') {
-        const profile=await api('profile',{name:data.get('nickname'),avatar:data.get('avatar'),visible:data.has('visible')});setIdentity({...getIdentity(),...profile});notice(text().saved);await refresh();
+        let visible=data.has('visible');
+        let parentalGateAck=hasParentalAck();
+        if(visible && !parentalGateAck){
+          parentalGateAck=await requireParentalGate({purpose:'arena-public',locale:getLocale()});
+          if(!parentalGateAck){notice(text().parentGateNeeded||text().privacy);visible=false;}
+        }
+        const profile=await api('profile',{name:data.get('nickname'),avatar:data.get('avatar'),visible,parentalGateAck:!!parentalGateAck});setIdentity({...getIdentity(),...profile});notice(text().saved);await refresh();
       }
       if(e.target.id==='family-join')await join(data.get('code'));
       if(e.target.id==='family-settings')await call('settings',{gameType:data.get('gameType'),size:Number(data.get('size')||family.size||9),rules:data.get('rules')||family.rules||'chinese',seats:[data.get('seat0'),data.get('seat1')]});
@@ -86,6 +94,8 @@ export function createPlayroom({ api, getLocale, getIdentity, setIdentity, getRo
       if(action==='family-start'){await call('start');if(family.seats.includes(self()))openGame(family.gameType,family.game);}
       if(action==='family-game')openGame(family.gameType,family.game);
       if(action==='invite'||action==='accept'||action==='decline'){directory=await api('invitation',{type:action,target:el.dataset.target,invite:el.dataset.invite});}
+      if(action==='report'){await api('report',{targetPublicId:el.dataset.target,reason:'other'});notice(t.reported||'Reported');}
+      if(action==='block'){await api('block',{targetPublicId:el.dataset.target});notice(t.blocked||'Blocked');directory={...directory,players:directory.players.filter(p=>p.key!==el.dataset.target)};}
       if(action==='open-invite')await join(el.dataset.family);
       if(action==='learn') {
         const oldProgress=Math.max(getIdentity()?.tutorial||0,learned);

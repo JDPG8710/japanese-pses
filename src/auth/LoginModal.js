@@ -42,8 +42,8 @@ export class LoginModal extends EventTarget {
             <span>ログイン後に学習概要（保護者向け）を見られるよ</span>
           </article>
           <article class="auth-benefit-card">
-            <strong>修了証の番号を保存</strong>
-            <span>ログイン後に修了証番号を保存し、あとでシェアしやすくするよ</span>
+            <strong>修了証番号をプライベート保存</strong>
+            <span>ログイン後に修了証番号をプライベート保存。共有は番号のみ・保護者確認のあと</span>
           </article>
         </div>
         <div id="auth-turnstile" class="mt-5 flex min-h-[70px] justify-center" aria-label="安全チェック"></div>

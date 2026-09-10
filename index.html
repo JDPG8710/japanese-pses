@@ -329,8 +329,8 @@
           </article>
           <article class="rounded-xl border border-amber-300/30 bg-amber-500/10 p-3">
             <p class="text-[10px] font-black tracking-wider text-amber-200">CERT</p>
-            <strong class="mt-1 block text-xs font-black text-white">修了証の番号を保存</strong>
-            <p class="mt-1 text-[11px] leading-4 text-slate-300">ログイン後に修了証番号を保存し、あとでシェアしやすくするよ</p>
+            <strong class="mt-1 block text-xs font-black text-white">修了証番号をプライベート保存</strong>
+            <p class="mt-1 text-[11px] leading-4 text-slate-300">ログイン後に修了証番号をプライベート保存。共有は番号のみ・保護者確認のあと</p>
           </article>
         </div>
         <div class="mt-3 flex flex-wrap gap-2">
@@ -419,19 +419,25 @@
     </div>
   </div>
 
-  <!-- 全学年修了時に一度だけ授与する卒業証明 -->
+  <!-- 全学年修了時に一度だけ授与する卒業証明（既定は学習者名マスキング・公開URLなし） -->
   <div id="graduation-modal" class="fixed inset-0 z-[90] hidden items-center justify-center bg-slate-950/95 p-4 backdrop-blur-xl">
     <div class="w-full max-w-2xl rounded-[2rem] border-4 border-amber-300 bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 p-3 shadow-2xl shadow-amber-500/30">
       <div class="rounded-[1.5rem] border border-amber-300/60 p-6 text-center sm:p-10">
         <p class="text-4xl">🎓</p><p class="mt-3 text-xs font-bold tracking-[0.2em] text-amber-300">Piko Game</p>
         <h2 class="mt-3 text-3xl font-black text-white">小学校課程修了証</h2>
-        <p id="graduation-learner-name" class="mt-6 text-2xl font-bold text-amber-200"></p>
+        <p id="graduation-learner-name" class="mt-6 text-2xl font-bold text-amber-200">学習者 さん</p>
+        <p id="graduation-name-privacy-note" class="mt-2 text-[11px] leading-5 text-slate-400">表示名は初期マスク（学習者）。本名の表示と番号の共有は保護者確認が必要です。公開の証明URLはありません。</p>
         <p class="mt-3 text-sm leading-7 text-slate-200">1年生から6年生までの全教科・全関門を修了し、確かな学びと挑戦する力を身につけたことを証明します。</p>
         <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
           <div class="rounded-xl bg-black/25 p-3"><span class="block text-slate-400">証明番号</span><strong id="graduation-certificate-number" class="text-white"></strong></div>
           <div class="rounded-xl bg-black/25 p-3"><span class="block text-slate-400">授与日</span><strong id="graduation-issued-at" class="text-white"></strong></div>
         </div>
         <p id="graduation-reward" class="mt-5 font-black text-amber-300"></p>
+        <div class="mt-5 flex flex-wrap items-center justify-center gap-2">
+          <button type="button" id="graduation-reveal-name-btn" class="min-h-12 rounded-2xl border border-amber-300/50 bg-slate-900/80 px-4 text-xs font-black text-amber-100">本名を表示（保護者）</button>
+          <button type="button" id="graduation-share-number-btn" class="min-h-12 rounded-2xl border border-cyan-300/50 bg-slate-900/80 px-4 text-xs font-black text-cyan-100">番号だけ共有（保護者）</button>
+        </div>
+        <p id="graduation-share-status" role="status" class="mt-2 hidden text-xs font-bold text-emerald-200"></p>
         <button id="graduation-close-btn" class="mt-6 min-h-14 rounded-2xl bg-gradient-to-r from-amber-400 to-yellow-300 px-8 font-black text-slate-950">学習きろくにしまって閉じる</button>
       </div>
     </div>
@@ -1202,15 +1208,88 @@
       };
     }
 
+    let activeGraduationCertificate = null;
+    let graduationNameRevealed = false;
+
+    function uiLocale() {
+      const lang = document.documentElement.lang || 'ja';
+      if (lang.startsWith('zh')) return 'zh';
+      if (lang.startsWith('en')) return 'en';
+      return 'ja';
+    }
+
+    function desensitizedLearnerLabel() {
+      const locale = uiLocale();
+      if (locale === 'zh') return '学习者';
+      if (locale === 'en') return 'Learner';
+      return '学習者';
+    }
+
+    function setGraduationShareStatus(message) {
+      const status = document.getElementById('graduation-share-status');
+      if (!status) return;
+      if (!message) {
+        status.classList.add('hidden');
+        status.textContent = '';
+        return;
+      }
+      status.textContent = message;
+      status.classList.remove('hidden');
+    }
+
     function showGraduationCertificate(certificate) {
       if (!certificate) return;
-      document.getElementById('graduation-learner-name').textContent = `${certificate.learnerName} さん`;
+      activeGraduationCertificate = certificate;
+      graduationNameRevealed = false;
+      document.getElementById('graduation-learner-name').textContent = `${desensitizedLearnerLabel()} さん`;
       document.getElementById('graduation-certificate-number').textContent = certificate.certificateNumber;
       document.getElementById('graduation-issued-at').textContent = new Date(certificate.issuedAt).toLocaleDateString('ja-JP');
       document.getElementById('graduation-reward').textContent = `お祝いのスターコイン ${certificate.rewardCoins}枚をプレゼント！`;
+      setGraduationShareStatus('');
+      const revealBtn = document.getElementById('graduation-reveal-name-btn');
+      if (revealBtn) {
+        revealBtn.disabled = false;
+        revealBtn.textContent = '本名を表示（保護者）';
+      }
       const modal = document.getElementById('graduation-modal');
       modal.classList.remove('hidden');
       modal.classList.add('flex');
+    }
+
+    async function revealGraduationLearnerName() {
+      if (!activeGraduationCertificate || graduationNameRevealed) return;
+      const ok = hasParentalAck() || await requireParentalGate({ purpose: 'certificate-reveal', locale: uiLocale() });
+      if (!ok) return;
+      graduationNameRevealed = true;
+      const realName = activeGraduationCertificate.learnerName || desensitizedLearnerLabel();
+      document.getElementById('graduation-learner-name').textContent = `${realName} さん`;
+      const revealBtn = document.getElementById('graduation-reveal-name-btn');
+      if (revealBtn) {
+        revealBtn.disabled = true;
+        revealBtn.textContent = '本名を表示中';
+      }
+    }
+
+    async function shareGraduationCertificateNumber() {
+      if (!activeGraduationCertificate?.certificateNumber) return;
+      const ok = hasParentalAck() || await requireParentalGate({ purpose: 'certificate-share', locale: uiLocale() });
+      if (!ok) return;
+      if (!confirm('修了証番号だけを共有します。本名や公開の証明URLは含めません。よろしいですか？')) return;
+      const text = `Piko Game 小学校課程修了証\n証明番号: ${activeGraduationCertificate.certificateNumber}`;
+      try {
+        if (navigator.share) {
+          await navigator.share({ text });
+          setGraduationShareStatus('番号だけの共有を開きました（公開URLなし）。');
+        } else if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(text);
+          setGraduationShareStatus('証明番号をコピーしました（公開URLなし）。');
+        } else {
+          setGraduationShareStatus(text);
+        }
+      } catch (error) {
+        if (error?.name === 'AbortError') return;
+        setGraduationShareStatus('共有に失敗しました。番号を手入力で控えてください。');
+      }
     }
 
     function ensureGraduationReward({ showWhenAwarded = true, syncWhenAwarded = true } = {}) {
@@ -1266,7 +1345,7 @@
       const certificate = getGraduationCertificate();
       const certificatePanel = document.getElementById('profile-certificate-panel');
       if (certificate) {
-        certificatePanel.innerHTML = `<div class="flex items-start justify-between gap-3"><div><p class="text-xs font-bold tracking-widest text-amber-300">おめでとう！</p><h3 class="mt-1 text-lg font-black text-white">${certificate.title}</h3><p class="mt-1 text-xs text-slate-300">証明番号 ${certificate.certificateNumber} · ${new Date(certificate.issuedAt).toLocaleDateString('ja-JP')}</p></div><button id="profile-view-certificate" class="min-h-11 rounded-xl bg-amber-300 px-4 text-xs font-black text-slate-950">見る</button></div>`;
+        certificatePanel.innerHTML = `<div class="flex items-start justify-between gap-3"><div><p class="text-xs font-bold tracking-widest text-amber-300">おめでとう！</p><h3 class="mt-1 text-lg font-black text-white">${certificate.title}</h3><p class="mt-1 text-xs text-slate-300">証明番号 ${certificate.certificateNumber} · ${new Date(certificate.issuedAt).toLocaleDateString('ja-JP')}</p><p class="mt-1 text-[11px] leading-4 text-slate-400">表示名は初期マスク。公開の証明URLはありません。番号共有は保護者確認後のみ。</p></div><button id="profile-view-certificate" class="min-h-11 rounded-xl bg-amber-300 px-4 text-xs font-black text-slate-950">見る</button></div>`;
         document.getElementById('profile-view-certificate').addEventListener('click', () => showGraduationCertificate(certificate));
       } else {
         const remaining = Math.max(0, totalStages - clearedStages);
@@ -1299,8 +1378,8 @@
           cards[1].querySelector('p:last-child').textContent = authText('ログイン後に学習概要（保護者向け）を見られるよ');
         }
         if (cards[2]) {
-          cards[2].querySelector('strong').textContent = authText('修了証の番号を保存');
-          cards[2].querySelector('p:last-child').textContent = authText('ログイン後に修了証番号を保存し、あとでシェアしやすくするよ');
+          cards[2].querySelector('strong').textContent = authText('修了証番号をプライベート保存');
+          cards[2].querySelector('p:last-child').textContent = authText('ログイン後に修了証番号をプライベート保存。共有は番号のみ・保護者確認のあと');
         }
       }
       if (status.adFree) {
@@ -1572,12 +1651,19 @@
         renderMembershipPanel('クラウド資料の削除はログイン後に利用できます。端末の学習記録はブラウザのサイトデータを消去してください。');
         return;
       }
-      if (!confirm('クラウド上の学習プロフィールと進捗を削除しますか？この操作は取り消せません。')) return;
+      if (!confirm('クラウド上の学習プロフィールと進捗（user_profiles / node_progress / game_attempts）を削除しますか？メンバーシップ記録は含みません。この操作は取り消せません。')) return;
       try {
         const response = await fetch('/api/state', { method: 'DELETE', credentials: 'include' });
         const result = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(result.error || 'DELETE_FAILED');
-        renderMembershipPanel('クラウド学習資料を削除しました。');
+        await storageAdapter.clearLearningSyncCache().catch(() => null);
+        const clearLocal = confirm('クラウド削除が完了しました。この端末の同期キャッシュ（IndexedDBの学習プロフィール／進捗／試行）も消去しますか？\n\n※メンバーシップは対象外です。端末のその他データはブラウザのサイトデータ消去で削除できます。');
+        if (clearLocal) {
+          await storageAdapter.clearLearningSyncCache({ includeMemory: true }).catch(() => null);
+          renderMembershipPanel('クラウド学習資料と端末の同期キャッシュを削除しました（メンバーシップは対象外）。');
+        } else {
+          renderMembershipPanel('クラウド学習資料を削除しました。端末キャッシュは残っています（メンバーシップは対象外）。');
+        }
       } catch {
         renderMembershipPanel('削除に失敗しました。時間をおいてから、もう一度ためしてください。');
       }
@@ -1664,6 +1750,12 @@
     syncCurriculumSelection(0, null);
     showLearningModeModal();
 
+    document.getElementById('graduation-reveal-name-btn')?.addEventListener('click', () => {
+      void revealGraduationLearnerName();
+    });
+    document.getElementById('graduation-share-number-btn')?.addEventListener('click', () => {
+      void shareGraduationCertificateNumber();
+    });
     document.getElementById('graduation-close-btn').addEventListener('click', () => {
       const modal = document.getElementById('graduation-modal');
       modal.classList.add('hidden');

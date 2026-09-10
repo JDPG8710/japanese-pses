@@ -61,3 +61,24 @@
 
 ## Suggested PR acceptance body
 Use the checklist in the requirements doc (R1–R8) with the PASS items above checked.
+
+## Manual verification notes (2026-09-10 audit follow-up)
+
+### Network — no ads without parental gate
+1. Open DevTools → Network; hard-reload as a fresh visitor (or clear site data).
+2. Confirm no AdSense / `adsbygoogle` / `pagead` script requests fire while privacy choice is default-deny and parental ack is absent.
+3. Open privacy choices → attempt “allow optional ads” without completing the parental gate → ads must not load.
+4. Complete parental gate + allow optional ads (non-CN, non-EEA/UK/CH) → child-directed tags present; ads may load.
+5. Withdraw consent or clear parental ack → subsequent loads must stop requesting ads.
+
+### CN safe mode — no purchase / no ads
+1. With `CN_SAFE_MODE=true` (default in `wrangler.toml`) or a CN-classified location response (`cnSafeMode` / `adsBlocked` / `checkoutBlocked`).
+2. Confirm membership purchase button is hidden/disabled and checkout API returns blocked (`403 CN_SAFE_MODE` or `checkoutAllowed=false`).
+3. Confirm ad loader never starts (Network: no AdSense) even if a stale local consent flag exists.
+4. Guest local play still works without sign-in.
+
+### Certificate desensitisation (audit #1)
+1. Award or open 小学校課程修了証 → default name shows 「学習者」 (or zh/en equivalent), not `learnerName`.
+2. “本名を表示” requires parental gate; only then shows stored nickname.
+3. “番号だけ共有” requires parental gate + second confirm; payload is certificate number text only (no public proof URL).
+

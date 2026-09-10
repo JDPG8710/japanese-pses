@@ -279,6 +279,43 @@ export class StorageAdapter extends EventTarget {
     await idbRequest(this.db.transaction(store, 'readwrite').objectStore(store).delete(key));
   }
 
+  /**
+   * Clear IndexedDB/memory learning sync cache for the current (or given) user.
+   * Targets user_profile / node_progress / game_attempts only — not memberships.
+   */
+  async clearLearningSyncCache({ userId = this.userId, includeMemory = true } = {}) {
+    const owner = String(userId || 'local');
+    clearTimeout(this.syncTimer);
+    this.syncTimer = null;
+    this.dirty = false;
+
+    const profiles = await this.getAll('user_profile');
+    for (const profile of profiles) {
+      if (String(profile?.user_id || '') === owner) await this.delete('user_profile', profile.user_id);
+    }
+    const nodes = await this.getAll('node_progress');
+    for (const node of nodes) {
+      if (String(node?.user_id || '') === owner && node.progress_key) await this.delete('node_progress', node.progress_key);
+    }
+    const attempts = await this.getAll('game_attempts');
+    for (const attempt of attempts) {
+      if (String(attempt?.user_id || '') === owner && attempt.attempt_id) await this.delete('game_attempts', attempt.attempt_id);
+    }
+
+    if (includeMemory) {
+      for (const [key, value] of [...this.memory.user_profile.entries()]) {
+        if (String(value?.user_id || key) === owner) this.memory.user_profile.delete(key);
+      }
+      for (const [key, value] of [...this.memory.node_progress.entries()]) {
+        if (String(value?.user_id || '') === owner) this.memory.node_progress.delete(key);
+      }
+      for (const [key, value] of [...this.memory.game_attempts.entries()]) {
+        if (String(value?.user_id || '') === owner) this.memory.game_attempts.delete(key);
+      }
+    }
+    return { clearedFor: owner, stores: ['user_profile', 'node_progress', 'game_attempts'] };
+  }
+
   destroy() {
     clearTimeout(this.syncTimer);
     if (typeof window !== 'undefined') window.removeEventListener('online', this.onOnline);

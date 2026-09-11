@@ -26,7 +26,7 @@
     "db:seed:local": "node scripts/import-game-data-d1.mjs --local",
     "db:seed": "node scripts/import-game-data-d1.mjs --remote",
     "deploy:worker": "wrangler deploy --config wrangler.toml",
-    "deploy:pages": "wrangler pages deploy --branch main",
+    "deploy:pages": "wrangler pages deploy ./dist --project-name=manabi-pop --branch main",
     "deploy": "npm run test && npm run build && npm run db:migrate && npm run db:seed && npm run deploy:worker && npm run deploy:pages",
     "monitor:production": "node scripts/monitor-production.mjs",
     "test:parental-gate": "node tests/test_parental_gate.mjs"

@@ -115,7 +115,7 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
       assert.equal(FREE_AD_INTERVAL_MS, 5 * 60 * 1000);
       let now = 1000;
       let continued = 0;
-      const manager = new H5AdManager({ now: () => now, intervalMs: 300_000, setIntervalImpl: () => 1, clearIntervalImpl: () => {} }).start();
+      const manager = new H5AdManager({ now: () => now, intervalMs: 300_000, advertisingAllowed: true, setIntervalImpl: () => 1, clearIntervalImpl: () => {} }).start();
       manager.setGameActive(true);
       for (let i = 0; i < 60; i += 1) { now += 5000; manager.tick(); }
       assert.equal(manager.adDue, true, 'ゲーム中は広告を直接割り込ませず、表示待ちにしてください');

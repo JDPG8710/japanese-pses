@@ -3,8 +3,13 @@ import { newGame, play, score, sgf } from './GoRules.mjs';
 import { AuthManager } from '../auth/AuthManager.js';
 import { createPlayroom } from './PlayroomUI.mjs';
 import { playroomText } from './PlayroomText.mjs';
+import { mountGoLearn } from './GoLearn.mjs';
+import { hasParentalAck, requireParentalGate } from '../privacy/ParentalGate.mjs';
 
 const app = document.querySelector('#app'), notice = document.querySelector('#notice');
+const playroomHost = document.querySelector('#playroom');
+if (playroomHost) playroomHost.hidden = true;
+if (app) app.hidden = false;
 const params = new URLSearchParams(location.search);
 let locale = params.get('lang') || (navigator.language.startsWith('zh') ? 'zh' : navigator.language.startsWith('ja') ? 'ja' : 'en');
 if (!texts[locale]) locale = 'en';
@@ -77,11 +82,67 @@ function difficulty() { return `<label>${label('difficulty')} <select id="diffic
 function settings() { return {size:boardSize,rules}; }
 function settingLabel(game) { return `${game.size || 9} × ${game.size || 9} · ${label(game.rules || 'chinese')} · ${label('komi')} ${game.komi ?? 7.5}`; }
 function lobby() {
-  return `<h2 class="go-section-title">⚫ ⚪ ${escape(playroomText[locale].go)}</h2><div class="game-settings"><label>${label("boardSize")} <select id="board-size"><option value="9" ${boardSize===9?"selected":""}>9 × 9</option><option value="19" ${boardSize===19?"selected":""}>19 × 19</option></select></label><label>${label("ruleChoice")} <select id="rules"><option value="chinese" ${rules==="chinese"?"selected":""}>${label("chinese")} · 7.5</option><option value="japanese" ${rules==="japanese"?"selected":""}>${label("japanese")} · 6.5</option></select></label></div><div class="cards"><section class="card"><span class="icon">⚫ ⚪</span><h2>${label('invite')}</h2><p>${label('inviteDesc')}</p>${button('create','create','primary',busy || !identity)}</section>
-    <section class="card"><span class="icon">↔</span><h2>${label('match')}</h2><p>${label('matchDesc')}</p><label class="toggle"><input id="auto-ai" type="checkbox" ${autoAI ? 'checked' : ''}>${label('auto')}</label>${button('match','match','primary',busy || !identity)}</section>
-    <section class="card"><span class="icon">✳</span><h2>${label('ai')}</h2><p>${label('aiDesc')}</p>${difficulty()}<small class="muted">${label('aiNote')}</small>${button('ai','startAI','primary',busy || !identity)}</section></div>
-    <form class="join" id="join-form"><input id="room-code" required aria-label="${label('code')}" placeholder="${label('code')}"><button ${busy || !identity ? 'disabled' : ''}>${label('join')}</button></form>
-    <details><summary>${label('history')}</summary><p class="muted">${label('noHistory')}</p><div class="history">${recent.map((r,i) => `<button data-history="${i}">${escape(new Date(r.finished_at).toLocaleDateString(locale))} · ${r.mode === 'ai' ? label('computer') : label('playing')} · ${label('replay')}</button>`).join('')}</div></details>`;
+  return `<div class="game-zone-header">
+    <div class="game-zone-title-group">
+      <span class="kid-tag">⚪⚫ ${escape(playroomText[locale].go || '围棋')}</span>
+      <h2 class="go-section-title">${escape(playroomText[locale].goTitle || playroomText[locale].go)}</h2>
+    </div>
+    <button type="button" class="back-to-hub-btn" data-action="back-hub">
+      ${escape(playroomText[locale].backToHub || '⬅ 返回游戏大厅')}
+    </button>
+  </div>
+  <div class="game-settings">
+    <label>${label("boardSize")}
+      <select id="board-size">
+        <option value="9" ${boardSize===9?"selected":""}>9 × 9 ${locale==='zh'?'（小棋盘·推荐新手）':locale==='ja'?'（9路盤・おすすめ）':'(9x9 Quick)'}</option>
+        <option value="19" ${boardSize===19?"selected":""}>19 × 19 ${locale==='zh'?'（标准大棋盘·挑战）':locale==='ja'?'（19路盤・ほんかく）':'(19x19 Full)'}</option>
+      </select>
+    </label>
+    <label>${label("ruleChoice")}
+      <select id="rules">
+        <option value="chinese" ${rules==="chinese"?"selected":""}>${label("chinese")} · 7.5</option>
+        <option value="japanese" ${rules==="japanese"?"selected":""}>${label("japanese")} · 6.5</option>
+      </select>
+    </label>
+  </div>
+  <div class="cards four-cards">
+    <section class="card kid-mode-card">
+      <div class="kid-mode-top"><span class="icon">✳</span><span class="kid-mode-badge">${locale==='zh'?'适合练手':locale==='ja'?'れんしゅう':'Solo Practice'}</span></div>
+      <h2>${label('ai')}</h2>
+      <p>${label('aiDesc')}</p>
+      ${difficulty()}
+      <small class="muted">${label('aiNote')}</small>
+      ${button('ai','startAI','primary',busy || !identity)}
+    </section>
+    <section class="card kid-mode-card">
+      <div class="kid-mode-top"><span class="icon">⚫ ⚪</span><span class="kid-mode-badge">${locale==='zh'?'两人同乐':locale==='ja'?'ふたりで':'Play Friend'}</span></div>
+      <h2>${label('invite')}</h2>
+      <p>${label('inviteDesc')}</p>
+      ${button('create','create','primary',busy || !identity)}
+    </section>
+    <section class="card kid-mode-card">
+      <div class="kid-mode-top"><span class="icon">↔</span><span class="kid-mode-badge">${locale==='zh'?'随机匹配':locale==='ja'?'オンライン':'Match Online'}</span></div>
+      <h2>${label('match')}</h2>
+      <p>${label('matchDesc')}</p>
+      <label class="toggle"><input id="auto-ai" type="checkbox" ${autoAI ? 'checked' : ''}>${label('auto')}</label>
+      ${button('match','match','primary',busy || !identity)}
+    </section>
+    <section class="card kid-mode-card">
+      <div class="kid-mode-top"><span class="icon">🎓</span><span class="kid-mode-badge">${locale==='zh'?'新手学堂':locale==='ja'?'きほん':'Tutorial'}</span></div>
+      <h2>${escape(playroomText[locale].learn || '新手小课堂')}</h2>
+      <p>${escape(playroomText[locale].learnHint || '从吃子、气与做活学起，闯过5关成为合格棋手！')}</p>
+      <p><span class="kid-progress-badge">${escape(playroomText[locale].progress || '已完成')} ${identity?.tutorial || 0} / 5</span></p>
+      <button type="button" data-action="learn" class="primary kid-action-btn">🚀 ${escape(playroomText[locale]?.learn || '新手学堂')}</button>
+    </section>
+  </div>
+  <div class="panel join-panel">
+    <div class="card-eyebrow-row"><span class="kid-tag">🔑 ${locale==='zh'?'房间暗号':locale==='ja'?'へやのあいことば':'Room Code'}</span></div>
+    <form class="join" id="join-form">
+      <input id="room-code" required aria-label="${label('code')}" placeholder="${label('code')}">
+      <button ${busy || !identity ? 'disabled' : ''}>${label('join')}</button>
+    </form>
+  </div>
+  <details class="kid-history-details"><summary>📜 ${label('history')}</summary><p class="muted">${label('noHistory')}</p><div class="history">${recent.map((r,i) => `<button data-history="${i}">${escape(new Date(r.finished_at).toLocaleDateString(locale))} · ${r.mode === 'ai' ? label('computer') : label('playing')} · ${label('replay')}</button>`).join('')}</div></details>`;
 }
 function boardHTML(game, disabled = false) {
   const size = game.size || 9, edge = size * 50 - 25, dimension = size * 50;
@@ -138,7 +199,12 @@ function clocks() {
   }
 }
 async function start(mode) {
-  const next = await api(mode==='match'?'match':'rooms',{mode,difficulty:level,...settings()});
+  let parentalGateAck = hasParentalAck();
+  if (mode==='match') {
+    parentalGateAck = parentalGateAck || await requireParentalGate({ purpose: 'arena-match', locale });
+    if (!parentalGateAck) { message(t().parentGateNeeded || 'Parent approval required for public matchmaking.'); return; }
+  }
+  const next = await api(mode==='match'?'match':'rooms',{mode,difficulty:level,...settings(),parentalGateAck: mode==='match' ? parentalGateAck : true});
   matchingAt = mode==='match'?Date.now():0; fallbackShown = false; message(); enter(next);
 }
 async function switchAI() {
@@ -151,7 +217,12 @@ async function home() {
   if (room && ['playing','scoring'].includes(room.phase) && !confirm(t().leaveAsk)) return;
   if (room && ['waiting','ready'].includes(room.phase)) { await api('match/cancel',settings()); await action('cancel'); }
   const familyId=room?.family;
-  disconnect(); room = null; pendingRoom = null; review = null; matchingAt = 0; history.replaceState(null,'',`/arena.html?lang=${locale}`); message();
+  disconnect(); room = null; pendingRoom = null; review = null; matchingAt = 0;
+  if (familyId) {
+    location.href = `/arena.html?lang=${locale}`;
+    return;
+  }
+  history.replaceState(null,'',`/arena.html?game=go&lang=${locale}`); message();
   await playroom.restoreFamily(familyId);
   if (identity?.authenticated) { try { recent=(await api('history')).entries; } catch (e) { error(e); } }
 }
@@ -167,6 +238,28 @@ app.addEventListener('click',event => {
   const actionName = event.target.closest('[data-action]')?.dataset.action;
   if (!actionName) return;
   void run(async () => {
+    if (actionName==='back-hub') { location.href = `/arena.html?lang=${locale}`; return; }
+    if (actionName==='learn') {
+      const learning = document.querySelector('#learn-room');
+      const lessonClose = mountGoLearn(learning, {
+        locale,
+        progress: identity?.tutorial || 0,
+        onProgress: step => {
+          if (identity) identity.tutorial = Math.max(identity.tutorial || 0, step);
+          if (identity?.configured) void api('tutorial', { step }).catch(error);
+        },
+        onClose: () => {
+          lessonClose?.();
+          learning.hidden = true;
+          app.hidden = false;
+          render();
+        }
+      });
+      learning.hidden = false;
+      app.hidden = true;
+      learning.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      return;
+    }
     if (actionName==='retry') return initialize();
     if (actionName==='create') return start('invite');
     if (actionName==='match') return start('match');
@@ -222,5 +315,5 @@ const timer=setInterval(()=>{
 const heartbeat=setInterval(()=>{if(socket?.readyState===WebSocket.OPEN)socket.send('ping');},25000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden && room)void run(async()=>{update(await api(`rooms/${room.id}`));connect();});});
 window.addEventListener('pagehide',()=>{alive=false;disconnect();clearInterval(timer);clearInterval(heartbeat);playroom.dispose();},{once:true});
-const playroom=createPlayroom({api,getLocale:()=>locale,getIdentity:()=>identity,setIdentity:next=>{identity=next;},getRoom:()=>room,openGame,onError:error});
+const playroom=createPlayroom({api,getLocale:()=>locale,getIdentity:()=>identity,setIdentity:next=>{identity=next;},getRoom:()=>room,openGame,onError:error,headless:true});
 render();void initialize();

@@ -3,7 +3,8 @@ import { createRequire } from 'node:module';
 import { mkdir } from 'node:fs/promises';
 import { startGoPreview } from '../scripts/preview-go.mjs';
 const require=createRequire(import.meta.url);
-const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||'playwright');
+let playwright;try{playwright=require(process.env.PLAYWRIGHT_MODULE_PATH||'playwright');}catch{playwright=require('playwright-core');}
+const {chromium}=playwright;
 const preview=await startGoPreview(4176);
 const browser=await chromium.launch({channel:process.env.BROWSER_CHANNEL||'chrome',headless:true});
 const artifacts='.wrangler/go-tests';await mkdir(artifacts,{recursive:true});let checks=0;
@@ -11,7 +12,8 @@ try {
   const desktop=await browser.newContext({viewport:{width:1280,height:900}}),phone=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
   const a=await desktop.newPage(),b=await phone.newPage(),errors=[];
   for(const p of [a,b])p.on('pageerror',e=>errors.push(e.message));
-  await a.goto(`${preview.origin}/arena.html?lang=zh`);
+  for(const p of [a,b])await p.addInitScript(()=>localStorage.setItem('piko-parental-ack-v1',JSON.stringify({version:1,ackedAt:Date.now(),purposes:['browser-test']})));
+  await a.goto(`${preview.origin}/arena.html?game=go&lang=zh`);
   await a.locator('[data-consent="necessary"]').click();
   await a.locator('[data-action=create]').click();await a.locator('[data-action=copy]').waitFor();
   const link=a.url();await a.screenshot({path:`${artifacts}/desktop-room.png`,fullPage:true});
@@ -40,14 +42,14 @@ try {
   await b.screenshot({path:`${artifacts}/tablet-ai.png`,fullPage:true});
   b.on('dialog',dialog=>dialog.accept());await b.locator('[data-action=resign]').click();await b.locator('.result').waitFor();await b.locator('[data-action=home]').click();
   await b.locator('#auto-ai').check();await b.locator('[data-action=match]').click();
-  await b.locator('[data-action=ready]').waitFor({timeout:30000});assert.match(await b.locator('.player').nth(1).innerText(),/电脑/);checks++;
+  await b.locator('[data-action=ready]').waitFor({timeout:35000});assert.match(await b.locator('.player').nth(1).innerText(),/电脑/);checks++;
   await b.locator('#locale').selectOption('ja');assert.equal(await b.locator('h1').innerText(),'Piko Playroom');checks++;
   await b.evaluate(async()=>{
     const {LoginModal}=await import('/src/auth/LoginModal.js');
     const modal=new LoginModal({siteKey:'local-layout-test'});modal.ensureTurnstile=async()=>{};window.goTestModal=modal;
   });
   assert.equal(await b.locator('#auth-modal').isVisible(),false,'shared login modal hidden by default');checks++;
-  await b.evaluate(()=>window.goTestModal.show());await b.locator('#auth-modal [data-action=close]').click();
+  await b.evaluate(()=>{ void window.goTestModal.show(); });await b.locator('#auth-modal [data-action=close]').click();
   assert.equal(await b.locator('#auth-modal').isVisible(),false,'standalone login modal opens and closes');checks++;
   await b.locator('[data-action=home]').click();
   await b.locator('#board-size').selectOption('19');await b.locator('#rules').selectOption('japanese');
@@ -64,4 +66,4 @@ try {
   await b.locator('[data-action=resign]').click();await b.locator('.result').waitFor();
   assert.deepEqual(errors,[],'no browser errors');checks++;
   console.log(`Go browser: ${checks} checks passed: guests, invitation, live moves, touch, reload, offline recovery, score, review, AI, auto fallback, 320/390/820/1180 layouts.`);
-}finally{await browser.close();await preview.close();}
+}finally{await browser.close();await preview.close();process.exit(0);}

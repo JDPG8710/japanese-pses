@@ -13,7 +13,7 @@ try{
   const ac=await browser.newContext({viewport:{width:1280,height:960}}),bc=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
   const a=await ac.newPage(),b=await bc.newPage(),errors=[];
   for(const page of [a,b])page.on('pageerror',error=>errors.push(error.message));
-  async function setup(page,name){await page.goto(`${preview.origin}/arena.html?game=chess&lang=zh`);await page.locator('[data-consent=necessary]').click();await page.locator('#playroom-profile [name=nickname]').fill(name);await page.locator('#playroom-profile button').click();await page.locator('#playroom-profile').waitFor({state:'hidden'});}
+  async function setup(page,name){await page.addInitScript(()=>localStorage.setItem('piko-parental-ack-v1',JSON.stringify({version:1,ackedAt:Date.now(),purposes:['browser-test']})));await page.goto(`${preview.origin}/arena.html?lang=zh`);await page.locator('[data-consent=necessary]').click();await page.locator('#playroom-profile [name=nickname]').fill(name);await page.locator('#playroom-profile button').click();await page.locator('#playroom-profile').waitFor({state:'hidden'});await page.goto(`${preview.origin}/arena.html?game=chess&lang=zh`);}
   await setup(a,'爸爸');await setup(b,'小朋友');
   await a.locator('[data-chess=create]').click();await a.waitForURL(url=>!!new URL(url).searchParams.get('room'));await a.getByText('等待对手加入',{exact:true}).waitFor();
   const invitation=a.url();await b.goto(invitation);await b.locator('[data-chess=join-link]').click();

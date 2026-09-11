@@ -145,6 +145,10 @@ function register({ describe, test, assert, loadESModule }) {
       const adsManager = fs.readFileSync(path.join(rootDir, 'src/ads/H5AdManager.js'), 'utf8');
       assert.match(adsManager, /script\.dataset\.tagForChildDirectedTreatment = '1'/);
       assert.match(adsManager, /script\.dataset\.tagForUnderAgeOfConsent = '1'/);
+      assert.ok(html.includes('data-tag-for-child-directed-treatment="1"'));
+      assert.ok(html.includes('data-tag-for-under-age-of-consent="1"'));
+      assert.ok(fs.existsSync(path.join(rootDir, 'src/privacy/ParentalGate.mjs')));
+      assert.ok(!fs.readFileSync(path.join(rootDir, 'data/kanji_1026.json'), 'utf8').includes('完全収録'));
       assert.ok(fs.readFileSync(path.join(rootDir, 'sitemap.xml'), 'utf8').includes(`<loc>${canonical}</loc>`));
       assert.ok(fs.existsSync(path.join(rootDir, 'site.webmanifest')) && fs.existsSync(path.join(rootDir, 'favicon.svg')));
     });

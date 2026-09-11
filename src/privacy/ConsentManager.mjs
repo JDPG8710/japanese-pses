@@ -1,3 +1,5 @@
+import { hasParentalAck, requireParentalGate } from './ParentalGate.mjs';
+
 const STORAGE_KEY = 'piko-privacy-choice-v1';
 const NOTICE_VERSION = 1;
 const CHOICE_MAX_AGE_MS = 180 * 24 * 60 * 60 * 1000;
@@ -9,7 +11,7 @@ const GOOGLE_CERTIFIED_CMP_REGIONS = new Set([
 const COPY = {
   en: {
     title: 'Your privacy choices',
-    body: 'Piko Game uses necessary cookies and browser storage for security, requested sign-in, your country and language, and learning progress. With your permission, Google may use optional cookies or similar storage to provide child-directed, non-personalised ads. Please choose with a parent or guardian.',
+    body: 'Piko Game uses necessary cookies and browser storage for security, requested sign-in, your country and language, and learning progress. With parent/guardian permission, Google may use optional cookies or similar storage to provide child-directed, non-personalised ads. Please choose with a parent or guardian.',
     necessary: 'Necessary only',
     ads: 'Parent/guardian: allow optional ads',
     details: 'Read the privacy notice',
@@ -17,7 +19,7 @@ const COPY = {
   },
   zh: {
     title: '你的隐私选择',
-    body: 'Piko Game 使用必要 Cookie 和浏览器存储来保障安全、完成你主动选择的登录、记住国家与语言并保存学习进度。经你许可后，Google 才可以使用可选 Cookie 或类似存储来提供面向儿童的非个性化广告。请与家长或监护人一起选择。',
+    body: 'Piko Game 使用必要 Cookie 和浏览器存储来保障安全、完成你主动选择的登录、记住国家与语言并保存学习进度。经家长/监护人许可后，Google 才可以使用可选 Cookie 或类似存储来提供面向儿童的非个性化广告。请与家长或监护人一起选择。',
     necessary: '仅使用必要存储',
     ads: '家长/监护人允许可选广告',
     details: '阅读隐私说明',
@@ -25,7 +27,7 @@ const COPY = {
   },
   ja: {
     title: 'プライバシーの選択',
-    body: 'Piko Gameは、安全、選択したログイン、国・言語、学習の記録のために必要なCookieとブラウザー保存領域を使います。許可した場合だけ、Googleが子ども向けの非パーソナライズ広告のために任意のCookie等を使うことがあります。保護者といっしょに選んでください。',
+    body: 'Piko Gameは、安全、選択したログイン、国・言語、学習の記録のために必要なCookieとブラウザー保存領域を使います。保護者が許可した場合だけ、Googleが子ども向けの非パーソナライズ広告のために任意のCookie等を使うことがあります。保護者といっしょに選んでください。',
     necessary: '必要な保存だけ',
     ads: '保護者が任意の広告を許可',
     details: 'プライバシー通知を読む',
@@ -55,16 +57,36 @@ export function savePrivacyChoice(optionalAds, storage = safeStorage(), now = Da
   return choice;
 }
 
-export async function advertisingAllowedForCurrentVisitor({ storage = safeStorage(), fetchImpl = globalThis.fetch?.bind(globalThis) } = {}) {
-  if (!hasAdvertisingConsent(storage) || typeof fetchImpl !== 'function') return false;
+export async function resolveVisitorLocation({ fetchImpl = globalThis.fetch?.bind(globalThis) } = {}) {
+  if (typeof fetchImpl !== 'function') return { country: null, cnSafeMode: true };
   try {
     const response = await fetchImpl('/api/location', { cache: 'no-store', signal: AbortSignal.timeout(2500) });
-    if (!response.ok) return false;
-    const country = String((await response.json())?.country || '').toUpperCase();
-    return /^[A-Z]{2}$/.test(country) && !GOOGLE_CERTIFIED_CMP_REGIONS.has(country);
+    if (!response.ok) return { country: null, cnSafeMode: true };
+    const data = await response.json();
+    const country = String(data?.country || '').toUpperCase();
+    const cnSafeMode = data?.cnSafeMode !== false;
+    return {
+      country: /^[A-Z]{2}$/.test(country) ? country : null,
+      cnSafeMode: Boolean(cnSafeMode),
+      locale: data?.locale || null
+    };
   } catch {
-    return false;
+    return { country: null, cnSafeMode: true };
   }
+}
+
+export async function advertisingAllowedForCurrentVisitor({
+  storage = safeStorage(),
+  fetchImpl = globalThis.fetch?.bind(globalThis),
+  requireParental = true
+} = {}) {
+  if (!hasAdvertisingConsent(storage)) return false;
+  if (requireParental && !hasParentalAck(storage)) return false;
+  const { country, cnSafeMode } = await resolveVisitorLocation({ fetchImpl });
+  if (!country) return false;
+  if (cnSafeMode && country === 'CN') return false;
+  if (GOOGLE_CERTIFIED_CMP_REGIONS.has(country)) return false;
+  return true;
 }
 
 export async function initConsentManager() {
@@ -106,9 +128,18 @@ export async function initConsentManager() {
   };
   const hide = () => { panel.hidden = true; settings.hidden = true; };
   const choose = async optionalAds => {
+    if (optionalAds) {
+      const gateOk = await requireParentalGate({ purpose: 'ads', locale });
+      if (!gateOk) return;
+    }
     const choice = savePrivacyChoice(optionalAds);
     hide();
     const advertisingAllowed = optionalAds ? await advertisingAllowedForCurrentVisitor() : false;
+    if (optionalAds && !advertisingAllowed) {
+      // Parental gate passed and consent saved, but region/CN rules still block loading.
+      window.dispatchEvent(new CustomEvent('PIKO_PRIVACY_CHOICE_CHANGED', { detail: { ...choice, advertisingAllowed: false } }));
+      return;
+    }
     window.dispatchEvent(new CustomEvent('PIKO_PRIVACY_CHOICE_CHANGED', { detail: { ...choice, advertisingAllowed } }));
   };
 
@@ -172,4 +203,4 @@ function injectStyles() {
 
 if (typeof window !== 'undefined') void initConsentManager();
 
-export { STORAGE_KEY as PRIVACY_CHOICE_STORAGE_KEY, NOTICE_VERSION as PRIVACY_NOTICE_VERSION };
+export { STORAGE_KEY as PRIVACY_CHOICE_STORAGE_KEY, NOTICE_VERSION as PRIVACY_NOTICE_VERSION, GOOGLE_CERTIFIED_CMP_REGIONS };

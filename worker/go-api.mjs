@@ -51,7 +51,7 @@ export async function goRoute(request, env, helpers) {
   }
   if (request.method !== 'POST') throw new HttpError(404, 'NOT_FOUND');
   const body = await readJson(request, HttpError);
-  if (['profile','presence','invitation','families','tutorial'].includes(path) || path.startsWith('families/')) {
+  if (['profile','presence','invitation','families','tutorial','report','block'].includes(path) || path.startsWith('families/')) {
     const result = await playroomRoute(env, actor, path, body);
     return reply(result, result.error ? 409 : 200);
   }
@@ -61,6 +61,7 @@ export async function goRoute(request, env, helpers) {
   if (path === 'match/cancel') { await env.GO_LOBBY.getByName(pool).cancel(actor.id); return reply({ ok: true }); }
   if (path === 'rooms' || path === 'match') {
     const mode = path === 'match' ? 'match' : body.mode === 'ai' ? 'ai' : 'invite';
+    if (mode === 'match' && body.parentalGateAck !== true) return reply({ error: 'PARENTAL_GATE_REQUIRED' }, 403);
     const difficulty = ['beginner', 'easy', 'medium', 'hard'].includes(body.difficulty) ? body.difficulty : 'easy';
     let room = crypto.randomUUID();
     if (mode === 'match') room = (await env.GO_LOBBY.getByName(pool).match(actor.id)).room;

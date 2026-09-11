@@ -2,6 +2,9 @@
 
 調査日：2026-09-05。状態：研究・設計のみ。実装、問題作成、データベースへの投入、公開は行っていない。
 
+
+> Engineering constraint: see `docs/CONTENT_POLICY.md`. Unauthorized Chinese textbook verbatim content must not be committed or shipped.
+
 ## 1. 対象・根拠・確認範囲
 
 初期対象は中国本土の普通話・簡体字で学ぶ小学生。六三制（小学校6年）と五四制（小学校5年）を別課程として設計する。香港・マカオ・台湾等の異なる教育課程や、少数民族言語・国際学校の個別課程まで対応済みとはしない。中国語を母語として学ぶルートと、追加言語として学ぶルートも分ける。

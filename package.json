@@ -18,7 +18,7 @@
     "test:foundations": "node tests/test_foundations.mjs && node tests/test_foundation_api.mjs",
     "test:seo": "node tests/test_seo.mjs",
     "test:auth": "node tests/test_oauth.mjs",
-    "test:privacy": "node tests/test_privacy_consent.mjs",
+    "test:privacy": "node tests/test_privacy_consent.mjs && node tests/test_parental_gate.mjs",
     "verify:auth:production": "node scripts/verify-auth-redirects.mjs",
     "build": "node scripts/build.mjs",
     "db:migrate:local": "wrangler d1 migrations apply japanese-pses-production --local --config wrangler.toml",
@@ -28,7 +28,8 @@
     "deploy:worker": "wrangler deploy --config wrangler.toml",
     "deploy:pages": "wrangler pages deploy --branch main",
     "deploy": "npm run test && npm run build && npm run db:migrate && npm run db:seed && npm run deploy:worker && npm run deploy:pages",
-    "monitor:production": "node scripts/monitor-production.mjs"
+    "monitor:production": "node scripts/monitor-production.mjs",
+    "test:parental-gate": "node tests/test_parental_gate.mjs"
   },
   "devDependencies": {
     "playwright-core": "^1.63.0",

@@ -78,7 +78,7 @@ export const playroomText = {
    refresh:'刷新名单',
    privateRoom:'私密房间',
    leaveAsk:'离开家庭房间？正在进行的棋局不会结束。',
-   errors:{INVALID_NAME:'请填写1至20字的昵称，并选择头像。',PROFILE_REQUIRED:'先保存一个昵称，就能和大家一起玩。',FAMILY_NOT_FOUND:'家庭房间不存在或已过期。',NOT_MEMBER:'请通过邀请链接加入家庭房间。',HOST_ONLY:'这一步由房主操作。',FAMILY_STALE:'房间已更新，请再试一次。',NOT_READY:'请选两位在线玩家，并等待他们都准备好。',GAME_ACTIVE:'上一局还在进行，请先完成或认输。',PLAYER_UNAVAILABLE:'对方目前不方便接受邀请。',INVITE_EXPIRED:'邀请已过期。',DIRECTORY_FULL:'在线名单暂时已满，家庭房间仍可使用。'}
+   errors:{INVALID_NAME:'请填写1至20字的昵称，并选择头像。',PROFILE_REQUIRED:'先保存一个昵称，就能和大家一起玩。',FAMILY_NOT_FOUND:'家庭房间不存在或已过期。',NOT_MEMBER:'请通过邀请链接加入家庭房间。',HOST_ONLY:'这一步由房主操作。',FAMILY_STALE:'房间已更新，请再试一次。',NOT_READY:'请选两位在线玩家，并等待他们都准备好。',GAME_ACTIVE:'上一局还在进行，请先完成或认输。',PLAYER_UNAVAILABLE:'对方目前不方便接受邀请。',INVITE_EXPIRED:'邀请已过期。',DIRECTORY_FULL:'在线名单暂时已满，家庭房间仍可使用。',INTERNAL_ERROR:'连接暂时不稳定，请刷新后再试。',UNAVAILABLE:'暂时无法连接游戏服务，请稍后再试。'}
  },
  en: {
    tagline:'Play together. One more round.',
@@ -159,7 +159,7 @@ export const playroomText = {
    refresh:'Refresh players',
    privateRoom:'Private room',
    leaveAsk:'Leave this family room? Your current game will continue.',
-   errors:{INVALID_NAME:'Choose an avatar and a nickname of 1–20 characters.',PROFILE_REQUIRED:'Save a nickname to play together.',FAMILY_NOT_FOUND:'Family room not found or expired.',NOT_MEMBER:'Join using a family invitation.',HOST_ONLY:'Only the host can do this.',FAMILY_STALE:'The room changed. Please try again.',NOT_READY:'Choose two online players and wait for both to be ready.',GAME_ACTIVE:'Finish or resign from the current game first.',PLAYER_UNAVAILABLE:'That player cannot accept an invitation now.',INVITE_EXPIRED:'Invitation expired.',DIRECTORY_FULL:'The public list is full. Family rooms are still available.'}
+   errors:{INVALID_NAME:'Choose an avatar and a nickname of 1–20 characters.',PROFILE_REQUIRED:'Save a nickname to play together.',FAMILY_NOT_FOUND:'Family room not found or expired.',NOT_MEMBER:'Join using a family invitation.',HOST_ONLY:'Only the host can do this.',FAMILY_STALE:'The room changed. Please try again.',NOT_READY:'Choose two online players and wait for both to be ready.',GAME_ACTIVE:'Finish or resign from the current game first.',PLAYER_UNAVAILABLE:'That player cannot accept an invitation now.',INVITE_EXPIRED:'Invitation expired.',DIRECTORY_FULL:'The public list is full. Family rooms are still available.',INTERNAL_ERROR:'The connection was interrupted. Refresh and try again.',UNAVAILABLE:'The game service is temporarily unavailable. Try again soon.'}
  },
  ja: {
    tagline:'いっしょにあそぼう。もういっかい。',
@@ -240,6 +240,6 @@ export const playroomText = {
    refresh:'リストをこうしん',
    privateRoom:'なかまだけのへや',
    leaveAsk:'へやをでますか？いまのたいきょくはつづきます。',
-   errors:{INVALID_NAME:'1〜20もじのニックネームとアバターをえらんでね。',PROFILE_REQUIRED:'ニックネームをほぞんしてね。',FAMILY_NOT_FOUND:'へやがみつかりません。',NOT_MEMBER:'しょうたいリンクからはいってね。',HOST_ONLY:'へやのリーダーがそうさします。',FAMILY_STALE:'へやがかわりました。もういちどためしてね。',NOT_READY:'オンラインの2にんをえらんで、じゅんびをまってね。',GAME_ACTIVE:'いまのたいきょくをおわらせてね。',PLAYER_UNAVAILABLE:'いまはあいてをさそえません。',INVITE_EXPIRED:'おさそいのじかんがきれました。',DIRECTORY_FULL:'リストがいっぱいです。かぞくのへやはつかえます。'}
+   errors:{INVALID_NAME:'1〜20もじのニックネームとアバターをえらんでね。',PROFILE_REQUIRED:'ニックネームをほぞんしてね。',FAMILY_NOT_FOUND:'へやがみつかりません。',NOT_MEMBER:'しょうたいリンクからはいってね。',HOST_ONLY:'へやのリーダーがそうさします。',FAMILY_STALE:'へやがかわりました。もういちどためしてね。',NOT_READY:'オンラインの2にんをえらんで、じゅんびをまってね。',GAME_ACTIVE:'いまのたいきょくをおわらせてね。',PLAYER_UNAVAILABLE:'いまはあいてをさそえません。',INVITE_EXPIRED:'おさそいのじかんがきれました。',DIRECTORY_FULL:'リストがいっぱいです。かぞくのへやはつかえます。',INTERNAL_ERROR:'つうしんがいちどとまりました。ページをこうしんしてね。',UNAVAILABLE:'いまはゲームにつながりません。すこしまってからためしてね。'}
  }
 };

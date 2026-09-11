@@ -14,6 +14,9 @@ try {
   for(const p of [a,b])p.on('pageerror',e=>errors.push(e.message));
   async function setup(p,name){await p.addInitScript(()=>localStorage.setItem('piko-parental-ack-v1',JSON.stringify({version:1,ackedAt:Date.now(),purposes:['browser-test']})));await p.goto(`${preview.origin}/arena.html?lang=zh`);await p.locator('[data-consent=necessary]').click();await p.locator('#playroom-profile [name=nickname]').fill(name);await p.locator('#playroom-profile [name=visible]').check();await p.locator('#playroom-profile button').click();await p.locator('#playroom-profile').waitFor({state:'hidden'});}
   await setup(a,'爸爸');await setup(b,'小朋友');
+  await a.evaluate(()=>localStorage.setItem('piko-family','00000000-0000-4000-8000-000000000000'));
+  await a.reload();await a.locator('[data-pr=refresh]').waitFor();
+  check(await a.evaluate(()=>localStorage.getItem('piko-family')===null),'expired saved family is cleared without showing an internal error');
   await a.locator('[data-pr=refresh]').click();await a.getByText('小朋友',{exact:true}).waitFor();checks++;
   await a.screenshot({path:`${artifacts}/desktop-lobby.png`,fullPage:true});
   const family=await a.evaluate(async()=>{const r=await fetch('/api/arena/families',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({tab:crypto.randomUUID()})});return(await r.json()).id;});

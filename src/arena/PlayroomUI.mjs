@@ -144,6 +144,24 @@ export function createPlayroom({ api, getLocale, getIdentity, setIdentity, getRo
     if(!/^[a-f0-9-]{36}$/.test(value))throw new Error('FAMILY_NOT_FOUND');
     const next=await api(`families/${value}`,{type:'join',tab});family=next;rememberFamily(value);await refresh();
   }
+  async function restoreSavedFamily(fromUrl) {
+    for(let attempt=0;attempt<2;attempt++) {
+      try {
+        family=await api(`families/${familyId}`,{type:fromUrl?'join':'get',tab});
+        rememberFamily(familyId);
+        return;
+      } catch(e) {
+        if(['NOT_MEMBER','FAMILY_NOT_FOUND'].includes(e.message)) {
+          family=null;
+          rememberFamily(null);
+          return;
+        }
+        if(attempt===0&&['INTERNAL_ERROR','UNAVAILABLE'].includes(e.message)) continue;
+        onError(e);
+        return;
+      }
+    }
+  }
   host.addEventListener('submit', e=>{
     e.preventDefault();const data=new FormData(e.target);
     void run(async()=>{
@@ -247,7 +265,7 @@ export function createPlayroom({ api, getLocale, getIdentity, setIdentity, getRo
   const onVisibility=()=>{if(!document.hidden)void refresh();};document.addEventListener('visibilitychange',onVisibility);
   return {
     render(){if(lastLocale!==getLocale()){lastLocale=getLocale();lastMarkup='';}render();},
-    async initialize(){if(!familyId)try{familyId=localStorage.getItem('piko-family');}catch{}if(familyId&&getIdentity()?.configured){try{const fromUrl=new URLSearchParams(location.search).get('family');family=await api(`families/${familyId}`,{type:fromUrl?'join':'get',tab});rememberFamily(familyId);}catch(e){if(e.message!=='NOT_MEMBER'&&e.message!=='FAMILY_NOT_FOUND')onError(e);}}render();await refresh();},
+    async initialize(){if(!familyId)try{familyId=localStorage.getItem('piko-family');}catch{}if(familyId&&getIdentity()?.configured)await restoreSavedFamily(new URLSearchParams(location.search).get('family'));render();await refresh();},
     async restoreFamily(id){navigationEpoch++;if(id){rememberFamily(id);try{await call('get');}catch(e){onError(e);}}await refresh();render();},
     dispose(){disposed=true;clearInterval(timer);clearInterval(familyTimer);document.removeEventListener('visibilitychange',onVisibility);lessonClose?.();}
   };

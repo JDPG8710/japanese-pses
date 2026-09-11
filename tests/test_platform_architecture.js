@@ -195,7 +195,7 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
 
     test('Pages は静的フロントを配信し、Service BindingでD1 API Workerへ同一オリジン接続する', () => {
       const config = read('wrangler.toml');
-      const pagesConfig = read('wrangler.jsonc');
+      const pagesConfig = read('wrangler.pages.jsonc');
       const pagesProxy = read('functions/api/[[path]].js');
       assert.ok(config.includes('binding = "DB"'));
       assert.ok(config.includes('database_name = "japanese-pses-production"'));
@@ -215,6 +215,9 @@ module.exports = ({ describe, test, assert, loadESModule }) => {
       const packageScripts = JSON.parse(read('package.json')).scripts;
       const dataImporter = read('scripts/import-game-data-d1.mjs');
       assert.ok(packageScripts['db:migrate'].includes('--config wrangler.toml'));
+      assert.ok(packageScripts['deploy:worker'].includes('--config wrangler.toml'));
+      assert.ok(packageScripts['deploy:pages'].includes('--project-name=manabi-pop'));
+      assert.ok(packageScripts['deploy:pages'].includes('./dist'));
       assert.ok(packageScripts['db:migrate:local'].includes('--config wrangler.toml'));
       assert.ok(dataImporter.includes("path.join(root, 'wrangler.toml')"));
       for (const secret of ['TURNSTILE_SECRET_KEY =', 'GOOGLE_CLIENT_SECRET =', 'APPLE_CLIENT_SECRET =', 'JWT_SECRET =', 'FINGERPRINT_PEPPER =', 'STRIPE_SECRET_KEY =', 'STRIPE_WEBHOOK_SECRET =']) {

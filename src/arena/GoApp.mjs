@@ -1,5 +1,6 @@
 import { texts } from './GoText.mjs';
 import { newGame, play, score, sgf } from './GoRules.mjs';
+import { estimatePosition } from './GoAI.mjs';
 import { AuthManager } from '../auth/AuthManager.js';
 import { createPlayroom } from './PlayroomUI.mjs';
 import { playroomText } from './PlayroomText.mjs';
@@ -158,6 +159,16 @@ function reviewGame() {
   let game = newGame(review.game.size || 9, review.game.rules || "chinese");
   for (const m of review.game.moves.slice(0,review.step)) { game.phase = 'playing'; game = play(game,m.point); }
   return game;
+}
+
+function liveEvalHTML(game) {
+  const e = estimatePosition(game);
+  const leadTxt = e.lead > 0.5
+    ? `${label('black')} +${e.lead.toFixed(1)}`
+    : e.lead < -0.5
+      ? `${label('white')} +${(-e.lead).toFixed(1)}`
+      : label('evalEven');
+  return `<p class="live-eval"><strong>${label('liveEval')}</strong>: ${label('black')} ${e.black.toFixed(1)} · ${label('white')} ${e.white.toFixed(1)} <span class="muted">(${leadTxt})</span><br><small class="muted">${label('liveEvalNote')}</small></p>`;
 }
 function render() {
   const scroll=app.querySelector('.board-scroll'), scrollX=scroll?.scrollLeft||0, scrollY=scroll?.scrollTop||0;

@@ -7,7 +7,7 @@ compatibility_flags = ["nodejs_compat"]
 [vars]
 GO_AI_MAX_ROOMS = "8"
 GO_AI_MAX_UNITS = "16"
-GO_AI_SLOW_MS = "250"
+GO_AI_SLOW_MS = "600"
 APP_ORIGIN = "https://piko-game.com"
 CN_SAFE_MODE = "true"
 API_ORIGIN = "https://piko-game.com"

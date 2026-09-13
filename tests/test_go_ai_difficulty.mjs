@@ -1,11 +1,10 @@
 import assert from 'node:assert/strict';
 import { newGame, play } from '../src/arena/GoRules.mjs';
-import { chooseMove, levelProfile } from '../src/arena/GoAI.mjs';
+import { chooseMove, levelProfile, estimatePosition } from '../src/arena/GoAI.mjs';
 
 let checks = 0;
 const check = (v, m) => { assert.ok(v, m); checks++; };
 
-// Personas must differ on concrete levers, not just tiny weight tweaks.
 const b = levelProfile('beginner');
 const e = levelProfile('easy');
 const m = levelProfile('medium');
@@ -15,11 +14,11 @@ check(b.blunderChance > e.blunderChance && e.blunderChance > m.blunderChance && 
 check(!b.saveAtari && e.saveAtari && m.saveAtari && h.saveAtari, 'beginner lacks atari-save flag');
 check(b.replyTop === 0 && e.replyTop === 0 && m.replyTop > 0 && h.replyTop > m.replyTop, 'reply search only medium+; hard wider');
 check(h.captureWeight > e.captureWeight && e.captureWeight > b.captureWeight, 'capture weight scales up');
-check(h.thinkMs >= 150 && h.thinkMs <= 250, 'hard think budget bounded ~150-250ms');
+check(h.searchDepth >= 2 && m.searchDepth >= 1 && e.searchDepth === 0, 'hard deeper than medium; easy has no search');
+check(h.useStaticEval && m.useStaticEval && !e.useStaticEval, 'static eval on medium/hard');
+check(h.thinkMs >= 300 && h.thinkMs <= 600, 'hard think budget widened for deeper search');
 
-/** Build a 9x9 position where Black has an obvious one-stone capture at `capturePoint`. */
 function capturePosition() {
-  // White alone at 40 (ee), Black at 31/39/41; only liberty is 49 — Black captures there.
   const g = newGame(9, 'chinese');
   g.board[40] = 2;
   g.board[31] = 1;
@@ -31,7 +30,6 @@ function capturePosition() {
   return { state: g, capturePoint: 49 };
 }
 
-/** Black one-stone group at 40 with sole liberty 49; must extend/save there. */
 function atariSavePosition() {
   const g = newGame(9, 'chinese');
   g.board[40] = 1;
@@ -55,7 +53,6 @@ function rate(fn, level, target, trials = 80) {
 }
 
 const { capturePoint } = capturePosition();
-// Sanity: capture is legal and removes the white stone.
 const after = play(capturePosition().state, capturePoint);
 check(after.board[40] === 0 && after.captures[0] === 1, 'fixture capture works');
 
@@ -79,7 +76,10 @@ check(saveHard >= 0.85, `hard almost always saves (got ${saveHard})`);
 check(saveEasy >= 0.7, `easy often saves (got ${saveEasy})`);
 check(saveBeginner < saveHard - 0.25, `beginner saves far less than hard (${saveBeginner} vs ${saveHard})`);
 
-// Existing contract: all levels return legal moves / null from empty-ish games.
+const est = estimatePosition(newGame());
+check(Number.isFinite(est.black) && Number.isFinite(est.white) && Number.isFinite(est.lead), 'estimatePosition returns numbers');
+check(est.white > est.black, 'empty board white ahead by komi in estimate');
+
 for (const level of ['beginner', 'easy', 'medium', 'hard']) {
   let game = newGame();
   for (let i = 0; i < 12 && game.phase === 'playing'; i++) {

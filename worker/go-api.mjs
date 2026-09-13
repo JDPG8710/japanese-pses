@@ -69,6 +69,13 @@ export async function goRoute(request, env, helpers) {
       let admission;
       try { admission = await capacity(env).acquireAI(room, actor.id, difficulty, boardSize); }
       catch { return reply({ error: 'AI_BUSY' }, 503, { 'Retry-After': '60' }); }
+      if (admission.error === 'AI_ALREADY_ACTIVE' && admission.roomId) {
+        // Practice restart abandons the previous computer game.
+        try { await env.GO_ROOMS.getByName(admission.roomId).abandonAI(actor); } catch { /* best-effort */ }
+        try { await capacity(env).releaseAI(admission.roomId); } catch { /* best-effort */ }
+        try { admission = await capacity(env).acquireAI(room, actor.id, difficulty, boardSize); }
+        catch { return reply({ error: 'AI_BUSY' }, 503, { 'Retry-After': '60' }); }
+      }
       if (admission.error) return reply(admission, admission.error === 'AI_ALREADY_ACTIVE' ? 409 : 503, { 'Retry-After': '60' });
     }
     // An ambiguous creation failure keeps its short lease until expiry: releasing

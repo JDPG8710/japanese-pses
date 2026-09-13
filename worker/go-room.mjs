@@ -131,6 +131,31 @@ export class GoRoom extends DurableObject {
     if (room.phase === 'finished') this.ctx.waitUntil(this.archive(room).catch(e => console.error('Go archive retry scheduled', e)));
     return this.view(room, actor.id);
   }
+  async abandonAI(actor) {
+    let room = this.read();
+    if (!room || room.mode !== 'ai') return { ok: true };
+    const seat = room.players.findIndex(p => p.id === actor.id);
+    if (seat < 0) return fail('NOT_PLAYER');
+    if (['finished', 'expired'].includes(room.phase)) {
+      try { await capacity(this.env).releaseAI(room.id); } catch { /* best-effort lease cleanup */ }
+      return { ok: true };
+    }
+    this.tick(room);
+    if (['finished', 'expired'].includes(room.phase)) {
+      this.write(room); this.broadcast(room); await this.schedule(room);
+      return { ok: true };
+    }
+    if (['playing', 'scoring'].includes(room.phase)) {
+      // Same outcome as resign: human seat loses, computer wins.
+      room.game.result = { winner: 2 - seat, reason: 'resign' };
+      room.phase = room.game.phase = 'finished';
+    } else if (['waiting', 'ready'].includes(room.phase)) {
+      room.phase = room.game.phase = 'expired';
+    }
+    room.revision++;
+    this.write(room); this.broadcast(room); await this.schedule(room);
+    return { ok: true };
+  }
   async fetch(request) {
     // Only reached through the authenticated Worker binding, never a public route.
     const actor = JSON.parse(request.headers.get('x-go-actor') || 'null'), room = this.read();

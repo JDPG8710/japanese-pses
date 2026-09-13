@@ -31,7 +31,8 @@ async function api(path, body) {
 }
 function error(e) {
   message(playroomText[locale].errors[e.message] || t().errors[e.message] || t().unavailable);
-  if (/^[a-f0-9-]{36}$/.test(e.roomId || '')) {
+  // AI_ALREADY_ACTIVE is replaced server-side on practice restart; do not offer a rejoin link.
+  if (e.message !== 'AI_ALREADY_ACTIVE' && /^[a-f0-9-]{36}$/.test(e.roomId || '')) {
     const link = document.createElement('a'); link.href = `/arena.html?room=${e.roomId}&lang=${locale}`; link.textContent = ` ${t().room} →`; notice.append(link);
   }
 }
@@ -222,7 +223,14 @@ async function start(mode) {
     parentalGateAck = parentalGateAck || await requireParentalGate({ purpose: 'arena-match', locale });
     if (!parentalGateAck) { message(t().parentGateNeeded || 'Parent approval required for public matchmaking.'); return; }
   }
-  const next = await api(mode==='match'?'match':'rooms',{mode,difficulty:level,...settings(),parentalGateAck: mode==='match' ? parentalGateAck : true});
+  const payload = {mode,difficulty:level,...settings(),parentalGateAck: mode==='match' ? parentalGateAck : true};
+  let next;
+  try { next = await api(mode==='match'?'match':'rooms',payload); }
+  catch (e) {
+    // Server should replace an abandoned AI lease; retry once if a stale lease remains.
+    if (mode==='ai' && e.message==='AI_ALREADY_ACTIVE') next = await api('rooms',payload);
+    else throw e;
+  }
   matchingAt = mode==='match'?Date.now():0; fallbackShown = false; message(); enter(next);
 }
 async function switchAI() {
@@ -233,7 +241,14 @@ async function switchAI() {
 }
 async function home() {
   if (room && ['playing','scoring'].includes(room.phase) && !confirm(t().leaveAsk)) return;
-  if (room && ['waiting','ready'].includes(room.phase)) { await api('match/cancel',settings()); await action('cancel'); }
+  if (room && !['finished','expired'].includes(room.phase)) {
+    if (room.mode === 'ai') {
+      if (['waiting','ready'].includes(room.phase)) { try { await action('cancel'); } catch { /* best-effort */ } }
+      else if (['playing','scoring'].includes(room.phase)) { try { await action('resign'); } catch { /* best-effort */ } }
+    } else if (['waiting','ready'].includes(room.phase)) {
+      await api('match/cancel',settings()); await action('cancel');
+    }
+  }
   const familyId=room?.family;
   disconnect(); room = null; pendingRoom = null; review = null; matchingAt = 0;
   if (familyId) {

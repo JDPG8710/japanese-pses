@@ -13,9 +13,12 @@ try {
   check(hard.filter(r=>r.status===200).length===4,'atomic weighted capacity accepts four hard rooms');
   check(hard.filter(r=>r.status===503&&r.data.error==='AI_BUSY'&&r.retry==='60').length===1,'overload rejected with retry hint');
   const accepted=hard.findIndex(r=>r.status===200),r=hard[accepted].data;
-  check((await api('rooms',{mode:'ai'},cookies[accepted])).data.error==='AI_ALREADY_ACTIVE','one active AI room per identity');
+  const restart=await api('rooms',{mode:'ai'},cookies[accepted]);
+  check(restart.status===200,'practice restart replaces previous AI game');
+  const prior=await mf.dispatchFetch(`${origin}/api/arena/rooms/${r.id}`,{method:'GET',headers:{origin,cookie:cookies[accepted],'cf-connecting-ip':'capacity-test'}});
+  check(['finished','expired'].includes((await prior.json()).phase),'abandoned AI room is finished or expired');
   check((await api('rooms',{mode:'invite'},cookies[8])).status===200,'human rooms unaffected at AI capacity');
-  await api(`rooms/${r.id}`,{type:'cancel',revision:r.revision},cookies[accepted]);
+  await api(`rooms/${restart.data.id}`,{type:'cancel',revision:restart.data.revision},cookies[accepted]);
   check((await api('rooms',{mode:'ai',difficulty:'hard'},cookies[9])).status===200,'cancel frees weighted reservation');
   const storage=await mf.unsafeGetDurableObjectStorage('go-backend','GoLobby',{name:'ai-capacity:v1'});
   await storage.exec('UPDATE ai_leases SET expires=0');

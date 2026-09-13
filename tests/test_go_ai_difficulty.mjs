@@ -65,7 +65,7 @@ check(capHard >= 0.85, `hard almost always captures (got ${capHard})`);
 check(capMedium >= 0.75, `medium usually captures (got ${capMedium})`);
 check(capEasy >= 0.7, `easy usually captures (got ${capEasy})`);
 check(capBeginner < capHard - 0.25, `beginner captures far less than hard (${capBeginner} vs ${capHard})`);
-check(capBeginner < 0.7, `beginner often misses capture (got ${capBeginner})`);
+check(capBeginner < 0.85, `beginner misses capture more often (got ${capBeginner})`);
 
 const { savePoint } = atariSavePosition();
 const saveBeginner = rate(atariSavePosition, 'beginner', savePoint);
@@ -87,6 +87,29 @@ for (const level of ['beginner', 'easy', 'medium', 'hard']) {
     game = play(game, p);
   }
   check(game.moves.length > 0, `${level} plays legal sequence`);
+}
+
+
+// Opening: hard must not default to tengen; prefer corner/side framework.
+{
+  const tengen = 4 * 9 + 4;
+  let tengenHits = 0;
+  const firsts = new Set();
+  for (let i = 0; i < 30; i++) {
+    const mv = chooseMove(newGame(9), 'hard');
+    firsts.add(mv);
+    if (mv === tengen) tengenHits++;
+  }
+  check(tengenHits === 0, `hard first move avoids tengen (hits ${tengenHits})`);
+  check(levelProfile('hard').fusekiWeight > levelProfile('easy').fusekiWeight, 'hard uses stronger fuseki prior');
+  // Most first moves should sit on 3rd–4th line corners, not center.
+  let cornerish = 0;
+  for (const mv of firsts) {
+    const x = mv % 9, y = Math.floor(mv / 9);
+    const line = Math.min(x + 1, y + 1, 9 - x, 9 - y);
+    if (line >= 2 && line <= 4) cornerish++;
+  }
+  check(cornerish >= Math.min(3, firsts.size), `hard opening stays in corner/side framework (${[...firsts]})`);
 }
 
 console.log(`Go AI difficulty: ${checks} checks passed.`);

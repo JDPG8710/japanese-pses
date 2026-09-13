@@ -1,4 +1,5 @@
 import { play, group, neighbors, score } from './GoRules.mjs';
+import { josekiSuggestions, bestJosekiMove } from './GoJoseki.mjs';
 
 // Bounded tactical practice engine (not MCTS/NN, not rank-calibrated).
 // Levels differ by randomness, tactics, board estimate, search, and fuseki priors.
@@ -9,28 +10,28 @@ const LEVEL = {
     pickPool: 18, temperature: 1.8, blunderChance: 0.38,
     captureWeight: 1.5, selfAtariPenalty: 2, eyeFillPenalty: 4,
     saveAtari: false, threatenAtari: false, replyTop: 0, replyLossWeight: 0,
-    openingCenter: 0.05, fusekiWeight: 0, useStaticEval: false, searchDepth: 0, replyCap: 0,
+    openingCenter: 0.05, fusekiWeight: 0, josekiWeight: 0, useStaticEval: false, searchDepth: 0, replyCap: 0,
   },
   easy: {
     strength: 1, thinkMs: 45, candidateCap19: 80, randomNoise: 0.7,
     pickPool: 4, temperature: 0.45, blunderChance: 0.1,
     captureWeight: 8, selfAtariPenalty: 10, eyeFillPenalty: 12,
     saveAtari: true, threatenAtari: true, replyTop: 0, replyLossWeight: 0,
-    openingCenter: 0.1, fusekiWeight: 2.5, useStaticEval: false, searchDepth: 0, replyCap: 0,
+    openingCenter: 0.1, fusekiWeight: 2.5, josekiWeight: 4, useStaticEval: false, searchDepth: 0, replyCap: 0,
   },
   medium: {
     strength: 2, thinkMs: 140, candidateCap19: 110, randomNoise: 0.15,
     pickPool: 2, temperature: 0.08, blunderChance: 0.02,
     captureWeight: 10, selfAtariPenalty: 12, eyeFillPenalty: 13,
     saveAtari: true, threatenAtari: true, replyTop: 8, replyLossWeight: 8,
-    openingCenter: 0, fusekiWeight: 8, useStaticEval: true, searchDepth: 1, replyCap: 28,
+    openingCenter: 0, fusekiWeight: 8, josekiWeight: 12, useStaticEval: true, searchDepth: 1, replyCap: 28,
   },
   hard: {
     strength: 3, thinkMs: 450, candidateCap19: 160, randomNoise: 0,
     pickPool: 1, temperature: 0, blunderChance: 0,
     captureWeight: 16, selfAtariPenalty: 18, eyeFillPenalty: 18,
     saveAtari: true, threatenAtari: true, replyTop: 18, replyLossWeight: 14,
-    openingCenter: -0.15, fusekiWeight: 14, useStaticEval: true, searchDepth: 2, replyCap: 48,
+    openingCenter: -0.15, fusekiWeight: 14, josekiWeight: 22, useStaticEval: true, searchDepth: 2, replyCap: 48,
   },
 };
 
@@ -310,6 +311,10 @@ function evaluateMove(state, p, next, cfg, color, size, center) {
     value += open * cfg.openingCenter;
   }
   value += fusekiPrior(state, p, cfg);
+  if (cfg.josekiWeight) {
+    const jk = josekiSuggestions(state).get(p);
+    if (jk) value += jk.weight * (cfg.josekiWeight / 10);
+  }
 
   if (cfg.useStaticEval) value += staticEval(next, color) * (cfg.strength >= 3 ? 0.85 : 0.55);
 
@@ -405,6 +410,18 @@ export function chooseMove(state, level = 'easy') {
 
   if (!fighting && ranked[0].value < -2) return null;
   if (!fighting && state.passes && score(state).winner === color && ranked[0].value < 2) return null;
+
+  // Follow joseki when the local corner matches and no liberty fight is on.
+  if (!fighting && cfg.josekiWeight >= 12) {
+    const jk = bestJosekiMove(state);
+    if (jk && jk.weight >= 18) {
+      const hit = ranked.find(c => c.p === jk.p);
+      if (hit) return jk.p;
+      // Joseki point may be outside shallow candidate cut — still play if legal.
+      try { play(state, jk.p); return jk.p; } catch { /* fall through */ }
+    }
+  }
+
   // Early fuseki: sample among near-tied corner/approach moves so hard is not glued to one 3-3.
   const stonesPlayed = state.moves.filter(m => m.point != null).length;
   if (cfg.fusekiWeight && stonesPlayed < 4) {
@@ -427,5 +444,6 @@ export function levelProfile(level) {
     searchDepth: c.searchDepth,
     useStaticEval: c.useStaticEval,
     fusekiWeight: c.fusekiWeight,
+    josekiWeight: c.josekiWeight,
   };
 }

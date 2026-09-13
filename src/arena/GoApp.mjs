@@ -168,7 +168,14 @@ function liveEvalHTML(game) {
     : e.lead < -0.5
       ? `${label('white')} +${(-e.lead).toFixed(1)}`
       : label('evalEven');
-  return `<p class="live-eval"><strong>${label('liveEval')}</strong>: ${label('black')} ${e.black.toFixed(1)} · ${label('white')} ${e.white.toFixed(1)} <span class="muted">(${leadTxt})</span><br><small class="muted">${label('liveEvalNote')}</small></p>`;
+  const blackWr = Math.round((e.winRateBlack ?? e.winRate ?? 0.5) * 100);
+  const whiteWr = 100 - blackWr;
+  const wrTxt = e.lead > 0.5
+    ? `${label('winRate')} ${label('black')} ${blackWr}%`
+    : e.lead < -0.5
+      ? `${label('winRate')} ${label('white')} ${whiteWr}%`
+      : `${label('winRate')} B${blackWr}% / W${whiteWr}%`;
+  return `<p class="live-eval"><strong>${label('liveEval')}</strong>: ${label('black')} ${e.black.toFixed(1)} · ${label('white')} ${e.white.toFixed(1)} <span class="muted">(${leadTxt} · ${wrTxt})</span><br><small class="muted">${label('liveEvalNote')}</small></p>`;
 }
 function render() {
   const scroll=app.querySelector('.board-scroll'), scrollX=scroll?.scrollLeft||0, scrollY=scroll?.scrollTop||0;
@@ -188,7 +195,7 @@ function render() {
     app.innerHTML = `<div class="table-layout"><section><div class="players">${[1,2].map(color => `<div class="player ${phase==='playing' && game.turn===color?'active':''}"><strong>${color===1?'●':'○'} ${color===1?label('black'):label('white')} ${room.seat===color?`· ${label('you')}`:''}</strong><small>${room.players[color-1] ? room.mode==='ai'&&color===2?`${label('computer')} · ${label(room.difficulty)}`:escape(room.players[color-1].name):label('empty')}</small><span class="clock" data-clock="${color}"></span></div>`).join('')}</div>
       ${boardHTML(game,busy || !(yourTurn || phase==='scoring'))}<p class="preview-note">${phase==='playing'?yourTurn?`${label('turn')} ${room.seat===1?label('black'):label('white')}`:label('notTurn'):''}</p>
       ${phase==='playing'?`<div class="actions">${button('pass','pass','',busy || !yourTurn)}</div>`:''}</section>
-      <aside class="panel"><p class="game-config">${settingLabel(game)}</p><h2>${label(phase==='ready'?'readyPhase':phase)}</h2><p id="connection" class="status"></p>
+      <aside class="panel"><p class="game-config">${settingLabel(game)}</p>${['playing','scoring','finished'].includes(phase)?liveEvalHTML(game):''}<h2>${label(phase==='ready'?'readyPhase':phase)}</h2><p id="connection" class="status"></p>
       ${phase==='ready'?button('ready',room.players[room.seat-1]?.ready?'readyDone':'ready','primary',busy || room.players[room.seat-1]?.ready):''}
       ${phase==='waiting'?`<p>${label('inviteDesc')}</p><div class="actions">${button('copy','copy')}${navigator.share?button('share','share'):''}</div><p class="room-code">${label('room')} ${escape(room.id)}</p><a class="button" target="_blank" rel="noopener" href="/arena.html?practice=1&size=${boardSize}&rules=${rules}&lang=${locale}">${label('practice')}</a>${room.mode==='match'?`<p id="fallback" ${fallbackShown?'':'hidden'}>${label('fallback')}</p>${difficulty()}${button('ai-now','aiNow','',busy)}`:''}<div class="actions">${button('cancel','cancel','',busy)}</div>`:''}
       ${phase==='scoring'?`<p>${label('deadHint')}</p>${game.rules==='japanese'?`<label>${label('markChoice')} <select id="mark-mode"><option value="dead" ${markMode==='dead'?'selected':''}>${label('deadMark')}</option><option value="seki" ${markMode==='seki'?'selected':''}>${label('sekiMark')}</option></select></label>`:''}<p>${label('score')}: ${label('black')} ${score(game).black} · ${label('white')} ${score(game).white}</p><div class="actions">${button('accept',game.accepted.includes(room.seat)?'accepted':'accept','primary',busy || game.accepted.includes(room.seat))}${button('resume','resume','',busy)}</div>`:''}

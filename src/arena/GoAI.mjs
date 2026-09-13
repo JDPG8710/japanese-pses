@@ -20,18 +20,18 @@ const LEVEL = {
     openingCenter: 0.1, fusekiWeight: 2.5, josekiWeight: 4, useStaticEval: false, searchDepth: 0, replyCap: 0,
   },
   medium: {
-    strength: 2, thinkMs: 140, candidateCap19: 110, randomNoise: 0.15,
+    strength: 2, thinkMs: 280, candidateCap19: 130, randomNoise: 0.15,
     pickPool: 2, temperature: 0.08, blunderChance: 0.02,
     captureWeight: 10, selfAtariPenalty: 12, eyeFillPenalty: 13,
-    saveAtari: true, threatenAtari: true, replyTop: 8, replyLossWeight: 8,
-    openingCenter: 0, fusekiWeight: 8, josekiWeight: 12, useStaticEval: true, searchDepth: 1, replyCap: 28,
+    saveAtari: true, threatenAtari: true, replyTop: 12, replyLossWeight: 10,
+    openingCenter: 0, fusekiWeight: 8, josekiWeight: 12, useStaticEval: true, searchDepth: 2, replyCap: 40,
   },
   hard: {
-    strength: 3, thinkMs: 450, candidateCap19: 160, randomNoise: 0,
+    strength: 3, thinkMs: 850, candidateCap19: 200, randomNoise: 0,
     pickPool: 1, temperature: 0, blunderChance: 0,
-    captureWeight: 16, selfAtariPenalty: 18, eyeFillPenalty: 18,
-    saveAtari: true, threatenAtari: true, replyTop: 18, replyLossWeight: 14,
-    openingCenter: -0.15, fusekiWeight: 14, josekiWeight: 22, useStaticEval: true, searchDepth: 2, replyCap: 48,
+    captureWeight: 18, selfAtariPenalty: 18, eyeFillPenalty: 18,
+    saveAtari: true, threatenAtari: true, replyTop: 24, replyLossWeight: 16,
+    openingCenter: -0.15, fusekiWeight: 14, josekiWeight: 22, useStaticEval: true, searchDepth: 3, replyCap: 72,
   },
 };
 
@@ -206,20 +206,149 @@ export function staticEval(state, color) {
   return value;
 }
 
+/** Soft influence near an empty point: neighbor stones + nearby group liberty strength. */
+function influenceAt(board, p, size) {
+  let black = 0, white = 0;
+  for (const n of neighbors(p, size)) {
+    const c = board[n];
+    if (!c) continue;
+    const g = group(board, n);
+    const strength = 1 + Math.min(g.liberties.length, 5) * 0.15 + Math.min(g.stones.length, 6) * 0.05;
+    if (c === 1) black += strength;
+    else white += strength;
+  }
+  // Second-ring soft pull (diagonal/knight-ish adjacency via neighbor-of-neighbor empties skipped; only stone rings).
+  for (const n of neighbors(p, size)) {
+    for (const n2 of neighbors(n, size)) {
+      if (n2 === p || board[n2] === 0) continue;
+      const c = board[n2];
+      if (c === 1) black += 0.25;
+      else if (c === 2) white += 0.25;
+    }
+  }
+  return { black, white };
+}
+
+/**
+ * Territory-aware live estimate (provisional 点目), not final scoring.
+ * Flood-fills empties like score(); contested regions soft-split by influence.
+ * Folds a light liberty/safety term from staticEval so atari fights still show.
+ */
 export function estimatePosition(state) {
   const size = state.size || 9;
-  const komi = state.komi ?? (state.rules === 'japanese' ? 6.5 : 7.5);
-  const blackLead = staticEval(state, 1);
-  const soft = blackLead * 0.55;
-  const mid = (size * size) / 2;
-  const black = mid + soft / 2;
-  const white = mid - soft / 2 + komi;
+  const japanese = state.rules === 'japanese';
+  const komi = state.komi ?? (japanese ? 6.5 : 7.5);
+  const board = state.board;
+  const dead = new Set(state.dead || []);
+  const seki = new Set(state.seki || []);
+
+  let black = 0, white = 0;
+  // Living stones (Chinese area) / ignore for Japanese territory base.
+  if (!japanese) {
+    for (let p = 0; p < board.length; p++) {
+      if (dead.has(p)) continue;
+      if (board[p] === 1) black += 1;
+      else if (board[p] === 2) white += 1;
+    }
+  } else {
+    black += state.captures?.[0] || 0;
+    white += state.captures?.[1] || 0;
+    // Dead stones count as captures for the opponent in Japanese-style live estimate.
+    for (const p of dead) {
+      if (board[p] === 1) white += 1;
+      else if (board[p] === 2) black += 1;
+    }
+  }
+
+  const seen = new Set();
+  const isEmpty = (q) => !board[q] || dead.has(q);
+  for (let p = 0; p < board.length; p++) {
+    if (!isEmpty(p) || seen.has(p)) continue;
+
+    const region = [];
+    const stack = [p];
+    const border = new Set();
+    let sekiBorder = false;
+    seen.add(p);
+    while (stack.length) {
+      const cur = stack.pop();
+      region.push(cur);
+      for (const n of neighbors(cur, size)) {
+        if (isEmpty(n)) {
+          if (!seen.has(n)) { seen.add(n); stack.push(n); }
+        } else {
+          border.add(board[n]);
+          if (seki.has(n)) sekiBorder = true;
+        }
+      }
+    }
+
+    const area = region.length;
+    if (border.size === 1 && !(japanese && sekiBorder)) {
+      const owner = [...border][0];
+      if (owner === 1) black += area;
+      else white += area;
+      continue;
+    }
+    if (border.size === 0) {
+      // Fully empty board region — split evenly (komi handled separately).
+      black += area * 0.5;
+      white += area * 0.5;
+      continue;
+    }
+    // Contested: soft-assign by influence summed over region.
+    let bInf = 0, wInf = 0;
+    for (const q of region) {
+      const inf = influenceAt(board, q, size);
+      bInf += inf.black;
+      wInf += inf.white;
+    }
+    const sum = bInf + wInf;
+    let bShare, wShare;
+    if (sum < 1e-6) {
+      bShare = 0.5;
+      wShare = 0.5;
+    } else {
+      bShare = bInf / sum;
+      wShare = wInf / sum;
+      // Soften extremes — never give 100% of contested dame.
+      bShare = 0.15 + bShare * 0.7;
+      wShare = 0.15 + wShare * 0.7;
+      const norm = bShare + wShare;
+      bShare /= norm;
+      wShare /= norm;
+    }
+    black += area * bShare;
+    white += area * wShare;
+  }
+
+  white += komi;
+
+  // Light liberty/safety adjustment so fights still move the needle.
+  const safety = staticEval(state, 1) * 0.12;
+  black += safety / 2;
+  white -= safety / 2;
+
+  const round1 = (x) => Math.round(x * 10) / 10;
+  const lead = black - white;
+  const k = size >= 19 ? 12 : 8;
+  let winRateBlack = 1 / (1 + Math.exp(-lead / k));
+  winRateBlack = Math.min(0.98, Math.max(0.02, winRateBlack));
   return {
-    black: Math.round(black * 10) / 10,
-    white: Math.round(white * 10) / 10,
-    lead: Math.round((black - white) * 10) / 10,
-    raw: Math.round(blackLead * 10) / 10,
+    black: round1(black),
+    white: round1(white),
+    lead: round1(lead),
+    raw: round1(safety / 0.12),
+    winRateBlack: round1(winRateBlack * 100) / 100,
+    winRate: round1(winRateBlack * 100) / 100,
   };
+}
+
+/** Computer's estimated win rate from Black's winRateBlack (color 1|2). */
+export function computerWinRate(state, color) {
+  const e = estimatePosition(state);
+  const wr = color === 1 ? e.winRateBlack : (1 - e.winRateBlack);
+  return Math.round(wr * 100) / 100;
 }
 
 function urgentPoints(state) {
@@ -356,15 +485,25 @@ function refineCandidates(candidates, cfg, color, deadline) {
     if (cfg.searchDepth >= 2 && bestState && cfg.useStaticEval) {
       c.value += staticEval(bestState, color) * 0.75;
       let ourGain = 0;
-      const followCfg = { ...cfg, replyCap: Math.min(20, cfg.replyCap || 20) };
-      for (const p of replyCandidates(bestState, null, followCfg)) {
+      let bestFollowScore = -Infinity;
+      const followCfg = { ...cfg, replyCap: Math.min(cfg.searchDepth >= 3 ? 28 : 20, cfg.replyCap || 20) };
+      for (const p of replyCandidates(bestState, c.p, followCfg)) {
         if (performance.now() >= deadline) break;
         try {
           const follow = play(bestState, p);
-          ourGain = Math.max(ourGain, follow.captures[color - 1] - bestState.captures[color - 1]);
+          const cap = follow.captures[color - 1] - bestState.captures[color - 1];
+          ourGain = Math.max(ourGain, cap);
+          if (cfg.searchDepth >= 3) {
+            const followScore = staticEval(follow, color) + cap * cfg.captureWeight * 0.35;
+            if (followScore > bestFollowScore) bestFollowScore = followScore;
+          }
         } catch { /* illegal */ }
       }
       c.value += ourGain * (cfg.captureWeight * 0.5);
+      // Depth 3: extra ply — credit our best follow-up staticEval/capture after opponent reply.
+      if (cfg.searchDepth >= 3 && bestFollowScore > -Infinity) {
+        c.value += bestFollowScore * 0.45;
+      }
     }
   }
   top.sort((a, b) => b.value - a.value);
@@ -428,7 +567,44 @@ export function chooseMove(state, level = 'easy') {
     const openCfg = { ...cfg, pickPool: Math.max(cfg.pickPool, 4), temperature: Math.max(cfg.temperature, 0.35) };
     return pickFromPool(ranked, openCfg);
   }
+
+  // Medium/hard: prefer moves that keep computer win-rate >= 50% when available.
+  // Urgent liberty fights (huge capture/save already baked into value) still override.
+  if ((cfg.strength >= 2) && ranked.length && !hasUrgentOverride(ranked, fighting)) {
+    const floorPick = applyWinRateFloor(ranked, color, cfg);
+    if (floorPick != null) return floorPick;
+  }
   return pickFromPool(ranked, cfg);
+}
+
+function hasUrgentOverride(ranked, fighting) {
+  if (!fighting || !ranked.length) return false;
+  // Huge tactical swing vs next — treat as override (capture/save already dominates value).
+  const best = ranked[0].value;
+  const second = ranked[1]?.value ?? -Infinity;
+  return best - second >= 25 || best >= 40;
+}
+
+function applyWinRateFloor(ranked, color, cfg) {
+  const margin = cfg.strength >= 3 ? 8 : 14;
+  const bestVal = ranked[0].value;
+  const pool = ranked.filter(c => c.value >= bestVal - margin);
+  const scored = pool.map(c => {
+    const e = estimatePosition(c.next);
+    const wr = color === 1 ? e.winRateBlack : (1 - e.winRateBlack);
+    return { p: c.p, wr, value: c.value };
+  });
+  const safe = scored.filter(s => s.wr >= 0.5);
+  if (safe.length) {
+    safe.sort((a, b) => b.wr - a.wr || b.value - a.value);
+    // Hard: take best safe; medium: softer — allow pickPool among safe.
+    if (cfg.strength >= 3) return safe[0].p;
+    const safeCfg = { ...cfg, pickPool: Math.min(cfg.pickPool, safe.length) };
+    return pickFromPool(safe.map(s => ({ p: s.p, value: s.value + (s.wr - 0.5) * 6 })), safeCfg);
+  }
+  // All below 50%: recovery — maximize computer win rate.
+  scored.sort((a, b) => b.wr - a.wr || b.value - a.value);
+  return scored[0].p;
 }
 
 export function levelProfile(level) {

@@ -14,6 +14,7 @@ import {RunTutorial} from '../tutorial/RunTutorial.js';
 import {helpButton} from '../tutorial/GameTutorial.js';
 import {worldTutorial} from '../tutorial/TutorialContent.js';
 import {countBadge,refreshPlayCounts,recordPlay} from '../stats/PlayCounts.js';
+import {arcadeSectionMarkup,startArcade,playKeyForArcade} from '../arcade/ArcadeHub.mjs';
 
 // 世界ゲームはランキング参加の有無に関係なく、1回の挑戦を5分間に統一する。
 const WORLD_GAME_TIME_LIMIT_MS=5*60*1000;
@@ -56,9 +57,11 @@ function saveGradeProgress(){if(!gradeRoute||!run||run.timedOut||run.score<800)r
 function render(){
  queueMicrotask(()=>{
   if(view==='play')return;
-  app.querySelectorAll('[data-action^="play:"]').forEach(button=>{
+  app.querySelectorAll('[data-action^="play:"], [data-action^="arcade:"]').forEach(button=>{
    const parent=button.closest('.card-body')||button.parentElement;
-   if(!parent.querySelector('[data-play-count]'))parent.insertAdjacentHTML('beforeend',countBadge(`world:${button.dataset.action.split(':')[1]}`));
+   const kind=button.dataset.action.split(':')[0],id=button.dataset.action.split(':')[1];
+   const key=kind==='arcade'?playKeyForArcade(id):`world:${id}`;
+   if(!parent.querySelector('[data-play-count]'))parent.insertAdjacentHTML('beforeend',countBadge(key));
   });
   void refreshPlayCounts(app);
  });
@@ -67,7 +70,7 @@ function render(){
  const gradeLink=document.querySelector('#grade-entry-link');gradeLink.textContent=locale==='zh'?'按年级学习':locale==='ja'?'がくねん':'School year';gradeLink.href=gradeEntryUrl({country,locale,profile:gradeRoute?.profile||params.get('returnCurriculum'),year:gradeRoute?.year||params.get('returnYear')});
  document.querySelector('#login').textContent=member?t().logged:t().login;document.querySelector('#footer-text').textContent=t().footer;
  if(view==='home'){
-  app.innerHTML=`<section class="hero"><div><p class="eyebrow">${t().kicker}</p><h1>${t().title}</h1><p>${t().intro}</p></div><div class="orbit" aria-hidden="true"><span>🧩</span><small>DEDUCE · PLAN · SOLVE</small></div></section><div class="section-top"><div><h2>${t().choose}</h2><p class="muted">${t().skills}</p></div><label>${t().level} <select id="level">${t().levels.map((name,i)=>`<option value="${i+1}" ${level===i+1?'selected':''}>${name}</option>`).join('')}</select></label></div>${feedback?`<p class="status" role="status">${esc(feedback)}</p>`:''}<div class="cards">${GAMES.map(id=>`<article class="card" id="game-${id}"><div class="card-art" style="--tint:${art[id][1]}" aria-hidden="true">${art[id][0]}</div><div class="card-body"><span class="tag">${t().games[id][1]}</span><h3>${t().games[id][0]}</h3><p>${t().games[id][2]}</p>${guideLink(id,locale)}<div class="actions">${button(`play:${id}`,t().play,'primary')}${button(`board:${id}`,t().board)}</div></div></article>`).join('')}</div><aside class="rules"><p><b>${t().rules}</b></p><p>${t().privacy}</p></aside>`;
+  app.innerHTML=`<section class="hero"><div><p class="eyebrow">${t().kicker}</p><h1>${t().title}</h1><p>${t().intro}</p></div><div class="orbit" aria-hidden="true"><span>🧩</span><small>DEDUCE · PLAN · SOLVE</small></div></section>${gradeRoute?'':arcadeSectionMarkup(locale,{esc,button})}<div class="section-top"><div><h2>${t().choose}</h2><p class="muted">${t().skills}</p></div><label>${t().level} <select id="level">${t().levels.map((name,i)=>`<option value="${i+1}" ${level===i+1?'selected':''}>${name}</option>`).join('')}</select></label></div>${feedback?`<p class="status" role="status">${esc(feedback)}</p>`:''}<div class="cards">${GAMES.map(id=>`<article class="card" id="game-${id}"><div class="card-art" style="--tint:${art[id][1]}" aria-hidden="true">${art[id][0]}</div><div class="card-body"><span class="tag">${t().games[id][1]}</span><h3>${t().games[id][0]}</h3><p>${t().games[id][2]}</p>${guideLink(id,locale)}<div class="actions">${button(`play:${id}`,t().play,'primary')}${button(`board:${id}`,t().board)}</div></div></article>`).join('')}</div><aside class="rules"><p><b>${t().rules}</b></p><p>${t().privacy}</p></aside>`;
   app.insertAdjacentHTML('afterbegin',townEntry(locale,country));
   const picker=document.querySelector('#level');picker.disabled=!!gradeRoute;if(gradeRoute)app.querySelector('.section-top .muted').textContent=yearLabel(gradeRoute.year,locale);picker.onchange=e=>{level=Number(e.target.value);};
   if(gradeRoute)app.querySelectorAll('.card').forEach(card=>{const id=card.querySelector('[data-action^="play:"]').dataset.action.split(':')[1];if(!availableTasks(gradeRoute.profile,gradeRoute.year,gradeRoute.subject).some(task=>task.game===id))card.remove();});
@@ -144,7 +147,7 @@ async function loadBoard(){const token=++epoch,target=app.querySelector('#board-
 app.addEventListener('click',event=>{
  const el=event.target.closest('[data-action]');if(!el||el.disabled)return;const[action,value]=el.dataset.action.split(':');
  interaction.tap();
- if(action==='home')return goHome();if(action==='play')return void start(value);if(action==='board'){leave();game=value;view='board';render();window.scrollTo(0,0);return void loadBoard();}if(action==='refresh')return void loadBoard();if(action==='check')return void submit();if(!run||busy||fatal)return;
+ if(action==='home')return goHome();if(action==='arcade')return void startArcade(value,{locale,onExit:()=>{if(view==='home')render();}});if(action==='play')return void start(value);if(action==='board'){leave();game=value;view='board';render();window.scrollTo(0,0);return void loadBoard();}if(action==='refresh')return void loadBoard();if(action==='check')return void submit();if(!run||busy||fatal)return;
  if(action==='next'&&nextState){if(nextState.complete){view='result';clearInterval(timer);localeSelect.disabled=false;render();if(run.score>=800&&!run.timedOut)interaction.victory();return;}run.index=nextState.index;run.question=nextState.question;answer=initialAnswer(run.question);nextState=null;feedback='';feedbackGood=false;renderPlay();return;}if(nextState)return;
  const i=Number(value);interacted=true;
  if(action==='rotate')answer[i]=(answer[i]+1)%4;

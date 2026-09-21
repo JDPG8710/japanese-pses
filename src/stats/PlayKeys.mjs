@@ -8,7 +8,8 @@ export function japanesePlayKey(gameType,mode){
  const value=specialized.includes(mode)?mode:gameType;
  return `jp:${aliases[value]||value}`;
 }
-export const PLAY_KEYS=Object.freeze([...japaneseGames.map(id=>`jp:${id}`),...GAMES.map(id=>`world:${id}`),...Object.keys(TOPICS).map(id=>`lesson:${id}`)]);
+const arcadeGames=['race','breakout','fruit','ninja'];
+export const PLAY_KEYS=Object.freeze([...japaneseGames.map(id=>`jp:${id}`),...GAMES.map(id=>`world:${id}`),...Object.keys(TOPICS).map(id=>`lesson:${id}`),...arcadeGames.map(id=>`arcade:${id}`)]);
 const allowed=new Set(PLAY_KEYS);
 export const validPlayKey=key=>typeof key==='string'&&allowed.has(key);
 export function formatPlayCount(value){

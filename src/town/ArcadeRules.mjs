@@ -17,9 +17,10 @@ export const ITEMS=[
  {id:'hint',price:6,icon:'💡',kind:'use',zh:'提示卡',en:'Hint card',ja:'ヒントカード',effect:'hint'}
 ];
 const int=(v,lo,hi,d)=>Number.isSafeInteger(v)&&v>=lo&&v<=hi?v:d;
-export function newExpansion(){return {version:2,character:'explorer',accessory:null,gear:[],inventory:{shield:0,hint:0},runs:{},best:Object.fromEntries(MODES.map(id=>[id,0])),total:0};}
+export function newExpansion(){return {version:2,cameraMode:'third',character:'explorer',accessory:null,gear:[],inventory:{shield:0,hint:0},runs:{},best:Object.fromEntries(MODES.map(id=>[id,0])),total:0};}
 export function restoreExpansion(raw){
  const e=newExpansion();if(!raw||raw.version!==2)return e;
+ e.cameraMode=raw.cameraMode==='first'?'first':'third';
  e.character=AVATARS.some(a=>a.id===raw.character)?raw.character:e.character;
  e.gear=ITEMS.filter(i=>i.kind!=='use'&&Array.isArray(raw.gear)&&raw.gear.includes(i.id)).map(i=>i.id);
  e.accessory=['backpack','crown'].includes(raw.accessory)&&e.gear.includes(raw.accessory)?raw.accessory:null;

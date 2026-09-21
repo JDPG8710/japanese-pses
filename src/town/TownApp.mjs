@@ -1,22 +1,25 @@
 import {TEXT} from './TownText.mjs?v=1';
 import {SAVE_KEY,PRODUCTS,FURNITURE,MISSIONS,PLACES,loadState,restoreState,saveState,startOrder,submitOrder,completeMission,buyFurniture,placeFurniture,englishOrder} from './TownRules.mjs?v=1';
-import {TownScene,AVATAR_COLORS} from './TownScene.mjs?v=1';
+import {TownScene,AVATAR_COLORS} from './TownScene3D.mjs?v=2';
+import {createExpansion} from './TownExpansion.mjs?v=2';
+import {ARCADE_TEXT} from './ArcadeText.mjs?v=2';
 
 const $=id=>document.getElementById(id),esc=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let storage;try{storage=localStorage;}catch{}
 const params=new URLSearchParams(location.search);let savedLocale;try{savedLocale=storage?.getItem('world-locale');}catch{}
 let locale=[params.get('locale'),savedLocale,navigator.language?.slice(0,2),'en'].find(l=>TEXT[l]);
 const state=loadState(storage),w=()=>TEXT[locale],dialog=$('town-dialog');
-let modal=null,translated=false,feedback='',feedbackGood=false,selected=null,saveOK=true,scene;
+let modal=null,translated=false,feedback='',feedbackGood=false,selected=null,saveOK=true,scene,expansion;
 const label=p=>p[locale]||p.en;
 function persist(){saveOK=saveState(storage,state);$('save-status').textContent=saveOK?w().saved:w().saveFail;$('save-status').classList.toggle('save-error',!saveOK);}
 function button(action,text,cls=''){return `<button type="button" data-action="${action}" class="${cls}">${esc(text)}</button>`;}
 function shell(title,content,kind=''){
+  expansion?.disposePreview();
   $('dialog-body').innerHTML=`<div class="dialog-heading"><div><p class="eyebrow">${esc(w().chapter)}</p><h2 id="dialog-title">${esc(title)}</h2></div>${button('close','×','close-button')}</div><div class="dialog-content ${kind}">${content}</div>`;
   dialog.querySelector('.close-button').setAttribute('aria-label',w().close);
   if(!dialog.open){dialog.showModal();dialog.querySelector('button')?.focus();}
 }
-function close(){dialog.close();modal=null;feedback='';translated=false;scene?.stop();$('town-canvas').focus({preventScroll:true});window.speechSynthesis?.cancel();}
+function close(){expansion?.disposePreview();dialog.close();modal=null;feedback='';translated=false;scene?.stop();$('town-canvas').focus({preventScroll:true});window.speechSynthesis?.cancel();}
 dialog.addEventListener('cancel',e=>{e.preventDefault();close();});
 function refresh(){
   document.documentElement.lang=locale;document.title=w().title+' · Piko Game';$('locale').value=locale;
@@ -32,7 +35,7 @@ function refresh(){
   $('go-mission').textContent=`${w().explore} → ${w()[`${finished?'home':MISSIONS[state.mission].place}Short`]}`;
   $('progress').value=state.mission;$('progress').setAttribute('aria-label',w().progress);$('progress-count').textContent=`${state.mission} / 10`;
   $('journal').innerHTML=w().missions.map((name,i)=>`<li class="${i<state.mission?'complete':i===state.mission?'current':''}"><span>${i<state.mission?'✓':String(i+1).padStart(2,'0')}</span>${esc(name)}</li>`).join('');
-  updateNear(scene?.near);$('save-status').textContent=saveOK?w().local:w().saveFail;
+  updateNear(scene?.near);$('save-status').textContent=saveOK?w().local:w().saveFail;expansion?.rerender();
 }
 function updateNear(id){$('interact').disabled=!id;$('interact').textContent=id?`${w().talk} · ${{guide:'Piko',shop:'Mia',home:'Noah'}[id]}`:w().near;}
 function intro(){modal='intro';shell(w().hello,`<div class="welcome-art" aria-hidden="true"><span>☀</span><b>⌂</b><i>✳</i></div><p class="intro-copy">${w().intro}</p><div class="intro-features"><span>🔤 English</span><span>🔢 Maths</span><span>🌱 My home</span></div>${button('begin',w().start,'primary wide')}<small class="local-detail">${w().local}</small>`,'welcome');}
@@ -48,6 +51,7 @@ function renderModal(){
   if(modal==='help'){shell(w().help,`<div class="npc-talk"><span>🧭</span><p>${w().helpText}</p></div><p>${w().helpKeys}</p>${button('close',w().close,'primary')}`);return;}
   if(modal==='settings'){
     shell(w().settings,`<p>${w().chooseAvatar}</p><div class="outfits">${AVATAR_COLORS.map((color,i)=>`<button type="button" data-avatar="${i}" style="--outfit:${color}" aria-pressed="${state.avatar===i}"><span class="mini-person" aria-hidden="true"></span>${w().avatars[i]}</button>`).join('')}</div><div class="level-settings">${['math','english'].map(k=>`<label>${w()[k]}<select id="${k}-level">${w()[`${k}Levels`].map((name,i)=>`<option value="${i+1}" ${state[k]===i+1?'selected':''}>${name}</option>`).join('')}</select></label>`).join('')}</div><p class="muted">${w().difficultyNote}</p>${button('close',w().close,'primary')}`);
+    expansion?.decorateSettings();
     for(const k of ['math','english'])$(`${k}-level`).onchange=e=>{state[k]=Number(e.target.value);persist();};return;
   }
   if(modal==='guide'){
@@ -131,7 +135,10 @@ document.querySelectorAll('[data-direction]').forEach(el=>{
   el.addEventListener('keyup',()=>scene.direction(el.dataset.direction,false));
   el.addEventListener('blur',()=>scene.direction(el.dataset.direction,false));
 });
-scene=new TownScene($('town-canvas'),{state,words:w,onArrive:showPlace,onMove:()=>{if(state.started)persist();},onNear:updateNear,isPaused:()=>dialog.open||!state.started});
+try{scene=new TownScene($('town-canvas'),{state,words:w,onArrive:showPlace,onMove:()=>{if(state.started)persist();},onNear:updateNear,isPaused:()=>dialog.open||!state.started});
+scene.onGraphicsError=()=>{const el=document.createElement('div');el.className='graphics-error';el.setAttribute('role','alert');el.textContent=ARCADE_TEXT[locale].webgl;document.querySelector('.world-card').append(el);};
+expansion=createExpansion({state,scene,persist,refresh,shell,close,getLocale:()=>locale});
+}catch(error){const el=document.createElement('div');el.className='graphics-error';el.setAttribute('role','alert');el.textContent=ARCADE_TEXT[locale].webgl;document.querySelector('.world-card').append(el);console.error('3D scene unavailable',error);scene={stop(){},travel(){},direction(){},near:null};}
 window.addEventListener('pagehide',()=>{if(state.started)persist();});
 window.addEventListener('storage',e=>{if(e.key===SAVE_KEY&&e.newValue){try{Object.assign(state,restoreState(JSON.parse(e.newValue)));scene.stop();if(dialog.open)close();refresh();}catch{}}});
 refresh();

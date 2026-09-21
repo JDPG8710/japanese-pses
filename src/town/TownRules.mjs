@@ -1,4 +1,5 @@
 // 小镇规则与浏览器解耦。所有数值都以整数星币表示；第一版只保存本机进度。
+import {newExpansion,restoreExpansion} from './ArcadeRules.mjs?v=2';
 export const SAVE_KEY = 'piko-town-v1';
 export const PRODUCTS = [
   {id:'apple',icon:'🍎',en:'apple',plural:'apples',zh:'苹果',ja:'りんご',price:3},
@@ -58,7 +59,7 @@ export function findPath(from,to){
   const result=[];for(let cur=end;parents.get(key(...cur));cur=parents.get(key(...cur)))result.unshift({x:cur[0]*step,y:cur[1]*step});
   return result;
 }
-export function newState(){return {version:1,mission:0,coins:0,xp:0,math:1,english:1,avatar:0,player:{x:560,y:555},owned:[],room:Array(9).fill(null),active:null,stats:{correct:0,mistakes:0,hints:0},started:false};}
+export function newState(){return {expansion:newExpansion(),version:1,mission:0,coins:0,xp:0,math:1,english:1,avatar:0,player:{x:560,y:555},owned:[],room:Array(9).fill(null),active:null,stats:{correct:0,mistakes:0,hints:0},started:false};}
 const integer=(x,min,max,fallback)=>Number.isInteger(x)&&x>=min&&x<=max?x:fallback;
 export function orderFor(mission,math=1,english=1){
   const spec=MISSIONS[mission];if(!spec||!spec.items)return null;
@@ -68,7 +69,7 @@ export function orderFor(mission,math=1,english=1){
 }
 export function restoreState(raw){
   const s=newState();if(!raw||raw.version!==1)return s;
-  s.mission=integer(raw.mission,0,10,0);s.coins=integer(raw.coins,0,10000,0);s.xp=integer(raw.xp,0,10000,0);
+  s.expansion=restoreExpansion(raw.expansion);s.mission=integer(raw.mission,0,10,0);s.coins=integer(raw.coins,0,1000000000,0);s.xp=integer(raw.xp,0,1000000000,0);
   s.math=integer(raw.math,1,3,1);s.english=integer(raw.english,1,3,1);s.avatar=integer(raw.avatar,0,3,0);s.started=raw.started===true;
   if(canWalk(raw.player?.x,raw.player?.y)&&Number.isFinite(raw.player.x)&&Number.isFinite(raw.player.y))s.player={x:raw.player.x,y:raw.player.y};
   s.owned=FURNITURE.filter(f=>Array.isArray(raw.owned)&&raw.owned.includes(f.id)).map(f=>f.id);

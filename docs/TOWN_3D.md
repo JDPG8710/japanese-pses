@@ -86,3 +86,15 @@ node scripts/preview-town.mjs --built --port=4191
 - 发布后在正式域名运行完整手动浏览器验收：16 / 16 通过；真实双指触控及手机布局检查通过；生产接口检查 8 / 8 通过。
 - 对正式域名的 HTML 资源版本，以及 `TownScene3D.mjs`、`PlatformCourse.mjs`、`TownExpansion.mjs` 进行字节核对，与测试过的构建一致。
 - 未更新独立后端 Worker、D1 数据或另一任务的 AdSense 页面。
+
+## 2026-09-22 建筑入口与显示修复发布
+
+- 生产部署：https://e82999d0.manabi-pop.pages.dev 。正式站：https://piko-game.com/town?locale=zh 。
+- 发布源码：cd769d4464fa08cdd25f6eed35b1de829680e42e；资源版本：be15dc047050。
+- 回滚参考：b481e40f-4a2c-4947-b377-725fa0f35d5e。
+- 移除下方五游戏卡片及传送门菜单。五座游戏建筑与冒险商店均需实际走入；退出或关闭大厅回到门外，避免重复弹窗。
+- 题目独立放在画布上方；答案标牌至少 22px，自动错开并连接场景目标。出生、负首帧时间差和地面以下恢复已覆盖测试。
+- 发布前：主回归 212/212、原版故事浏览器 18/18、3D 浏览器 16/16、边界试玩 7/7、真实双指触控、规则与地图模拟全部通过。最终构建通过三组布局/出生回归与原版故事、3D 和触屏验收。
+- 发布后：正式域名三组布局/出生回归、双指触屏和两视角手机布局均通过；生产接口 8/8。
+- 核对正式 HTML 资源版本与页面源码前缀；Cloudflare 会追加防护脚本。TownApp、TownScene3D、TownExpansion、TownBuildings 和 expansion.css 与构建文件逐字节一致。
+- 本地最终构建保持在 http://127.0.0.1:4191/town?locale=zh 运行。

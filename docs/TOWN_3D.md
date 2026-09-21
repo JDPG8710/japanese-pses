@@ -72,3 +72,13 @@ node scripts/preview-town.mjs --built --port=4191
 引擎接入依据 [Three.js 安装说明](https://threejs.org/manual/pages/installation.html) 和 [WebGLRenderer 文档](https://threejs.org/docs/pages/WebGLRenderer.html)。
 
 本次代码在 `codex/learning-town-3d` 分支开发和提交，避免混入另一任务尚未发布的 AdSense 页面修改。
+
+## 2026-09-22 正式发布记录
+
+- 正式地址：`https://piko-game.com/town?locale=zh`。
+- Cloudflare Pages 部署：`https://b481e40f.manabi-pop.pages.dev`，生产分支 `main`。
+- 发布源码提交：`dbeaaa1f2ff2845d77caaa5c3b59dee5b07c3b99`；静态资源版本：`2728c02f0e4f`。
+- 回滚参考：此前生产部署 `af6ef5a0-9c79-4a74-ab66-2c033bed321b`。
+- 发布后在正式域名运行完整手动浏览器验收：16 / 16 通过；真实双指触控及手机布局检查通过；生产接口检查 8 / 8 通过。
+- 对正式域名的 HTML 资源版本，以及 `TownScene3D.mjs`、`PlatformCourse.mjs`、`TownExpansion.mjs` 进行字节核对，与测试过的构建一致。
+- 未更新独立后端 Worker、D1 数据或另一任务的 AdSense 页面。

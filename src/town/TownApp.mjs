@@ -26,7 +26,7 @@ function refresh(){
   const texts={'town-title':'title','town-tag':'tag','world-link':'back','chapter':'chapter','mission-label':'mission','progress-label':'progress','journal-label':'journal','local-note':'local','walk-tip':'walk','coins-label':'coins','xp-label':'xp','guide-label':'guide','shop-label':'shop','home-label':'home','character':'settings','privacy-link':'privacy','terms-link':'terms'};
   for(const [id,key]of Object.entries(texts))$(id).textContent=w()[key];
   $('help').setAttribute('aria-label',w().help);$('world-link').href=`world.html?${new URLSearchParams({locale,...(params.get('country')?{country:params.get('country')}:{})})}`;
-  $('town-canvas').setAttribute('aria-label',`${w().title}. ${w().helpKeys}`);
+  $('town-canvas').setAttribute('aria-label',`${w().title}. ${ARCADE_TEXT[locale].controls}. ${ARCADE_TEXT[locale].touch}`);
   $('coins').textContent=state.coins;$('xp').textContent=state.xp;
   const finished=state.mission>=10;
   $('mission-number').textContent=finished?'✦':String(state.mission+1).padStart(2,'0');
@@ -48,7 +48,7 @@ function showPlace(id){
 }
 function renderModal(){
   if(modal==='intro'){intro();return;}
-  if(modal==='help'){shell(w().help,`<div class="npc-talk"><span>🧭</span><p>${w().helpText}</p></div><p>${w().helpKeys}</p>${button('close',w().close,'primary')}`);return;}
+  if(modal==='help'){shell(w().help,`<div class="npc-talk"><span>🧭</span><p>${expansion?.isPlaying()?ARCADE_TEXT[locale].guideNote:w().helpText}</p></div><p>${ARCADE_TEXT[locale].controls}</p><p>${ARCADE_TEXT[locale].touch}</p>${button('close',w().close,'primary')}`);return;}
   if(modal==='settings'){
     shell(w().settings,`<p>${w().chooseAvatar}</p><div class="outfits">${AVATAR_COLORS.map((color,i)=>`<button type="button" data-avatar="${i}" style="--outfit:${color}" aria-pressed="${state.avatar===i}"><span class="mini-person" aria-hidden="true"></span>${w().avatars[i]}</button>`).join('')}</div><div class="level-settings">${['math','english'].map(k=>`<label>${w()[k]}<select id="${k}-level">${w()[`${k}Levels`].map((name,i)=>`<option value="${i+1}" ${state[k]===i+1?'selected':''}>${name}</option>`).join('')}</select></label>`).join('')}</div><p class="muted">${w().difficultyNote}</p>${button('close',w().close,'primary')}`);
     expansion?.decorateSettings();

@@ -135,7 +135,7 @@ document.querySelectorAll('[data-direction]').forEach(el=>{
   el.addEventListener('keyup',()=>scene.direction(el.dataset.direction,false));
   el.addEventListener('blur',()=>scene.direction(el.dataset.direction,false));
 });
-try{scene=new TownScene($('town-canvas'),{state,words:w,onArrive:showPlace,onMove:()=>{if(state.started)persist();},onNear:updateNear,isPaused:()=>dialog.open||!state.started});
+try{scene=new TownScene($('town-canvas'),{state,words:w,locale:()=>locale,onArrive:showPlace,onMove:()=>{if(state.started)persist();},onNear:updateNear,isPaused:()=>dialog.open||!state.started});
 scene.onGraphicsError=()=>{const el=document.createElement('div');el.className='graphics-error';el.setAttribute('role','alert');el.textContent=ARCADE_TEXT[locale].webgl;document.querySelector('.world-card').append(el);};
 expansion=createExpansion({state,scene,persist,refresh,shell,close,getLocale:()=>locale});
 }catch(error){const el=document.createElement('div');el.className='graphics-error';el.setAttribute('role','alert');el.textContent=ARCADE_TEXT[locale].webgl;document.querySelector('.world-card').append(el);console.error('3D scene unavailable',error);scene={stop(){},travel(){},direction(){},near:null};}

@@ -16,3 +16,7 @@ ARCADE_TEXT.en.modes.obby[1]='Jump across islands with randomized sizes, spacing
 ARCADE_TEXT.en.modes.tower[1]='Climb a randomized route with changing heights and platform widths.';
 ARCADE_TEXT.ja.modes.obby[1]='大きさ・間隔・向きが変わる足場を跳んで、正しい答えへ。';
 ARCADE_TEXT.ja.modes.tower[1]='高さや幅が変わるランダムなルートを、自分でジャンプして登ろう。';
+
+Object.assign(ARCADE_TEXT.zh,{districtTip:'沿路向南走进游戏街区 · 进入建筑选择游戏',play:'开始游戏'});
+Object.assign(ARCADE_TEXT.en,{districtTip:'Walk south along the road · Enter a building to play',play:'Start game'});
+Object.assign(ARCADE_TEXT.ja,{districtTip:'道を南へ · 建物に入ってゲームを選ぼう',play:'ゲームをはじめる'});

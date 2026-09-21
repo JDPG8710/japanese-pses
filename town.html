@@ -26,8 +26,10 @@
     <div class="town-layout">
       <section class="world-card" aria-label="Town map">
         <div class="world-top"><span class="live-dot"></span><span id="chapter"></span><span class="weather" aria-hidden="true">☀ 24°</span></div>
+        <div class="scene-viewport">
         <canvas id="town-canvas" tabindex="0" aria-label="Town map. Use arrow keys to walk and E to talk, or use the place buttons below."></canvas>
         <div class="map-caption"><span id="walk-tip"></span><span class="compass" aria-hidden="true">N ↑</span></div>
+        </div>
         <div class="world-controls"><div class="dpad" aria-label="Movement"><button data-direction="ArrowUp" aria-label="↑" type="button">↑</button><button data-direction="ArrowLeft" aria-label="←" type="button">←</button><button data-direction="ArrowDown" aria-label="↓" type="button">↓</button><button data-direction="ArrowRight" aria-label="→" type="button">→</button></div><button id="interact" class="primary" type="button" disabled></button></div>
       </section>
       <aside class="quest-panel"><p class="eyebrow" id="mission-label"></p><div class="quest-number" id="mission-number"></div><h2 id="mission-title"></h2><p id="mission-objective"></p><button id="go-mission" class="primary" type="button"></button><div class="story-progress"><div><span id="progress-label"></span><b id="progress-count"></b></div><progress id="progress" max="10" value="0"></progress></div><details class="journal"><summary id="journal-label"></summary><ol id="journal"></ol></details><div class="note"><span aria-hidden="true">🌱</span><p id="local-note"></p></div></aside>

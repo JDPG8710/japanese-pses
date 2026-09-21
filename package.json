@@ -38,7 +38,9 @@
     "preview:town:3d": "node scripts/preview-town.mjs --port=4190",
     "test:town:3d:edges": "node tests/test_town_3d_edges.mjs",
     "test:town:platforms": "node tests/test_platform_course.mjs",
-    "test:town:touch": "node tests/test_town_touch.mjs"
+    "test:town:touch": "node tests/test_town_touch.mjs",
+    "test:town:buildings": "node tests/test_town_buildings.mjs",
+    "test:town:presentation": "node tests/test_town_presentation.mjs"
   },
   "devDependencies": {
     "playwright-core": "^1.63.0",

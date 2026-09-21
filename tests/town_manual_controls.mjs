@@ -1,3 +1,4 @@
+import {TOWN_BUILDINGS} from '../src/town/TownBuildings.mjs';
 // Browser tests use the same keyboard / pointer inputs available to a player.
 // No teleport, game-state mutation, answer submission hook, or production autoplay.
 import assert from 'node:assert/strict';
@@ -11,12 +12,12 @@ export async function face(page,target){
  while(Math.abs(remaining)>.1){const pixels=Math.sign(remaining)*Math.min(Math.abs(remaining),Math.max(40,rect.width*.3));const startX=rect.x+rect.width/2,startY=rect.y+rect.height*.55;await page.mouse.move(startX,startY);await page.mouse.down();await page.mouse.move(startX+pixels,startY,{steps:4});await page.mouse.up();remaining-=pixels;}
  await canvas.focus();
 }
-export async function moveTo(page,target,{jump=false,tolerance=.15,finishWhenResult=false}={}){
+export async function moveTo(page,target,{jump=false,tolerance=.15,finishWhenResult=false,finishWhenDialog=false}={}){
  await face(page,target);const [x,,z]=await position(page),distance=Math.hypot(target.x-x,target.z-z);if(distance<tolerance)return;
  // Space is an explicit player input for each jump, never an internal game call.
  const mode=await page.locator('#town-canvas').getAttribute('data-mode'),run=(await readSave(page)).expansion.runs[mode],signature=JSON.stringify([run?.solved,run?.hearts,run?.memoryIndex]);
  if(jump)await page.keyboard.press('Space');await page.keyboard.down('w');
- try{await page.waitForFunction(({x,z,tx,tz,d,tolerance,mode,signature,finishWhenResult})=>{const r=JSON.parse(localStorage.getItem('piko-town-v1')).expansion.runs[mode];if(finishWhenResult&&JSON.stringify([r?.solved,r?.hearts,r?.memoryIndex])!==signature)return true;const p=document.querySelector('#town-canvas').dataset.position.split(',').map(Number);return ((p[0]-x)*(tx-x)+(p[2]-z)*(tz-z))/d>=d-tolerance;},{x,z,tx:target.x,tz:target.z,d:distance,tolerance,mode,signature,finishWhenResult},{timeout:14000});}finally{await page.keyboard.up('w');}
+ try{await page.waitForFunction(({x,z,tx,tz,d,tolerance,mode,signature,finishWhenResult,finishWhenDialog})=>{if(finishWhenDialog&&document.querySelector('#town-dialog').open)return true;const r=JSON.parse(localStorage.getItem('piko-town-v1')).expansion.runs[mode];if(finishWhenResult&&JSON.stringify([r?.solved,r?.hearts,r?.memoryIndex])!==signature)return true;const p=document.querySelector('#town-canvas').dataset.position.split(',').map(Number);return ((p[0]-x)*(tx-x)+(p[2]-z)*(tz-z))/d>=d-tolerance;},{x,z,tx:target.x,tz:target.z,d:distance,tolerance,mode,signature,finishWhenResult,finishWhenDialog},{timeout:14000});}finally{await page.keyboard.up('w');}
  if(jump&&!finishWhenResult){await page.waitForFunction(y=>{const c=document.querySelector('#town-canvas');return c.dataset.grounded==='true'&&Math.abs(Number(c.dataset.position.split(',')[1])-y)<.06;},target.y,{timeout:10000});}
 }
 export async function reachSkyTarget(page,mode,index){
@@ -33,4 +34,13 @@ export async function solve(page,mode){
   while(!r.solved){await page.waitForFunction(()=>document.querySelector('[data-memory-replay]')?.disabled===false);const q=questionFor(r),before=r.memoryIndex;await moveTo(page,{x:(q.answer%2?1:-1)*4,z:q.answer<2?-3:3},{finishWhenResult:true});await page.waitForFunction(before=>{const r=JSON.parse(localStorage.getItem('piko-town-v1')).expansion.runs.memory;return r.solved||r.memoryIndex!==before;},before);r=(await readSave(page)).expansion.runs.memory;}
  }
  await page.waitForFunction(mode=>JSON.parse(localStorage.getItem('piko-town-v1')).expansion.runs[mode].solved,mode);
+}
+
+export async function enterBuilding(page,id){
+ const b=TOWN_BUILDINGS.find(b=>b.id===id);
+ if(await page.locator('#town-dialog').evaluate(d=>d.open))await page.locator('.close-button').click();
+ await moveTo(page,{x:(await position(page))[0],z:15});await moveTo(page,{x:b.x,z:15});
+ await moveTo(page,{x:b.x,z:b.z-1.8},{finishWhenDialog:true});
+ await page.locator('#town-dialog[open]').waitFor();
+ if(id!=='gear'){await page.locator(`[data-game="${id}"]`).click();await page.locator(`#town-canvas[data-mode="${id}"]`).waitFor();}
 }

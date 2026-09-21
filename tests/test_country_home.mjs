@@ -10,7 +10,11 @@ for(const [code,locale]of [['JP','ja'],['CN','zh'],['US','en'],['GB','en'],['AU'
   const request=new Request('https://example.com/api/location');Object.defineProperty(request,'cf',{value:{country:code}});
   const response=countryResponse(request),body=await response.json();
   assert.equal(body.locale,locale);assert.equal(body.country,normalizeCountry(code));assert.equal(response.headers.get('cache-control'),'private, no-store');
-  assert.deepEqual(Object.keys(body).sort(),['country','locale','source']);
+  assert.deepEqual(Object.keys(body).sort(),['adsBlocked','checkoutBlocked','cnSafeMode','cnSafeModeEnabled','country','locale','source']);
+  assert.equal(body.cnSafeModeEnabled,true);
+  assert.equal(body.cnSafeMode,code==='CN');
+  assert.equal(body.adsBlocked,code==='CN');
+  assert.equal(body.checkoutBlocked,code==='CN');
 }
 assert.equal((await countryResponse(new Request('https://example.com/api/location',{headers:{'cf-ipcountry':'JP','x-forwarded-for':'1.2.3.4'}})).json()).country,null);
 const values=new Map(),storage={getItem:k=>values.get(k),setItem:(k,v)=>values.set(k,v)};

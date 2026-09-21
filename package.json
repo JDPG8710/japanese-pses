@@ -5,6 +5,9 @@
   "description": "譌･譛ｬ縺ｮ蟆丞ｭｦ逕溷髄縺第弌蝗ｳ謨呵ご繧ｲ繝ｼ繝",
   "scripts": {
     "test": "node tests/test_e2e_runner.js",
+    "test:town": "node tests/test_town.mjs",
+    "test:town:browser": "node tests/test_town_browser.mjs",
+    "preview:town": "node scripts/preview-town.mjs",
     "test:go": "node tests/test_go.mjs && node tests/test_go_capacity.mjs && node tests/test_go_19.mjs",
     "test:go:browser": "node tests/test_go_browser.mjs",
     "test:playroom": "node tests/test_playroom.mjs",

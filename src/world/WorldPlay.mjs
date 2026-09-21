@@ -1,4 +1,5 @@
 import {GAMES,makeRounds,evaluate,solution,rotateMask,robotState} from './WorldRules.mjs';
+import {townEntry} from '../town/TownEntry.mjs?v=1';
 import {TEXT} from './WorldText.mjs';
 import {initSiteVisits} from '../stats/SiteVisits.js';
 import {AuthManager} from '../auth/AuthManager.js?v=3';
@@ -65,6 +66,7 @@ function render(){
  document.querySelector('#login').textContent=member?t().logged:t().login;document.querySelector('#footer-text').textContent=t().footer;
  if(view==='home'){
   app.innerHTML=`<section class="hero"><div><p class="eyebrow">${t().kicker}</p><h1>${t().title}</h1><p>${t().intro}</p></div><div class="orbit" aria-hidden="true"><span>🧩</span><small>DEDUCE · PLAN · SOLVE</small></div></section><div class="section-top"><div><h2>${t().choose}</h2><p class="muted">${t().skills}</p></div><label>${t().level} <select id="level">${t().levels.map((name,i)=>`<option value="${i+1}" ${level===i+1?'selected':''}>${name}</option>`).join('')}</select></label></div>${feedback?`<p class="status" role="status">${esc(feedback)}</p>`:''}<div class="cards">${GAMES.map(id=>`<article class="card"><div class="card-art" style="--tint:${art[id][1]}" aria-hidden="true">${art[id][0]}</div><div class="card-body"><span class="tag">${t().games[id][1]}</span><h3>${t().games[id][0]}</h3><p>${t().games[id][2]}</p><div class="actions">${button(`play:${id}`,t().play,'primary')}${button(`board:${id}`,t().board)}</div></div></article>`).join('')}</div><aside class="rules"><p><b>${t().rules}</b></p><p>${t().privacy}</p></aside>`;
+  app.insertAdjacentHTML('afterbegin',townEntry(locale,country));
   const picker=document.querySelector('#level');picker.disabled=!!gradeRoute;if(gradeRoute)app.querySelector('.section-top .muted').textContent=yearLabel(gradeRoute.year,locale);picker.onchange=e=>{level=Number(e.target.value);};
   if(gradeRoute)app.querySelectorAll('.card').forEach(card=>{const id=card.querySelector('[data-action^="play:"]').dataset.action.split(':')[1];if(!availableTasks(gradeRoute.profile,gradeRoute.year,gradeRoute.subject).some(task=>task.game===id))card.remove();});
  }else if(view==='board'){

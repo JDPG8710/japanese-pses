@@ -20,3 +20,7 @@ ARCADE_TEXT.ja.modes.tower[1]='高さや幅が変わるランダムなルート�
 Object.assign(ARCADE_TEXT.zh,{districtTip:'沿路向南走进游戏街区 · 进入建筑选择游戏',play:'开始游戏'});
 Object.assign(ARCADE_TEXT.en,{districtTip:'Walk south along the road · Enter a building to play',play:'Start game'});
 Object.assign(ARCADE_TEXT.ja,{districtTip:'道を南へ · 建物に入ってゲームを選ぼう',play:'ゲームをはじめる'});
+
+Object.assign(ARCADE_TEXT.zh,{districtPark:'果园街区',districtDojo:'忍者道场',districtAlley:'街机巷',districtTrack:'夜赛道',hardVenue:'高难度休闲馆'});
+Object.assign(ARCADE_TEXT.en,{districtPark:'Orchard',districtDojo:'Ninja dojo',districtAlley:'Arcade alley',districtTrack:'Night track',hardVenue:'Hard leisure venue'});
+Object.assign(ARCADE_TEXT.ja,{districtPark:'果樹園エリア',districtDojo:'忍者どうじょう',districtAlley:'アーケード横丁',districtTrack:'ナイトトラック',hardVenue:'HARDレジャー館'});

@@ -1,5 +1,5 @@
 // 小镇规则与浏览器解耦。所有数值都以整数星币表示；第一版只保存本机进度。
-import {buildingBlocks} from './TownBuildings.mjs?v=4';
+import {buildingBlocks} from './TownBuildings.mjs?v=5';
 import {newExpansion,restoreExpansion} from './ArcadeRules.mjs?v=2';
 export const SAVE_KEY = 'piko-town-v1';
 export const PRODUCTS = [
@@ -33,8 +33,10 @@ export const OBSTACLES = [
   {x:145,y:160,w:280,h:170}, {x:710,y:170,w:240,h:160},
   {x:490,y:265,w:130,h:80}, {x:100,y:470,w:235,h:145}
 ];
+// Expanded save-space bounds for the commercial 3D map (world ≈ x±34, z -20..34).
+export const WORLD_BOUNDS=Object.freeze({minX:-300,maxX:1400,minY:-120,maxY:1250});
 export function canWalk(x,y){
-  return x>=45&&x<=1055&&y>=100&&y<=1055&&!buildingBlocks((x-550)/25,(y-380)/25)&&!OBSTACLES.some(r=>x>r.x-14&&x<r.x+r.w+14&&y>r.y-10&&y<r.y+r.h+12);
+  return x>=WORLD_BOUNDS.minX&&x<=WORLD_BOUNDS.maxX&&y>=WORLD_BOUNDS.minY&&y<=WORLD_BOUNDS.maxY&&!buildingBlocks((x-550)/25,(y-380)/25)&&!OBSTACLES.some(r=>x>r.x-14&&x<r.x+r.w+14&&y>r.y-10&&y<r.y+r.h+12);
 }
 export function movePlayer(player,dx,dy){
   const next={...player};
@@ -47,7 +49,7 @@ export function findPath(from,to){
   const step=10,key=(x,y)=>`${x},${y}`,sx=Math.round(from.x/step),sy=Math.round(from.y/step),tx=Math.round(to.x/step),ty=Math.round(to.y/step);
   if(!canWalk(tx*step,ty*step))return [];
   const queue=[[sx,sy]],parents=new Map([[key(sx,sy),null]]);let end;
-  for(let n=0;n<queue.length&&n<14000;n++){
+  for(let n=0;n<queue.length&&n<50000;n++){
     const [x,y]=queue[n];if(x===tx&&y===ty){end=[x,y];break;}
     for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){
       const xx=x+dx,yy=y+dy,k=key(xx,yy);

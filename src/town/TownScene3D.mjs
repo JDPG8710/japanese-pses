@@ -1,6 +1,7 @@
-import {TOWN_BUILDINGS,buildingAt,frameSeconds} from './TownBuildings.mjs?v=4';
-import {ARCADE_TEXT} from './ArcadeText.mjs?v=4';
-import {PLACES,movePlayer,findPath,canWalk} from './TownRules.mjs?v=2';
+import {TOWN_BUILDINGS,CASUAL_ARCADE_IDS,buildingAt,frameSeconds} from './TownBuildings.mjs?v=5';
+import {ARCADE_TEXT} from './ArcadeText.mjs?v=5';
+import {arcadeText} from '../arcade/ArcadeText.mjs?v=1';
+import {PLACES,movePlayer,findPath,canWalk} from './TownRules.mjs?v=3';
 import {THREE,box,ball,label,makeAvatar,animateAvatar,disposeGroup} from './Models3D.mjs?v=2';
 import {generateCourse,advanceVertical,standingOnTarget} from './PlatformCourse.mjs?v=3';
 export const AVATAR_COLORS=['#ec825f','#509fd4','#9c82cf','#62a67a'];
@@ -10,8 +11,8 @@ export class TownScene {
  constructor(canvas,options){
   Object.assign(this,options);this.canvas=canvas;this.keys=new Set();this.path=[];this.position=new THREE.Vector3(toWorld(this.state.player).x,0,toWorld(this.state.player).z);this.velocity=0;this.grounded=true;this.near=null;this.clock=0;this.yaw=Math.PI;this.pitch=.58;this.distance=22;this.mode=null;this.cooldown=0;this.characterKey='';this.viewMode=this.state.expansion?.cameraMode||'third';this.firstPitch=.08;this.jumpCount=0;this.platformId=null;
   this.renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});this.renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5));this.renderer.shadowMap.enabled=true;this.renderer.shadowMap.type=THREE.PCFSoftShadowMap;this.renderer.outputColorSpace=THREE.SRGBColorSpace;this.renderer.toneMapping=THREE.ACESFilmicToneMapping;this.renderer.toneMappingExposure=1.15;
-  this.world=new THREE.Scene();this.world.background=new THREE.Color(0xbfe8fb);this.world.fog=new THREE.Fog(0xbfe8fb,42,110);this.camera=new THREE.PerspectiveCamera(48,1,.1,150);this.cameraTarget=new THREE.Vector3();this.ray=new THREE.Raycaster();
-  this.world.add(new THREE.HemisphereLight(0xfffff0,0x93a9b6,2.5));const sun=new THREE.DirectionalLight(0xfff0d7,3);sun.position.set(-12,25,14);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-30,right:30,top:30,bottom:-30,near:1,far:70});sun.shadow.bias=-.0006;this.world.add(sun);this.sun=sun;
+  this.world=new THREE.Scene();this.world.background=new THREE.Color(0xbfe8fb);this.world.fog=new THREE.Fog(0xbfe8fb,55,150);this.camera=new THREE.PerspectiveCamera(48,1,.1,220);this.cameraTarget=new THREE.Vector3();this.ray=new THREE.Raycaster();
+  this.world.add(new THREE.HemisphereLight(0xfffff0,0x93a9b6,2.5));const sun=new THREE.DirectionalLight(0xfff0d7,3);sun.position.set(-18,32,18);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-45,right:45,top:45,bottom:-45,near:1,far:100});sun.shadow.bias=-.0006;this.world.add(sun);this.sun=sun;
   this.environment=new THREE.Group();this.world.add(this.environment);this.buildTown();const entry=buildingAt(this.position.x,this.position.z);if(entry)this.returnFromBuilding(entry);this.syncAvatar();this.resize=new ResizeObserver(()=>this.size());this.resize.observe(canvas);this.size();
   const blocked=e=>e.target.closest('input,select,textarea,button,a');
   window.addEventListener('keydown',e=>{if(this.isPaused()||blocked(e))return;const key=e.key.length===1?e.key.toLowerCase():e.key;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','a','s','d'].includes(key)){e.preventDefault();this.keys.add(key);this.path=[];this.destination=null;}if(e.code==='Space'){e.preventDefault();this.jump();}if(key==='e'&&this.near&&!this.mode)this.onArrive(this.near);if(key==='v'){e.preventDefault();this.toggleView();}if(key==='q')this.orbit(-.15);if(key==='r')this.resetCamera();});
@@ -31,23 +32,39 @@ export class TownScene {
  house(x,z,color,roof,name,shop=false){const g=new THREE.Group();g.position.set(x,0,z);this.environment.add(g);box(g,0,2,0,7.8,4,5.7,color);box(g,0,4.15,0,8.5,.4,6.3,roof);box(g,0,4.5,0,7.4,.4,5.2,roof);box(g,0,4.85,0,6.2,.35,4.2,roof);box(g,0,1.35,2.89,1.5,2.7,.14,0x568b90);box(g,0,1.9,3,1.1,1.2,.1,0xafe2e4);box(g,.5,1.1,3.1,.12,.12,.12,0xffdc74);for(const px of [-2.5,2.5]){box(g,px,2,2.92,1.45,1.7,.15,0xfff4d9);box(g,px,2,3.03,1.18,1.4,.1,0x90d4e1);box(g,px,2,3.11,.06,1.4,.07,0xfff4d9);box(g,px,2,3.11,1.18,.06,.07,0xfff4d9);}if(shop)for(let i=0;i<8;i++)box(g,-3.5+i,3.2,3.35,1,.25,1.2,i%2?0xffefc9:0xf08b72);label(g,name,0,5.65,.5,{width:6});}
  clearEnvironment(){this.answerLayer?.replaceChildren();this.answerLabels=[];disposeGroup(this.environment);this.platforms=[];this.targets=[];this.hazards=[];this.npcs=[];}
  buildTown(){
-  this.clearEnvironment();this.floor(0,6,48,48,0,0x9dcd85);box(this.environment,0,-.8,6,48,1.1,48,0xb79873);box(this.environment,0,.025,15,43,.05,4,0xf1ddb0);box(this.environment,0,.025,10,5,.05,20,0xf1ddb0);box(this.environment,0,.025,0,5,.05,30,0xf1ddb0);box(this.environment,0,.03,0,40,.05,4,0xf1ddb0);
+  this.clearEnvironment();
+  // Larger commercial footprint so educational row + scattered arcade districts fit.
+  this.floor(0,4,72,72,0,0x9dcd85);box(this.environment,0,-.8,4,72,1.1,72,0xb79873);
+  // Main promenade (N–S) and east–west arteries linking districts.
+  box(this.environment,0,.025,15,52,.05,4,0xf1ddb0);box(this.environment,0,.025,10,5,.05,28,0xf1ddb0);box(this.environment,0,.025,0,5,.05,36,0xf1ddb0);box(this.environment,0,.03,0,52,.05,4,0xf1ddb0);
+  box(this.environment,-22,.025,8,4,.05,28,0xf1ddb0);box(this.environment,20,.025,-2,4,.05,30,0xf1ddb0);
+  box(this.environment,-25,.025,-12,18,.05,3.5,0xf1ddb0);box(this.environment,16,.025,18,22,.05,3.5,0xf1ddb0);
+  // Soft district washes
+  box(this.environment,-28,.02,8,14,.04,12,0xcfe9b8);box(this.environment,22,.02,-8,12,.04,10,0xd9c8f0);box(this.environment,18,.02,18,12,.04,10,0xb9d7f0);box(this.environment,-22,.02,-12,12,.04,10,0xf0c2b0);
   this.house(-10.9,-5.6,0xffe4b5,0xee8e74,this.words().shopShort,true);this.house(10.6,-5.4,0xe7eed8,0x78abb9,this.words().homeShort);
   box(this.environment,0,.7,-3,3,1.4,2.2,0xd4c5ad);box(this.environment,0,1.5,-3,3.5,.25,2.7,0xf1e5cb);box(this.environment,0,1.62,-3,2.9,.06,2.1,0x8bd4e5);ball(this.environment,0,2.2,-3,.5,0xb1e6f1);
-  for(const [x,z,s]of [[-20,-10,1.3],[-18,5,1],[-20,12,1.2],[20,-12,1.5],[19,2,1],[19,13,1.3],[-4,-12,1],[5,-13,.85],[-6,12,.8]])this.tree(x,z,s);
+  for(const [x,z,s]of [[-32,-14,1.3],[-30,4,1],[-32,14,1.2],[30,-14,1.5],[28,2,1],[28,16,1.3],[-4,-16,1],[5,-17,.85],[-6,14,.8],[-26,-4,1.1],[24,8,.9],[-18,16,1],[14,-14,1]])this.tree(x,z,s);
   box(this.environment,-14,.08,7,7,.16,4,0x73bfcf);for(const x of [-17.5,-10.5])box(this.environment,x,.15,7,.35,.3,4.5,0xc6c6aa);for(const z of [4.8,9.2])box(this.environment,-14,.15,z,7,.3,.35,0xc6c6aa);
   for(let i=0;i<6;i++){box(this.environment,5+i*1.4,.2,11,.75,.4,.75,0xc89475);ball(this.environment,5+i*1.4,.75,11,.42,i%2?0xf4bcd4:0xffd782);}
+  // District marker posts
+  const locale=this.locale?.()||document.documentElement.lang;const words=ARCADE_TEXT[locale]||ARCADE_TEXT.en;const casual=arcadeText(locale);
+  for(const [x,z,title]of [[-28,2,words.districtPark||'ORCHARD'],[22,-14,words.districtDojo||'DOJO'],[18,12,words.districtAlley||'ARCADE'],[-22,-18,words.districtTrack||'TRACK']]){box(this.environment,x,.9,z,.25,1.8,.25,0x8a7460);label(this.environment,title,x,2.4,z,{width:3.2,size:36});}
   for(const [id,p]of Object.entries(PLACES)){const pos=toWorld(p),npc=makeAvatar(id==='shop'?'builder':id==='home'?'astro':'frog');npc.position.set(pos.x,0,pos.z);this.environment.add(npc);label(this.environment,{guide:'Piko',shop:'Mia',home:'Noah'}[id],pos.x,3.2,pos.z,{width:2.2});this.npcs.push(npc);}
-  const words=ARCADE_TEXT[this.locale?.()||document.documentElement.lang]||ARCADE_TEXT.en;
+  const icons={obby:'＋',tower:'×',runner:'ABC',memory:'▦',garden:'🌱',gear:'🎒',fruit:'🍉',breakout:'🧱',race:'🏎️',ninja:'🥷'};
   for(const b of TOWN_BUILDINGS){
    const g=new THREE.Group();g.position.set(b.x,0,b.z);this.environment.add(g);
    box(g,0,.035,-3,3,.07,6,0xffecc4);box(g,0,.08,0,5.8,.16,5.8,0xfff3d5);
    for(const x of [-2.65,2.65])box(g,x,2.1,0,.6,4.2,5.8,b.color);
    box(g,0,2.1,2.65,5.8,4.2,.6,b.color);box(g,0,4.35,0,6.3,.5,6.3,b.color);
    box(g,0,3.65,-2.8,5.3,1,.35,0xfff4d4);
-   label(g,b.id==='gear'?words.shop:words.modes[b.id][0],0,5.3,-2.7,{width:6,size:48});
-   label(g,['＋','×','ABC','▦','🌱','🎒'][TOWN_BUILDINGS.indexOf(b)],0,2,.8,{width:2.6,size:86});
+   const casualIds=CASUAL_ARCADE_IDS;const title=b.id==='gear'?words.shop:casualIds.includes(b.id)?(casual.games[b.id]?.title||b.id):(words.modes[b.id]?.[0]||b.id);
+   label(g,title,0,5.3,-2.7,{width:6,size:48});
+   label(g,icons[b.id]||'✦',0,2,.8,{width:2.6,size:86});
    if(b.id==='tower')for(let i=0;i<3;i++)box(g,0,4.9+i*.5,0,3-i*.5,.5,3-i*.5,b.color);
+   if(b.id==='fruit')for(const [dx,dz,c]of [[-1.2,.6,0xff6b6b],[0,.9,0xffd45e],[1.1,.5,0xff9f43]])ball(g,dx,1.2,dz,.35,c);
+   if(b.id==='breakout')for(let r=0;r<2;r++)for(let c=0;c<3;c++)box(g,-1.2+c*1.2,4.9+r*.45,-.2,1,.35,.7,[0xff6b8a,0xffd45e,0x7dffb3][(r+c)%3]);
+   if(b.id==='race'){box(g,0,4.7,0,4.2,.35,1.2,0x2b3340);box(g,-1.4,5.1,0,.6,.8,.2,0xffefc9);box(g,1.4,5.1,0,.6,.8,.2,0xffefc9);}
+   if(b.id==='ninja'){box(g,0,5.1,0,3.2,.9,3.2,0x2d2438);box(g,0,5.7,0,1.6,.5,1.6,0x1b1524);}
   }
   this.canvas.dataset.buildings=TOWN_BUILDINGS.map(b=>b.id).join(',');
   this.recoverTown();

@@ -1,8 +1,8 @@
 import {TEXT} from './TownText.mjs?v=1';
-import {SAVE_KEY,PRODUCTS,FURNITURE,MISSIONS,PLACES,loadState,restoreState,saveState,startOrder,submitOrder,completeMission,buyFurniture,placeFurniture,englishOrder} from './TownRules.mjs?v=1';
-import {TownScene,AVATAR_COLORS} from './TownScene3D.mjs?v=2';
-import {createExpansion} from './TownExpansion.mjs?v=2';
-import {ARCADE_TEXT} from './ArcadeText.mjs?v=2';
+import {SAVE_KEY,PRODUCTS,FURNITURE,MISSIONS,PLACES,loadState,restoreState,saveState,startOrder,submitOrder,completeMission,buyFurniture,placeFurniture,englishOrder} from './TownRules.mjs?v=3';
+import {TownScene,AVATAR_COLORS} from './TownScene3D.mjs?v=3';
+import {createExpansion} from './TownExpansion.mjs?v=3';
+import {ARCADE_TEXT} from './ArcadeText.mjs?v=5';
 
 const $=id=>document.getElementById(id),esc=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let storage;try{storage=localStorage;}catch{}
@@ -129,13 +129,13 @@ $('go-mission').onclick=()=>{if(!state.started){intro();return;}scene.travel(sta
 $('interact').onclick=()=>{if(scene.near)showPlace(scene.near);};
 document.querySelectorAll('[data-travel]').forEach(el=>el.onclick=()=>{if(!state.started){intro();return;}scene.travel(el.dataset.travel);});
 document.querySelectorAll('[data-direction]').forEach(el=>{
-  el.addEventListener('pointerdown',e=>{e.preventDefault();if(dialog.open||!state.started)return;el.setPointerCapture(e.pointerId);scene.direction(el.dataset.direction,true);});
+  el.addEventListener('pointerdown',e=>{e.preventDefault();if(dialog.open||!state.started||expansion?.isArcadeOpen?.())return;el.setPointerCapture(e.pointerId);scene.direction(el.dataset.direction,true);});
   for(const type of ['pointerup','pointercancel','lostpointercapture'])el.addEventListener(type,()=>scene.direction(el.dataset.direction,false));
   el.addEventListener('keydown',e=>{if(e.key===' '||e.key==='Enter'){e.preventDefault();scene.direction(el.dataset.direction,true);}});
   el.addEventListener('keyup',()=>scene.direction(el.dataset.direction,false));
   el.addEventListener('blur',()=>scene.direction(el.dataset.direction,false));
 });
-try{scene=new TownScene($('town-canvas'),{state,words:w,locale:()=>locale,onArrive:showPlace,onMove:()=>{if(state.started)persist();},onNear:updateNear,isPaused:()=>dialog.open||!state.started});
+try{scene=new TownScene($('town-canvas'),{state,words:w,locale:()=>locale,onArrive:showPlace,onMove:()=>{if(state.started)persist();},onNear:updateNear,isPaused:()=>dialog.open||!state.started||!!expansion?.isArcadeOpen?.()});
 scene.onGraphicsError=()=>{const el=document.createElement('div');el.className='graphics-error';el.setAttribute('role','alert');el.textContent=ARCADE_TEXT[locale].webgl;document.querySelector('.world-card').append(el);};
 expansion=createExpansion({state,scene,persist,refresh,shell,close,getLocale:()=>locale});
 }catch(error){const el=document.createElement('div');el.className='graphics-error';el.setAttribute('role','alert');el.textContent=ARCADE_TEXT[locale].webgl;document.querySelector('.world-card').append(el);console.error('3D scene unavailable',error);scene={stop(){},travel(){},direction(){},near:null};}

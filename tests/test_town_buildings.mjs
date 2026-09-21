@@ -15,3 +15,20 @@ const game={position:new THREE.Vector3(0,-2,0),velocity:-5,mode:'obby'};TownScen
 console.log('ok - underground town spawns recover without changing floating-course falls');
 for(const b of TOWN_BUILDINGS){const to={x:b.x*25+550,y:(b.z-2)*25+380};assert.ok(canWalk(to.x,to.y));assert.ok(findPath(newState().player,to).length);assert.equal(buildingAt(b.x,b.z-2).id,b.id);assert.equal(canWalk((b.x+2.7)*25+550,b.z*25+380),false);assert.equal(canWalk(b.x*25+550,(b.z+2.7)*25+380),false);}
 console.log('ok - all six building entrances are reachable and side / rear walls block movement');
+
+import {CASUAL_ARCADE_IDS} from '../src/town/TownBuildings.mjs';
+assert.deepEqual([...CASUAL_ARCADE_IDS],['fruit','ninja','breakout','race']);
+for(const id of CASUAL_ARCADE_IDS)assert.ok(TOWN_BUILDINGS.some(b=>b.id===id),id);
+const casual=TOWN_BUILDINGS.filter(b=>CASUAL_ARCADE_IDS.includes(b.id));
+assert.equal(casual.length,4);
+// Not co-linear: at least three distinct z bands and x spread beyond plaza row.
+const zs=new Set(casual.map(b=>Math.round(b.z/4)));
+const xs=casual.map(b=>b.x);
+assert.ok(zs.size>=3,'arcade venues must sit in different districts (z clusters)');
+assert.ok(Math.max(...xs)-Math.min(...xs)>30,'arcade venues must be scattered on x');
+// Educational row stays intact on z=22.
+const edu=TOWN_BUILDINGS.filter(b=>!CASUAL_ARCADE_IDS.includes(b.id));
+assert.ok(edu.every(b=>b.z===22));
+assert.equal(edu.length,6);
+for(const b of casual){assert.equal(buildingAt(b.x,b.z-1.5).id,b.id);assert.ok(canWalk(b.x*25+550,(b.z-2)*25+380));}
+console.log('ok - four hard arcade venues are scattered and enterable');

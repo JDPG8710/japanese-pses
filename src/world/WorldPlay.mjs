@@ -1,5 +1,7 @@
 import {GAMES,makeRounds,evaluate,solution,rotateMask,robotState} from './WorldRules.mjs';
 import {townEntry} from '../town/TownEntry.mjs?v=1';
+import {guideLink} from './LearningObjectives.mjs';
+import {answerFeedback} from './WorldFeedback.mjs';
 import {TEXT} from './WorldText.mjs';
 import {initSiteVisits} from '../stats/SiteVisits.js';
 import {AuthManager} from '../auth/AuthManager.js?v=3';
@@ -12,6 +14,7 @@ import {RunTutorial} from '../tutorial/RunTutorial.js';
 import {helpButton} from '../tutorial/GameTutorial.js';
 import {worldTutorial} from '../tutorial/TutorialContent.js';
 import {countBadge,refreshPlayCounts,recordPlay} from '../stats/PlayCounts.js';
+import {arcadeSectionMarkup,startArcade,playKeyForArcade} from '../arcade/ArcadeHub.mjs';
 
 // 世界ゲームはランキング参加の有無に関係なく、1回の挑戦を5分間に統一する。
 const WORLD_GAME_TIME_LIMIT_MS=5*60*1000;
@@ -54,9 +57,11 @@ function saveGradeProgress(){if(!gradeRoute||!run||run.timedOut||run.score<800)r
 function render(){
  queueMicrotask(()=>{
   if(view==='play')return;
-  app.querySelectorAll('[data-action^="play:"]').forEach(button=>{
+  app.querySelectorAll('[data-action^="play:"], [data-action^="arcade:"]').forEach(button=>{
    const parent=button.closest('.card-body')||button.parentElement;
-   if(!parent.querySelector('[data-play-count]'))parent.insertAdjacentHTML('beforeend',countBadge(`world:${button.dataset.action.split(':')[1]}`));
+   const kind=button.dataset.action.split(':')[0],id=button.dataset.action.split(':')[1];
+   const key=kind==='arcade'?playKeyForArcade(id):`world:${id}`;
+   if(!parent.querySelector('[data-play-count]'))parent.insertAdjacentHTML('beforeend',countBadge(key));
   });
   void refreshPlayCounts(app);
  });
@@ -65,7 +70,7 @@ function render(){
  const gradeLink=document.querySelector('#grade-entry-link');gradeLink.textContent=locale==='zh'?'按年级学习':locale==='ja'?'がくねん':'School year';gradeLink.href=gradeEntryUrl({country,locale,profile:gradeRoute?.profile||params.get('returnCurriculum'),year:gradeRoute?.year||params.get('returnYear')});
  document.querySelector('#login').textContent=member?t().logged:t().login;document.querySelector('#footer-text').textContent=t().footer;
  if(view==='home'){
-  app.innerHTML=`<section class="hero"><div><p class="eyebrow">${t().kicker}</p><h1>${t().title}</h1><p>${t().intro}</p></div><div class="orbit" aria-hidden="true"><span>🧩</span><small>DEDUCE · PLAN · SOLVE</small></div></section><div class="section-top"><div><h2>${t().choose}</h2><p class="muted">${t().skills}</p></div><label>${t().level} <select id="level">${t().levels.map((name,i)=>`<option value="${i+1}" ${level===i+1?'selected':''}>${name}</option>`).join('')}</select></label></div>${feedback?`<p class="status" role="status">${esc(feedback)}</p>`:''}<div class="cards">${GAMES.map(id=>`<article class="card"><div class="card-art" style="--tint:${art[id][1]}" aria-hidden="true">${art[id][0]}</div><div class="card-body"><span class="tag">${t().games[id][1]}</span><h3>${t().games[id][0]}</h3><p>${t().games[id][2]}</p><div class="actions">${button(`play:${id}`,t().play,'primary')}${button(`board:${id}`,t().board)}</div></div></article>`).join('')}</div><aside class="rules"><p><b>${t().rules}</b></p><p>${t().privacy}</p></aside>`;
+  app.innerHTML=`<section class="hero"><div><p class="eyebrow">${t().kicker}</p><h1>${t().title}</h1><p>${t().intro}</p></div><div class="orbit" aria-hidden="true"><span>🧩</span><small>DEDUCE · PLAN · SOLVE</small></div></section>${gradeRoute?'':arcadeSectionMarkup(locale,{esc,button})}<div class="section-top"><div><h2>${t().choose}</h2><p class="muted">${t().skills}</p></div><label>${t().level} <select id="level">${t().levels.map((name,i)=>`<option value="${i+1}" ${level===i+1?'selected':''}>${name}</option>`).join('')}</select></label></div>${feedback?`<p class="status" role="status">${esc(feedback)}</p>`:''}<div class="cards">${GAMES.map(id=>`<article class="card" id="game-${id}"><div class="card-art" style="--tint:${art[id][1]}" aria-hidden="true">${art[id][0]}</div><div class="card-body"><span class="tag">${t().games[id][1]}</span><h3>${t().games[id][0]}</h3><p>${t().games[id][2]}</p>${guideLink(id,locale)}<div class="actions">${button(`play:${id}`,t().play,'primary')}${button(`board:${id}`,t().board)}</div></div></article>`).join('')}</div><aside class="rules"><p><b>${t().rules}</b></p><p>${t().privacy}</p></aside>`;
   app.insertAdjacentHTML('afterbegin',townEntry(locale,country));
   const picker=document.querySelector('#level');picker.disabled=!!gradeRoute;if(gradeRoute)app.querySelector('.section-top .muted').textContent=yearLabel(gradeRoute.year,locale);picker.onchange=e=>{level=Number(e.target.value);};
   if(gradeRoute)app.querySelectorAll('.card').forEach(card=>{const id=card.querySelector('[data-action^="play:"]').dataset.action.split(':')[1];if(!availableTasks(gradeRoute.profile,gradeRoute.year,gradeRoute.subject).some(task=>task.game===id))card.remove();});
@@ -135,20 +140,20 @@ async function showTutorial(){
 }
 function tick(){if(!run||view!=='play'||tutorial.paused)return;if(nextState?.complete){clearInterval(timer);const clock=app.querySelector('#clock');if(clock)clock.textContent='✓';return;}const seconds=Math.max(0,Math.ceil((run.expiresAt-Date.now())/1000)),clock=app.querySelector('#clock');if(clock)clock.textContent=`${Math.floor(seconds/60)}:${String(seconds%60).padStart(2,'0')}`;if(!seconds&&!busy){run.timedOut=true;view='result';clearInterval(timer);localeSelect.disabled=false;interaction.error();render();}}
 function burstFx(kind){const shell=app.querySelector('.game-shell');if(!shell)return;shell.classList.add(`fx-${kind}`);setTimeout(()=>shell.classList.remove(`fx-${kind}`),500);if(window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;const layer=shell.querySelector('.fx-layer');for(let i=0;i<(kind==='good'?14:6);i++){const spark=document.createElement('i');spark.style.setProperty('--i',i);spark.textContent=kind==='good'?['✦','●','★'][i%3]:'·';layer.append(spark);setTimeout(()=>spark.remove(),800);}}
-async function submit(){if(!run||busy||nextState||fatal||!answerReady())return;const token=epoch;let effect='bad';busy=true;renderPlay();try{let result;if(run.ranked)result=await api('answer',{id:run.id,revision:run.revision,answer});else{const verdict=evaluate(game,run.question,answer,run.tries),index=run.index+(verdict.done?1:0);result={...verdict,index,score:run.score+verdict.points,complete:index===10,question:run.rounds[index]||null,explanation:verdict.done&&!verdict.correct?solution(game,run.question):null};}if(token!==epoch)return;run.score=result.score;run.tries=result.tries;run.revision=result.revision;feedbackGood=result.correct;effect=result.correct?'good':'bad';feedback=result.correct?t().correct:result.done?`${t().explain} ${formatSolution(result.explanation)}`:result.tries===1?t().first:t().games[game][4];if(result.done)nextState=result;}catch(error){if(token!==epoch)return;fatal=[401,404,409,410].includes(error.status);feedback=fatal?t().ended:t().unsaved;}busy=false;renderPlay();if(effect==='good')interaction.correct();else interaction.error();burstFx(effect);}
+async function submit(){if(!run||busy||nextState||fatal||!answerReady())return;const token=epoch;let effect='bad';busy=true;renderPlay();try{let result;if(run.ranked)result=await api('answer',{id:run.id,revision:run.revision,answer});else{const verdict=evaluate(game,run.question,answer,run.tries),index=run.index+(verdict.done?1:0);result={...verdict,index,score:run.score+verdict.points,complete:index===10,question:run.rounds[index]||null,explanation:verdict.done&&!verdict.correct?solution(game,run.question):null};}if(token!==epoch)return;run.score=result.score;run.tries=result.tries;run.revision=result.revision;feedbackGood=result.correct;effect=result.correct?'good':'bad';feedback=result.correct?t().correct:result.done?`${t().explain} ${formatSolution(result.explanation)}`:answerFeedback(game,run.question,answer,locale)||(result.tries===1?t().first:t().games[game][4]);if(result.done)nextState=result;}catch(error){if(token!==epoch)return;fatal=[401,404,409,410].includes(error.status);feedback=fatal?t().ended:t().unsaved;}busy=false;renderPlay();if(effect==='good')interaction.correct();else interaction.error();burstFx(effect);}
 function formatSolution(value){if(!value)return'';if(game==='circuit')return value.map(n=>'↻'.repeat(n)||'·').join(' ');if(game==='sudoku')return value.join(' ');if(game==='code')return value.map(n=>codeMarks[n]).join(' ');if(game==='robot')return value.map(n=>moveMarks[n]).join(' ');if(game==='set')return value.map(n=>`#${n+1}`).join(' · ');if(game==='balance')return`${value[0]}`;if(game==='order')return `${t().front} → ${value.map(n=>mascots[n]).join(' → ')} → ${t().rear}`;if(game==='water')return value.map(n=>t().ops[n]).join(' → ');if(game==='network')return value.map(i=>{const edge=run.question.edges[i];return`${String.fromCharCode(65+edge[0])}–${String.fromCharCode(65+edge[1])}`;}).join(' · ');return value.join(' / ');}
 async function loadBoard(){const token=++epoch,target=app.querySelector('#board-result');if(!target)return;target.textContent=t().loading;try{const result=await api(`leaderboard?game=${game}&level=${level}`);if(epoch!==token||view!=='board')return;target.innerHTML=result.entries.length?`<div class="table-wrap"><table><thead><tr><th>${t().rank}</th><th>${t().name}</th><th>${t().score}</th></tr></thead><tbody>${result.entries.map(row=>`<tr><td>${row.rank}</td><td>${esc(row.name)}</td><td>${row.score}</td></tr>`).join('')}</tbody></table></div>`:`<p>${t().empty}</p>`;}catch{if(epoch===token&&view==='board')target.textContent=t().error;}}
 
 app.addEventListener('click',event=>{
  const el=event.target.closest('[data-action]');if(!el||el.disabled)return;const[action,value]=el.dataset.action.split(':');
  interaction.tap();
- if(action==='home')return goHome();if(action==='play')return void start(value);if(action==='board'){leave();game=value;view='board';render();window.scrollTo(0,0);return void loadBoard();}if(action==='refresh')return void loadBoard();if(action==='check')return void submit();if(!run||busy||fatal)return;
+ if(action==='home')return goHome();if(action==='arcade')return void startArcade(value,{locale,onExit:()=>{if(view==='home')render();}});if(action==='play')return void start(value);if(action==='board'){leave();game=value;view='board';render();window.scrollTo(0,0);return void loadBoard();}if(action==='refresh')return void loadBoard();if(action==='check')return void submit();if(!run||busy||fatal)return;
  if(action==='next'&&nextState){if(nextState.complete){view='result';clearInterval(timer);localeSelect.disabled=false;render();if(run.score>=800&&!run.timedOut)interaction.victory();return;}run.index=nextState.index;run.question=nextState.question;answer=initialAnswer(run.question);nextState=null;feedback='';feedbackGood=false;renderPlay();return;}if(nextState)return;
  const i=Number(value);interacted=true;
  if(action==='rotate')answer[i]=(answer[i]+1)%4;
  if(action==='sudoku'&&!run.question.givens[i])answer[i]=(answer[i]%run.question.size)+1;
  if(action==='code')answer[i]=(answer[i]+1)%run.question.symbols;
- if(action==='move'&&answer.length<run.question.limit){const candidate=[...answer,i],state=robotState(run.question,candidate);if(!state.valid){feedback=t().blocked;feedbackGood=false;interaction.error();renderPlay();app.querySelector(`[data-action="${el.dataset.action}"]`)?.focus({preventScroll:true});return;}answer=candidate;feedback='';}
+ if(action==='move'&&answer.length<run.question.limit){const candidate=[...answer,i],state=robotState(run.question,candidate);if(!state.valid){feedback=answerFeedback(game,run.question,candidate,locale)||t().blocked;feedbackGood=false;interaction.error();renderPlay();app.querySelector(`[data-action="${el.dataset.action}"]`)?.focus({preventScroll:true});return;}answer=candidate;feedback='';}
  if(action==='select'){if(answer.includes(i))answer=answer.filter(n=>n!==i);else if(answer.length<3)answer=[...answer,i];}
  if(action==='number')answer=[i];
  if(action==='left'&&i>0)[answer[i-1],answer[i]]=[answer[i],answer[i-1]];

@@ -26,15 +26,36 @@
   <link rel="stylesheet" href="src/world/world.css?v=2">
   <link rel="stylesheet" href="src/world/quest-adventure.css?v=1">
   <link rel="stylesheet" href="src/world/topbar.css?v=1">
+  <link rel="stylesheet" href="src/town/entry.css?v=1">
+  <link rel="stylesheet" href="/css/site-content.css?v=1">
   <script type="module" src="/src/privacy/ConsentManager.mjs?v=1"></script>
 </head>
-<body>
+<body class="world-page">
   <header class="topbar">
     <a href="index.html" class="brand">✳ <span>Piko <span class="brand-pop">Game</span></span></a>
     <div class="top-actions"><a id="arena-entry-link" class="pill" href="arena.html">Go · 围棋 · 囲碁</a><a id="grade-entry-link" class="pill" href="grades">School year</a><button id="sound-toggle" type="button" aria-pressed="false">🔊 Sound</button><label><span class="sr-only">Language / 语言 / ことば</span><select id="locale"><option value="ja">日本語</option><option value="en">English</option><option value="zh">中文</option></select></label><button id="login" type="button">ログイン</button></div>
   </header>
-  <main id="app"></main>
-  <footer>Piko Game · <span id="footer-text"></span> · <a href="privacy">Privacy</a> · <a href="terms">Terms</a></footer>
+  <main id="app">
+    <section class="static-intro" aria-labelledby="logic-intro-title">
+      <p class="eyebrow">PIKO LOGIC LAB</p><h1 id="logic-intro-title">Nine ways to practise thinking</h1>
+      <p>Choose a puzzle, read its opening tutorial and try a short round. Start with the first difficulty. Guest practice needs no account; the five-minute timer begins after the tutorial. For an untimed start, use the worked examples below.</p>
+      <ul class="static-game-list">
+        <li><h2>Circuit Relay</h2><p>Rotate pipe pieces until they form a connected route. Check that each connection has a matching opening in its neighbour; a piece facing the goal can still be disconnected.</p></li>
+        <li id="game-sudoku"><h2>Number Vault</h2><p>Complete a small Sudoku. Use the numbers missing from a row, then eliminate those already in the column or outlined region. Check all three constraints.</p></li>
+        <li><h2>Codebreaker</h2><p>Compare the feedback from several guesses to infer a hidden code. Distinguish a correct symbol in the right position from one that belongs elsewhere.</p></li>
+        <li id="game-robot"><h2>Piko Pathfinder</h2><p>Plan the shortest safe route around rocks. Trace every intermediate square and count the moves before sending the robot; arriving by a longer route is not enough.</p></li>
+        <li><h2>Triple Set</h2><p>Choose three cards whose features are each all the same or all different. Check each feature separately instead of choosing cards that merely look similar.</p></li>
+        <li><h2>Shape Number Puzzle</h2><p>Use equations to find the number represented by a shape. Replace a known shape value in the next equation, then check the result against every clue.</p></li>
+        <li><h2>Logic Lineup</h2><p>Arrange travellers from relative-position clues. “Before” need not mean “immediately before”; keep adjacency and ordering requirements separate.</p></li>
+        <li id="game-water"><h2>Water Lab</h2><p>Plan fills, empties and pours to reach an exact volume within the move limit. Track both containers after every move and remember their remaining space.</p></li>
+        <li><h2>Island Grid</h2><p>Connect every island with minimum total cost. A cheap connection is useful only if it helps connect the network; adding a cycle wastes an edge.</p></li>
+      </ul>
+      <nav class="site-resource-links" aria-label="Worked examples"><a href="/en/learning-guide">Worked examples in English</a><a href="/zh/learning-guide" lang="zh-Hans">中文例题与解析</a><a href="/ja/learning-guide" lang="ja">日本語の例題と解説</a></nav>
+      <p>The interactive menu loads here. If it does not appear, you can still read the guides or visit <a href="/about#help">help and contact information</a>.</p>
+      <noscript><p>JavaScript is needed for interactive play. The guides linked above work without it.</p></noscript>
+    </section>
+  </main>
+  <footer>Piko Game · <span id="footer-text"></span> · <a href="privacy">Privacy</a> · <a href="terms">Terms</a><nav class="site-resource-links" aria-label="Learning resources"><a href="/about">About &amp; help · 关于与帮助 · サイト案内</a><a href="/en/learning-guide">English guide</a><a href="/ja/learning-guide" lang="ja">学習ガイド</a><a href="/zh/learning-guide" lang="zh-Hans">学习指南</a></nav><nav class="site-resource-links" aria-label="Learning library"><a href="/en/guides/">Learning library</a><a href="/zh/guides/" lang="zh-Hans">学习资料库</a><a href="/ja/guides/" lang="ja">学習ライブラリー</a></nav></footer>
   <script type="module" src="src/world/WorldPlay.mjs?v=4"></script>
 </body>
 </html>

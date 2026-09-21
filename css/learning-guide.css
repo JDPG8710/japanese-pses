@@ -1,0 +1,14 @@
+@import url('/css/policy.css');
+header nav,.guide-languages{display:flex;flex-wrap:wrap;gap:12px}
+header{flex-wrap:wrap}main{max-width:900px}h1{font-size:clamp(32px,5vw,52px)}
+.guide-toc{display:flex;flex-wrap:wrap;gap:10px 20px;margin:24px 0}
+.guide-example{padding:16px;border-left:4px solid #26715f;background:#edf4eb;border-radius:0 12px 12px 0}
+.guide-table{border-collapse:collapse;width:100%;margin:18px 0;font-variant-numeric:tabular-nums}
+.guide-table th,.guide-table td{padding:10px;border:1px solid #c8d6cc;text-align:left;overflow-wrap:anywhere}
+.guide-table th{background:#edf4eb}.guide-play{display:inline-block;padding:12px 18px;margin-top:10px;border-radius:12px;background:#215e50;color:#fff;text-decoration:none;font-weight:750}
+details{margin:18px 0}summary{cursor:pointer;font-weight:750;padding:10px 0}details p{padding-left:12px}
+section{scroll-margin-top:24px}a:focus-visible,summary:focus-visible{outline:3px solid #b15e24;outline-offset:4px}
+.guide-meta{color:#526a64;font-size:14px}footer{padding-bottom:80px}p,li{overflow-wrap:anywhere}
+.example-grid{border-collapse:collapse;margin:20px auto;font-size:24px;text-align:center;max-width:100%}.example-grid caption{font-size:15px;margin-bottom:10px}.example-grid td{width:54px;height:54px;border:1px solid #779489}.sudoku-example{border:3px solid #24443c}.sudoku-example tr:nth-child(2) td{border-bottom:3px solid #24443c}.sudoku-example td:nth-child(2){border-right:3px solid #24443c}
+.guide-cards{display:grid;gap:16px}.guide-cards article{border-top:1px solid #d9ddd3}.guide-cards h3{margin-bottom:8px}.guide-cards p{margin-top:8px}li+li{margin-top:12px}h3{line-height:1.45}figure{margin:20px 0}figcaption{font-size:15px;color:#526a64}.count-example div{font-size:36px;letter-spacing:12px;line-height:1.5}.ten-example{padding:16px;background:#edf4eb;border-radius:12px}.ten-example p{font-size:clamp(17px,4vw,25px);font-weight:750}.fraction-example{display:flex;max-width:400px;border:2px solid #24443c;margin-top:12px}.fraction-example span{flex:1;text-align:center;padding:16px 0;border-right:1px solid #24443c}.fraction-example span:last-child{border-right:0}.fraction-example .shaded{background:#26715f;color:white}.coverage-year ul{padding-left:22px}.coverage-year li{margin:14px 0}.coverage-year{border-top:1px solid #d9ddd3}
+@media(max-width:420px){.guide-table th,.guide-table td{padding:7px;font-size:14px}section{padding:16px}header{gap:12px}}

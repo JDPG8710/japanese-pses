@@ -9,7 +9,9 @@ const pages=[
   ['zh/index.html','/zh/'],
   ['grades.html','/grades'],
   ['world.html','/world'],
+  ['town.html','/town'],
   ['arena.html','/arena'],
+  ['about.html','/about'],
   ['privacy.html','/privacy'],
   ['terms.html','/terms']
 ];

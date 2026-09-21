@@ -1,0 +1,8 @@
+.static-intro{padding:clamp(18px,4vw,32px);border:1px solid #cdd9d2;border-radius:24px;background:#fffdf8;color:#253d42;line-height:1.75;margin:24px auto;max-width:1000px}
+.static-intro h1{font-size:clamp(28px,5vw,44px);line-height:1.2}.static-intro h2{font-size:24px}.static-intro h3{font-size:18px;margin:0 0 8px}.static-intro a{color:#185f55;text-underline-offset:4px}.static-intro p{overflow-wrap:anywhere}
+.static-game-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:20px;padding:0;list-style:none}.static-game-list li{padding:18px;background:#edf3e9;border-radius:14px}.static-game-list p{margin:0}
+.site-resource-links{display:flex;flex-wrap:wrap;justify-content:center;gap:12px 20px;line-height:1.6;margin:12px auto;max-width:1000px}.site-resource-links a{display:inline-block;padding:6px 0;text-underline-offset:3px}
+.site-resource-links a:focus-visible,.static-intro a:focus-visible{outline:3px solid #b45225;outline-offset:4px}
+.static-intro .eyebrow{color:#386b5c}.site-resource-links{font-size:14px;letter-spacing:0}
+body.world-page footer,body.grade-adventure footer,body.quest-adventure footer{color:#bdcfe5}
+.learning-link{display:inline-block;margin:8px 0 14px;text-decoration:underline;text-underline-offset:3px;font-weight:700;line-height:1.5;color:inherit}.learning-link:focus-visible{outline:3px solid #efa24a;outline-offset:4px}

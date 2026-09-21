@@ -2,6 +2,12 @@ import {L} from './FoundationCatalog.mjs';
 const text=(v,locale)=>v[locale];
 const gcd=(a,b)=>b?gcd(b,a%b):a;
 const fraction=(a,b)=>{const g=gcd(a,b);return b/g===1?String(a/g):`${a/g}/${b/g}`;};
+function smallSumExplanation(x,y,subtract){
+ const total=x+y;
+ if(subtract)return L(`${total} − ${y} = ${x}. Check by putting the removed group back: ${x} + ${y} = ${total}.`,`${total} − ${y} = ${x}。把拿走的${y}个补回去检查：${x} + ${y} = ${total}。`,`${total} − ${y} = ${x}。とった${y}こを もどすと、${x} + ${y} = ${total}。`);
+ if(x<10&&total>=10){const need=10-x,left=y-need;return L(`Split ${y} into ${need} + ${left}. Then ${x} + ${need} = 10, so 10 + ${left} = ${total}. The ${need} counters moved into ten are counted only once.`,`把${y}拆成${need} + ${left}。先算${x} + ${need} = 10，再算10 + ${left} = ${total}。已经凑十的${need}个不能重复加。`,`${y}を${need}と${left}に わけます。${x} + ${need} = 10、10 + ${left} = ${total}。10に いれた${need}こは、もう たしません。`);}
+ return L(`Start with ${x} counters and add ${y} more. There are ${total} in all. Check: ${total} − ${y} = ${x}.`,`原来有${x}个，再添${y}个，共${total}个。用减法检查：${total} − ${y} = ${x}。`,`${x}こに${y}こを たすと、全部で${total}こ。${total} − ${y} = ${x}で たしかめます。`);
+}
 export function mathPool(topic,locale,profile){
  const out=[];
  const add=(prompt,answer,hint,explanation,visual)=>out.push({id:`${topic}-${out.length}`,kind:'number',prompt:text(prompt,locale),correct:String(answer),hint:text(hint,locale),explanation:text(explanation,locale),...(visual?{visual}:{} )});
@@ -14,7 +20,7 @@ export function mathPool(topic,locale,profile){
    if(i<11)add(L('How many dots?','有几个圆点？','まるは いくつ？'),n,L('Touch each dot once.','每个圆点只数一次。','ひとつずつ かぞえよう。'),result(String(n)),{type:'dots',count:n});
    else if(i<31){const x=i-10;add(L(`What number comes after ${x}?`,`紧接着${x}的数是多少？`,`${x}の つぎの かずは？`),x+1,L('Count one more.','再数一个。','ひとつ ふやそう。'),result(`${x} + 1 = ${x+1}`));}
   }
-  if(topic==='add20'){const x=i%11,y=Math.floor(i/11)+1;if(i%2)add(L(`${x+y} − ${y} = ?`,`${x+y} − ${y} = ?`,`${x+y} − ${y} = ?`),x,calc,result(`${x+y} − ${y} = ${x}`));else add(L(`${x} + ${y} = ?`,`${x} + ${y} = ?`,`${x} + ${y} = ?`),x+y,calc,result(`${x} + ${y} = ${x+y}`));}
+  if(topic==='add20'){const x=i%11,y=Math.floor(i/11)+1;if(i%2)add(L(`${x+y} − ${y} = ?`,`${x+y} − ${y} = ?`,`${x+y} − ${y} = ?`),x,L('What number plus the amount removed gives the starting amount?','想一想：什么数加上拿走的数量，等于原来的数量？','のこりに とった かずを たすと、はじめの かずに なるよ。'),smallSumExplanation(x,y,true));else add(L(`${x} + ${y} = ?`,`${x} + ${y} = ?`,`${x} + ${y} = ?`),x+y,L('If you cross ten, split the second number to make ten first. Otherwise count on.','如果需要跨过十，先拆开第二个数凑十；没有跨十时可以接着数。','10を こえるときは、たす かずを わけて10を つくろう。ほかは つづけて かぞえよう。'),smallSumExplanation(x,y,false));}
   if(topic==='add100'){const x=10+i,y=1+i%21;const sub=i%2;add(L(`${x} ${sub?'−':'+'} ${y} = ?`,`${x} ${sub?'−':'+'} ${y} = ?`,`${x} ${sub?'−':'+'} ${y} = ?`),sub?x-y:x+y,L('Split tens and ones.','把十位和个位分开想。','10のまとまりと 1に わけよう。'),result(`${x} ${sub?'−':'+'} ${y} = ${sub?x-y:x+y}`));}
   if(topic==='place'){const n=12+i;add(L(`How many tens are in ${n}?`,`数${n}的十位上是几？`,`${n}の 10のくらいは？`),Math.floor(n/10),L('A ten is a group of ten ones.','10个一组成一个十。','1が10こで 10だよ。'),result(`${n} = ${Math.floor(n/10)} × 10 + ${n%10}`));}
   if(topic==='money'){

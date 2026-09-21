@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#f5f3e9">
+  <title>Piko Learning Town · Maths & English Roleplay for Kids</title>
+  <meta name="description" content="Explore a friendly little town, read English shopping orders, practise maths and giving change, and decorate your home in this free single-player learning adventure.">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <link rel="canonical" href="https://piko-game.com/town">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Piko Game">
+  <meta property="og:title" content="Piko Learning Town · Open for business!">
+  <meta property="og:description" content="A little town. Your first shop. Learn maths and English through everyday adventures.">
+  <meta property="og:url" content="https://piko-game.com/town">
+  <meta property="og:image" content="https://piko-game.com/assets/seo/piko-game-en.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="stylesheet" href="src/town/town.css?v=1">
+</head>
+<body>
+  <header class="town-header"><a class="brand" href="index.html"><span class="brand-star">✳</span> Piko <span>Town</span></a><nav><a id="world-link" href="world">World games</a><button id="help" class="icon-button" type="button">?</button><button id="character" type="button">My character</button><label><span class="sr-only">Language / 语言 / ことば</span><select id="locale"><option value="zh">中文</option><option value="en">English</option><option value="ja">日本語</option></select></label></nav></header>
+  <main class="town-main">
+    <section class="page-heading"><div><p class="eyebrow">PIKO LEARNING TOWN</p><h1 id="town-title">Piko Learning Town</h1><p id="town-tag"></p></div><div class="wallet"><span>✦ <b id="coins">0</b><small id="coins-label"></small></span><span>✧ <b id="xp">0</b><small id="xp-label"></small></span></div></section>
+    <div class="town-layout">
+      <section class="world-card" aria-label="Town map">
+        <div class="world-top"><span class="live-dot"></span><span id="chapter"></span><span class="weather" aria-hidden="true">☀ 24°</span></div>
+        <canvas id="town-canvas" tabindex="0" aria-label="Town map. Use arrow keys to walk and E to talk, or use the place buttons below."></canvas>
+        <div class="map-caption"><span id="walk-tip"></span><span class="compass" aria-hidden="true">N ↑</span></div>
+        <div class="world-controls"><div class="dpad" aria-label="Movement"><button data-direction="ArrowUp" aria-label="↑" type="button">↑</button><button data-direction="ArrowLeft" aria-label="←" type="button">←</button><button data-direction="ArrowDown" aria-label="↓" type="button">↓</button><button data-direction="ArrowRight" aria-label="→" type="button">→</button></div><button id="interact" class="primary" type="button" disabled></button></div>
+      </section>
+      <aside class="quest-panel"><p class="eyebrow" id="mission-label"></p><div class="quest-number" id="mission-number"></div><h2 id="mission-title"></h2><p id="mission-objective"></p><button id="go-mission" class="primary" type="button"></button><div class="story-progress"><div><span id="progress-label"></span><b id="progress-count"></b></div><progress id="progress" max="10" value="0"></progress></div><details class="journal"><summary id="journal-label"></summary><ol id="journal"></ol></details><div class="note"><span aria-hidden="true">🌱</span><p id="local-note"></p></div></aside>
+    </div>
+    <nav class="place-links" aria-label="Town destinations"><button data-travel="guide" type="button"><span>✳</span><div><b id="guide-label"></b><small>PIKO SQUARE</small></div><i>↗</i></button><button data-travel="shop" type="button"><span>🛍</span><div><b id="shop-label"></b><small>SUNSHINE SHOP</small></div><i>↗</i></button><button data-travel="home" type="button"><span>⌂</span><div><b id="home-label"></b><small>MY LITTLE HOME</small></div><i>↗</i></button></nav>
+    <p id="save-status" class="save-status" role="status" aria-live="polite"></p>
+  </main>
+  <footer><span>✳ Piko Game · Made for little discoveries.</span><div><a id="town-guide-link" href="/en/guides/town-shop">Shop worked example</a><a id="privacy-link" href="privacy">Privacy</a><a id="terms-link" href="terms">Terms</a></div></footer>
+  <dialog id="town-dialog" aria-labelledby="dialog-title"><div id="dialog-body"></div></dialog>
+  <noscript><p>This town needs JavaScript. 请启用 JavaScript 来探索小镇。JavaScriptを有効にしてください。</p></noscript>
+  <script type="module" src="src/town/TownApp.mjs?v=1"></script>
+</body>
+</html>

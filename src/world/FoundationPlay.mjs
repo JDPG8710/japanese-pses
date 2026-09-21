@@ -12,6 +12,7 @@ import {foundationTutorial} from '../tutorial/TutorialContent.js';
 import {initSiteVisits} from '../stats/SiteVisits.js';
 import {countBadge,refreshPlayCounts,recordPlay} from '../stats/PlayCounts.js';
 import {LESSON_COMICS,comicButtonLabel,openMathComic} from '../comics/MathComic.mjs';
+import {lessonObjective,guideLink} from './LearningObjectives.mjs';
 const params=new URLSearchParams(location.search);let storage;try{storage=localStorage;}catch{}
 const country=normalizeCountry(params.get('country'))||readCountry(storage),locale=['en','zh','ja'].includes(params.get('locale'))?params.get('locale'):languageForCountry(country);
 const input={profile:params.get('curriculum'),year:params.get('year'),lesson:params.get('lesson'),stage:params.get('stage')||'1',locale},candidate=validateFoundation(input),candidateScores=candidate?readJourneyScores(storage,candidate.profile,candidate.year,locale):{},candidateGate=candidate?journeyState(candidate.profile,candidate.year,candidateScores).find(gate=>gate.id===lessonGateId(candidate.lesson,candidate.stage)):null,route=candidateGate?.unlocked?candidate:null,w=FOUNDATION_TEXT[locale],app=document.querySelector('#foundation-app');
@@ -43,7 +44,7 @@ function render(){
  if(!route){app.innerHTML=`<p role="alert">${w.invalid}</p>`;return;}
  if(view==='intro'){
   let best=0;try{best=Number(storage.getItem(progressKey)||0);}catch{}
-  app.innerHTML=`<section class="board quest-intro">${context()}<p>${w.intro}</p><p>${w.rules}</p><p>${w.anonymous}</p>${best?`<p>${w.progress}: ${best}/1000</p>`:''}<div class="quest-controls">${LESSON_COMICS[route.lesson]?button('comic',comicButtonLabel(locale)):''}${button('start',w.start)}${button('board',w.board)}</div><p role="status">${esc(feedback)}</p><p class="quest-note">${w.review}</p></section>`;
+  app.innerHTML=`<section class="board quest-intro">${context()}<p>${esc(lessonObjective(route.lesson,locale,route.learningLanguage))}</p>${guideLink(route.lesson,locale)}<p>${w.rules}</p><p>${w.anonymous}</p>${best?`<p>${w.progress}: ${best}/1000</p>`:''}<div class="quest-controls">${LESSON_COMICS[route.lesson]?button('comic',comicButtonLabel(locale)):''}${button('start',w.start)}${button('board',w.board)}</div><p role="status">${esc(feedback)}</p><p class="quest-note">${w.review}</p></section>`;
  }else if(view==='board'){
   app.innerHTML=`<section class="board">${context()}<h2>${w.board}</h2><p class="quest-note">${w.privacy}</p>${boardEntries?boardEntries.length?`<div class="quest-board-wrap"><table class="quest-board"><thead><tr><th>#</th><th>Piko</th><th>${w.score}</th></tr></thead><tbody>${boardEntries.map(r=>`<tr><td>${r.rank}</td><td>${esc(r.name)}</td><td>${r.score}</td></tr>`).join('')}</tbody></table></div>`:`<p>${w.empty}</p>`:`<p role="status">${esc(feedback||w.loading)}</p>`}<div class="quest-controls">${button('board',w.board)}${button('intro',w.back)}${button('start',w.start)}</div></section>`;
  }else if(view==='result'){

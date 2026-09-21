@@ -3,7 +3,7 @@
         xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>https://piko-game.com/</loc>
-    <lastmod>2026-09-07</lastmod>
+    <lastmod>2026-09-21</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://piko-game.com/en/" />
@@ -13,7 +13,7 @@
   </url>
   <url>
     <loc>https://piko-game.com/en/</loc>
-    <lastmod>2026-09-07</lastmod>
+    <lastmod>2026-09-21</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://piko-game.com/en/" />
@@ -23,7 +23,7 @@
   </url>
   <url>
     <loc>https://piko-game.com/ja/</loc>
-    <lastmod>2026-09-07</lastmod>
+    <lastmod>2026-09-21</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://piko-game.com/en/" />
@@ -33,7 +33,7 @@
   </url>
   <url>
     <loc>https://piko-game.com/zh/</loc>
-    <lastmod>2026-09-07</lastmod>
+    <lastmod>2026-09-21</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://piko-game.com/en/" />
@@ -42,33 +42,71 @@
     <xhtml:link rel="alternate" hreflang="x-default" href="https://piko-game.com/" />
   </url>
   <url>
+    <loc>https://piko-game.com/town</loc>
+    <lastmod>2026-09-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://piko-game.com/grades</loc>
-    <lastmod>2026-09-07</lastmod>
+    <lastmod>2026-09-21</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://piko-game.com/world</loc>
-    <lastmod>2026-09-07</lastmod>
+    <lastmod>2026-09-21</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://piko-game.com/arena</loc>
-    <lastmod>2026-09-08</lastmod>
+    <lastmod>2026-09-21</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://piko-game.com/privacy</loc>
-    <lastmod>2026-09-07</lastmod>
+    <lastmod>2026-09-21</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
     <loc>https://piko-game.com/terms</loc>
-    <lastmod>2026-09-07</lastmod>
+    <lastmod>2026-09-21</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://piko-game.com/en/learning-guide</loc>
+    <lastmod>2026-09-21</lastmod>
+    <xhtml:link rel="alternate" hreflang="en" href="https://piko-game.com/en/learning-guide" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://piko-game.com/ja/learning-guide" />
+    <xhtml:link rel="alternate" hreflang="zh-Hans" href="https://piko-game.com/zh/learning-guide" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://piko-game.com/en/learning-guide" />
+  </url>
+  <url>
+    <loc>https://piko-game.com/ja/learning-guide</loc>
+    <lastmod>2026-09-21</lastmod>
+    <xhtml:link rel="alternate" hreflang="en" href="https://piko-game.com/en/learning-guide" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://piko-game.com/ja/learning-guide" />
+    <xhtml:link rel="alternate" hreflang="zh-Hans" href="https://piko-game.com/zh/learning-guide" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://piko-game.com/en/learning-guide" />
+  </url>
+  <url>
+    <loc>https://piko-game.com/zh/learning-guide</loc>
+    <lastmod>2026-09-21</lastmod>
+    <xhtml:link rel="alternate" hreflang="en" href="https://piko-game.com/en/learning-guide" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://piko-game.com/ja/learning-guide" />
+    <xhtml:link rel="alternate" hreflang="zh-Hans" href="https://piko-game.com/zh/learning-guide" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://piko-game.com/en/learning-guide" />
+  </url>
+  <url>
+    <loc>https://piko-game.com/about</loc>
+    <lastmod>2026-09-21</lastmod>
+  </url>
+  <url>
+    <loc>https://piko-game.com/updates</loc>
+    <lastmod>2026-09-21</lastmod>
   </url>
 </urlset>

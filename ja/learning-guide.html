@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>学習ガイド｜数独・ロボット・水量の例題と解説 | Piko Game</title>
+  <meta name="description" content="Piko Gameの数独、ロボットルート、水量パズルにつながるオリジナル例題を、答えの理由とともに解説。つまずいた時の声かけ、難易度の選び方、家庭での振り返りも紹介します。">
+  <meta name="robots" content="index,follow">
+  <link rel="canonical" href="https://piko-game.com/ja/learning-guide">
+  <link rel="alternate" hreflang="en" href="https://piko-game.com/en/learning-guide">
+  <link rel="alternate" hreflang="ja" href="https://piko-game.com/ja/learning-guide">
+  <link rel="alternate" hreflang="zh-Hans" href="https://piko-game.com/zh/learning-guide">
+  <link rel="alternate" hreflang="x-default" href="https://piko-game.com/en/learning-guide">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/learning-guide.css?v=1">
+</head>
+<body>
+<header><a class="brand" href="/">✦ Piko Game</a><nav aria-label="メインメニュー"><a href="/ja/">Pikoについて</a><a href="/world?locale=ja">ロジックゲーム</a><a href="/privacy#contact">お問い合わせ</a></nav></header>
+<main id="main">
+  <p class="eyebrow">ためす・説明する・考え直す</p><h1>親子で考える、3つのパズル</h1>
+  <p class="lead">正解したあとに「どうして？」を説明してみましょう。数独・ロボットルート・水量パズルの考え方を、時間制限のない例題で練習できます。</p>
+  <p class="guide-meta">Piko Game · 2026年9月21日公開 · このガイド用のオリジナル例題です。ゲーム本編の出題とは異なります。</p>
+  <nav class="guide-languages" aria-label="ガイドの言語"><a href="/en/learning-guide" lang="en">English</a><a href="/ja/learning-guide" aria-current="page">日本語</a><a href="/zh/learning-guide" lang="zh-Hans">中文</a></nav>
+  <nav class="guide-toc" aria-label="目次"><a href="#start">はじめ方</a><a href="#sudoku">数独</a><a href="#robot">ロボット</a><a href="#water">水量</a><a href="#review">振り返り</a></nav>
+  <section id="library"><h2><a href="/ja/guides/">学習ライブラリーへ</a></h2><p>7つの ガイド：論理パズル3つ、数える、10を つくる、分数、まちの お店。</p></section>
+<section id="start"><h2>学年だけでなく、できることから選ぶ</h2><p>1〜4の数字を読めるなら数独、矢印を順にたどれるならロボット、小さな数の引き算に慣れてきたら水量の例題を試してください。これは取り組み始める目安であり、年齢による判定や学校の評価ではありません。</p><p>一緒に問題を読み、まず本人に試してもらい、一手の理由を聞きます。そのあと<a href="/world?locale=ja">ロジックラボ</a>で「ナンバーそうこ」（数独）、「ピコの みちさがし」（ロボット）、水量のゲームを選び、最初の難易度から始められます。開始時の遊び方を読み、開始ボタンで練習へ進みます。ログインなしのゲスト練習が可能です。本編のセッションには5分の制限がありますが、このページは時間を気にせず読めます。</p></section>
+  <section id="sudoku"><p><a href="/ja/guides/sudoku">くわしい 例題と 解説へ →</a></p><h2>1. 数独：入らない数字を見つける</h2><p>4×4の数独では、横の列、縦の列、2×2の小さな枠に、1・2・3・4を一つずつ入れます。次は盤面の一部分を使った練習です。</p><div class="guide-example"><p><strong>例題：</strong>横一列が「1・空欄・3・空欄」です。最初の空欄と同じ縦の列には、すでに4があります。最初の空欄に入る数字は何でしょう？</p></div><details><summary>答えと考え方を見る</summary><p>横の列に足りないのは2と4です。最初の空欄に4を入れると縦の列で重なるため、ここは<strong>2</strong>。最後の空欄は<strong>4</strong>になります。実際の盤面では、2×2の枠にも同じ数字がないか確認します。</p></details><p><strong>つまずいたとき：</strong>答えを教える前に「まだない数字はどれ？」と聞きます。横の列だけを見て決めず、縦の条件も合わせることがポイントです。次の問題では、数字を除外できた手がかりを指さしてもらいましょう。</p></section>
+  <section id="robot"><p><a href="/ja/guides/robot">くわしい 例題と 解説へ →</a></p><h2>2. ロボット：途中のマスまで確かめる</h2><p>紙に3×3のマスを描き、行は上から、列は左から数えます。出発は1行1列、ゴールは3行3列、岩は2行2列です。上下左右に1マスずつ動き、斜めには進めません。</p><div class="guide-example"><p><strong>例題：</strong>岩を通らず、4手でゴールできるでしょうか。動かす前に矢印を書いてみてください。</p></div><details><summary>道順と手数の理由を見る</summary><p><strong>→ → ↓ ↓</strong>なら上の端を進み、右の端を下りるので、中央の岩を通りません。<strong>↓ ↓ → →</strong>も正解です。右に2マス、下に2マス進む必要があるため、少なくとも4手必要です。この二つの道順は、その最小の手数で到着します。</p></details><p><strong>つまずいたとき：</strong>矢印を一つずつ指でたどります。「→ ↓ → ↓」では2手目に岩へ入ってしまいます。最後の位置だけでなく、途中も安全か確認しましょう。本編では盤面や手数の上限が変わるので、毎回画面の条件を読みます。</p></section>
+  <section id="water"><p><a href="/ja/guides/water">くわしい 例題と 解説へ →</a></p><h2>3. 水量：二つの容器の状態を記録する</h2><p>空の3 L容器Aと5 L容器Bがあります。できる操作は、満杯にする、空にする、片方からもう片方へ注ぐこと。注ぐときは、注ぎ元が空になるか、注ぎ先が満杯になるまで続けます。目盛りはありません。Bにちょうど4 L残しましょう。</p><table class="guide-table"><caption>6手で解く一例</caption><thead><tr><th scope="col">操作</th><th scope="col">A：3 L</th><th scope="col">B：5 L</th></tr></thead><tbody><tr><td>はじめ</td><td>0</td><td>0</td></tr><tr><td>1. Bを満杯にする</td><td>0</td><td>5</td></tr><tr><td>2. BからAへ注ぐ</td><td>3</td><td>2</td></tr><tr><td>3. Aを空にする</td><td>0</td><td>2</td></tr><tr><td>4. BからAへ注ぐ</td><td>2</td><td>0</td></tr><tr><td>5. Bを満杯にする</td><td>2</td><td>5</td></tr><tr><td>6. BからAへ注ぐ</td><td>3</td><td>4</td></tr></tbody></table><p>最後は、Aにすでに2 L入っているので、あと1 Lしか入りません。Bに残るのは5 − 1 = <strong>4 L</strong>です。「Aの容量が3 Lだから毎回3 L移る」と考えず、空いている量と注ぎ元の水量を比べ、小さい方だけ移します。</p><p><strong>自分で試す：</strong>両方空の状態から、Bに2 L残すにはどうしますか？ まず考えてから、上の表と比べましょう。</p><details><summary>短い問題の答えを見る</summary><p>Bを満杯にし、BからAへ注ぎます。Aに3 L、Bに2 Lとなり、2手で完成します。</p></details></section>
+  <section id="review"><h2>一回のプレイを振り返る</h2><ol><li>始める前に、数字を除外する・道順を計画する・量を記録する、のように目標を一つ決めます。</li><li>間違えたら、最初にルールと合わなくなった一手を見つけ、その一手を変えます。</li><li>できたら、答えを見ずに理由を説明します。準備ができてから新しい問題へ進みます。</li></ol><p>ゲームの得点はその回の結果であり、学校の学習内容を身につけたことの判定ではありません。時間制限が気になるときは、こちらの例題に戻れます。教科学習は<a href="/?choose-country=1">国・地域と学年の選択画面</a>から、学校で学んだことのある単元を選んでみてください。</p><a class="guide-play" href="/world?locale=ja">ロジックゲームを選ぶ →</a></section>
+  <section id="about"><h2>このガイドと訂正の窓口</h2><p>Piko Gameはブラウザで使える補助学習サービスです。このページは、サイト内の数独・ロボット・水量ゲームで使うルールを独立した例題で説明しています。教科書本文の転載、各国の教育課程の完全な網羅、学習効果の測定結果を示すものではありません。</p><p>誤答や動作の問題に気づいたら、保護者・先生から、ページのURL、ゲーム名、言語、問題の内容を<a href="mailto:j565718319@gmail.com">j565718319@gmail.com</a>へお知らせください。<a href="/privacy#contact">プライバシー説明</a>にも同じ窓口を掲載しています。子どもの氏名やアカウント情報は記載しないでください。公開した機能の変更は<a href="/updates.html">更新情報</a>で確認できます。</p></section>
+</main><footer><a href="/about#ja">サイト案内・ヘルプ</a> · <a href="/ja/">Pikoについて</a> · <a href="/privacy">プライバシー</a> · <a href="/terms">利用規約</a> · <a href="/privacy#contact">お問い合わせ</a></footer>
+</body>
+</html>

@@ -2,6 +2,7 @@ import { cp, mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promi
 import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { buildLearningContent } from './build-learning-content.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const output = path.resolve(root, 'dist');
@@ -14,8 +15,8 @@ await rm(output, { recursive: true, force: true });
 await mkdir(output, { recursive: true });
 
 const publicRootFiles = new Set([
-  'index.html', 'arena.html', 'updates.html', 'world.html', 'grades.html', 'learn.html', 'privacy.html', 'terms.html', 'robots.txt', 'sitemap.xml', 'ads.txt', 'favicon.svg', 'site.webmanifest',
-  '_routes.json', '_headers'
+  'index.html', 'arena.html', 'updates.html', 'town.html', 'world.html', 'grades.html', 'learn.html', 'privacy.html', 'terms.html', 'robots.txt', 'sitemap.xml', 'ads.txt', 'favicon.svg', 'site.webmanifest',
+  '404.html', 'about.html', '_routes.json', '_headers'
 ]);
 const rootFiles = (await readdir(root, { withFileTypes: true }))
   .filter(entry => entry.isFile() && (publicRootFiles.has(entry.name) || entry.name.endsWith('.js')))
@@ -30,6 +31,8 @@ for (const name of rootFiles) {
 for (const directory of ['assets', 'css', 'js', 'src', 'functions', 'en', 'ja', 'zh']) {
   await cp(path.join(root, directory), path.join(output, directory), { recursive: true });
 }
+
+await buildLearningContent(output);
 
 const releaseHash = createHash('sha256');
 const releaseFiles = (await collectFiles(output)).sort();

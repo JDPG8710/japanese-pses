@@ -8,7 +8,7 @@ export const playroomText = {
    goDesc:'落子、吃子、围地盘！锻炼超强思维力，新手小棋盘和大棋盘都能玩。',
    chessTitle:'国际象棋城堡',
    chessBadge:'骑士王后 · 益智对决',
-   chessDesc:'认识国王、王后与战马，巧妙运子，吃掉对方的国王吧！',
+   chessDesc:'认识王、后与马，巧妙运子，将死对方的王：王受到攻击且无法合法脱困时获胜。',
    playGo:'进入围棋大冒险 ➔',
    playChess:'进入国际象棋城堡 ➔',
    backToHub:'⬅ 返回游戏大厅',

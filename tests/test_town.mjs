@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {newState,restoreState,loadState,saveState,orderFor,startOrder,submitOrder,completeMission,buyFurniture,placeFurniture,canWalk,movePlayer,findPath,PLACES,MISSIONS,FURNITURE,englishOrder} from '../src/town/TownRules.mjs';
+import {newState,restoreState,loadState,saveState,orderFor,startOrder,submitOrder,completeMission,buyFurniture,placeFurniture,canWalk,movePlayer,findPath,PLACES,PLACE_ARCADE,MISSIONS,FURNITURE,englishOrder} from '../src/town/TownRules.mjs';
 import {TEXT} from '../src/town/TownText.mjs';
 import {townEntry} from '../src/town/TownEntry.mjs';
 let checks=0;const check=(name,fn)=>{fn();checks++;console.log(`ok ${checks} - ${name}`);};
@@ -42,8 +42,17 @@ check('every place is reachable from every other place and the initial spawn',()
   }
 });
 check('buildings, lake and town edges block movement',()=>{
-  assert.equal(canWalk(150,200),false);assert.equal(canWalk(200,500),false);assert.equal(canWalk(44,500),false);assert.deepEqual(findPath(newState().player,{x:200,y:200}),[]);
-  const p={x:500,y:360};assert.deepEqual(movePlayer(p,0,-5),p);
+  assert.equal(canWalk(200,280),false);assert.equal(canWalk(850,880),false);assert.equal(canWalk(44,500),false);assert.deepEqual(findPath(newState().player,{x:200,y:280}),[]);
+  const p={x:900,y:443};assert.deepEqual(movePlayer(p,0,-5),p);
+});
+check('arcade venues are mapped and reachable leisure spots',()=>{
+  assert.deepEqual(Object.keys(PLACE_ARCADE).sort(),['breakout','fruit','ninja','race']);
+  for(const id of Object.keys(PLACE_ARCADE))assert.ok(PLACES[id],id);
+  const spawn=newState().player;
+  for(const id of Object.keys(PLACE_ARCADE)){
+    const route=findPath(spawn,PLACES[id]);assert.ok(route.length>0,id);
+    assert.ok(canWalk(PLACES[id].x+30,PLACES[id].y+35),id+' approach');
+  }
 });
 check('every locale covers all UI fields, mission names and objectives',()=>{
   for(const l of ['zh','en','ja']){assert.deepEqual(Object.keys(TEXT[l]).sort(),Object.keys(TEXT.en).sort());assert.equal(TEXT[l].missions.length,MISSIONS.length);assert.equal(TEXT[l].objectives.length,MISSIONS.length);for(const f of FURNITURE)assert.ok(f[l]);assert.ok(!townEntry(l,'CN').includes('undefined'));}

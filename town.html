@@ -16,7 +16,8 @@
   <meta property="og:url" content="https://piko-game.com/town">
   <meta property="og:image" content="https://piko-game.com/assets/seo/piko-game-en.png">
   <meta name="twitter:card" content="summary_large_image">
-  <link rel="stylesheet" href="src/town/town.css?v=1">
+  <link rel="stylesheet" href="src/town/town.css?v=2">
+  <link rel="stylesheet" href="src/arcade/arcade.css?v=1">
 </head>
 <body>
   <header class="town-header"><a class="brand" href="index.html"><span class="brand-star">✳</span> Piko <span>Town</span></a><nav><a id="world-link" href="world">World games</a><button id="help" class="icon-button" type="button">?</button><button id="character" type="button">My character</button><label><span class="sr-only">Language / 语言 / ことば</span><select id="locale"><option value="zh">中文</option><option value="en">English</option><option value="ja">日本語</option></select></label></nav></header>
@@ -31,12 +32,24 @@
       </section>
       <aside class="quest-panel"><p class="eyebrow" id="mission-label"></p><div class="quest-number" id="mission-number"></div><h2 id="mission-title"></h2><p id="mission-objective"></p><button id="go-mission" class="primary" type="button"></button><div class="story-progress"><div><span id="progress-label"></span><b id="progress-count"></b></div><progress id="progress" max="10" value="0"></progress></div><details class="journal"><summary id="journal-label"></summary><ol id="journal"></ol></details><div class="note"><span aria-hidden="true">🌱</span><p id="local-note"></p></div></aside>
     </div>
-    <nav class="place-links" aria-label="Town destinations"><button data-travel="guide" type="button"><span>✳</span><div><b id="guide-label"></b><small>PIKO SQUARE</small></div><i>↗</i></button><button data-travel="shop" type="button"><span>🛍</span><div><b id="shop-label"></b><small>SUNSHINE SHOP</small></div><i>↗</i></button><button data-travel="home" type="button"><span>⌂</span><div><b id="home-label"></b><small>MY LITTLE HOME</small></div><i>↗</i></button></nav>
+    <div class="town-explore">
+      <nav class="place-links" aria-label="Town destinations"><button data-travel="guide" type="button"><span>✳</span><div><b id="guide-label"></b><small>PIKO SQUARE</small></div><i>↗</i></button><button data-travel="shop" type="button"><span>🛍</span><div><b id="shop-label"></b><small>SUNSHINE SHOP</small></div><i>↗</i></button><button data-travel="home" type="button"><span>⌂</span><div><b id="home-label"></b><small>MY LITTLE HOME</small></div><i>↗</i></button></nav>
+      <aside class="map-legend" aria-label="Leisure landmarks">
+        <p class="eyebrow" id="legend-title">Leisure landmarks</p>
+        <ul>
+          <li><span aria-hidden="true">🍉</span><b id="legend-fruit">Fruit stall</b><small>NORTH PARK</small></li>
+          <li><span aria-hidden="true">🧱</span><b id="legend-breakout">Brick hall</b><small>WEST ALLEY</small></li>
+          <li><span aria-hidden="true">🏎️</span><b id="legend-race">Night track</b><small>SOUTH PIER</small></li>
+          <li><span aria-hidden="true">🥷</span><b id="legend-ninja">Ninja dojo</b><small>EAST RIDGE</small></li>
+        </ul>
+        <p class="legend-tip" id="legend-tip"></p>
+      </aside>
+    </div>
     <p id="save-status" class="save-status" role="status" aria-live="polite"></p>
   </main>
   <footer><span>✳ Piko Game · Made for little discoveries.</span><div><a id="town-guide-link" href="/en/guides/town-shop">Shop worked example</a><a id="privacy-link" href="privacy">Privacy</a><a id="terms-link" href="terms">Terms</a></div></footer>
   <dialog id="town-dialog" aria-labelledby="dialog-title"><div id="dialog-body"></div></dialog>
   <noscript><p>This town needs JavaScript. 请启用 JavaScript 来探索小镇。JavaScriptを有効にしてください。</p></noscript>
-  <script type="module" src="src/town/TownApp.mjs?v=1"></script>
+  <script type="module" src="src/town/TownApp.mjs?v=2"></script>
 </body>
 </html>

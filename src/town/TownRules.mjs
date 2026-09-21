@@ -26,13 +26,26 @@ export const MISSIONS = [
   {place:'home',kind:'decorate'},
   {place:'guide',kind:'opening'}
 ];
-export const PLACES = {guide:{x:565,y:430},shop:{x:290,y:365},home:{x:835,y:370}};
+export const WORLD = Object.freeze({w:1800,h:1200});
+export const PLACES = {
+  guide:{x:900,y:520},
+  shop:{x:300,y:430},
+  home:{x:1500,y:480},
+  fruit:{x:480,y:210},
+  ninja:{x:1520,y:170},
+  breakout:{x:250,y:940},
+  race:{x:1600,y:980}
+};
+export const PLACE_ARCADE = Object.freeze({fruit:'fruit',breakout:'breakout',race:'race',ninja:'ninja'});
 export const OBSTACLES = [
-  {x:145,y:160,w:280,h:170}, {x:710,y:170,w:240,h:160},
-  {x:490,y:265,w:130,h:80}, {x:100,y:470,w:235,h:145}
+  {x:150,y:230,w:270,h:155}, {x:1380,y:300,w:250,h:145},
+  {x:835,y:355,w:130,h:75}, {x:780,y:820,w:240,h:150},
+  {x:360,y:80,w:180,h:70}, {x:1420,y:60,w:200,h:70},
+  {x:90,y:830,w:130,h:85}, {x:1500,y:870,w:190,h:70},
+  {x:80,y:520,w:90,h:110}, {x:1650,y:560,w:100,h:140}
 ];
 export function canWalk(x,y){
-  return x>=45&&x<=1055&&y>=100&&y<=655&&!OBSTACLES.some(r=>x>r.x-14&&x<r.x+r.w+14&&y>r.y-10&&y<r.y+r.h+12);
+  return x>=50&&x<=WORLD.w-50&&y>=90&&y<=WORLD.h-60&&!OBSTACLES.some(r=>x>r.x-14&&x<r.x+r.w+14&&y>r.y-10&&y<r.y+r.h+12);
 }
 export function movePlayer(player,dx,dy){
   const next={...player};
@@ -45,7 +58,7 @@ export function findPath(from,to){
   const step=10,key=(x,y)=>`${x},${y}`,sx=Math.round(from.x/step),sy=Math.round(from.y/step),tx=Math.round(to.x/step),ty=Math.round(to.y/step);
   if(!canWalk(tx*step,ty*step))return [];
   const queue=[[sx,sy]],parents=new Map([[key(sx,sy),null]]);let end;
-  for(let n=0;n<queue.length&&n<9000;n++){
+  for(let n=0;n<queue.length&&n<50000;n++){
     const [x,y]=queue[n];if(x===tx&&y===ty){end=[x,y];break;}
     for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){
       const xx=x+dx,yy=y+dy,k=key(xx,yy);
@@ -58,7 +71,7 @@ export function findPath(from,to){
   const result=[];for(let cur=end;parents.get(key(...cur));cur=parents.get(key(...cur)))result.unshift({x:cur[0]*step,y:cur[1]*step});
   return result;
 }
-export function newState(){return {version:1,mission:0,coins:0,xp:0,math:1,english:1,avatar:0,player:{x:560,y:555},owned:[],room:Array(9).fill(null),active:null,stats:{correct:0,mistakes:0,hints:0},started:false};}
+export function newState(){return {version:1,mission:0,coins:0,xp:0,math:1,english:1,avatar:0,player:{x:900,y:720},owned:[],room:Array(9).fill(null),active:null,stats:{correct:0,mistakes:0,hints:0},started:false};}
 const integer=(x,min,max,fallback)=>Number.isInteger(x)&&x>=min&&x<=max?x:fallback;
 export function orderFor(mission,math=1,english=1){
   const spec=MISSIONS[mission];if(!spec||!spec.items)return null;

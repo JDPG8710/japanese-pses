@@ -1,13 +1,15 @@
-import {TEXT} from './TownText.mjs?v=1';
-import {SAVE_KEY,PRODUCTS,FURNITURE,MISSIONS,PLACES,loadState,restoreState,saveState,startOrder,submitOrder,completeMission,buyFurniture,placeFurniture,englishOrder} from './TownRules.mjs?v=1';
-import {TownScene,AVATAR_COLORS} from './TownScene.mjs?v=1';
+import {TEXT} from './TownText.mjs?v=2';
+import {SAVE_KEY,PRODUCTS,FURNITURE,MISSIONS,PLACES,PLACE_ARCADE,loadState,restoreState,saveState,startOrder,submitOrder,completeMission,buyFurniture,placeFurniture,englishOrder} from './TownRules.mjs?v=2';
+import {TownScene,AVATAR_COLORS} from './TownScene.mjs?v=2';
+import {startArcade,ARCADE_IDS} from '../arcade/ArcadeHub.mjs?v=1';
+import {arcadeText} from '../arcade/ArcadeText.mjs?v=1';
 
 const $=id=>document.getElementById(id),esc=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let storage;try{storage=localStorage;}catch{}
 const params=new URLSearchParams(location.search);let savedLocale;try{savedLocale=storage?.getItem('world-locale');}catch{}
 let locale=[params.get('locale'),savedLocale,navigator.language?.slice(0,2),'en'].find(l=>TEXT[l]);
 const state=loadState(storage),w=()=>TEXT[locale],dialog=$('town-dialog');
-let modal=null,translated=false,feedback='',feedbackGood=false,selected=null,saveOK=true,scene;
+let modal=null,arcadeBusy=false,translated=false,feedback='',feedbackGood=false,selected=null,saveOK=true,scene;
 const label=p=>p[locale]||p.en;
 function persist(){saveOK=saveState(storage,state);$('save-status').textContent=saveOK?w().saved:w().saveFail;$('save-status').classList.toggle('save-error',!saveOK);}
 function button(action,text,cls=''){return `<button type="button" data-action="${action}" class="${cls}">${esc(text)}</button>`;}
@@ -24,7 +26,9 @@ function refresh(){
   document.documentElement.lang=locale;document.title=w().title+' · Piko Game';$('locale').value=locale;
   const texts={'town-title':'title','town-tag':'tag','world-link':'back','chapter':'chapter','mission-label':'mission','progress-label':'progress','journal-label':'journal','local-note':'local','walk-tip':'walk','coins-label':'coins','xp-label':'xp','guide-label':'guide','shop-label':'shop','home-label':'home','character':'settings','privacy-link':'privacy','terms-link':'terms'};
   for(const [id,key]of Object.entries(texts))$(id).textContent=w()[key];
-  $('help').setAttribute('aria-label',w().help);$('world-link').href=`world.html?${new URLSearchParams({locale,...(params.get('country')?{country:params.get('country')}:{})})}`;
+  $('help').setAttribute('aria-label',w().help);
+  if($('legend-title')){$('legend-title').textContent=w().legendTitle;$('legend-tip').textContent=w().legendTip;for(const id of ['fruit','breakout','race','ninja']){const el=$(`legend-${id}`);if(el)el.textContent=w()[`${id}Short`];}}
+  $('world-link').href=`world.html?${new URLSearchParams({locale,...(params.get('country')?{country:params.get('country')}:{})})}`;
   $('town-canvas').setAttribute('aria-label',`${w().title}. ${w().helpKeys}`);
   $('coins').textContent=state.coins;$('xp').textContent=state.xp;
   const finished=state.mission>=10;
@@ -36,7 +40,8 @@ function refresh(){
   $('journal').innerHTML=w().missions.map((name,i)=>`<li class="${i<state.mission?'complete':i===state.mission?'current':''}"><span>${i<state.mission?'✓':String(i+1).padStart(2,'0')}</span>${esc(name)}</li>`).join('');
   updateNear(scene?.near);$('save-status').textContent=saveOK?w().local:w().saveFail;
 }
-function updateNear(id){$('interact').disabled=!id;$('interact').textContent=id?`${w().talk} · ${{guide:'Piko',shop:'Mia',home:'Noah'}[id]}`:w().near;}
+function nearLabel(id){return {guide:'Piko',shop:'Mia',home:'Noah',fruit:w().fruitShort,breakout:w().breakoutShort,race:w().raceShort,ninja:w().ninjaShort}[id]||id;}
+function updateNear(id){$('interact').disabled=!id;$('interact').textContent=id?`${w().talk} · ${nearLabel(id)}`:w().near;}
 function intro(){modal='intro';shell(w().hello,`<div class="welcome-art" aria-hidden="true"><span>☀</span><b>⌂</b><i>✳</i></div><p class="intro-copy">${w().intro}</p><div class="intro-features"><span>🔤 English</span><span>🔢 Maths</span><span>🌱 My home</span></div>${button('begin',w().start,'primary wide')}<small class="local-detail">${w().local}</small>`,'welcome');}
 function showPlace(id){
   scene?.stop();feedback='';translated=false;window.speechSynthesis?.cancel();
@@ -63,11 +68,17 @@ function renderModal(){
     if(!state.active){shell('Mia · '+w().shopShort,`<div class="npc-talk"><span>👩‍🍳</span><p>${state.mission===0?w().waitShop:state.mission===10?w().completedShop:w().allShop}</p></div>${button('close',w().close,'primary')}`);return;}
     renderOrder();return;
   }
+  if(PLACE_ARCADE[modal]){renderArcade(modal);return;}
   if(modal==='home'){renderHome();return;}
   if(modal==='reward'){
     shell(w().reward,`<div class="reward-star" aria-hidden="true">✦</div><p>${w().rewardText}</p><div class="rewards"><b>${w().rewardCoins}</b><b>${w().rewardXP}</b></div>${state.mission===8?`<p class="gift">🪴 ${w().plantGift}</p>`:''}<p>${esc(w().missions[state.mission]||w().done)}</p>${button('reward-next',w().next,'primary wide')}`,'reward');return;
   }
   if(modal==='certificate')certificate();
+}
+function renderArcade(id){
+  const game=PLACE_ARCADE[id], t=arcadeText(locale), g=t.games[game];
+  const icon={fruit:'🍉',breakout:'🧱',race:'🏎️',ninja:'🥷'}[id];
+  shell(w()[id]||g.title,`<div class="npc-talk"><span>${icon}</span><p>${w()[id+'Welcome']}</p></div><p class="muted">${esc(g.blurb)} · ${esc(t.hardHint||t.hardHint)}</p><div class="arcade-actions">${button('play-arcade:'+game,w().playArcade,'primary wide')}${button('close',w().close)}</div>`,'arcade-venue');
 }
 function certificate(){shell(w().finished,`<div class="certificate"><span aria-hidden="true">🏅</span><p>PIKO TOWN · CHAPTER 01</p><h3>${w().badge}</h3><p>${w().finishedText}</p><div class="rewards"><b>${state.stats.correct} ${w().correctCount}</b><b>${state.stats.hints} ${w().hintCount}</b></div><small>${w().hintUsed}</small></div>${button('close',w().close,'primary wide')}`);}
 function itemSummary(a){return a.items.flatMap((n,i)=>n?[`${PRODUCTS[i].icon} ${label(PRODUCTS[i])} × ${n}`]:[]).join(' · ');}
@@ -104,6 +115,12 @@ dialog.addEventListener('click',e=>{
   const el=e.target.closest('button');if(!el)return;
   const a=el.dataset.action;
   if(a==='close'){close();return;}
+  if(a?.startsWith('play-arcade:')){
+    const id=a.slice('play-arcade:'.length);if(!ARCADE_IDS.includes(id))return;
+    close();arcadeBusy=true;
+    startArcade(id,{locale,onExit:()=>{arcadeBusy=false;$('town-canvas').focus({preventScroll:true});}});
+    return;
+  }
   if(a==='begin'){state.started=true;persist();close();return;}
   if(a==='accept'&&state.mission===0){completeMission(state,0);persist();refresh();modal='reward';renderModal();return;}
   if(a==='celebrate'&&state.mission===9){completeMission(state,9);persist();refresh();modal='certificate';renderModal();return;}
@@ -133,7 +150,7 @@ document.querySelectorAll('[data-direction]').forEach(el=>{
   el.addEventListener('keyup',()=>scene.direction(el.dataset.direction,false));
   el.addEventListener('blur',()=>scene.direction(el.dataset.direction,false));
 });
-scene=new TownScene($('town-canvas'),{state,words:w,onArrive:showPlace,onMove:()=>{if(state.started)persist();},onNear:updateNear,isPaused:()=>dialog.open||!state.started});
+scene=new TownScene($('town-canvas'),{state,words:w,onArrive:showPlace,onMove:()=>{if(state.started)persist();},onNear:updateNear,isPaused:()=>dialog.open||!state.started||arcadeBusy});
 window.addEventListener('pagehide',()=>{if(state.started)persist();});
 window.addEventListener('storage',e=>{if(e.key===SAVE_KEY&&e.newValue){try{Object.assign(state,restoreState(JSON.parse(e.newValue)));scene.stop();if(dialog.open)close();refresh();}catch{}}});
 refresh();

@@ -1,5 +1,8 @@
-import {PLACES,movePlayer,findPath} from './TownRules.mjs?v=1';
+import {PLACES,WORLD,movePlayer,findPath} from './TownRules.mjs?v=2';
 export const AVATAR_COLORS=['#ec825f','#509fd4','#9c82cf','#62a67a'];
+const STORY=['guide','shop','home'];
+const VENUE_COLOR={guide:'#9ab57a',shop:'#eaa46c',home:'#8aadd0',fruit:'#e2b84a',breakout:'#5ec6e8',race:'#ff7a5c',ninja:'#b58ae8'};
+const VENUE_LABEL={guide:'Piko',shop:'Mia',home:'Noah',fruit:'🍈',breakout:'🕹️',race:'🏎️',ninja:'🥷'};
 export class TownScene {
   constructor(canvas,{state,words,onArrive,onMove,onNear,isPaused}){
     Object.assign(this,{canvas,state,words,onArrive,onMove,onNear,isPaused});
@@ -15,14 +18,14 @@ export class TownScene {
     document.addEventListener('visibilitychange',()=>{if(document.hidden)this.stop();});
     canvas.addEventListener('pointerdown',e=>{
       if(this.isPaused())return;canvas.focus({preventScroll:true});const rect=canvas.getBoundingClientRect(),x=(e.clientX-rect.left)/this.scale+this.camera.x,y=(e.clientY-rect.top)/this.scale+this.camera.y;
-      const place=Object.keys(PLACES).find(id=>Math.hypot(x-PLACES[id].x,y-(PLACES[id].y-20))<48);
+      const place=Object.keys(PLACES).find(id=>Math.hypot(x-PLACES[id].x,y-(PLACES[id].y-20))<52);
       if(place)this.travel(place);else{this.path=findPath(this.state.player,{x,y});this.destination=null;}
     });
     this.frame=this.frame.bind(this);requestAnimationFrame(this.frame);
   }
-  size(){const r=this.canvas.getBoundingClientRect();this.width=r.width;this.height=r.height;const dpr=Math.min(devicePixelRatio||1,2);this.canvas.width=Math.round(r.width*dpr);this.canvas.height=Math.round(r.height*dpr);this.dpr=dpr;this.draw();}
+  size(){const r=this.canvas.getBoundingClientRect();this.width=r.width;this.height=r.height;const dpr=Math.min(globalThis.devicePixelRatio||1,2);this.canvas.width=Math.round(r.width*dpr);this.canvas.height=Math.round(r.height*dpr);this.dpr=dpr;this.draw();}
   stop(){this.keys.clear();this.path=[];this.destination=null;this.onMove();}
-  travel(id){if(this.isPaused())return;this.keys.clear();const place=PLACES[id];this.path=findPath(this.state.player,{x:place.x+30,y:place.y+35});this.destination=id;if(!this.path.length&&Math.hypot(this.state.player.x-place.x,this.state.player.y-place.y)<75){this.destination=null;this.onArrive(id);}}
+  travel(id){if(this.isPaused()||!PLACES[id])return;this.keys.clear();const place=PLACES[id];this.path=findPath(this.state.player,{x:place.x+30,y:place.y+35});this.destination=id;if(!this.path.length&&Math.hypot(this.state.player.x-place.x,this.state.player.y-place.y)<75){this.destination=null;this.onArrive(id);}}
   direction(key,pressed){if(pressed){this.path=[];this.destination=null;this.keys.add(key);}else this.keys.delete(key);}
   frame(time){
     const dt=Math.min((time-this.last)/1000||0,0.04);this.last=time;
@@ -65,47 +68,91 @@ export class TownScene {
     this.round(-11,-17+step,9,16,3,'#4c6871');this.round(3,-17-step,9,16,3,'#4c6871');
     this.round(-13,-3+step,12,6,2,'#fff7e3');this.round(2,-3-step,12,6,2,'#fff7e3');
     this.round(-17,-39,34,26,7,color);this.round(-22,-36,8,24,4,'#f3c296');this.round(14,-36,8,24,4,'#f3c296');
-    this.round(-14,-64,28,28,8,'#f3c296');this.round(-15,-67,30,11,5,kind==='guide'?'#b77748':'#574334');
+    this.round(-14,-64,28,28,8,'#f3c296');this.round(-15,-67,30,11,5,kind==='guide'?'#b77748':kind==='ninja'?'#2d2438':'#574334');
     if(kind==='shop'){this.round(-17,-69,34,7,3,'#ffefc4');this.round(-10,-78,20,12,3,'#ffefc4');this.round(-11,-34,22,19,3,'#fff2d9');}
     if(kind==='home')this.round(-19,-68,38,8,4,'#94b9d5');
+    if(kind==='fruit')this.round(-16,-70,32,8,4,'#f0c85a');
+    if(kind==='breakout'){this.round(-18,-72,36,10,3,'#3ad0ff');this.round(-10,-34,20,16,3,'#dff7ff');}
+    if(kind==='race')this.round(-18,-70,36,9,3,'#ff8a6a');
+    if(kind==='ninja'){this.round(-16,-70,32,9,3,'#1b1524');this.round(-12,-54,24,8,3,'#1b1524');}
     this.ellipse(-5,-51,1.7,2,'#493b31');this.ellipse(6,-51,1.7,2,'#493b31');
     c.strokeStyle='#b76f56';c.lineWidth=1.5;c.beginPath();c.arc(1,-45,4,0,Math.PI);c.stroke();c.restore();
   }
+  road(x,y,w,h){this.round(x,y,w,h,28,'#c3b99b');this.round(x+6,y+6,w-12,h-12,24,'#f2e6c9');}
+  landmarkFruit(x,y){
+    this.round(x-70,y-95,140,70,10,'#8fbf6a');this.round(x-60,y-88,120,28,6,'#ffe08a');this.text(this.words().fruitShort,x,y-68,13,'#6a5a28');
+    this.text('🍉',x-35,y-40,28);this.text('🍎',x,y-44,26);this.text('🍋',x+34,y-40,24);
+    for(const [tx,ty,k] of [[x-90,y-20,.7],[x+85,y-10,.85],[x-40,y+5,.6]])this.tree(tx,ty,k);
+  }
+  landmarkBreakout(x,y){
+    this.round(x-55,y-100,110,85,8,'#1d2a44');this.round(x-48,y-93,96,28,5,'#57dfff');this.text(this.words().breakoutShort,x,y-73,12,'#083047');
+    for(let r=0;r<3;r++)for(let c=0;c<4;c++)this.round(x-40+c*20,y-55+r*14,16,10,2,['#ff6b8a','#ffd45e','#7dffb3','#c791ff'][(r+c)%4]);
+    this.round(x-22,y-10,44,8,3,'#9ad8ff');
+  }
+  landmarkRace(x,y){
+    this.ellipse(x,y-20,78,36,'#5a6570');this.ellipse(x,y-20,62,24,'#3d4650');
+    this.round(x-70,y-95,60,50,6,'#ff6b4a');this.round(x-64,y-88,48,18,4,'#ffe0d4');this.text('🏁',x-40,y-72,20);
+    this.text(this.words().raceShort,x+30,y-78,12,'#fff5ef');
+    this.round(x+10,y-100,70,40,6,'#2b3340');
+  }
+  landmarkNinja(x,y){
+    this.poly([[x-70,y-40],[x,y-110],[x+70,y-40]],'#5b4a78');this.round(x-55,y-40,110,55,6,'#efe6ff');
+    this.round(x-18,y-5,36,20,4,'#3a2d52');this.text(this.words().ninjaShort,x,y-55,13,'#3a2d52');
+    this.text('🥷',x,y-78,26);
+  }
   draw(){
-    if(!this.width||!this.height)return;const c=this.ctx;
+    if(!this.width||!this.height)return;const c=this.ctx,W=WORLD.w,H=WORLD.h,p=this.state.player;
     this.scale=this.width>=640?Math.min(this.width/1100,this.height/650):Math.max(this.width/700,this.height/650);
-    const vw=this.width/this.scale,vh=this.height/this.scale,p=this.state.player;
-    this.camera={x:this.width>=640?(1100-vw)/2:Math.max(0,Math.min(1100-vw,p.x-vw/2)),y:this.width>=640?70:Math.max(0,Math.min(720-vh,p.y-vh*.66))};
+    const vw=this.width/this.scale,vh=this.height/this.scale;
+    this.camera={x:Math.max(0,Math.min(W-vw,p.x-vw/2)),y:Math.max(0,Math.min(H-vh,p.y-vh*.58))};
     c.setTransform(this.dpr,0,0,this.dpr,0,0);c.clearRect(0,0,this.width,this.height);c.scale(this.scale,this.scale);c.translate(-this.camera.x,-this.camera.y);
     c.fillStyle='#b9d8a1';c.fillRect(this.camera.x,this.camera.y,vw,vh);
-    this.poly([[0,0],[1100,0],[1100,160],[0,215]],'#c8e1b0');
-    for(let i=0;i<140;i++){const x=(i*137)%1100,y=(i*83)%720;this.ellipse(x,y,2,1.1,i%3?'#a2c68a':'#e2e9a7');}
-    this.round(440,110,195,550,50,'#c3b99b');this.round(447,110,181,550,48,'#f2e6c9');
-    this.round(225,325,655,116,40,'#c3b99b');this.round(225,325,655,108,38,'#f2e6c9');
-    this.ellipse(548,492,140,102,'#c4bca0');this.ellipse(548,488,132,96,'#f6e9cc');
-    c.strokeStyle='#e3d5b6';c.lineWidth=1;for(let y=145;y<650;y+=32){c.beginPath();c.moveTo(467,y);c.lineTo(608,y);c.stroke();}
-    this.round(102,475,228,131,54,'#98ba91');this.round(111,482,210,113,48,'#80bec1');this.round(119,487,193,99,45,'#a3d5d2');
-    for(let i=0;i<4;i++){this.round(140+i*26,520+i%2*24,37,3,2,'#d7eece');}this.ellipse(270,559,14,6,'#71af87');this.text('✿',270,558,16,'#f6efcb');
-    // 花壇、垣根、街灯は歩行範囲を妨げない装飾。
-    for(const [x,y,k] of [[70,168,1.3],[87,335,1],[1021,180,1.3],[1030,360,1],[366,140,.8],[685,155,1],[362,590,.9],[970,590,1.2],[70,653,.9],[703,640,.75]])this.tree(x,y,k);
-    for(let i=0;i<8;i++){this.round(706+i*30,555,21,12,3,'#8ab87e');this.text(i%2?'✿':'✦',715+i*30,554,15,i%2?'#fff2c5':'#ee9ca0');}
-    this.house(150,168,265,157,'#fff0ce','#db8770',this.words().shopShort,true);
-    this.house(720,180,220,149,'#fcf5dd','#82aab3',this.words().homeShort);
-    this.round(493,271,122,65,5,'#c49b6b');this.round(499,277,110,48,3,'#f9f0cf');this.text('PIKO TOWN',554,299,13);this.text('✦ 01 ✦',554,319,13,'#c58d4f');
-    this.round(500,334,8,18,1,'#aa825e');this.round(600,334,8,18,1,'#aa825e');
-    for(const x of [405,672]){this.round(x,385,5,65,2,'#66867b');this.round(x-9,379,23,15,5,'#fff0b9');}
-    this.round(748,477,119,17,4,'#b39471');this.round(752,498,110,13,3,'#c6a07a');this.round(758,512,6,14,2,'#856d59');this.round(849,512,6,14,2,'#856d59');
-    this.ellipse(550,512,34,13,'#dccbad');this.text('✳',550,524,40,'#d7bd8e');
+    // soft district washes
+    this.ellipse(480,180,220,140,'#cfe9b855');this.ellipse(1520,160,210,130,'#d9c8f040');
+    this.ellipse(260,920,200,150,'#b9d7f040');this.ellipse(1600,980,220,150,'#f0c2b040');
+    this.ellipse(300,420,210,140,'#f3d7b840');this.ellipse(1500,470,210,140,'#c5dff040');
+    this.ellipse(900,540,260,180,'#e8efc850');
+    this.poly([[0,0],[W,0],[W,180],[0,240]],'#c8e1b0');
+    for(let i=0;i<260;i++){const x=(i*137)%W,y=(i*83)%H;this.ellipse(x,y,2,1.1,i%3?'#a2c68a':'#e2e9a7');}
+    // road network
+    this.road(820,120,160,960);this.road(120,470,1560,120);
+    this.road(420,120,140,420);this.road(1380,120,140,420);
+    this.road(160,820,780,110);this.road(900,820,720,110);
+    this.road(200,200,420,90);this.road(1280,160,420,90);
+    this.ellipse(900,560,150,110,'#c4bca0');this.ellipse(900,556,138,100,'#f6e9cc');
+    c.strokeStyle='#e3d5b6';c.lineWidth=1;for(let y=160;y<1080;y+=36){c.beginPath();c.moveTo(848,y);c.lineTo(952,y);c.stroke();}
+    // pond
+    this.round(790,830,220,130,54,'#98ba91');this.round(800,838,200,112,48,'#80bec1');this.round(808,844,184,98,45,'#a3d5d2');
+    this.ellipse(900,900,14,6,'#71af87');this.text('✿',900,899,16,'#f6efcb');
+    // decoration trees (non-blocking)
+    for(const [x,y,k] of [[70,180,1.2],[90,640,1],[70,1100,.9],[300,110,1],[700,100,.85],[1100,110,1],[1700,160,1.2],[1720,640,1],[1700,1100,1],[1100,1100,.9],[620,640,.7],[1180,640,.7],[480,360,.65],[1320,360,.65]])this.tree(x,y,k);
+    // story buildings
+    this.house(155,235,255,150,'#fff0ce','#db8770',this.words().shopShort,true);
+    this.house(1390,305,230,140,'#fcf5dd','#82aab3',this.words().homeShort);
+    this.round(845,360,120,62,5,'#c49b6b');this.round(851,366,108,46,3,'#f9f0cf');this.text('PIKO TOWN',905,388,13);this.text('✦ MAP ✦',905,408,12,'#c58d4f');
+    for(const x of [780,1010]){this.round(x,500,5,65,2,'#66867b');this.round(x-9,494,23,15,5,'#fff0b9');}
+    // arcade landmarks
+    this.landmarkFruit(PLACES.fruit.x,PLACES.fruit.y);
+    this.landmarkBreakout(PLACES.breakout.x,PLACES.breakout.y);
+    this.landmarkRace(PLACES.race.x,PLACES.race.y);
+    this.landmarkNinja(PLACES.ninja.x,PLACES.ninja.y);
+    // district signs
+    this.round(430,320,120,28,10,'#ffffffcc');this.text(this.words().districtPark,490,339,11,'#5d734f');
+    this.round(200,700,130,28,10,'#ffffffcc');this.text(this.words().districtAlley,265,719,11,'#3d5a73');
+    this.round(1480,720,140,28,10,'#ffffffcc');this.text(this.words().districtTrack,1550,739,11,'#8a4a3a');
+    this.round(1480,300,130,28,10,'#ffffffcc');this.text(this.words().districtDojo,1545,319,11,'#5a4578');
     if(this.path.length){for(let i=3;i<this.path.length;i+=5)this.ellipse(this.path[i].x,this.path[i].y,3,2,'#b89a69a0');}
-    const actors=Object.entries(PLACES).map(([kind,pos])=>({...pos,kind,color:kind==='shop'?'#eaa46c':kind==='home'?'#8aadd0':'#9ab57a'}));
+    const actors=Object.entries(PLACES).map(([kind,pos])=>({...pos,kind,color:VENUE_COLOR[kind]||'#9ab57a'}));
     actors.push({...p,kind:'player',color:AVATAR_COLORS[this.state.avatar]});
     actors.sort((a,b)=>a.y-b.y).forEach(a=>this.person(a.x,a.y,a.color,a.kind,a.kind==='player'&&this.walking));
     for(const [id,pos] of Object.entries(PLACES)){
       const target=this.state.mission<10&&['guide','shop','shop','shop','shop','shop','shop','shop','home','guide'][this.state.mission]===id;
       if(target){const bob=window.matchMedia('(prefers-reduced-motion: reduce)').matches?0:Math.sin(this.clock*3)*3;this.ellipse(pos.x,pos.y-93+bob,12,13,'#ffe0a0');this.text('!',pos.x,pos.y-88+bob,20,'#8b653b');}
-      const label={guide:'Piko',shop:'Mia',home:'Noah'}[id];this.round(pos.x-25,pos.y+13,50,19,9,'#fff8e6e8');this.text(label,pos.x,pos.y+27,12);
+      const label=STORY.includes(id)?VENUE_LABEL[id]:(this.words()[`${id}Short`]||VENUE_LABEL[id]);
+      const tw=STORY.includes(id)?50:Math.max(54,String(label).length*7+16);
+      this.round(pos.x-tw/2,pos.y+13,tw,19,9,'#fff8e6e8');this.text(label,pos.x,pos.y+27,11);
     }
     this.poly([[p.x-5,p.y-82],[p.x+5,p.y-82],[p.x,p.y-75]],'#ffffff');
-    if(this.state.mission>=10){this.text('✦',448,227,28,'#edb961');this.text('✦',658,240,22,'#edb961');}
+    if(this.state.mission>=10){this.text('✦',820,300,28,'#edb961');this.text('✦',980,310,22,'#edb961');}
   }
 }

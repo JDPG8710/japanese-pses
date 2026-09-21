@@ -54,7 +54,7 @@ export function questionFor(r){
   explanation=`${word[0]} = ${word[1]} · ${word[2]} · ${word[3]}`;
  }else if(r.mode==='garden'){
   const crops=[['apples','🍎'],['carrots','🥕'],['tomatoes','🍅'],['bananas','🍌']],crop=crops[pick(crops.length)],rows=2+pick(r.math===1?3:7),each=1+pick(r.math===1?4:9);
-  answer=rows*each;question=r.english===1?`${rows} baskets × ${each} ${crop[0]}`:`Harvest ${rows} baskets with ${each} ${crop[0]} in each basket.`;
+  const noun=each===1?(crop[0]==='tomatoes'?'tomato':crop[0].slice(0,-1)):crop[0];answer=rows*each;question=r.english===1?`${rows} baskets × ${each} ${noun}`:`Harvest ${rows} baskets with ${each} ${noun} in each basket.`;
   explanation=`${rows} × ${each} = ${answer} ${crop[1]}`;
  }else if(r.mode==='memory'){
   const sequence=Array.from({length:Math.min(5,2+Math.floor((r.stage-1)/4))},()=>pick(4));

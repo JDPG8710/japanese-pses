@@ -35,7 +35,8 @@
     "test:parental-gate": "node tests/test_parental_gate.mjs",
     "test:town:3d": "node tests/test_town_3d.mjs",
     "test:town:3d:browser": "node tests/test_town_3d_browser.mjs",
-    "preview:town:3d": "node scripts/preview-town.mjs --port=4190"
+    "preview:town:3d": "node scripts/preview-town.mjs --port=4190",
+    "test:town:3d:edges": "node tests/test_town_3d_edges.mjs"
   },
   "devDependencies": {
     "playwright-core": "^1.63.0",

@@ -13,3 +13,7 @@
 @media(max-width:760px){.world-task{padding:12px;font-size:18px}.scene-answer{font-size:22px;max-width:110px;padding:6px 8px}.answer-label{font-size:22px}}
 
 .answer-leaders{position:absolute;inset:0;width:100%;height:100%;overflow:visible}.answer-leaders line{stroke-width:2.5;paint-order:stroke;stroke-linecap:round}.scene-viewport .map-caption{top:auto;bottom:12px}
+
+/* Immersive course play: keep panel visible beside a taller map. */
+.playing-island .town-layout{grid-template-columns:minmax(0,1fr) minmax(260px,320px)}
+.playing-island #town-canvas{height:min(82vh,900px);max-height:82vh}

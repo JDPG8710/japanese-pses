@@ -1,5 +1,5 @@
 // 小镇规则与浏览器解耦。所有数值都以整数星币表示；第一版只保存本机进度。
-import {buildingBlocks} from './TownBuildings.mjs?v=5';
+import {buildingBlocks} from './TownBuildings.mjs?v=6';
 import {newExpansion,restoreExpansion} from './ArcadeRules.mjs?v=2';
 export const SAVE_KEY = 'piko-town-v1';
 export const PRODUCTS = [
@@ -28,13 +28,16 @@ export const MISSIONS = [
   {place:'home',kind:'decorate'},
   {place:'guide',kind:'opening'}
 ];
-export const PLACES = {guide:{x:565,y:430},shop:{x:290,y:365},home:{x:835,y:370}};
-export const OBSTACLES = [
-  {x:145,y:160,w:280,h:170}, {x:710,y:170,w:240,h:160},
-  {x:490,y:265,w:130,h:80}, {x:100,y:470,w:235,h:145}
-];
-// Expanded save-space bounds for the commercial 3D map (world ≈ x±34, z -20..34).
-export const WORLD_BOUNDS=Object.freeze({minX:-300,maxX:1400,minY:-120,maxY:1250});
+export const PLACES = {
+  // Plaza / shop / home districts (world ≈ guide 0,8 · shop -18,-8 · home 16,-6)
+  guide:{x:550,y:580},
+  shop:{x:100,y:180},
+  home:{x:950,y:230}
+};
+// Decorative plaza blockers only — building walls come from buildingBlocks.
+export const OBSTACLES = [];
+// Sprawl map ~±70 world → save space via (w*25+550, w*25+380).
+export const WORLD_BOUNDS=Object.freeze({minX:-1250,maxX:2350,minY:-1420,maxY:2180});
 export function canWalk(x,y){
   return x>=WORLD_BOUNDS.minX&&x<=WORLD_BOUNDS.maxX&&y>=WORLD_BOUNDS.minY&&y<=WORLD_BOUNDS.maxY&&!buildingBlocks((x-550)/25,(y-380)/25)&&!OBSTACLES.some(r=>x>r.x-14&&x<r.x+r.w+14&&y>r.y-10&&y<r.y+r.h+12);
 }
@@ -49,7 +52,7 @@ export function findPath(from,to){
   const step=10,key=(x,y)=>`${x},${y}`,sx=Math.round(from.x/step),sy=Math.round(from.y/step),tx=Math.round(to.x/step),ty=Math.round(to.y/step);
   if(!canWalk(tx*step,ty*step))return [];
   const queue=[[sx,sy]],parents=new Map([[key(sx,sy),null]]);let end;
-  for(let n=0;n<queue.length&&n<50000;n++){
+  for(let n=0;n<queue.length&&n<200000;n++){
     const [x,y]=queue[n];if(x===tx&&y===ty){end=[x,y];break;}
     for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){
       const xx=x+dx,yy=y+dy,k=key(xx,yy);

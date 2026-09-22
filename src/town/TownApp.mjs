@@ -1,8 +1,8 @@
 import {TEXT} from './TownText.mjs?v=1';
-import {SAVE_KEY,PRODUCTS,FURNITURE,MISSIONS,PLACES,loadState,restoreState,saveState,startOrder,submitOrder,completeMission,buyFurniture,placeFurniture,englishOrder} from './TownRules.mjs?v=3';
-import {TownScene,AVATAR_COLORS} from './TownScene3D.mjs?v=3';
-import {createExpansion} from './TownExpansion.mjs?v=3';
-import {ARCADE_TEXT} from './ArcadeText.mjs?v=5';
+import {SAVE_KEY,PRODUCTS,FURNITURE,MISSIONS,PLACES,loadState,restoreState,saveState,startOrder,submitOrder,completeMission,buyFurniture,placeFurniture,englishOrder} from './TownRules.mjs?v=4';
+import {TownScene,AVATAR_COLORS} from './TownScene3D.mjs?v=4';
+import {createExpansion} from './TownExpansion.mjs?v=4';
+import {ARCADE_TEXT} from './ArcadeText.mjs?v=6';
 
 const $=id=>document.getElementById(id),esc=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let storage;try{storage=localStorage;}catch{}

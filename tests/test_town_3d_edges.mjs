@@ -24,6 +24,6 @@ try{
    s=await read(page);r=s.expansion.runs[mode];assert.equal(r.solved,questionFor(r).answer===target,`must reach the intended ${mode} target ${target}`);
   }
  }mark('all six manually jumped randomized answer routes work with speed shoes and spring boots');
- await page.locator('[data-exit-game]').last().click();await page.reload();await enterBuilding(page,'memory');await page.locator('[data-memory-replay]:not([disabled])').waitFor({timeout:12000});const before=await read(page);await page.locator('[data-memory-replay]').click();assert.equal((await read(page)).coins,before.coins);assert.equal((await read(page)).expansion.runs.memory.memoryIndex,0);mark('memory replay is free, resets sequence position and grants no reward');
+ await page.locator('[data-exit-game]').last().click();await page.reload();await page.locator('#town-canvas[data-renderer]').waitFor();await enterBuilding(page,'memory');await page.locator('[data-memory-replay]:not([disabled])').waitFor({timeout:12000});const before=await read(page);await page.locator('[data-memory-replay]').click();assert.equal((await read(page)).coins,before.coins);assert.equal((await read(page)).expansion.runs.memory.memoryIndex,0);mark('memory replay is free, resets sequence position and grants no reward');
  assert.deepEqual(errors,[]);mark('no exceptions during migration, repeated previews, purchases and recovery');console.log(`Town 3D edges: ${checks} groups passed.`);
 }finally{await browser.close();await preview.close();}

@@ -1,29 +1,27 @@
-/** Hard breakout: small paddle, fast ball, multi-hit bricks, few lives. */
+/** 3D perspective breakout — paddle, ball, brick wall. */
+import {
+  createArcadeRenderer, resizeArcade3D, disposeArcade3D, boxMesh, sphereMesh, THREE
+} from './Arcade3D.mjs?v=1';
+
 export const BREAKOUT_DIFFICULTY = Object.freeze({
-  lives: 2,
-  paddleWidth: 54,
-  paddleHeight: 12,
-  ballRadius: 5.5,
-  ballSpeed: 320,
-  ballSpeedMax: 460,
-  rows: 7,
+  lives: 3,
+  paddleWidth: 2.8,
+  ballRadius: 0.28,
+  ballSpeed: 9.5,
+  ballSpeedMax: 14,
+  rows: 5,
   cols: 8,
-  brickHitsMin: 2,
-  brickHitsMax: 3,
-  wallPadding: 16
+  brickHitsMin: 1,
+  brickHitsMax: 2,
+  playWidth: 10,
+  playDepth: 14
 });
 
 export function createBreakoutGame({canvas, onHud, onEnd, autoStart = true} = {}) {
-  const W = canvas?.width || 360;
-  const H = canvas?.height || 640;
-  const ctx = canvas?.getContext?.('2d');
   const D = BREAKOUT_DIFFICULTY;
-
-  let paddleX = W / 2;
-  let ballX = W / 2;
-  let ballY = H - 140;
-  let vx = D.ballSpeed * 0.55;
-  let vy = -D.ballSpeed;
+  const graphics = createArcadeRenderer(canvas, {clear: 0x102038});
+  let paddleX = 0;
+  let ball = {x: 0, y: 0.4, z: 4, vx: 3, vz: -D.ballSpeed};
   let lives = D.lives;
   let score = 0;
   let bricks = [];
@@ -33,149 +31,159 @@ export function createBreakoutGame({canvas, onHud, onEnd, autoStart = true} = {}
   let last = 0;
   let launched = false;
   let pointerId = null;
+  let paddleMesh = null;
+  let ballMesh = null;
+  let brickGroup = null;
+
+  function remaining() { return bricks.filter(b => b.hits > 0).length; }
+  function hud() { onHud?.({score, lives, extra: `🧱 ${remaining()}`}); }
 
   function buildBricks() {
     bricks = [];
-    const top = 70;
-    const gap = 3;
-    const bw = (W - D.wallPadding * 2 - gap * (D.cols - 1)) / D.cols;
-    const bh = 16;
+    if (brickGroup) while (brickGroup.children.length) brickGroup.remove(brickGroup.children[0]);
+    const gap = 0.12;
+    const bw = (D.playWidth - gap * (D.cols - 1)) / D.cols;
+    const bd = 0.7;
+    const startZ = -4;
     for (let r = 0; r < D.rows; r++) {
       for (let c = 0; c < D.cols; c++) {
-        // cursed pattern: denser multi-hit center + protected corners
         let hits = D.brickHitsMin;
-        if ((r + c) % 3 === 0) hits = D.brickHitsMax;
-        if (r < 2) hits = D.brickHitsMax;
-        if (c === 0 || c === D.cols - 1) hits = Math.max(hits, D.brickHitsMax);
-        bricks.push({
-          x: D.wallPadding + c * (bw + gap),
-          y: top + r * (bh + gap),
-          w: bw,
-          h: bh,
-          hits,
-          max: hits
-        });
+        if ((r + c) % 4 === 0) hits = D.brickHitsMax;
+        if (r < 1) hits = D.brickHitsMax;
+        const color = [0xff6b8a, 0xffd45e, 0x7dffb3, 0x57dfff, 0xc791ff][r % 5];
+        const mesh = graphics.ok ? boxMesh(bw * 0.92, 0.45, bd * 0.9, color) : null;
+        const x = -D.playWidth / 2 + bw / 2 + c * (bw + gap);
+        const z = startZ - r * (bd + gap);
+        if (mesh) {
+          mesh.position.set(x, 0.4, z);
+          brickGroup.add(mesh);
+        }
+        bricks.push({x, z, w: bw, d: bd, hits, max: hits, mesh});
       }
     }
   }
 
-  function remaining() { return bricks.filter(b => b.hits > 0).length; }
-
-  function hud() {
-    onHud?.({score, lives, extra: `🧱 ${remaining()}`});
+  function buildScene() {
+    if (!graphics.ok) return;
+    const {scene, camera} = graphics;
+    while (scene.children.length) scene.remove(scene.children[0]);
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x334466, 1.3));
+    const sun = new THREE.DirectionalLight(0xffffff, 1.5);
+    sun.position.set(4, 12, 8);
+    scene.add(sun);
+    const floor = boxMesh(D.playWidth + 2, 0.1, D.playDepth + 4, 0x1a2a44);
+    floor.position.set(0, -0.05, 2);
+    scene.add(floor);
+    for (const x of [-D.playWidth / 2 - 0.3, D.playWidth / 2 + 0.3]) {
+      const wall = boxMesh(0.35, 1.2, D.playDepth + 2, 0x2a4060);
+      wall.position.set(x, 0.5, 1);
+      scene.add(wall);
+    }
+    const back = boxMesh(D.playWidth + 1, 1.2, 0.35, 0x2a4060);
+    back.position.set(0, 0.5, -6.2);
+    scene.add(back);
+    brickGroup = new THREE.Group();
+    scene.add(brickGroup);
+    paddleMesh = boxMesh(D.paddleWidth, 0.35, 0.7, 0x6ff0ad);
+    paddleMesh.position.set(0, 0.3, 6.2);
+    scene.add(paddleMesh);
+    ballMesh = sphereMesh(D.ballRadius, 0xfff1a8, {segments: 14});
+    ballMesh.position.set(0, 0.4, 5.2);
+    scene.add(ballMesh);
+    camera.position.set(0, 11, 12);
+    camera.lookAt(0, 0, 0);
+    resizeArcade3D(graphics, canvas);
   }
 
   function resetBall() {
-    ballX = paddleX;
-    ballY = H - 140;
-    const angle = (-Math.PI / 2) + (Math.random() * 0.7 - 0.35);
-    const spd = Math.min(D.ballSpeedMax, D.ballSpeed + score * 0.04);
-    vx = Math.cos(angle) * spd;
-    vy = Math.sin(angle) * spd;
+    ball.x = paddleX;
+    ball.y = 0.4;
+    ball.z = 5.2;
+    const angle = -Math.PI / 2 + (Math.random() * 0.6 - 0.3);
+    const spd = Math.min(D.ballSpeedMax, D.ballSpeed + score * 0.01);
+    ball.vx = Math.cos(angle) * spd;
+    ball.vz = Math.sin(angle) * spd;
     launched = false;
   }
 
   function tick(dt) {
     if (!running || ended) return;
     if (!launched) {
-      ballX = paddleX;
-      ballY = H - 140;
+      ball.x = paddleX;
+      ball.z = 5.2;
+      if (paddleMesh) paddleMesh.position.x = paddleX;
+      if (ballMesh) ballMesh.position.set(ball.x, ball.y, ball.z);
       hud();
       return;
     }
+    ball.x += ball.vx * dt;
+    ball.z += ball.vz * dt;
+    const half = D.playWidth / 2 - D.ballRadius;
+    if (ball.x < -half) { ball.x = -half; ball.vx *= -1; }
+    if (ball.x > half) { ball.x = half; ball.vx *= -1; }
+    if (ball.z < -6) { ball.z = -6; ball.vz *= -1; }
 
-    ballX += vx * dt;
-    ballY += vy * dt;
-
-    if (ballX < D.ballRadius) { ballX = D.ballRadius; vx = Math.abs(vx); }
-    if (ballX > W - D.ballRadius) { ballX = W - D.ballRadius; vx = -Math.abs(vx); }
-    if (ballY < D.ballRadius + 8) { ballY = D.ballRadius + 8; vy = Math.abs(vy); }
-
-    const py = H - 48;
-    if (vy > 0 && ballY + D.ballRadius >= py && ballY - D.ballRadius <= py + D.paddleHeight &&
-        ballX >= paddleX - D.paddleWidth / 2 && ballX <= paddleX + D.paddleWidth / 2) {
-      const offset = (ballX - paddleX) / (D.paddleWidth / 2);
-      const angle = -Math.PI / 2 + offset * 1.05;
-      const spd = Math.min(D.ballSpeedMax, Math.hypot(vx, vy) * 1.03);
-      vx = Math.cos(angle) * spd;
-      vy = Math.sin(angle) * spd;
-      ballY = py - D.ballRadius - 0.5;
+    // paddle
+    if (ball.z > 5.7 && ball.z < 6.6 && Math.abs(ball.x - paddleX) < D.paddleWidth / 2 + D.ballRadius) {
+      ball.z = 5.7;
+      const offset = (ball.x - paddleX) / (D.paddleWidth / 2);
+      const spd = Math.min(D.ballSpeedMax, Math.hypot(ball.vx, ball.vz) * 1.03);
+      ball.vx = offset * spd * 0.85;
+      ball.vz = -Math.abs(Math.sqrt(Math.max(0.1, spd * spd - ball.vx * ball.vx)));
     }
 
     for (const b of bricks) {
       if (b.hits <= 0) continue;
-      if (ballX + D.ballRadius < b.x || ballX - D.ballRadius > b.x + b.w ||
-          ballY + D.ballRadius < b.y || ballY - D.ballRadius > b.y + b.h) continue;
-      const overlapL = ballX + D.ballRadius - b.x;
-      const overlapR = b.x + b.w - (ballX - D.ballRadius);
-      const overlapT = ballY + D.ballRadius - b.y;
-      const overlapB = b.y + b.h - (ballY - D.ballRadius);
-      const minX = Math.min(overlapL, overlapR);
-      const minY = Math.min(overlapT, overlapB);
-      if (minX < minY) vx *= -1; else vy *= -1;
-      b.hits -= 1;
-      score += b.hits === 0 ? 120 : 40;
-      break;
+      if (Math.abs(ball.x - b.x) < b.w / 2 + D.ballRadius && Math.abs(ball.z - b.z) < b.d / 2 + D.ballRadius) {
+        b.hits -= 1;
+        score += 10 * (b.max);
+        if (Math.abs(ball.x - b.x) / b.w > Math.abs(ball.z - b.z) / b.d) ball.vx *= -1;
+        else ball.vz *= -1;
+        if (b.hits <= 0 && b.mesh) {
+          b.mesh.visible = false;
+        } else if (b.mesh) {
+          b.mesh.scale.y = 0.55 + 0.45 * (b.hits / b.max);
+        }
+        break;
+      }
     }
 
-    if (ballY > H + 20) {
+    if (ball.z > 7.5) {
       lives -= 1;
       hud();
       if (lives <= 0) return finish(false);
       resetBall();
     }
-
     if (remaining() === 0) return finish(true);
+
+    if (paddleMesh) paddleMesh.position.x = paddleX;
+    if (ballMesh) ballMesh.position.set(ball.x, ball.y, ball.z);
     hud();
   }
 
   function finish(cleared) {
-    ended = true;
-    running = false;
+    ended = true; running = false;
     typeof cancelAnimationFrame === 'function' && cancelAnimationFrame(raf);
-    onEnd?.({cleared, score, detail: cleared ? 'wall down' : `${remaining()} left`});
+    onEnd?.({cleared, score, detail: cleared ? 'wall clear' : ''});
   }
 
   function draw() {
-    if (!ctx) return;
-    ctx.fillStyle = '#081426';
-    ctx.fillRect(0, 0, W, H);
-    for (const b of bricks) {
-      if (b.hits <= 0) continue;
-      const t = b.hits / b.max;
-      ctx.fillStyle = t > 0.66 ? '#ff6b8a' : t > 0.33 ? '#ffd45e' : '#57dfff';
-      ctx.fillRect(b.x, b.y, b.w, b.h);
-    }
-    ctx.fillStyle = '#6ff0ad';
-    ctx.fillRect(paddleX - D.paddleWidth / 2, H - 48, D.paddleWidth, D.paddleHeight);
-    ctx.beginPath();
-    ctx.fillStyle = '#fff6c2';
-    ctx.arc(ballX, ballY, D.ballRadius, 0, Math.PI * 2);
-    ctx.fill();
-    if (!launched) {
-      ctx.fillStyle = '#9ad7ff';
-      ctx.font = '700 14px system-ui,sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('TAP / SPACE', W / 2, H - 80);
-      ctx.textAlign = 'left';
-    }
+    if (!graphics.ok) return;
+    graphics.renderer.render(graphics.scene, graphics.camera);
   }
-
   function loop(ts) {
     if (!running) return;
     const dt = Math.min(0.033, (ts - last) / 1000 || 0.016);
-    last = ts;
-    tick(dt);
-    draw();
+    last = ts; tick(dt); draw();
     if (running) raf = requestAnimationFrame(loop);
   }
 
   function movePaddle(clientX) {
     const rect = canvas.getBoundingClientRect();
-    const x = ((clientX - rect.left) / rect.width) * W;
-    paddleX = Math.max(D.paddleWidth / 2 + 4, Math.min(W - D.paddleWidth / 2 - 4, x));
+    const t = (clientX - rect.left) / rect.width;
+    paddleX = (t - 0.5) * D.playWidth;
+    paddleX = Math.max(-D.playWidth / 2 + D.paddleWidth / 2, Math.min(D.playWidth / 2 - D.paddleWidth / 2, paddleX));
   }
-
   function onPointerDown(e) {
     pointerId = e.pointerId;
     canvas.setPointerCapture?.(pointerId);
@@ -186,30 +194,31 @@ export function createBreakoutGame({canvas, onHud, onEnd, autoStart = true} = {}
     if (pointerId != null && e.pointerId !== pointerId && e.buttons === 0) return;
     movePaddle(e.clientX);
   }
-  function onPointerUp(e) {
-    if (e.pointerId === pointerId) pointerId = null;
-  }
+  function onPointerUp(e) { if (e.pointerId === pointerId) pointerId = null; }
   function onKey(e) {
-    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') paddleX = Math.max(D.paddleWidth / 2 + 4, paddleX - 28);
-    if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') paddleX = Math.min(W - D.paddleWidth / 2 - 4, paddleX + 28);
+    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') paddleX = Math.max(-D.playWidth / 2 + D.paddleWidth / 2, paddleX - 0.7);
+    if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') paddleX = Math.min(D.playWidth / 2 - D.paddleWidth / 2, paddleX + 0.7);
     if (e.key === ' ' || e.key === 'Enter') launched = true;
   }
+  function onResize() { resizeArcade3D(graphics, canvas); }
 
   function bind() {
     canvas?.addEventListener?.('pointerdown', onPointerDown);
     canvas?.addEventListener?.('pointermove', onPointerMove);
     canvas?.addEventListener?.('pointerup', onPointerUp);
     typeof window !== 'undefined' && window.addEventListener('keydown', onKey);
+    typeof window !== 'undefined' && window.addEventListener('resize', onResize);
   }
   function unbind() {
     canvas?.removeEventListener?.('pointerdown', onPointerDown);
     canvas?.removeEventListener?.('pointermove', onPointerMove);
     canvas?.removeEventListener?.('pointerup', onPointerUp);
     typeof window !== 'undefined' && window.removeEventListener('keydown', onKey);
+    typeof window !== 'undefined' && window.removeEventListener('resize', onResize);
   }
 
   function start() {
-    lives = D.lives; score = 0; ended = false; paddleX = W / 2;
+    lives = D.lives; score = 0; ended = false; paddleX = 0;
     buildBricks(); resetBall(); running = true; last = performance.now?.() || 0; hud();
     typeof cancelAnimationFrame === 'function' && cancelAnimationFrame(raf);
     if (typeof requestAnimationFrame === 'function') raf = requestAnimationFrame(loop);
@@ -220,9 +229,15 @@ export function createBreakoutGame({canvas, onHud, onEnd, autoStart = true} = {}
     running = true; last = performance.now?.() || 0;
     if (typeof requestAnimationFrame === 'function') raf = requestAnimationFrame(loop);
   }
-  function destroy() { running = false; typeof cancelAnimationFrame === 'function' && cancelAnimationFrame(raf); unbind(); }
+  function destroy() {
+    running = false;
+    typeof cancelAnimationFrame === 'function' && cancelAnimationFrame(raf);
+    unbind();
+    disposeArcade3D(graphics);
+  }
 
+  buildScene();
   bind();
   if (autoStart) start();
-  return {start, pause, resume, destroy, tick, draw, getState: () => ({lives, score, remaining: remaining(), ended, bricks: bricks.length})};
+  return {start, pause, resume, destroy, tick, draw, getState: () => ({lives, score, remaining: remaining(), ended, bricks: bricks.length, gl: graphics.ok})};
 }

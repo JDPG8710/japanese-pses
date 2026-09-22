@@ -1,9 +1,11 @@
 import {MODES,AVATARS,ITEMS,startRun,questionFor,answerRun,nextStage,retryStage,buyItem,useHint} from './ArcadeRules.mjs?v=2';
-import {ARCADE_TEXT} from './ArcadeText.mjs?v=5';
+import {ARCADE_TEXT} from './ArcadeText.mjs?v=6';
 import {previewAvatar} from './Models3D.mjs?v=2';
-import {CASUAL_ARCADE_IDS} from './TownBuildings.mjs?v=5';
-import {startArcade,ARCADE_IDS} from '../arcade/ArcadeHub.mjs?v=1';
-import {arcadeText} from '../arcade/ArcadeText.mjs?v=1';
+import {CASUAL_ARCADE_IDS} from './TownBuildings.mjs?v=6';
+import {startArcade,ARCADE_IDS} from '../arcade/ArcadeHub.mjs?v=2';
+function requestGameFullscreen(el){try{const t=el||document.documentElement;const r=t.requestFullscreen||t.webkitRequestFullscreen;const p=r?.call(t);p?.catch?.(()=>{});}catch{}}
+function exitGameFullscreen(){try{(document.exitFullscreen||document.webkitExitFullscreen)?.call(document);}catch{}}
+import {arcadeText} from '../arcade/ArcadeText.mjs?v=2';
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export function createExpansion({state,scene,persist,refresh,shell,close,getLocale}){
  const w=()=>ARCADE_TEXT[getLocale()],name=o=>o[getLocale()]||o.en;let active=null,feedback='',previewDispose=null,watchStart=null,watchIndex=-1;
@@ -24,9 +26,9 @@ export function createExpansion({state,scene,persist,refresh,shell,close,getLoca
   scene.arcadeLocked=r.solved||r.hearts<=0||watching;panel.dataset.stage=String(r.stage);panel.dataset.solved=String(r.solved);
  }
  function watch(){watchStart=scene.clock;watchIndex=-1;scene.arcadeLocked=true;scene.respawn();hud();}
- function loadStage(){const r=state.expansion.runs[active],q=questionFor(r);watchStart=null;scene.enterGame(active,q,r.stage,choose,fall,r);feedback='';if(active==='memory'&&!r.solved&&r.hearts>0)watch();else hud();}
+ function loadStage(){const r=state.expansion.runs[active],q=questionFor(r);watchStart=null;requestGameFullscreen(document.querySelector('.town-layout')||document.documentElement);scene.enterGame(active,q,r.stage,choose,fall,r);feedback='';if(active==='memory'&&!r.solved&&r.hearts>0)watch();else hud();}
  function enter(mode){disposePreview();if($('town-dialog').open)close();state.started=true;startRun(state,mode);active=mode;persist();refresh();document.body.classList.add('playing-island');document.querySelector('.quest-panel').hidden=true;panel.hidden=false;loadStage();$('town-canvas').scrollIntoView({block:'center',behavior:'instant'});$('town-canvas').focus({preventScroll:true});}
- function leave(){if(!active)return;watchStart=null;active=null;worldTask.hidden=true;scene.arcadeLocked=false;scene.exitGame();if(entryBuilding)scene.returnFromBuilding(entryBuilding);panel.hidden=true;document.querySelector('.quest-panel').hidden=false;document.body.classList.remove('playing-island');persist();refresh();renderCards();$('town-canvas').focus({preventScroll:true});}
+ function leave(){if(!active)return;watchStart=null;active=null;worldTask.hidden=true;scene.arcadeLocked=false;scene.exitGame();exitGameFullscreen();if(entryBuilding)scene.returnFromBuilding(entryBuilding);panel.hidden=true;document.querySelector('.quest-panel').hidden=false;document.body.classList.remove('playing-island');persist();refresh();renderCards();$('town-canvas').focus({preventScroll:true});}
  function choose(index){if(!active||watchStart!==null)return;const result=answerRun(state,active,index);if(result.ignored)return;persist();refresh();if(result.partial){scene.respawn();feedback='✓';}else if(result.ok){feedback=`${w().correct} +${result.coins} ${w().coins} · ${result.explanation}`;scene.stop();}else{feedback=`${result.shield?'🛡 ':''}${result.over?w().over:w().wrong} ${result.explanation}`;scene.respawn();}hud();renderCards();}
  function fall(){if(!active)return;const q=questionFor(state.expansion.runs[active]);const result=answerRun(state,active,(q.answer+1)%q.options.length);if(result.ignored)return;feedback=result.over?w().over:w().fall;persist();refresh();hud();}
  function showShop(){disposePreview();scene.stop();const e=state.expansion;shell(w().shop,`<p>${w().bag} · <b>✦ ${state.coins}</b></p><div class="item-grid">${ITEMS.map(i=>{const owned=e.gear.includes(i.id);return `<article class="shop-item"><span class="item-icon">${i.icon}</span><h3>${name(i)}</h3><p>${w()[i.id==='hint'?'hintDescription':i.id]}</p><small>${i.kind==='use'?`${w().bag}: ${e.inventory[i.id]}`:owned?w().owned:`${i.price} ✦`}</small><button type="button" data-buy-item="${i.id}" ${owned||state.coins<i.price||i.kind==='use'&&e.inventory[i.id]>=99?'disabled':''}>${owned?'✓ '+w().owned:`${w().buy} · ${i.price} ✦`}</button>${i.kind==='style'&&owned?`<button type="button" data-equip-item="${i.id}" aria-pressed="${e.accessory===i.id}">${e.accessory===i.id?w().equipped:w().equip}</button>`:''}</article>`;}).join('')}</div>${e.accessory?`<button type="button" data-equip-item="">${w().remove}</button>`:''}`,'expansion-shop');}

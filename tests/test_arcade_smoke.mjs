@@ -24,17 +24,18 @@ for (const id of ARCADE_IDS) {
   assert.ok(ARCADE_DIFFICULTY[id]);
 }
 
-// Difficulty knobs stay hard (not baby-mode).
-assert.ok(RACE_DIFFICULTY.clearDistance >= 4500);
-assert.ok(RACE_DIFFICULTY.lives <= 2);
-assert.ok(RACE_DIFFICULTY.spawnIntervalMin <= 0.35);
-assert.ok(BREAKOUT_DIFFICULTY.paddleWidth <= 60);
-assert.ok(BREAKOUT_DIFFICULTY.lives <= 2);
-assert.ok(BREAKOUT_DIFFICULTY.brickHitsMax >= 2);
-assert.ok(FRUIT_DIFFICULTY.bombChanceStart >= 0.25);
-assert.ok(FRUIT_DIFFICULTY.minComboToCreditWave >= 3);
-assert.ok(NINJA_DIFFICULTY.clearWords >= 30);
-assert.ok(NINJA_DIFFICULTY.fallSpeedMax >= 200);
+// Easier / playable 3D knobs (not the old brutal 2D hard mode).
+assert.ok(RACE_DIFFICULTY.lives >= 3);
+assert.ok(RACE_DIFFICULTY.clearDistance <= 3500);
+assert.ok(RACE_DIFFICULTY.spawnIntervalMin >= 0.5);
+assert.ok(BREAKOUT_DIFFICULTY.lives >= 3);
+assert.ok(BREAKOUT_DIFFICULTY.paddleWidth >= 2);
+assert.ok(BREAKOUT_DIFFICULTY.brickHitsMax <= 2);
+assert.ok(FRUIT_DIFFICULTY.bombChanceStart <= 0.2);
+assert.ok(FRUIT_DIFFICULTY.minComboToCreditWave <= 3);
+assert.ok(NINJA_DIFFICULTY.clearWords <= 30);
+assert.ok(NINJA_DIFFICULTY.lives >= 3);
+assert.ok(NINJA_DIFFICULTY.fallSpeedMax <= 12);
 
 for (const id of ARCADE_IDS) {
   const state = createArcadeHeadless(id, {locale: 'en'});
@@ -46,6 +47,7 @@ const race = createRaceGame({canvas: createStubCanvas(), autoStart: false, onHud
 race.start();
 for (let i = 0; i < 30; i++) race.tick(1 / 60);
 assert.ok(race.getState().distance > 0);
+assert.equal(race.getState().gl, false); // headless stub has no WebGL
 race.destroy();
 
 const ninja = createNinjaTypeGame({canvas: createStubCanvas(), locale: 'ja', autoStart: false, onHud() {}, onEnd() {}});
@@ -53,6 +55,11 @@ ninja.start();
 ninja.tick(0.5);
 assert.ok(wordsForLocale('ja').length >= 20);
 ninja.destroy();
+
+const br = createBreakoutGame({canvas: createStubCanvas(), autoStart: false, onHud() {}, onEnd() {}});
+br.start(); br.tick(1/60); br.destroy();
+const fr = createFruitSlashGame({canvas: createStubCanvas(), autoStart: false, onHud() {}, onEnd() {}});
+fr.start(); fr.tick(1/60); fr.destroy();
 
 const html = arcadeSectionMarkup('zh');
 assert.match(html, /休闲街机/);
@@ -67,8 +74,12 @@ const worldHtml = await readFile(new URL('../world.html', import.meta.url), 'utf
 assert.match(worldHtml, /src\/arcade\/arcade\.css/);
 assert.match(worldHtml, /WorldPlay\.mjs\?v=/);
 
-// Logic lab games list unchanged.
 const {GAMES} = await import('../src/world/WorldRules.mjs');
 assert.deepEqual(GAMES, ['circuit', 'sudoku', 'code', 'robot', 'set', 'balance', 'order', 'water', 'network']);
 
-console.log(`Arcade smoke: ${ARCADE_IDS.length} games + i18n + difficulty knobs + headless ticks OK`);
+const shellSrc = await readFile(new URL('../src/arcade/ArcadeShell.mjs', import.meta.url), 'utf8');
+assert.match(shellSrc, /requestFullscreen/);
+assert.match(shellSrc, /exitFullscreen/);
+assert.match(shellSrc, /ResizeObserver/);
+
+console.log(`Arcade smoke: ${ARCADE_IDS.length} 3D games + i18n + easier difficulty + headless ticks OK`);

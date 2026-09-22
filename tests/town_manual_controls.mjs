@@ -17,7 +17,7 @@ export async function moveTo(page,target,{jump=false,tolerance=.15,finishWhenRes
  // Space is an explicit player input for each jump, never an internal game call.
  const mode=await page.locator('#town-canvas').getAttribute('data-mode'),run=(await readSave(page)).expansion.runs[mode],signature=JSON.stringify([run?.solved,run?.hearts,run?.memoryIndex]);
  if(jump)await page.keyboard.press('Space');await page.keyboard.down('w');
- try{await page.waitForFunction(({x,z,tx,tz,d,tolerance,mode,signature,finishWhenResult,finishWhenDialog})=>{if(finishWhenDialog&&document.querySelector('#town-dialog').open)return true;const r=JSON.parse(localStorage.getItem('piko-town-v1')).expansion.runs[mode];if(finishWhenResult&&JSON.stringify([r?.solved,r?.hearts,r?.memoryIndex])!==signature)return true;const p=document.querySelector('#town-canvas').dataset.position.split(',').map(Number);return ((p[0]-x)*(tx-x)+(p[2]-z)*(tz-z))/d>=d-tolerance;},{x,z,tx:target.x,tz:target.z,d:distance,tolerance,mode,signature,finishWhenResult,finishWhenDialog},{timeout:14000});}finally{await page.keyboard.up('w');}
+ try{await page.waitForFunction(({x,z,tx,tz,d,tolerance,mode,signature,finishWhenResult,finishWhenDialog})=>{if(finishWhenDialog&&document.querySelector('#town-dialog').open)return true;const r=JSON.parse(localStorage.getItem('piko-town-v1')).expansion.runs[mode];if(finishWhenResult&&JSON.stringify([r?.solved,r?.hearts,r?.memoryIndex])!==signature)return true;const p=document.querySelector('#town-canvas').dataset.position.split(',').map(Number);return ((p[0]-x)*(tx-x)+(p[2]-z)*(tz-z))/d>=d-tolerance;},{x,z,tx:target.x,tz:target.z,d:distance,tolerance,mode,signature,finishWhenResult,finishWhenDialog},{timeout:Math.min(45000,Math.max(14000,distance*900))});}finally{await page.keyboard.up('w');}
  if(jump&&!finishWhenResult){await page.waitForFunction(y=>{const c=document.querySelector('#town-canvas');return c.dataset.grounded==='true'&&Math.abs(Number(c.dataset.position.split(',')[1])-y)<.06;},target.y,{timeout:10000});}
 }
 export async function reachSkyTarget(page,mode,index){
@@ -39,8 +39,24 @@ export async function solve(page,mode){
 export async function enterBuilding(page,id){
  const b=TOWN_BUILDINGS.find(b=>b.id===id);
  if(await page.locator('#town-dialog').evaluate(d=>d.open))await page.locator('.close-button').click();
- await moveTo(page,{x:(await position(page))[0],z:15});await moveTo(page,{x:b.x,z:15});
- await moveTo(page,{x:b.x,z:b.z-1.8},{finishWhenDialog:true});
- await page.locator('#town-dialog[open]').waitFor();
+ // Always stay south of the open front — never walk through a building footprint.
+ const gateZ=b.z-6;
+ await moveTo(page,{x:0,z:8},{tolerance:.55});
+ if(gateZ<8){
+  await moveTo(page,{x:0,z:gateZ},{tolerance:.55});
+  await moveTo(page,{x:b.x,z:gateZ},{tolerance:.55});
+ }else{
+  await moveTo(page,{x:b.x,z:8},{tolerance:.55});
+  await moveTo(page,{x:b.x,z:gateZ},{tolerance:.55});
+ }
+ await moveTo(page,{x:b.x,z:b.z-1.8},{finishWhenDialog:true,tolerance:.5});
+ // Nudge into the open-front doorway until the lobby dialog opens.
+ for(let i=0;i<10;i++){
+  if(await page.locator('#town-dialog').evaluate(d=>d.open))break;
+  await page.keyboard.down('w');
+  await page.waitForTimeout(350);
+  await page.keyboard.up('w');
+ }
+ await page.locator('#town-dialog[open]').waitFor({timeout:20000});
  if(id!=='gear'){await page.locator(`[data-game="${id}"]`).click();await page.locator(`#town-canvas[data-mode="${id}"]`).waitFor();}
 }

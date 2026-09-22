@@ -13,9 +13,11 @@ for(const locale of ['zh','en','ja']){
 }
 const casual=TOWN_BUILDINGS.filter(b=>CASUAL_ARCADE_IDS.includes(b.id));
 assert.equal(casual.length,4);
-const eduZ=TOWN_BUILDINGS.filter(b=>!CASUAL_ARCADE_IDS.includes(b.id)).map(b=>b.z);
-assert.ok(eduZ.every(z=>z===22));
-assert.ok(!casual.every(b=>b.z===22),'arcade buildings must leave the educational row');
+const edu=TOWN_BUILDINGS.filter(b=>!CASUAL_ARCADE_IDS.includes(b.id));
+const eduZ=edu.map(b=>b.z);
+assert.ok(new Set(eduZ).size>=4,'edu buildings must stagger across districts');
+assert.ok(!edu.every(b=>b.z===edu[0].z),'edu must not share one z-row');
+assert.ok(!casual.every(b=>b.z===edu[0].z),'arcade buildings must leave any single edu row');
 const start=newState().player;
 for(const b of casual){
   const approach={x:b.x*25+550,y:(b.z-2)*25+380};

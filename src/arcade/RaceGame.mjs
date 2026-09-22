@@ -1,27 +1,28 @@
-/** Hard night racing: dense traffic, accelerating speed, few hits, long clear distance. */
+/** 3D chase-cam racing on a multi-lane road (easier difficulty than old 2D dodge). */
+import {
+  createArcadeRenderer, resizeArcade3D, disposeArcade3D, boxMesh, THREE
+} from './Arcade3D.mjs?v=1';
+
 export const RACE_DIFFICULTY = Object.freeze({
   lanes: 3,
-  lives: 2,
-  clearDistance: 5200,
-  baseSpeed: 290,
-  maxSpeed: 560,
-  accelPerSecond: 18,
-  spawnIntervalStart: 0.52,
-  spawnIntervalMin: 0.28,
-  hitInvulnMs: 700,
-  playerWidth: 34,
-  playerHeight: 52,
-  carWidth: 36,
-  carHeight: 56
+  lives: 4,
+  clearDistance: 2800,
+  baseSpeed: 160,
+  maxSpeed: 320,
+  accelPerSecond: 8,
+  spawnIntervalStart: 1.15,
+  spawnIntervalMin: 0.65,
+  hitInvulnMs: 1100,
+  laneWidth: 2.4,
+  playerLen: 2.2,
+  carLen: 2.4
 });
 
-export function createRaceGame({canvas, onHud, onEnd, autoStart = true} = {}) {
-  const W = canvas?.width || 360;
-  const H = canvas?.height || 640;
-  const ctx = canvas?.getContext?.('2d');
-  const D = RACE_DIFFICULTY;
-  const laneXs = Array.from({length: D.lanes}, (_, i) => W * (i + 0.5) / D.lanes);
+const CAR_COLORS = [0xff5c7a, 0xffd45e, 0x57dfff, 0xc791ff, 0xff9f43];
 
+export function createRaceGame({canvas, onHud, onEnd, autoStart = true} = {}) {
+  const D = RACE_DIFFICULTY;
+  const graphics = createArcadeRenderer(canvas, {clear: 0x0a1224});
   let lane = 1;
   let lives = D.lives;
   let score = 0;
@@ -34,8 +35,75 @@ export function createRaceGame({canvas, onHud, onEnd, autoStart = true} = {}) {
   let running = false;
   let raf = 0;
   let last = 0;
-  let keys = new Set();
   let ended = false;
+  let playerMesh = null;
+  let roadGroup = null;
+  let trafficGroup = null;
+
+  function laneX(i) {
+    return (i - (D.lanes - 1) / 2) * D.laneWidth;
+  }
+
+  function buildScene() {
+    if (!graphics.ok) return;
+    const {scene, camera} = graphics;
+    while (scene.children.length) scene.remove(scene.children[0]);
+    scene.add(new THREE.HemisphereLight(0xb8d4ff, 0x243040, 1.2));
+    const sun = new THREE.DirectionalLight(0xffe6c0, 1.4);
+    sun.position.set(-4, 18, -6);
+    scene.add(sun);
+    scene.fog = new THREE.Fog(0x0a1224, 40, 120);
+
+    roadGroup = new THREE.Group();
+    scene.add(roadGroup);
+    const road = boxMesh(D.laneWidth * D.lanes + 1.2, 0.08, 160, 0x1a2438);
+    road.position.set(0, 0, 40);
+    roadGroup.add(road);
+    const shoulderL = boxMesh(1.2, 0.12, 160, 0x2a3548);
+    shoulderL.position.set(-(D.laneWidth * D.lanes) / 2 - 0.8, 0.02, 40);
+    const shoulderR = shoulderL.clone();
+    shoulderR.position.x *= -1;
+    roadGroup.add(shoulderL, shoulderR);
+    for (let i = 1; i < D.lanes; i++) {
+      for (let s = 0; s < 24; s++) {
+        const dash = boxMesh(0.12, 0.05, 2.2, 0xfff3c0);
+        dash.position.set(laneX(i) - D.laneWidth / 2, 0.06, s * 6 - 10);
+        roadGroup.add(dash);
+      }
+    }
+    // side trees
+    for (let i = 0; i < 18; i++) {
+      const t = boxMesh(0.6, 2.4, 0.6, 0x3d8f5a);
+      t.position.set((i % 2 ? 1 : -1) * (D.laneWidth * 2.2), 1.2, i * 8 - 5);
+      roadGroup.add(t);
+    }
+
+    trafficGroup = new THREE.Group();
+    scene.add(trafficGroup);
+
+    playerMesh = makeCar(0x6ff0ad);
+    playerMesh.position.set(laneX(lane), 0.55, 4);
+    scene.add(playerMesh);
+
+    camera.position.set(0, 4.5, -6);
+    camera.lookAt(0, 1, 12);
+    resizeArcade3D(graphics, canvas);
+  }
+
+  function makeCar(color) {
+    const g = new THREE.Group();
+    const body = boxMesh(1.4, 0.55, D.playerLen, color);
+    body.position.y = 0.35;
+    const cabin = boxMesh(1.1, 0.45, 1.0, 0x1a2438);
+    cabin.position.set(0, 0.75, -0.1);
+    g.add(body, cabin);
+    for (const [x, z] of [[-0.6, 0.7], [0.6, 0.7], [-0.6, -0.7], [0.6, -0.7]]) {
+      const w = boxMesh(0.25, 0.25, 0.4, 0x111820);
+      w.position.set(x, 0.15, z);
+      g.add(w);
+    }
+    return g;
+  }
 
   function hud() {
     onHud?.({
@@ -46,27 +114,33 @@ export function createRaceGame({canvas, onHud, onEnd, autoStart = true} = {}) {
   }
 
   function spawnBurst() {
-    const occupied = new Set();
-    const count = speed > 420 ? 2 : 1;
+    const occupied = new Set(cars.map(c => c.lane));
+    // Prefer leaving at least one open lane.
+    const open = [];
+    for (let i = 0; i < D.lanes; i++) if (!occupied.has(i)) open.push(i);
+    const count = speed > 260 && Math.random() < 0.35 ? 2 : 1;
     for (let n = 0; n < count; n++) {
       let laneId = Math.floor(Math.random() * D.lanes);
-      for (let tries = 0; tries < 6 && occupied.has(laneId); tries++) laneId = Math.floor(Math.random() * D.lanes);
-      if (occupied.has(laneId) && Math.random() < 0.55) continue;
+      if (open.length && Math.random() < 0.7) {
+        laneId = open[Math.floor(Math.random() * open.length)];
+      }
+      if (occupied.has(laneId) && occupied.size >= D.lanes - 1) continue;
       occupied.add(laneId);
-      cars.push({
-        lane: laneId,
-        y: -D.carHeight - Math.random() * 40,
-        color: ['#ff5c7a', '#ffd45e', '#57dfff', '#c791ff'][Math.floor(Math.random() * 4)]
-      });
+      const color = CAR_COLORS[Math.floor(Math.random() * CAR_COLORS.length)];
+      const mesh = graphics.ok ? makeCar(color) : null;
+      const z = 55 + Math.random() * 20;
+      if (mesh) {
+        mesh.position.set(laneX(laneId), 0.55, z);
+        trafficGroup.add(mesh);
+      }
+      cars.push({lane: laneId, z, mesh, color});
     }
   }
 
   function collide() {
-    const px = laneXs[lane] - D.playerWidth / 2;
-    const py = H - 110;
     for (const car of cars) {
-      const cx = laneXs[car.lane] - D.carWidth / 2;
-      if (rectsOverlap(px, py, D.playerWidth, D.playerHeight, cx, car.y, D.carWidth, D.carHeight)) return true;
+      if (car.lane !== lane) continue;
+      if (Math.abs(car.z - 4) < (D.playerLen + D.carLen) * 0.42) return true;
     }
     return false;
   }
@@ -75,31 +149,49 @@ export function createRaceGame({canvas, onHud, onEnd, autoStart = true} = {}) {
     if (!running || ended) return;
     speed = Math.min(D.maxSpeed, speed + D.accelPerSecond * dt);
     distance += speed * dt * 0.55;
-    score = Math.floor(distance + (D.maxSpeed - (D.maxSpeed - speed)) * 0.2);
-    roadOffset = (roadOffset + speed * dt) % 48;
+    score = Math.floor(distance + speed * 0.15);
+    roadOffset = (roadOffset + speed * dt * 0.04) % 6;
     invuln = Math.max(0, invuln - dt * 1000);
 
     spawnTimer -= dt;
     if (spawnTimer <= 0) {
       spawnBurst();
-      const t = Math.max(D.spawnIntervalMin, D.spawnIntervalStart - (speed - D.baseSpeed) / 900);
-      spawnTimer = t * (0.75 + Math.random() * 0.45);
+      const t = Math.max(D.spawnIntervalMin, D.spawnIntervalStart - (speed - D.baseSpeed) / 700);
+      spawnTimer = t * (0.85 + Math.random() * 0.4);
     }
 
-    const relative = speed * 0.92;
+    const relative = speed * 0.045;
     cars = cars.filter(car => {
-      car.y += relative * dt;
-      return car.y < H + 80;
+      car.z -= relative;
+      if (car.mesh) car.mesh.position.z = car.z;
+      if (car.z < -8) {
+        if (car.mesh) trafficGroup?.remove(car.mesh);
+        return false;
+      }
+      return true;
     });
+
+    if (playerMesh) {
+      const targetX = laneX(lane);
+      playerMesh.position.x += (targetX - playerMesh.position.x) * Math.min(1, dt * 10);
+      const flash = invuln > 0 && Math.floor(invuln / 80) % 2 === 0;
+      playerMesh.visible = !flash;
+    }
+    if (roadGroup) roadGroup.position.z = -roadOffset;
 
     if (invuln <= 0 && collide()) {
       lives -= 1;
       invuln = D.hitInvulnMs;
-      cars = cars.filter(car => car.y < H * 0.45);
+      cars = cars.filter(car => {
+        if (car.z < 20) {
+          if (car.mesh) trafficGroup?.remove(car.mesh);
+          return false;
+        }
+        return true;
+      });
       hud();
       if (lives <= 0) return finish(false);
     }
-
     if (distance >= D.clearDistance) return finish(true);
     hud();
   }
@@ -112,42 +204,12 @@ export function createRaceGame({canvas, onHud, onEnd, autoStart = true} = {}) {
   }
 
   function draw() {
-    if (!ctx) return;
-    ctx.fillStyle = '#0b1528';
-    ctx.fillRect(0, 0, W, H);
-    // road
-    ctx.fillStyle = '#1a2438';
-    ctx.fillRect(W * 0.08, 0, W * 0.84, H);
-    ctx.strokeStyle = '#3d4f6e';
-    ctx.lineWidth = 3;
-    for (let i = 1; i < D.lanes; i++) {
-      const x = W * i / D.lanes;
-      ctx.beginPath();
-      ctx.setLineDash([18, 14]);
-      ctx.lineDashOffset = -roadOffset;
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, H);
-      ctx.stroke();
-    }
-    ctx.setLineDash([]);
-    // traffic
-    for (const car of cars) {
-      drawCar(laneXs[car.lane], car.y + D.carHeight / 2, D.carWidth, D.carHeight, car.color);
-    }
-    // player
-    const flash = invuln > 0 && Math.floor(invuln / 80) % 2 === 0;
-    if (!flash) drawCar(laneXs[lane], H - 110 + D.playerHeight / 2, D.playerWidth, D.playerHeight, '#6ff0ad');
-    // speed ribbon
-    ctx.fillStyle = '#9ad7ff';
-    ctx.font = '700 13px system-ui,sans-serif';
-    ctx.fillText(`${Math.floor(speed)}`, 12, 22);
-  }
-
-  function drawCar(cx, cy, w, h, color) {
-    ctx.fillStyle = color;
-    ctx.fillRect(cx - w / 2, cy - h / 2, w, h);
-    ctx.fillStyle = '#0b1528aa';
-    ctx.fillRect(cx - w / 2 + 6, cy - h / 2 + 8, w - 12, h * 0.28);
+    if (!graphics.ok) return;
+    const {camera, renderer, scene} = graphics;
+    const px = playerMesh?.position.x || 0;
+    camera.position.set(px * 0.35, 4.2, -5.5);
+    camera.lookAt(px * 0.2, 1.2, 14);
+    renderer.render(scene, camera);
   }
 
   function loop(ts) {
@@ -160,52 +222,58 @@ export function createRaceGame({canvas, onHud, onEnd, autoStart = true} = {}) {
   }
 
   function onKey(e) {
-    if (e.type === 'keydown') {
-      if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') { lane = Math.max(0, lane - 1); e.preventDefault(); }
-      if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') { lane = Math.min(D.lanes - 1, lane + 1); e.preventDefault(); }
-      keys.add(e.key);
-    } else keys.delete(e.key);
+    if (e.type !== 'keydown') return;
+    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+      lane = Math.max(0, lane - 1);
+      e.preventDefault();
+    }
+    if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+      lane = Math.min(D.lanes - 1, lane + 1);
+      e.preventDefault();
+    }
   }
-
   function onPointer(e) {
     const rect = canvas.getBoundingClientRect();
     const x = (e.clientX - rect.left) / rect.width;
     lane = x < 0.33 ? 0 : x > 0.66 ? 2 : 1;
   }
+  function onResize() { resizeArcade3D(graphics, canvas); }
 
   function bind() {
     typeof window !== 'undefined' && window.addEventListener('keydown', onKey);
-    typeof window !== 'undefined' && window.addEventListener('keyup', onKey);
     canvas?.addEventListener?.('pointerdown', onPointer);
+    typeof window !== 'undefined' && window.addEventListener('resize', onResize);
   }
   function unbind() {
     typeof window !== 'undefined' && window.removeEventListener('keydown', onKey);
-    typeof window !== 'undefined' && window.removeEventListener('keyup', onKey);
     canvas?.removeEventListener?.('pointerdown', onPointer);
+    typeof window !== 'undefined' && window.removeEventListener('resize', onResize);
   }
 
   function start() {
     lane = 1; lives = D.lives; score = 0; distance = 0; speed = D.baseSpeed;
-    spawnTimer = 0.35; invuln = 0; cars = []; roadOffset = 0; ended = false;
+    spawnTimer = 0.6; invuln = 0; cars = []; roadOffset = 0; ended = false;
+    if (trafficGroup) while (trafficGroup.children.length) trafficGroup.remove(trafficGroup.children[0]);
+    if (playerMesh) playerMesh.position.set(laneX(lane), 0.55, 4);
     running = true; last = performance.now?.() || 0; hud();
     typeof cancelAnimationFrame === 'function' && cancelAnimationFrame(raf);
     if (typeof requestAnimationFrame === 'function') raf = requestAnimationFrame(loop);
   }
-
   function pause() { running = false; typeof cancelAnimationFrame === 'function' && cancelAnimationFrame(raf); }
   function resume() {
     if (ended) return;
     running = true; last = performance.now?.() || 0;
     if (typeof requestAnimationFrame === 'function') raf = requestAnimationFrame(loop);
   }
-  function destroy() { running = false; typeof cancelAnimationFrame === 'function' && cancelAnimationFrame(raf); unbind(); }
+  function destroy() {
+    running = false;
+    typeof cancelAnimationFrame === 'function' && cancelAnimationFrame(raf);
+    unbind();
+    disposeArcade3D(graphics);
+  }
 
+  buildScene();
   bind();
   if (autoStart) start();
-
-  return {start, pause, resume, destroy, tick, draw, getState: () => ({lane, lives, score, distance, speed, cars: cars.length, ended})};
-}
-
-function rectsOverlap(ax, ay, aw, ah, bx, by, bw, bh) {
-  return ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by;
+  return {start, pause, resume, destroy, tick, draw, getState: () => ({lane, lives, score, distance, speed, cars: cars.length, ended, gl: graphics.ok})};
 }

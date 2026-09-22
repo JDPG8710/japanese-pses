@@ -2,7 +2,7 @@
 import {
   createArcadeRenderer, resizeArcade3D, disposeArcade3D, boxMesh, sphereMesh, THREE,
   spawnParticleBurst, updateParticles, capsulePowerMesh
-} from './Arcade3D.mjs?v=2';
+} from './Arcade3D.mjs?v=3';
 
 export const BREAKOUT_DIFFICULTY = Object.freeze({
   lives: 3,
@@ -29,6 +29,8 @@ export function createBreakoutGame({canvas, onHud, onEnd, audio = null, autoStar
   let paddleX = 0;
   let paddleW = D.paddleWidth;
   let paddleTargetX = 0;
+  const keyHeld = {left: false, right: false};
+  const PADDLE_SPEED = 11;
   let balls = [];
   let lives = D.lives;
   let score = 0;
@@ -221,7 +223,14 @@ export function createBreakoutGame({canvas, onHud, onEnd, audio = null, autoStar
 
   function tick(dt) {
     if (!running || ended) return;
-    paddleX += (paddleTargetX - paddleX) * Math.min(1, dt * 14);
+    // Keyboard: hold to move continuously (pointer still sets paddleTargetX directly).
+    if (keyHeld.left || keyHeld.right) {
+      const dir = (keyHeld.right ? 1 : 0) - (keyHeld.left ? 1 : 0);
+      paddleTargetX += dir * PADDLE_SPEED * dt;
+      const half = D.playWidth / 2 - paddleW / 2;
+      paddleTargetX = Math.max(-half, Math.min(half, paddleTargetX));
+    }
+    paddleX += (paddleTargetX - paddleX) * Math.min(1, dt * 18);
     if (expandUntil > 0) {
       expandUntil -= dt;
       if (expandUntil <= 0) {
@@ -338,29 +347,44 @@ export function createBreakoutGame({canvas, onHud, onEnd, audio = null, autoStar
     movePaddle(e.clientX);
   }
   function onPointerUp(e) { if (e.pointerId === pointerId) pointerId = null; }
-  function onKey(e) {
-    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') paddleTargetX = Math.max(-D.playWidth / 2 + paddleW / 2, paddleTargetX - 0.7);
-    if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') paddleTargetX = Math.min(D.playWidth / 2 - paddleW / 2, paddleTargetX + 0.7);
-    if (e.key === ' ' || e.key === 'Enter') launched = true;
+  function onKeyDown(e) {
+    if (e.repeat) return;
+    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') { keyHeld.left = true; e.preventDefault(); }
+    if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') { keyHeld.right = true; e.preventDefault(); }
+    if (e.key === ' ' || e.key === 'Enter') { launched = true; e.preventDefault(); }
   }
+  function onKeyUp(e) {
+    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keyHeld.left = false;
+    if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keyHeld.right = false;
+  }
+  function onBlur() { keyHeld.left = false; keyHeld.right = false; }
   function onResize() { resizeArcade3D(graphics, canvas); }
 
   function bind() {
     canvas?.addEventListener?.('pointerdown', onPointerDown);
     canvas?.addEventListener?.('pointermove', onPointerMove);
     canvas?.addEventListener?.('pointerup', onPointerUp);
-    typeof window !== 'undefined' && window.addEventListener('keydown', onKey);
-    typeof window !== 'undefined' && window.addEventListener('resize', onResize);
+    if (typeof window !== 'undefined') {
+      window.addEventListener('keydown', onKeyDown);
+      window.addEventListener('keyup', onKeyUp);
+      window.addEventListener('blur', onBlur);
+      window.addEventListener('resize', onResize);
+    }
   }
   function unbind() {
     canvas?.removeEventListener?.('pointerdown', onPointerDown);
     canvas?.removeEventListener?.('pointermove', onPointerMove);
     canvas?.removeEventListener?.('pointerup', onPointerUp);
-    typeof window !== 'undefined' && window.removeEventListener('keydown', onKey);
-    typeof window !== 'undefined' && window.removeEventListener('resize', onResize);
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
+      window.removeEventListener('blur', onBlur);
+      window.removeEventListener('resize', onResize);
+    }
   }
 
   function start() {
+    keyHeld.left = false; keyHeld.right = false;
     lives = D.lives; score = 0; ended = false; paddleX = 0; paddleTargetX = 0;
     paddleW = D.paddleWidth; expandUntil = 0; stickyUntil = 0; slowMul = 1; accum = 0;
     powerups = []; particles = [];

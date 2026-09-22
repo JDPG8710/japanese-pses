@@ -2,11 +2,11 @@ import {MODES,AVATARS,ITEMS,startRun,questionFor,answerRun,nextStage,retryStage,
 import {ARCADE_TEXT} from './ArcadeText.mjs?v=6';
 import {previewAvatar} from './Models3D.mjs?v=2';
 import {CASUAL_ARCADE_IDS} from './TownBuildings.mjs?v=7';
-import {startArcade,ARCADE_IDS} from '../arcade/ArcadeHub.mjs?v=3';
+import {startArcade,ARCADE_IDS} from '../arcade/ArcadeHub.mjs?v=4';
 import {getTownAudio} from './TownAudio.mjs?v=1';
 function requestGameFullscreen(el){try{const t=el||document.documentElement;const r=t.requestFullscreen||t.webkitRequestFullscreen;const p=r?.call(t);p?.catch?.(()=>{});}catch{}}
 function exitGameFullscreen(){try{(document.exitFullscreen||document.webkitExitFullscreen)?.call(document);}catch{}}
-import {arcadeText} from '../arcade/ArcadeText.mjs?v=2';
+import {arcadeText} from '../arcade/ArcadeText.mjs?v=3';
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export function createExpansion({state,scene,persist,refresh,shell,close,getLocale}){
  const w=()=>ARCADE_TEXT[getLocale()],name=o=>o[getLocale()]||o.en;let active=null,feedback='',previewDispose=null,watchStart=null,watchIndex=-1;

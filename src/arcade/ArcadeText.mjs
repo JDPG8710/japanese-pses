@@ -22,10 +22,10 @@ export const ARCADE_TEXT = {
     combo: 'Combo',
     games: {
       race: {
-        title: 'Night Drift',
+        title: 'Piko Circuit',
         tag: 'RACING',
-        blurb: 'Race in 3D — switch lanes, dodge cars, and reach the finish line.',
-        tip: '← → or A/D · tap left or right to change lanes'
+        blurb: 'Pick a track and car, then drive the loop — throttle, brake, steer, and grab items.',
+        tip: '↑/W gas · ↓/S brake · ←→/A D steer · Space use item · on-screen pads on mobile'
       },
       breakout: {
         title: 'Brick Siege',
@@ -44,6 +44,34 @@ export const ARCADE_TEXT = {
         tag: 'TYPING',
         blurb: 'Type the glowing word panels before they reach you.',
         tip: 'Keyboard only · type each glowing word'
+      }
+    },
+    race: {
+      lobbyKicker: 'CIRCUIT SELECT',
+      lobbyTitle: 'Piko Circuit',
+      lobbyHint: 'Choose a looping track and a car class, then race to finish the laps.',
+      pickTrack: 'Track',
+      pickCar: 'Car',
+      lap: 'Lap',
+      dnf: 'DNF',
+      useItem: 'Item',
+      tracks: {
+        sunrise: {name: 'Sunrise Circuit', blurb: 'Gentle oval · beginner'},
+        harbor: {name: 'Harbor Loop', blurb: 'Wide turns · docks'},
+        mountain: {name: 'Mountain Pass', blurb: 'Tight turns · banked'},
+        neon: {name: 'Neon City', blurb: 'Night layout · aggressive'}
+      },
+      cars: {
+        sports: {name: 'Sports', blurb: 'Balanced all-rounder'},
+        gt: {name: 'GT', blurb: 'High top speed · heavier'},
+        openwheel: {name: 'Open Wheel', blurb: 'Quick accel · sharp handling'},
+        kart: {name: 'Kart', blurb: 'Snappy turns · kid-friendly'}
+      },
+      powerups: {
+        boost: 'Boost',
+        shield: 'Shield',
+        oil: 'Oil',
+        magnet: 'Magnet'
       }
     }
   },
@@ -69,10 +97,10 @@ export const ARCADE_TEXT = {
     combo: '连击',
     games: {
       race: {
-        title: '夜路赛车',
+        title: '皮可环道',
         tag: '赛车',
-        blurb: '车流很密，车道很窄。几乎撞一次就结束。',
-        tip: '← → 或 A/D · 点左右 · 第三人称 3D 竞速'
+        blurb: '先选赛道和车型，再自己油门刹车过弯，捡道具完成圈数。',
+        tip: '↑/W 油门 · ↓/S 刹车 · ←→/A D 转向 · 空格用道具 · 手机用屏幕按钮'
       },
       breakout: {
         title: '打砖块围城',
@@ -91,6 +119,34 @@ export const ARCADE_TEXT = {
         tag: '打字',
         blurb: '落下的词很快。输错就掉命，速度还会再加快。',
         tip: '只用键盘 · 输入飞近的文字面板'
+      }
+    },
+    race: {
+      lobbyKicker: '赛道选择',
+      lobbyTitle: '皮可环道',
+      lobbyHint: '选择环形赛道和车型，开完指定圈数即可通关。',
+      pickTrack: '赛道',
+      pickCar: '车型',
+      lap: '圈',
+      dnf: '未完赛',
+      useItem: '道具',
+      tracks: {
+        sunrise: {name: '晨曦赛道', blurb: '简单椭圆 · 新手'},
+        harbor: {name: '港湾环线', blurb: '宽弯 · 码头风'},
+        mountain: {name: '山道关口', blurb: '急弯 · 倾斜感'},
+        neon: {name: '霓虹都市', blurb: '夜景 · 更具挑战'}
+      },
+      cars: {
+        sports: {name: '跑车', blurb: '均衡全能'},
+        gt: {name: 'GT', blurb: '极速高 · 更重'},
+        openwheel: {name: '开轮', blurb: '加速快 · 转向灵'},
+        kart: {name: '卡丁车', blurb: '转弯快 · 儿童友好'}
+      },
+      powerups: {
+        boost: '加速',
+        shield: '护盾',
+        oil: '机油',
+        magnet: '磁铁'
       }
     }
   },
@@ -116,10 +172,10 @@ export const ARCADE_TEXT = {
     combo: 'コンボ',
     games: {
       race: {
-        title: 'ナイトドリフト',
+        title: 'ピコサーキット',
         tag: 'レース',
-        blurb: 'レーンをかえてくるまをよけながら、ゴールをめざそう。',
-        tip: '← → または A/D · 左右をタップしてレーン移動'
+        blurb: 'コースとくるまをえらんで、アクセル・ブレーキ・ハンドルで周回しよう。',
+        tip: '↑/W アクセル · ↓/S ブレーキ · ←→/A D ハンドル · スペースでアイテム · スマホは画面ボタン'
       },
       breakout: {
         title: 'ブロック包囲',
@@ -138,6 +194,34 @@ export const ARCADE_TEXT = {
         tag: 'タイピング',
         blurb: 'ちかづくことばパネルを、とどくまえにタイプしよう。',
         tip: 'キーボードだけ · ひかることばをうってね'
+      }
+    },
+    race: {
+      lobbyKicker: 'コース選択',
+      lobbyTitle: 'ピコサーキット',
+      lobbyHint: 'ループコースとくるまをえらんで、指定ラップをゴールしよう。',
+      pickTrack: 'コース',
+      pickCar: 'くるま',
+      lap: 'ラップ',
+      dnf: 'リタイア',
+      useItem: 'アイテム',
+      tracks: {
+        sunrise: {name: 'サンライズ', blurb: 'かんたんオーバル'},
+        harbor: {name: 'ハーバーループ', blurb: 'ひろいコーナー'},
+        mountain: {name: 'マウンテンパス', blurb: 'きついカーブ'},
+        neon: {name: 'ネオンシティ', blurb: 'よるのテクニカル'}
+      },
+      cars: {
+        sports: {name: 'スポーツ', blurb: 'バランス型'},
+        gt: {name: 'GT', blurb: '最高速重視'},
+        openwheel: {name: 'オープンホイール', blurb: '加速とハンドリング'},
+        kart: {name: 'カート', blurb: 'まがりやすい'}
+      },
+      powerups: {
+        boost: 'ブースト',
+        shield: 'シールド',
+        oil: 'オイル',
+        magnet: 'マグネット'
       }
     }
   }

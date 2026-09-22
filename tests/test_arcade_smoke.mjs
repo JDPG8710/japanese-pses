@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {ARCADE_TEXT, arcadeText} from '../src/arcade/ArcadeText.mjs';
 import {createStubCanvas, readBest, writeBest} from '../src/arcade/ArcadeShell.mjs';
 import {ARCADE_IDS, ARCADE_DIFFICULTY, createArcadeHeadless, playKeyForArcade, arcadeSectionMarkup} from '../src/arcade/ArcadeHub.mjs';
-import {createRaceGame, RACE_DIFFICULTY} from '../src/arcade/RaceGame.mjs';
+import {createRaceGame, RACE_DIFFICULTY, RACE_TRACKS, RACE_CARS, RACE_POWERUPS} from '../src/arcade/RaceGame.mjs';
 import {createBreakoutGame, BREAKOUT_DIFFICULTY, BREAKOUT_POWERUPS} from '../src/arcade/BreakoutGame.mjs';
 import {createFruitSlashGame, FRUIT_DIFFICULTY} from '../src/arcade/FruitSlashGame.mjs';
 import {createNinjaTypeGame, NINJA_DIFFICULTY, wordsForLocale} from '../src/arcade/NinjaTypeGame.mjs';
@@ -17,6 +17,9 @@ for (const locale of ['en', 'zh', 'ja']) {
 }
 assert.equal(ARCADE_TEXT.zh.section, '休闲街机');
 assert.equal(ARCADE_TEXT.ja.section, 'アーケード');
+assert.ok(ARCADE_TEXT.en.race.tracks.sunrise.name);
+assert.ok(ARCADE_TEXT.zh.race.cars.kart.name);
+assert.ok(ARCADE_TEXT.ja.race.powerups.boost);
 
 for (const id of ARCADE_IDS) {
   assert.equal(playKeyForArcade(id), `arcade:${id}`);
@@ -24,10 +27,15 @@ for (const id of ARCADE_IDS) {
   assert.ok(ARCADE_DIFFICULTY[id]);
 }
 
-// Easier / playable 3D knobs (not the old brutal 2D hard mode).
+// Circuit racing API + playable knobs.
+assert.ok(RACE_TRACKS.length >= 3);
+assert.ok(RACE_CARS.length >= 3);
+assert.ok(RACE_POWERUPS.length >= 3);
 assert.ok(RACE_DIFFICULTY.lives >= 3);
-assert.ok(RACE_DIFFICULTY.clearDistance <= 3500);
+assert.ok(RACE_DIFFICULTY.laps >= 2);
 assert.ok(RACE_DIFFICULTY.spawnIntervalMin >= 0.5);
+assert.ok(RACE_TRACKS.every(t => t.path?.length >= 8 && t.width > 0));
+assert.ok(RACE_CARS.every(c => c.accel > 0 && c.topSpeed > 0 && c.handling > 0));
 assert.ok(BREAKOUT_DIFFICULTY.lives >= 3);
 assert.ok(BREAKOUT_DIFFICULTY.paddleWidth >= 2);
 assert.ok(BREAKOUT_DIFFICULTY.brickHitsMax <= 2);
@@ -45,12 +53,21 @@ for (const id of ARCADE_IDS) {
   assert.equal(state.ended, false);
 }
 
-const race = createRaceGame({canvas: createStubCanvas(), autoStart: false, onHud() {}, onEnd() {}});
+const race = createRaceGame({canvas: createStubCanvas(), autoStart: false, skipLobby: true, onHud() {}, onEnd() {}});
 race.start();
-for (let i = 0; i < 30; i++) race.tick(1 / 60);
-assert.ok(race.getState().distance > 0);
-assert.equal(race.getState().gl, false); // headless stub has no WebGL
+race.setControls({throttle: 1, steer: 0.2});
+for (let i = 0; i < 60; i++) race.tick(1 / 60);
+const rs = race.getState();
+assert.ok(rs.distance > 0 || rs.speed !== 0 || rs.progress > 0);
+assert.equal(rs.gl, false); // headless stub has no WebGL
+assert.ok(rs.trackId);
+assert.ok(rs.carId);
+assert.equal(rs.phase, 'racing');
 race.destroy();
+
+const raceDefaults = createRaceGame({canvas: createStubCanvas(), autoStart: true, onHud() {}, onEnd() {}});
+assert.equal(raceDefaults.getState().phase, 'racing');
+raceDefaults.destroy();
 
 const ninja = createNinjaTypeGame({canvas: createStubCanvas(), locale: 'ja', autoStart: false, onHud() {}, onEnd() {}});
 ninja.start();
@@ -84,7 +101,7 @@ assert.match(shellSrc, /requestFullscreen/);
 assert.match(shellSrc, /exitFullscreen/);
 assert.match(shellSrc, /ResizeObserver/);
 
-console.log(`Arcade smoke: ${ARCADE_IDS.length} 3D games + i18n + easier difficulty + headless ticks OK`);
+console.log(`Arcade smoke: ${ARCADE_IDS.length} 3D games + circuit race (${RACE_TRACKS.length} tracks / ${RACE_CARS.length} cars) + i18n + headless OK`);
 
 import {getTownAudio, createSilentTownAudio} from '../src/town/TownAudio.mjs';
 const silent = createSilentTownAudio();

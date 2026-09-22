@@ -1,6 +1,6 @@
 import {TOWN_BUILDINGS,CASUAL_ARCADE_IDS,buildingAt,frameSeconds} from './TownBuildings.mjs?v=7';
 import {ARCADE_TEXT} from './ArcadeText.mjs?v=6';
-import {arcadeText} from '../arcade/ArcadeText.mjs?v=2';
+import {arcadeText} from '../arcade/ArcadeText.mjs?v=3';
 import {PLACES,movePlayer,findPath,canWalk} from './TownRules.mjs?v=4';
 import {THREE,box,ball,label,makeAvatar,animateAvatar,disposeGroup} from './Models3D.mjs?v=2';
 import {generateCourse,advanceVertical,standingOnTarget} from './PlatformCourse.mjs?v=3';

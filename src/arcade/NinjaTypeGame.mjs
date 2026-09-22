@@ -1,7 +1,8 @@
 /** 3D ninja typing — floating word panels approaching the camera. */
 import {
-  createArcadeRenderer, resizeArcade3D, disposeArcade3D, boxMesh, THREE
-} from './Arcade3D.mjs?v=1';
+  createArcadeRenderer, resizeArcade3D, disposeArcade3D, boxMesh, THREE,
+  spawnParticleBurst, updateParticles
+} from './Arcade3D.mjs?v=2';
 
 export const NINJA_DIFFICULTY = Object.freeze({
   lives: 4,
@@ -65,7 +66,7 @@ function makeWordPanel(text) {
   return g;
 }
 
-export function createNinjaTypeGame({canvas, onHud, onEnd, locale = 'en', autoStart = true} = {}) {
+export function createNinjaTypeGame({canvas, onHud, onEnd, locale = 'en', audio = null, autoStart = true} = {}) {
   const D = NINJA_DIFFICULTY;
   const graphics = createArcadeRenderer(canvas, {clear: 0x0c0814});
   const bag = [...wordsForLocale(locale)];
@@ -82,6 +83,9 @@ export function createNinjaTypeGame({canvas, onHud, onEnd, locale = 'en', autoSt
   let last = 0;
   let streak = 0;
   let wordGroup = null;
+  let fxGroup = null;
+  let particles = [];
+  let flash = 0;
 
   function hud() {
     onHud?.({
@@ -117,6 +121,8 @@ export function createNinjaTypeGame({canvas, onHud, onEnd, locale = 'en', autoSt
     }
     wordGroup = new THREE.Group();
     scene.add(wordGroup);
+    fxGroup = new THREE.Group();
+    scene.add(fxGroup);
     camera.position.set(0, 1.2, 6);
     camera.lookAt(0, 0.8, -8);
     resizeArcade3D(graphics, canvas);
@@ -139,9 +145,17 @@ export function createNinjaTypeGame({canvas, onHud, onEnd, locale = 'en', autoSt
   }
 
   function destroyWord(w, ok) {
+    if (ok && graphics.ok && fxGroup) {
+      const origin = new THREE.Vector3(w.x, w.mesh?.position.y || 1.2, w.z);
+      particles = particles.concat(spawnParticleBurst(fxGroup, origin, {
+        count: 16, color: 0xe8b4ff, speed: 6, life: 0.4, size: 0.1
+      }));
+      flash = 0.18;
+    }
     if (w.mesh) wordGroup?.remove(w.mesh);
     active = active.filter(a => a !== w);
     if (ok) {
+      try { audio?.wordClear?.(); } catch {}
       typedCount += 1;
       streak += 1;
       score += 20 + streak * 3;
@@ -173,6 +187,8 @@ export function createNinjaTypeGame({canvas, onHud, onEnd, locale = 'en', autoSt
         if (lives <= 0) return finish(false);
       }
     }
+    particles = updateParticles(particles, dt, fxGroup);
+    if (flash > 0) flash = Math.max(0, flash - dt);
     hud();
   }
 
@@ -184,6 +200,8 @@ export function createNinjaTypeGame({canvas, onHud, onEnd, locale = 'en', autoSt
 
   function draw() {
     if (!graphics.ok) return;
+    if (flash > 0) graphics.scene.background.setHex(0x3a1a55);
+    else graphics.scene.background.setHex(0x0c0814);
     graphics.renderer.render(graphics.scene, graphics.camera);
   }
   function loop(ts) {
@@ -211,12 +229,13 @@ export function createNinjaTypeGame({canvas, onHud, onEnd, locale = 'en', autoSt
       lives -= D.mistakeLifeCost;
       streak = 0;
       buffer = '';
+      try { audio?.typeMiss?.(); } catch {}
       hud();
       if (lives <= 0) return finish(false);
       return;
     }
     if (match.text === buffer) destroyWord(match, true);
-    else hud();
+    else { try { audio?.typeOk?.(); } catch {} hud(); }
   }
   function onResize() { resizeArcade3D(graphics, canvas); }
 
@@ -233,6 +252,8 @@ export function createNinjaTypeGame({canvas, onHud, onEnd, locale = 'en', autoSt
     lives = D.lives; score = 0; typedCount = 0; buffer = ''; active = [];
     spawnTimer = 0.4; speed = D.fallSpeedStart; streak = 0; ended = false;
     if (wordGroup) while (wordGroup.children.length) wordGroup.remove(wordGroup.children[0]);
+    if (fxGroup) while (fxGroup.children.length) fxGroup.remove(fxGroup.children[0]);
+    particles = []; flash = 0;
     running = true; last = performance.now?.() || 0; hud();
     typeof cancelAnimationFrame === 'function' && cancelAnimationFrame(raf);
     if (typeof requestAnimationFrame === 'function') raf = requestAnimationFrame(loop);

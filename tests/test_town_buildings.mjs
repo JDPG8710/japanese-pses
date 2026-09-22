@@ -36,11 +36,11 @@ for(let i=0;i<TOWN_BUILDINGS.length;i++){
   for(let j=i+1;j<TOWN_BUILDINGS.length;j++){
     const a=TOWN_BUILDINGS[i],b=TOWN_BUILDINGS[j];
     const d=Math.hypot(a.x-b.x,a.z-b.z);
-    assert.ok(d>=12,`spacing ${a.id}-${b.id} = ${d}`);
+    assert.ok(d>=20,`spacing ${a.id}-${b.id} = ${d}`);
   }
 }
 for(const b of casual){assert.equal(buildingAt(b.x,b.z-1.5).id,b.id);assert.ok(canWalk(b.x*25+550,(b.z-2)*25+380));}
-console.log('ok - sprawling districts: edu not co-linear, min spacing >=12, casual enterable');
+console.log('ok - sprawling districts: edu not co-linear, min spacing >=20, casual enterable');
 
 // Town life counts
 const env=new THREE.Group();

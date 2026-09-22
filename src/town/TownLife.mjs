@@ -3,19 +3,19 @@ import {THREE, box, ball, makeAvatar, animateAvatar} from './Models3D.mjs?v=2';
 
 const WANDERERS = [
   {character: 'explorer', path: [[-8, 6], [8, 6], [8, -4], [-8, -4]], speed: 2.2, label: 'Kai'},
-  {character: 'robot', path: [[-30, 26], [-18, 34], [-8, 28], [-22, 22]], speed: 1.9, label: 'Beep'},
-  {character: 'cat', path: [[30, 28], [42, 34], [48, 26], [34, 22]], speed: 2.4, label: 'Momo'},
-  {character: 'builder', path: [[-22, -10], [-12, -4], [-28, 2], [-16, -14]], speed: 1.8, label: 'Rin'},
-  {character: 'astro', path: [[12, -10], [22, -2], [8, 4], [18, -16]], speed: 2.0, label: 'Lux'},
-  {character: 'explorer', path: [[-42, -28], [-50, -34], [-38, -38], [-34, -26]], speed: 2.1, label: 'Ski'}
+  {character: 'robot', path: [[-36, 30], [-22, 46], [-6, 34], [-28, 24]], speed: 1.9, label: 'Beep'},
+  {character: 'cat', path: [[34, 24], [52, 36], [58, 22], [40, 18]], speed: 2.4, label: 'Momo'},
+  {character: 'builder', path: [[-28, -20], [-12, -4], [-34, 0], [-22, -24]], speed: 1.8, label: 'Rin'},
+  {character: 'astro', path: [[12, -10], [26, -2], [8, 4], [20, -18]], speed: 2.0, label: 'Lux'},
+  {character: 'explorer', path: [[-52, -36], [-66, -48], [-48, -52], [-42, -34]], speed: 2.1, label: 'Ski'}
 ];
 
 const ANIMALS = [
-  {kind: 'cat', x: -46, z: 8, radius: 5, hop: true},
+  {kind: 'cat', x: -58, z: 12, radius: 5, hop: true},
   {kind: 'bird', x: 2, z: 10, radius: 7, fly: true},
   {kind: 'frog', x: -6, z: 14, radius: 3.5, hop: true},
   {kind: 'rabbit', x: 14, z: -4, radius: 4.5, hop: true},
-  {kind: 'bird', x: 40, z: -26, radius: 6, fly: true},
+  {kind: 'bird', x: 54, z: -36, radius: 6, fly: true},
   {kind: 'cat', x: 16, z: -8, radius: 4, hop: false}
 ];
 

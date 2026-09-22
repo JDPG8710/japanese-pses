@@ -3,7 +3,7 @@ import {ARCADE_TEXT, arcadeText} from '../src/arcade/ArcadeText.mjs';
 import {createStubCanvas, readBest, writeBest} from '../src/arcade/ArcadeShell.mjs';
 import {ARCADE_IDS, ARCADE_DIFFICULTY, createArcadeHeadless, playKeyForArcade, arcadeSectionMarkup} from '../src/arcade/ArcadeHub.mjs';
 import {createRaceGame, RACE_DIFFICULTY} from '../src/arcade/RaceGame.mjs';
-import {createBreakoutGame, BREAKOUT_DIFFICULTY} from '../src/arcade/BreakoutGame.mjs';
+import {createBreakoutGame, BREAKOUT_DIFFICULTY, BREAKOUT_POWERUPS} from '../src/arcade/BreakoutGame.mjs';
 import {createFruitSlashGame, FRUIT_DIFFICULTY} from '../src/arcade/FruitSlashGame.mjs';
 import {createNinjaTypeGame, NINJA_DIFFICULTY, wordsForLocale} from '../src/arcade/NinjaTypeGame.mjs';
 import {validPlayKey} from '../src/stats/PlayKeys.mjs';
@@ -31,6 +31,8 @@ assert.ok(RACE_DIFFICULTY.spawnIntervalMin >= 0.5);
 assert.ok(BREAKOUT_DIFFICULTY.lives >= 3);
 assert.ok(BREAKOUT_DIFFICULTY.paddleWidth >= 2);
 assert.ok(BREAKOUT_DIFFICULTY.brickHitsMax <= 2);
+assert.ok(BREAKOUT_POWERUPS.length >= 3);
+assert.ok(BREAKOUT_POWERUPS.includes('expand'));
 assert.ok(FRUIT_DIFFICULTY.bombChanceStart <= 0.2);
 assert.ok(FRUIT_DIFFICULTY.minComboToCreditWave <= 3);
 assert.ok(NINJA_DIFFICULTY.clearWords <= 30);
@@ -83,3 +85,9 @@ assert.match(shellSrc, /exitFullscreen/);
 assert.match(shellSrc, /ResizeObserver/);
 
 console.log(`Arcade smoke: ${ARCADE_IDS.length} 3D games + i18n + easier difficulty + headless ticks OK`);
+
+import {getTownAudio, createSilentTownAudio} from '../src/town/TownAudio.mjs';
+const silent = createSilentTownAudio();
+silent.startTown(); silent.enterArcade('breakout'); silent.brick(); silent.destroy();
+assert.equal(silent.isMuted(), true);
+console.log('TownAudio silent stub OK');

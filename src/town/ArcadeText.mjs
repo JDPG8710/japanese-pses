@@ -21,6 +21,6 @@ Object.assign(ARCADE_TEXT.zh,{districtTip:'沿路向南走进游戏街区 · 进
 Object.assign(ARCADE_TEXT.en,{districtTip:'Walk south along the road · Enter a building to play',play:'Start game'});
 Object.assign(ARCADE_TEXT.ja,{districtTip:'道を南へ · 建物に入ってゲームを選ぼう',play:'ゲームをはじめる'});
 
-Object.assign(ARCADE_TEXT.zh,{districtPark:'果园街区',districtDojo:'忍者道场',districtAlley:'街机巷',districtTrack:'夜赛道',hardVenue:'高难度休闲馆'});
-Object.assign(ARCADE_TEXT.en,{districtPark:'Orchard',districtDojo:'Ninja dojo',districtAlley:'Arcade alley',districtTrack:'Night track',hardVenue:'Hard leisure venue'});
-Object.assign(ARCADE_TEXT.ja,{districtPark:'果樹園エリア',districtDojo:'忍者どうじょう',districtAlley:'アーケード横丁',districtTrack:'ナイトトラック',hardVenue:'HARDレジャー館'});
+Object.assign(ARCADE_TEXT.zh,{districtPark:'果园街区',districtDojo:'忍者道场',districtAlley:'街机巷',districtTrack:'夜赛道',districtLearn:'学习带',districtPlaza:'广场',districtTip:'点击地面或用方向键探索。靠近后即可进入建筑。',firstPerson:'第一人称',thirdPerson:'第三人称',switchFirst:'切换到第一人称',switchThird:'切换到第三人称',hardVenue:'高难度休闲馆'});
+Object.assign(ARCADE_TEXT.en,{districtPark:'Orchard',districtDojo:'Ninja Dojo',districtAlley:'Arcade Alley',districtTrack:'Night Track',districtLearn:'Learning Belt',districtPlaza:'Plaza',districtTip:'Click the ground or use the arrows to explore. Enter a building when you are close.',firstPerson:'First person',thirdPerson:'Third person',switchFirst:'Switch to first person',switchThird:'Switch to third person',hardVenue:'Challenge venue'});
+Object.assign(ARCADE_TEXT.ja,{districtPark:'果樹園エリア',districtDojo:'忍者どうじょう',districtAlley:'アーケード横丁',districtTrack:'ナイトトラック',districtLearn:'まなびベルト',districtPlaza:'ひろば',districtTip:'地面をタップするか矢印でたんけん。ちかづいたら建物にはいれるよ。',firstPerson:'一人称',thirdPerson:'三人称',switchFirst:'一人称にきりかえ',switchThird:'三人称にきりかえ',hardVenue:'チャレンジ会場'});

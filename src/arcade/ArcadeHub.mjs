@@ -5,6 +5,7 @@ import {createBreakoutGame, BREAKOUT_DIFFICULTY} from './BreakoutGame.mjs';
 import {createFruitSlashGame, FRUIT_DIFFICULTY} from './FruitSlashGame.mjs';
 import {createNinjaTypeGame, NINJA_DIFFICULTY} from './NinjaTypeGame.mjs';
 import {recordPlay} from '../stats/PlayCounts.js';
+import {getTownAudio} from '../town/TownAudio.mjs?v=1';
 
 export const ARCADE_IDS = Object.freeze(['race', 'breakout', 'fruit', 'ninja']);
 
@@ -67,6 +68,9 @@ export function startArcade(id, {locale = 'en', onExit} = {}) {
   if (!ARCADE_IDS.includes(id)) return null;
   activeSession?.destroy?.();
   void recordPlay(playKeyForArcade(id));
+  const audio = typeof window !== 'undefined' ? getTownAudio() : null;
+  audio?.unlock?.();
+  audio?.enterArcade?.(id);
 
   let game = null;
   let wasPaused = false;
@@ -76,6 +80,7 @@ export function startArcade(id, {locale = 'en', onExit} = {}) {
     onExit() {
       game?.destroy?.();
       activeSession = null;
+      audio?.exitToTown?.();
       onExit?.();
     },
     onRetry() {
@@ -89,6 +94,7 @@ export function startArcade(id, {locale = 'en', onExit} = {}) {
     return FACTORIES[id]({
       canvas: shell.canvas,
       locale,
+      audio,
       autoStart: true,
       onHud(stats) {
         if (shell.paused || shell.ended) return;

@@ -1,5 +1,5 @@
 // 小镇规则与浏览器解耦。所有数值都以整数星币表示；第一版只保存本机进度。
-import {buildingBlocks} from './TownBuildings.mjs?v=6';
+import {buildingBlocks} from './TownBuildings.mjs?v=7';
 import {newExpansion,restoreExpansion} from './ArcadeRules.mjs?v=2';
 export const SAVE_KEY = 'piko-town-v1';
 export const PRODUCTS = [
@@ -37,7 +37,7 @@ export const PLACES = {
 // Decorative plaza blockers only — building walls come from buildingBlocks.
 export const OBSTACLES = [];
 // Sprawl map ~±70 world → save space via (w*25+550, w*25+380).
-export const WORLD_BOUNDS=Object.freeze({minX:-1250,maxX:2350,minY:-1420,maxY:2180});
+export const WORLD_BOUNDS=Object.freeze({minX:-1450,maxX:2550,minY:-1620,maxY:2380});
 export function canWalk(x,y){
   return x>=WORLD_BOUNDS.minX&&x<=WORLD_BOUNDS.maxX&&y>=WORLD_BOUNDS.minY&&y<=WORLD_BOUNDS.maxY&&!buildingBlocks((x-550)/25,(y-380)/25)&&!OBSTACLES.some(r=>x>r.x-14&&x<r.x+r.w+14&&y>r.y-10&&y<r.y+r.h+12);
 }

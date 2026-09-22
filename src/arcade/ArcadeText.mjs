@@ -3,7 +3,7 @@ export const ARCADE_TEXT = {
   en: {
     section: 'Arcade',
     sectionKicker: 'CASUAL · 3D ARCADE',
-    sectionIntro: 'Four 3D leisure games. Chase-cam racing, breakout, fruit slash, and typing.',
+    sectionIntro: 'Four fun 3D games: racing, breakout, fruit slash, and typing.',
     play: 'Play',
     best: 'Best',
     score: 'Score',
@@ -12,11 +12,11 @@ export const ARCADE_TEXT = {
     distance: 'Distance',
     pause: 'Pause',
     resume: 'Resume',
-    retry: 'Retry',
+    retry: 'Try again',
     back: 'Back',
     gameOver: 'Game over',
-    cleared: 'Cleared!',
-    hardHint: '3D · playable',
+    cleared: 'You cleared it!',
+    hardHint: '3D · clearable',
     paused: 'Paused',
     tip: 'Tip',
     combo: 'Combo',
@@ -24,26 +24,26 @@ export const ARCADE_TEXT = {
       race: {
         title: 'Night Drift',
         tag: 'RACING',
-        blurb: '3D chase-cam racing — change lanes, dodge traffic, reach the finish.',
-        tip: '← → or A/D · tap left/right · chase-cam 3D race'
+        blurb: 'Race in 3D — switch lanes, dodge cars, and reach the finish line.',
+        tip: '← → or A/D · tap left or right to change lanes'
       },
       breakout: {
         title: 'Brick Siege',
         tag: 'BREAKOUT',
-        blurb: '3D breakout — aim the paddle, clear the brick wall.',
-        tip: 'Drag pointer or ← → · launch with click / Space'
+        blurb: 'Bounce the ball, smash the bricks, and catch power-ups with your paddle.',
+        tip: 'Drag or use ← → · click or press Space to launch'
       },
       fruit: {
         title: 'Fruit Storm',
         tag: 'SLASH',
-        blurb: 'Slash flying 3D fruits — avoid bombs, build combos.',
-        tip: 'Swipe through fruits in 3D · bombs cost a life'
+        blurb: 'Slash flying fruit, dodge bombs, and build a big combo.',
+        tip: 'Swipe through fruit · bombs cost a life'
       },
       ninja: {
         title: 'Ninja Type',
         tag: 'TYPING',
-        blurb: 'Type approaching 3D word panels before they reach you.',
-        tip: 'Keyboard only · type the glowing panels'
+        blurb: 'Type the glowing word panels before they reach you.',
+        tip: 'Keyboard only · type each glowing word'
       }
     }
   },
@@ -97,7 +97,7 @@ export const ARCADE_TEXT = {
   ja: {
     section: 'アーケード',
     sectionKicker: 'カジュアル · 3D',
-    sectionIntro: '3Dの レジャーゲーム 4つ。レース・ブロック・フルーツ・タイピング。',
+    sectionIntro: '3Dゲームが4つ。レース・ブロックくずし・フルーツ・タイピング。',
     play: 'あそぶ',
     best: 'ベスト',
     score: 'スコア',
@@ -110,34 +110,34 @@ export const ARCADE_TEXT = {
     back: 'もどる',
     gameOver: 'ゲームオーバー',
     cleared: 'クリア！',
-    hardHint: '3D · クリア しやすい',
-    paused: 'ていしちゅう',
+    hardHint: '3D · クリアできる',
+    paused: 'いちじていし中',
     tip: 'ヒント',
     combo: 'コンボ',
     games: {
       race: {
         title: 'ナイトドリフト',
-        tag: 'レーシング',
-        blurb: 'くるまが たくさん。ほぼ 1かいの ミスで おわる。',
-        tip: '← → または A/D · 左右タップ · 3Dレース'
+        tag: 'レース',
+        blurb: 'レーンをかえてくるまをよけながら、ゴールをめざそう。',
+        tip: '← → または A/D · 左右をタップしてレーン移動'
       },
       breakout: {
         title: 'ブロック包囲',
         tag: 'ブロックくずし',
-        blurb: 'パドルは ちいさい。ボールは はやい。ぜんぶ くずそう。',
+        blurb: 'ボールをはじいてブロックをくずそう。パワーアップもキャッチしてね。',
         tip: 'ドラッグ / ← → · クリックかスペースで発射'
       },
       fruit: {
         title: 'フルーツストーム',
         tag: 'フルーツカット',
-        blurb: 'はやい なげと おおい ばくだん。コンボが たりないと むし。',
-        tip: '3Dでスワイプ · ばくだんはライフげん'
+        blurb: 'とんでくるフルーツをカット！ばくだんにはちゅういして、コンボをのばそう。',
+        tip: 'スワイプでカット · ばくだんはライフがへる'
       },
       ninja: {
-        title: '忍者タイピング',
+        title: 'にんじゃタイピング',
         tag: 'タイピング',
-        blurb: 'おちる ことばを うつ。まちがえると ライフが へる。',
-        tip: 'キーボードのみ · とんでくるパネルを うつ'
+        blurb: 'ちかづくことばパネルを、とどくまえにタイプしよう。',
+        tip: 'キーボードだけ · ひかることばをうってね'
       }
     }
   }

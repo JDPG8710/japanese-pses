@@ -1,7 +1,8 @@
 /** 3D chase-cam racing on a multi-lane road (easier difficulty than old 2D dodge). */
 import {
-  createArcadeRenderer, resizeArcade3D, disposeArcade3D, boxMesh, THREE
-} from './Arcade3D.mjs?v=1';
+  createArcadeRenderer, resizeArcade3D, disposeArcade3D, boxMesh, THREE,
+  spawnParticleBurst, updateParticles
+} from './Arcade3D.mjs?v=2';
 
 export const RACE_DIFFICULTY = Object.freeze({
   lanes: 3,
@@ -20,7 +21,7 @@ export const RACE_DIFFICULTY = Object.freeze({
 
 const CAR_COLORS = [0xff5c7a, 0xffd45e, 0x57dfff, 0xc791ff, 0xff9f43];
 
-export function createRaceGame({canvas, onHud, onEnd, autoStart = true} = {}) {
+export function createRaceGame({canvas, onHud, onEnd, audio = null, autoStart = true} = {}) {
   const D = RACE_DIFFICULTY;
   const graphics = createArcadeRenderer(canvas, {clear: 0x0a1224});
   let lane = 1;
@@ -39,6 +40,12 @@ export function createRaceGame({canvas, onHud, onEnd, autoStart = true} = {}) {
   let playerMesh = null;
   let roadGroup = null;
   let trafficGroup = null;
+  let fxGroup = null;
+  let particles = [];
+  let speedLines = [];
+  let camX = 0;
+  let camY = 4.2;
+  let camZ = -5.5;
 
   function laneX(i) {
     return (i - (D.lanes - 1) / 2) * D.laneWidth;
@@ -85,6 +92,17 @@ export function createRaceGame({canvas, onHud, onEnd, autoStart = true} = {}) {
     playerMesh.position.set(laneX(lane), 0.55, 4);
     scene.add(playerMesh);
 
+    fxGroup = new THREE.Group();
+    scene.add(fxGroup);
+    speedLines = [];
+    for (let i = 0; i < 18; i++) {
+      const line = boxMesh(0.04, 0.04, 1.8 + Math.random(), 0xb8d4ff);
+      line.material.transparent = true;
+      line.material.opacity = 0.35;
+      line.position.set((Math.random() - 0.5) * 8, 0.8 + Math.random() * 2.5, Math.random() * 40);
+      fxGroup.add(line);
+      speedLines.push(line);
+    }
     camera.position.set(0, 4.5, -6);
     camera.lookAt(0, 1, 12);
     resizeArcade3D(graphics, canvas);
@@ -179,8 +197,26 @@ export function createRaceGame({canvas, onHud, onEnd, autoStart = true} = {}) {
     }
     if (roadGroup) roadGroup.position.z = -roadOffset;
 
+    if (fxGroup && Math.random() < Math.min(0.35, speed / 900)) {
+      const origin = new THREE.Vector3((playerMesh?.position.x || 0) + (Math.random() - 0.5) * 0.6, 0.15, 3.2);
+      particles = particles.concat(spawnParticleBurst(fxGroup, origin, {
+        count: 2, color: 0xc4b59a, speed: 1.6, life: 0.28, size: 0.08
+      }));
+    }
+    for (const line of speedLines) {
+      line.position.z -= relative * 1.4;
+      if (line.position.z < -6) {
+        line.position.z = 40 + Math.random() * 10;
+        line.position.x = (Math.random() - 0.5) * 8;
+        line.scale.z = 0.6 + (speed / D.maxSpeed) * 1.8;
+      }
+      line.material.opacity = 0.15 + (speed / D.maxSpeed) * 0.45;
+    }
+    particles = updateParticles(particles, dt, fxGroup);
+
     if (invuln <= 0 && collide()) {
       lives -= 1;
+      try { audio?.raceHit?.(); } catch {}
       invuln = D.hitInvulnMs;
       cars = cars.filter(car => {
         if (car.z < 20) {
@@ -207,8 +243,14 @@ export function createRaceGame({canvas, onHud, onEnd, autoStart = true} = {}) {
     if (!graphics.ok) return;
     const {camera, renderer, scene} = graphics;
     const px = playerMesh?.position.x || 0;
-    camera.position.set(px * 0.35, 4.2, -5.5);
-    camera.lookAt(px * 0.2, 1.2, 14);
+    const targetX = px * 0.42;
+    const targetY = 4.0 + Math.min(0.8, (speed - D.baseSpeed) / 400);
+    const targetZ = -5.2 - Math.min(1.2, (speed - D.baseSpeed) / 350);
+    camX += (targetX - camX) * 0.12;
+    camY += (targetY - camY) * 0.1;
+    camZ += (targetZ - camZ) * 0.1;
+    camera.position.set(camX, camY, camZ);
+    camera.lookAt(px * 0.25, 1.15, 14);
     renderer.render(scene, camera);
   }
 
@@ -254,6 +296,13 @@ export function createRaceGame({canvas, onHud, onEnd, autoStart = true} = {}) {
     lane = 1; lives = D.lives; score = 0; distance = 0; speed = D.baseSpeed;
     spawnTimer = 0.6; invuln = 0; cars = []; roadOffset = 0; ended = false;
     if (trafficGroup) while (trafficGroup.children.length) trafficGroup.remove(trafficGroup.children[0]);
+    if (fxGroup) while (fxGroup.children.length > speedLines.length) {
+      const c = fxGroup.children[fxGroup.children.length - 1];
+      if (!speedLines.includes(c)) fxGroup.remove(c);
+      else break;
+    }
+    particles = [];
+    camX = 0; camY = 4.2; camZ = -5.5;
     if (playerMesh) playerMesh.position.set(laneX(lane), 0.55, 4);
     running = true; last = performance.now?.() || 0; hud();
     typeof cancelAnimationFrame === 'function' && cancelAnimationFrame(raf);

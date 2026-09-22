@@ -1,19 +1,19 @@
 // World coordinates; open-front buildings are entered from the north promenade (approach from south).
-// Sprawl map: educational + casual venues sit in distinct districts (not one shared z-row).
+// Sprawl map: educational + casual venues sit in distinct districts with roomy spacing.
 const EDU_COLORS = [0xe9b862, 0xab95d8, 0x77bddd, 0xe799ac, 0x94bd68, 0x73baaf];
 const EDU = [
-  {id: 'obby', x: -40, z: 28, color: EDU_COLORS[0]},
-  {id: 'tower', x: -15, z: 36, color: EDU_COLORS[1]},
-  {id: 'runner', x: 12, z: 30, color: EDU_COLORS[2]},
-  {id: 'memory', x: 36, z: 24, color: EDU_COLORS[3]},
-  {id: 'garden', x: 52, z: 36, color: EDU_COLORS[4]},
-  {id: 'gear', x: -24, z: -2, color: EDU_COLORS[5]}
+  {id: 'obby', x: -50, z: 36, color: EDU_COLORS[0]},
+  {id: 'tower', x: -18, z: 52, color: EDU_COLORS[1]},
+  {id: 'runner', x: 16, z: 40, color: EDU_COLORS[2]},
+  {id: 'memory', x: 46, z: 28, color: EDU_COLORS[3]},
+  {id: 'garden', x: 66, z: 50, color: EDU_COLORS[4]},
+  {id: 'gear', x: -40, z: -16, color: EDU_COLORS[5]}
 ];
 const CASUAL = [
-  {id: 'fruit', x: -48, z: 6, color: 0xffd45e},
-  {id: 'ninja', x: 42, z: -28, color: 0xc791ff},
-  {id: 'breakout', x: 40, z: 52, color: 0x57dfff},
-  {id: 'race', x: -45, z: -32, color: 0xff6b4a}
+  {id: 'fruit', x: -64, z: 10, color: 0xffd45e},
+  {id: 'ninja', x: 60, z: -40, color: 0xc791ff},
+  {id: 'breakout', x: 50, z: 70, color: 0x57dfff},
+  {id: 'race', x: -60, z: -44, color: 0xff6b4a}
 ];
 export const CASUAL_ARCADE_IDS = Object.freeze(CASUAL.map(b => b.id));
 export const TOWN_BUILDINGS = [...EDU, ...CASUAL];

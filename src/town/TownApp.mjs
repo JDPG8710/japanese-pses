@@ -1,15 +1,16 @@
-import {TEXT} from './TownText.mjs?v=1';
+import {TEXT} from './TownText.mjs?v=2';
+import {getTownAudio} from './TownAudio.mjs?v=1';
 import {SAVE_KEY,PRODUCTS,FURNITURE,MISSIONS,PLACES,loadState,restoreState,saveState,startOrder,submitOrder,completeMission,buyFurniture,placeFurniture,englishOrder} from './TownRules.mjs?v=4';
-import {TownScene,AVATAR_COLORS} from './TownScene3D.mjs?v=4';
-import {createExpansion} from './TownExpansion.mjs?v=4';
-import {ARCADE_TEXT} from './ArcadeText.mjs?v=6';
+import {TownScene,AVATAR_COLORS} from './TownScene3D.mjs?v=5';
+import {createExpansion} from './TownExpansion.mjs?v=5';
+import {ARCADE_TEXT} from './ArcadeText.mjs?v=7';
 
 const $=id=>document.getElementById(id),esc=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let storage;try{storage=localStorage;}catch{}
 const params=new URLSearchParams(location.search);let savedLocale;try{savedLocale=storage?.getItem('world-locale');}catch{}
 let locale=[params.get('locale'),savedLocale,navigator.language?.slice(0,2),'en'].find(l=>TEXT[l]);
 const state=loadState(storage),w=()=>TEXT[locale],dialog=$('town-dialog');
-let modal=null,translated=false,feedback='',feedbackGood=false,selected=null,saveOK=true,scene,expansion;
+let modal=null,translated=false,feedback='',feedbackGood=false,selected=null,saveOK=true,scene,expansion,syncTownFs=()=>{};
 const label=p=>p[locale]||p.en;
 function persist(){saveOK=saveState(storage,state);$('save-status').textContent=saveOK?w().saved:w().saveFail;$('save-status').classList.toggle('save-error',!saveOK);}
 function button(action,text,cls=''){return `<button type="button" data-action="${action}" class="${cls}">${esc(text)}</button>`;}
@@ -122,7 +123,7 @@ dialog.addEventListener('click',e=>{
   if(el.dataset.furniture){const id=el.dataset.furniture;if(state.owned.includes(id)||buyFurniture(state,id)){selected=id;persist();refresh();renderModal();}return;}
   if(el.dataset.slot!==undefined){const i=Number(el.dataset.slot);if(selected){const previous=state.mission;placeFurniture(state,selected,i);feedback=previous===8&&state.mission===9?`${w().reward} ${w().rewardCoins} · ${w().missions[9]}`:'';selected=null;}else if(state.room[i]){selected=state.room[i];state.room[i]=null;}persist();refresh();renderModal();}
 });
-$('locale').onchange=e=>{locale=e.target.value;try{storage?.setItem('world-locale',locale);}catch{}const q=new URLSearchParams(location.search);q.set('locale',locale);history.replaceState(null,'',`${location.pathname}?${q}`);refresh();if(modal)renderModal();};
+$('locale').onchange=e=>{locale=e.target.value;try{storage?.setItem('world-locale',locale);}catch{}const q=new URLSearchParams(location.search);q.set('locale',locale);history.replaceState(null,'',`${location.pathname}?${q}`);refresh();if(typeof syncTownFs==='function')syncTownFs();if(typeof syncTownMute==='function')syncTownMute();if(modal)renderModal();};
 $('help').onclick=()=>{modal='help';scene.stop();renderModal();};
 $('character').onclick=()=>{modal='settings';scene.stop();renderModal();};
 $('go-mission').onclick=()=>{if(!state.started){intro();return;}scene.travel(state.mission>=10?'home':MISSIONS[state.mission].place);};
@@ -141,7 +142,66 @@ expansion=createExpansion({state,scene,persist,refresh,shell,close,getLocale:()=
 }catch(error){const el=document.createElement('div');el.className='graphics-error';el.setAttribute('role','alert');el.textContent=ARCADE_TEXT[locale].webgl;document.querySelector('.world-card').append(el);console.error('3D scene unavailable',error);scene={stop(){},travel(){},direction(){},near:null};}
 window.addEventListener('pagehide',()=>{if(state.started)persist();});
 window.addEventListener('storage',e=>{if(e.key===SAVE_KEY&&e.newValue){try{Object.assign(state,restoreState(JSON.parse(e.newValue)));scene.stop();if(dialog.open)close();refresh();}catch{}}});
+
+function setupTownFullscreen(){
+  const viewport=document.querySelector('.scene-viewport')||document.querySelector('.world-card');
+  if(!viewport||viewport.querySelector('.town-fs-fab'))return;
+  const btn=document.createElement('button');
+  btn.type='button';btn.className='town-fs-fab';btn.dataset.townFs='1';
+  const sync=()=>{
+    const on=!!(document.fullscreenElement||document.webkitFullscreenElement);
+    btn.setAttribute('aria-pressed',on?'true':'false');
+    btn.textContent=on?'⛶':'⛶';
+    btn.setAttribute('aria-label',on?(w().fullscreenExit||'Exit full screen'):(w().fullscreenEnter||'Full screen'));
+    btn.title=btn.getAttribute('aria-label');
+  };
+  btn.addEventListener('click',e=>{
+    e.preventDefault();e.stopPropagation();
+    const target=document.querySelector('.world-card')||document.documentElement;
+    try{
+      if(document.fullscreenElement||document.webkitFullscreenElement){
+        (document.exitFullscreen||document.webkitExitFullscreen)?.call(document);
+      }else{
+        (target.requestFullscreen||target.webkitRequestFullscreen)?.call(target)?.catch?.(()=>{});
+      }
+    }catch{}
+  });
+  btn.addEventListener('pointerdown',e=>e.stopPropagation());
+  viewport.append(btn);
+  document.addEventListener('fullscreenchange',sync);
+  document.addEventListener('webkitfullscreenchange',sync);
+  sync();
+  return sync;
+}
+syncTownFs=setupTownFullscreen()||(()=>{});
+const townAudio=getTownAudio();
+function setupTownMute(){
+  const viewport=document.querySelector('.scene-viewport')||document.querySelector('.world-card');
+  if(!viewport||viewport.querySelector('.town-mute-fab'))return ()=>{};
+  const btn=document.createElement('button');
+  btn.type='button';btn.className='town-fs-fab town-mute-fab';
+  btn.style.bottom='64px';
+  const sync=()=>{
+    const on=townAudio.isMuted();
+    btn.setAttribute('aria-pressed',on?'true':'false');
+    btn.textContent=on?'🔇':'🔊';
+    btn.setAttribute('aria-label',on?(w().unmute||'Unmute'):(w().mute||'Mute'));
+    btn.title=btn.getAttribute('aria-label');
+  };
+  btn.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();townAudio.toggleMute();sync();});
+  btn.addEventListener('pointerdown',e=>e.stopPropagation());
+  viewport.append(btn);
+  window.addEventListener('AUDIO_MUTE_TOGGLED',sync);
+  sync();
+  return sync;
+}
+const syncTownMute=setupTownMute();
+const kickTownAudio=()=>{townAudio.unlock();townAudio.startTown();};
+['pointerdown','keydown','touchstart'].forEach(evt=>window.addEventListener(evt,kickTownAudio,{once:true,passive:true}));
+
 refresh();
+if(typeof syncTownFs==='function')syncTownFs();
+if(typeof syncTownMute==='function')syncTownMute();
 // 言語設定後に既存の同意UIを初期化する。新規訪問でも町と同じ言語で表示する。
 await import('../privacy/ConsentManager.mjs?v=1');
 if(!state.started)intro();

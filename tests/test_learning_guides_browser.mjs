@@ -12,6 +12,9 @@ try{
   assert.equal(await page.locator('h1').count(),1,route);
   assert.equal(await page.locator('link[rel="canonical"]').getAttribute('href'),`https://piko-game.com${route}`);
   assert.equal(await page.locator('link[rel="alternate"]').count(),4);
+  const article=ARTICLES.find(a=>a.slug===slug);
+  if(article)assert.equal(await page.locator('.guide-meta time').getAttribute('datetime'),article.updated);
+  if(slug==='network')assert.equal(await page.locator('.guide-table tbody tr').count(),6);
   if(slug==='coverage'){
    assert.equal(await page.locator('.coverage-year').count(),68);
    await page.locator('details').evaluateAll(nodes=>nodes.forEach(el=>el.open=true));
@@ -30,18 +33,19 @@ try{
    if(url.hash)assert.ok((await response.text()).includes(`id="${url.hash.slice(1)}"`),href);
    checked.add(href);
   }
-  if(locale==='zh'&&['','sudoku','make-ten','town-shop'].includes(slug)){
+  if((locale==='zh'&&['','sudoku','make-ten','town-shop'].includes(slug))||(locale==='ja'&&slug==='network')){
    await page.screenshot({path:`${artifacts}/${slug||'library'}-desktop.png`,fullPage:true});
    await page.setViewportSize({width:390,height:844});
    await page.screenshot({path:`${artifacts}/${slug||'library'}-mobile.png`,fullPage:true});
   }
  }
- console.log(`27 static learning pages: no-JS answers, all 68 curriculum paths, ${checked.size} internal links and three viewport widths passed.`);
+ console.log(`${3*(ARTICLES.length+2)} static learning pages: no-JS answers, all 68 curriculum paths, ${checked.size} internal links and three viewport widths passed.`);
  const live=await browser.newContext({viewport:{width:1280,height:900}}),play=await live.newPage(),errors=[];
  play.on('pageerror',e=>errors.push(e.message));
  await play.goto(`${preview.origin}/world?locale=zh#game-sudoku`);
  await play.locator('[data-consent="necessary"]').click();
  assert.equal(await play.locator('#game-sudoku .learning-link').getAttribute('href'),'/zh/guides/sudoku');
+ assert.equal(await play.locator('#game-network .learning-link').getAttribute('href'),'/zh/guides/network');
  for(const game of ['sudoku','robot','water']){
   await play.locator(`[data-action="play:${game}"]`).click();await play.locator('.pt-start').click();
   await play.locator(`.game-${game}`).waitFor();

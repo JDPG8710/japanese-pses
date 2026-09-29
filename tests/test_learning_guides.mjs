@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {ARTICLES,EXAMPLES} from '../content/learning-articles.mjs';
+import {ARTICLES,EXAMPLES,NETWORK_EXAMPLE} from '../content/learning-articles.mjs';
 import {checkAnswer,waterState,makeRounds,solution} from '../src/world/WorldRules.mjs';
 import {diagnoseAnswer,answerFeedback} from '../src/world/WorldFeedback.mjs';
 import {TOPICS,lessonsFor} from '../src/world/FoundationCatalog.mjs';
@@ -54,5 +54,17 @@ state.active.input='7';assert.ok(!submitOrder(state).ok,'price must not pass as 
 state.active.input='3';assert.deepEqual(submitOrder(state),{ok:true,done:true});
 assert.equal(orderFor(3).total,8);assert.equal(orderFor(4).paid-orderFor(4).total,2);
 assert.ok(numericEqual('2/4','1/2'));
-assert.equal(ARTICLES.length,7);
+
+const network=NETWORK_EXAMPLE;
+assert.ok(checkAnswer('network',network.question,network.answer));
+assert.ok(!checkAnswer('network',network.question,network.cycle));
+assert.ok(!checkAnswer('network',network.question,network.expensive));
+const practice={...network.question,edges:network.question.edges.map((edge,i)=>i===4?[1,3,3]:edge)};
+assert.ok(checkAnswer('network',practice,[0,1,4]));
+assert.ok(!checkAnswer('network',practice,network.answer));
+assert.equal(network.answer.reduce((sum,i)=>sum+network.question.edges[i][2],0),7);
+assert.equal([0,1,4].reduce((sum,i)=>sum+practice.edges[i][2],0),6);
+assert.equal(new Set(ARTICLES.map(a=>a.slug)).size,ARTICLES.length);
+for(const a of ARTICLES){assert.ok(['logic','math','town'].includes(a.group));assert.match(a.updated,/^\d{4}-\d{2}-\d{2}$/);}
+
 console.log('Learning guides: published game examples, independent water states, town checkout, multilingual goals and diagnostic feedback passed.');

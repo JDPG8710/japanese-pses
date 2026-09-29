@@ -8,7 +8,7 @@ export const EXAMPLES={
  town:{mission:5,math:1,english:1,items:[1,0,1,0],total:7,paid:10,change:3}
 };
 export const ARTICLES=[{
- slug:'sudoku',activity:'sudoku',title:L('4×4 Sudoku: explain every placement','4×4数独：每填一格，都能说出理由','4×4数独：数字を いれる 理由を 考えよう'),
+ slug:'sudoku',activity:'sudoku',group:'logic',updated:'2026-09-21',title:L('4×4 Sudoku: explain every placement','4×4数独：每填一格，都能说出理由','4×4数独：数字を いれる 理由を 考えよう'),
  goal:L('Use a row, a column and a small box together to rule out candidates. A completed row alone does not prove the board is correct.','同时利用行、列和小宫排除候选数。填对一行，并不能证明整张棋盘正确。','行・列・小さい わくを あわせて 考えます。1行が 正しくても、ばん全体が 正しいとは かぎりません。'),
  ready:L('Start when you can recognise 1, 2, 3 and 4. This example is untimed; a pencil and paper are enough.','能认出1、2、3、4即可尝试。本例不限时，可以先用纸笔思考。','1・2・3・4が わかれば はじめられます。時間を はからず、紙と えんぴつでも できます。'),
  example:L('A dot means an empty cell. Keep every given number. Each row, column and outlined 2×2 box must contain 1–4 exactly once. Rows are numbered from the top and columns from the left.','圆点表示待填格，题目给出的数字不能更改。每行、每列和粗线围成的2×2小宫必须各有一个1至4。行从上向下数，列从左向右数。','点は あいている マスです。はじめの 数字は かえません。行、列、太線の2×2の わくに、1〜4を 1つずつ いれます。行は 上から、列は 左から 数えます。'),
@@ -18,7 +18,7 @@ export const ARTICLES=[{
  answer:L('4. Column 1 has 1, 3 and 2; the bottom-left box has 2, 1 and 3. Both need 4.','填4。第1列已经有1、3、2；左下小宫也已经有2、1、3，两处都缺4。','4です。1列目には1・3・2、左下の わくには2・1・3が あり、どちらも4が ありません。'),
  transfer:L('In the game, choose the first difficulty for 4×4. The second uses 6×6 with 2×3 boxes and numbers 1–6. Apply the same checks; do not reuse this answer pattern.','游戏第一难度为4×4；第二难度使用6×6棋盘、2×3小宫和1至6。检查方法相同，但不要把本例答案套到新棋盘。','ゲームの はじめの 難しさは4×4。次は6×6で、わくは2×3、数字は1〜6です。新しい 問題で 同じ 調べ方を 試しましょう。')
 },{
- slug:'robot',activity:'robot',title:L('Robot routes: find the first wrong step','机器人寻路：找出第一个走错的步骤','ロボットの 道：はじめの まちがいを 見つけよう'),
+ slug:'robot',activity:'robot',group:'logic',updated:'2026-09-21',title:L('Robot routes: find the first wrong step','机器人寻路：找出第一个走错的步骤','ロボットの 道：はじめの まちがいを 見つけよう'),
  goal:L('Plan a legal sequence of moves, trace every intermediate position and justify the number of steps.','规划合法的移动顺序，检查所有中间位置，并解释步数为什么足够。','動く 順番を 考え、とちゅうの 場所を 確かめ、歩数の 理由を 説明します。'),
  ready:L('Practise following one arrow at a time before trying the timed game. Right and down refer to the board, not to the direction the robot faces.','先练习逐个跟随箭头，再进入计时游戏。左右上下以棋盘为准，不是以机器人的朝向为准。','まず 時間を はからず、やじるしを 1つずつ たどります。左右上下は ロボットの 向きではなく、ばんの 向きです。'),
  example:L('Start at S in the top-left corner and reach G in the bottom-right. The centre is a rock. Move one cell up, right, down or left; never diagonally or through a rock. Use at most four steps.','从左上角S出发，到右下角G。中央是石头。每步上下左右移动一格，不能斜走、越界或穿过石头，最多用四步。','左上のSから 右下のGへ。まんなかは いしです。上下左右に1マスずつ、4歩以内で 進みます。ななめや、いしの 上には 進めません。'),
@@ -28,7 +28,7 @@ export const ARTICLES=[{
  answer:L('↓ ↓ → → is valid. Three moves cannot cover the required two horizontal and two vertical moves.','↓↓→→也合法。至少两次横向移动、两次纵向移动，一共四步，三步不够。','↓↓→→も 正解。横に2回、たてに2回が 必要なので、3歩では 足りません。'),
  transfer:L('The playable levels have larger boards and different rocks. Read the new step limit, trace the route and remove only the first invalid arrow before rebuilding the remainder.','实际关卡有更大的棋盘和不同的石头。先读新的步数限制，逐步追踪路线，找出第一个非法箭头，再重建后续路线。','ゲームは もっと 大きい ばんです。歩数の 上限を よみ、はじめの まちがった やじるしから 道を なおしましょう。')
 },{
- slug:'water',activity:'water',title:L('Water jugs: calculate the space left','量水实验：先算容器还剩多少空间','水の パズル：あいている 量を 計算しよう'),
+ slug:'water',activity:'water',group:'logic',updated:'2026-09-21',title:L('Water jugs: calculate the space left','量水实验：先算容器还剩多少空间','水の パズル：あいている 量を 計算しよう'),
  goal:L('Track two quantities at once and calculate how much can move between containers without markings.','同时记录两个水量，计算无刻度容器之间实际能转移的水量。','2つの 水の 量を 記録して、目もりの ない 容器で うつせる 量を 考えます。'),
  ready:L('You need subtraction with small whole numbers. Treat this as a paper puzzle; no water equipment is required.','需要会做小数字减法。把它当作纸上推理题即可，不需要准备真实容器。','小さい 整数の ひきざんを 使います。紙の 上で 考えられるので、水や 容器は いりません。'),
  example:L('Jug A holds 3 L and B holds 5 L. Both start empty. You may fill a jug, empty it or pour into the other until the source is empty or the receiver is full. Leave 4 L in B within six operations.','A容量3升，B容量5升，开始都为空。可以装满、倒空或向另一容器倒水；倒到源容器空了或接水容器满了才停止。六步内在B留下4升。','Aは3L、Bは5Lで、はじめは 空です。満たす、空にする、もう片方へ うつす 操作が できます。うつすときは 元が 空か、先が いっぱいに なるまで。6回以内でBに4Lを 残します。'),
@@ -38,7 +38,7 @@ export const ARTICLES=[{
  answer:L('Fill B and pour into empty A: (0,5) → (3,2). Without markings, an arbitrary 1 L stopping point is not an allowed operation.','装满B，再倒入空的A：（0，5）→（3，2）。容器没有刻度，任意倒出1升就停止不属于允许的操作。','Bを 満たして Aへ：（0,5）→（3,2）。目もりが ないので、好きな 量で 止める 操作は できません。'),
  transfer:L('In the game, read both capacities and the target again. Reaching the target in either jug counts; the six-step sequence here applies to this example, not every generated puzzle.','游戏会改变容量和目标，需要重新读题。任一容器达到目标量即可；本例的六步路线不是所有题目的通用答案。','ゲームでは 容量と 目標を よみなおしましょう。どちらかの 容器が 目標に なれば 正解。この6回の 順番は すべての 問題には 使えません。')
 },{
- slug:'counting',activity:'count',title:L('Counting: one touch for each object','数数：一个物体只数一次','かぞえる：1つに 1回 ふれよう'),
+ slug:'counting',activity:'count',group:'math',updated:'2026-09-21',title:L('Counting: one touch for each object','数数：一个物体只数一次','かぞえる：1つに 1回 ふれよう'),
  goal:L('Match each object to one number word and understand that the final number tells how many there are.','让每个物体对应一个数词，理解最后数到的数表示总数量。','もの1つに 数字を1つ あわせ、最後の 数字が 全部の 数だと わかるように します。'),
  ready:L('Use five counters or the five dots below. A child who can recite numbers may still need help keeping track of objects.','准备五个小物件，或使用下面五个圆点。会背数序不等于能正确数清物体，还需要练习一一对应。','5つの 小さい ものか、下の5つの まるを 使います。数字を いえても、どれを 数えたか わからなくなる ことが あります。'),
  example:L('There are three dots in the top row and two below. How many altogether? Point to one dot at a time rather than guessing from the shape.','上面一行三个圆点，下面一行两个。一共有几个？每次数一个圆点，不凭形状猜数量。','上に3つ、下に2つの まるが あります。全部で いくつ？1つずつ 指で さしましょう。'),
@@ -48,7 +48,7 @@ export const ARTICLES=[{
  answer:L('Six, because 5 + 1 = 6. An empty group has zero objects. Zero is a quantity, not a skipped question.','有六个，因为5＋1＝6。空的一组有零个物体；零也是数量，不是没做题。','6つです。5＋1＝6。空の グループは0こです。0も 数を 表します。'),
  transfer:L('The count unit currently asks for 0–10 dots and the next number up to 21. It does not assess every early-maths skill. Choose your school-year map; locked stages open after the previous stage.','本站数数单元目前练习0至10个圆点及到21的后继数，不评估全部数学启蒙能力。进入自己的学年地图，按顺序解锁关卡。','数の 単元は0〜10この まると、21までの 次の 数を 練習します。算数の 力の 全部を はかるものでは ありません。学年マップから 順に 進みましょう。')
 },{
- slug:'make-ten',activity:'add20',title:L('8 + 5: make ten, then add what remains','8＋5：先凑十，再加剩下的数','8＋5：10を つくって 残りを たそう'),
+ slug:'make-ten',activity:'add20',group:'math',updated:'2026-09-21',title:L('8 + 5: make ten, then add what remains','8＋5：先凑十，再加剩下的数','8＋5：10を つくって 残りを たそう'),
  goal:L('Split one addend without changing its value and connect addition to subtraction.','把一个加数拆开且保持总量不变，再联系加法与减法。','たす 数を わけても 量が かわらないことと、たしざんと ひきざんの つながりを 考えます。'),
  ready:L('First practise pairs that make ten, such as 8 and 2. If these are unfamiliar, use counters instead of doing it all mentally.','先熟悉凑成十的数对，例如8和2。如果还不熟，可以用小物件，不必急着心算。','8と2など、10に なる 組を 使います。まだ 難しければ、小さい ものを 並べて 考えましょう。'),
  example:L('You have eight counters and receive five more. Find 8 + 5 by completing a group of ten.','已有八个圆片，又拿来五个。试着先组成一个十，再算8＋5。','8この まるに、5こ ふやします。10の まとまりを つくって8＋5を 求めましょう。'),
@@ -58,7 +58,7 @@ export const ARTICLES=[{
  answer:L('Split 4 into 1 + 3: 9 + 1 + 3 = 13. Since 9 + 4 = 13, the inverse calculation is 13 − 4 = 9.','把4拆成1＋3：9＋1＋3＝13。因为9＋4＝13，所以逆运算13－4＝9。','4＝1＋3。9＋1＋3＝13です。9＋4＝13なので、13－4＝9です。'),
  transfer:L('Use the add/subtract-to-20 unit on your year map. Making ten is one method; counting on is also valid. Ask the child to explain a method before asking for speed.','从学年地图进入“20以内加减法”。凑十是一种方法，接着数也有效。先让孩子解释方法，再考虑提高速度。','学年マップの「20までの たしひき」へ。10を つくる ほか、続けて 数えても かまいません。速さより先に、ときかたを 説明してみましょう。')
 },{
- slug:'fractions',activity:'fractions',title:L('Fractions: why equal parts matter','认识分数：为什么必须平均分','分数：同じ 大きさに 分ける 理由'),
+ slug:'fractions',activity:'fractions',group:'math',updated:'2026-09-21',title:L('Fractions: why equal parts matter','认识分数：为什么必须平均分','分数：同じ 大きさに 分ける 理由'),
  goal:L('Identify the whole, count equal parts and distinguish a fraction’s numerator from its denominator.','明确整体，数清等大的份数，区分分子与分母。','全体が 何かを 決め、同じ 大きさの 部分を 数えて、分子と 分母を 区別します。'),
  ready:L('Begin with a single whole divided into equal pieces. Counting coloured shapes without comparing their sizes is not enough.','先从一个整体等分开始。仅仅数涂色块的个数、不比较大小，可能得出错误结论。','1つの 全体を 同じ 大きさに 分けます。色の ある 形の 数だけでなく、大きさも 確かめます。'),
  example:L('One bar is divided into four equal parts, with three shaded. What fraction of the whole is shaded?','一根长条平均分成四份，涂色三份。涂色部分占整体的几分之几？','1本の テープを 同じ 大きさに4つ 分け、3つ ぬりました。全体の どれだけを ぬったでしょう？'),
@@ -68,7 +68,7 @@ export const ARTICLES=[{
  answer:L('2/4 = 1/2: two quarters cover half the whole. Unequal pieces require more information about their sizes. In the numeric exercise, equivalent values such as 2/4 and 1/2 are accepted.','2/4＝1/2，两个四分之一合起来是整体的一半。若不等分，还需要知道各块大小。本站数字练习接受2/4、1/2等数值相等的答案。','2/4＝1/2。4分の1を2つ 合わせると 半分です。大きさが 違えば、その 大きさの 情報が 必要です。ゲームでは2/4と1/2の ような 同じ 値の 答えも 使えます。'),
  transfer:L('Open your year map and find “Parts of a whole”. Earlier gates may need to be cleared first. This unit practises parts of a whole; fraction addition is a separate unit.','在自己的学年地图中查找“认识分数”，可能需要先通过前面的关卡。本单元练习整体与部分，分数加法是另一个单元。','学年マップの「ぶんすう」を さがします。前の 関門の クリアが 必要な 場合が あります。分数の たしざんは 別の 単元です。')
 },{
- slug:'town-shop',activity:'town',title:L('Town shop: read, total and give change','学习小镇：读订单、算总价、找零钱','まなびタウン：注文・合計・おつり'),
+ slug:'town-shop',activity:'town',group:'town',updated:'2026-09-21',title:L('Town shop: read, total and give change','学习小镇：读订单、算总价、找零钱','まなびタウン：注文・合計・おつり'),
  goal:L('Connect an English order to quantities, calculate a total and check change using addition.','把英文订单对应到商品数量，计算总价，再用加法检查找零。','英語の 注文を 品物の 数に つなげ、合計と おつりを 計算します。'),
  ready:L('This example uses maths level 1 and English level 1. Earlier town missions introduce collecting items, totals and change separately before combining them.','本例使用数学难度1和英语难度1。小镇会先分别介绍选商品、算总价和找零，再把它们组合起来。','算数と 英語を レベル1にした 例です。まちでは 品物・合計・おつりを 先に 別々に 練習してから、組み合わせます。'),
  example:L('A customer asks: “One apple and one loaf of bread, please.” An apple costs 3 star coins and a loaf of bread costs 4. The customer pays 10. These are fictional game coins, not real purchases.','顾客说：“One apple and one loaf of bread, please.” 苹果3星币一个，面包4星币一份，顾客付10星币。星币是游戏内的虚拟计数单位，不是真实购物。','注文は “One apple and one loaf of bread, please.” りんごは3、パンは4星コイン。支払いは10です。星コインは ゲームの 数で、本当の 買い物では ありません。'),
@@ -78,3 +78,18 @@ export const ARTICLES=[{
  answer:L('2 × 3 + 1 × 2 = 8, so change is 10 − 8 = 2. Check 8 + 2 = 10. The plural “apples” signals more than one apple, but the word “two” supplies the exact quantity.','2×3＋1×2＝8，找零10－8＝2，检查8＋2＝10。apples的复数形式表示不止一个苹果，具体数量仍要看two。','2×3＋1×2＝8、おつりは10－8＝2です。8＋2＝10。applesは 複数ですが、正確な 数はtwoで わかります。'),
  transfer:L('Enter the town and follow the guide to the shop. Later missions combine all three steps. Difficulty changes can alter quantities and prices on the next order, so reread them. Progress is stored in this browser; clearing its storage removes it.','进入小镇后按向导提示去商店，后续任务会串联三个步骤。改变难度可能让下一张订单的数量和价格变化，必须重新核对。进度保存在当前浏览器，清理网站存储会删除它。','まちの 案内に そって お店へ。あとの 任務で3つの 手順が つながります。難しさを 変えた 次の 注文は、数や ねだんを よみなおしましょう。進み具合は この ブラウザーに 保存され、保存データを 消すと なくなります。')
 }];
+
+// Small, fixed graph: the same validation rules as the playable network puzzle.
+export const NETWORK_EXAMPLE={question:{count:4,edges:[[0,1,1],[1,2,2],[0,2,3],[2,3,4],[1,3,6],[0,3,7]]},answer:[0,1,3],cycle:[0,1,2],expensive:[0,1,4]};
+ARTICLES.push({
+ slug:'network',activity:'network',group:'logic',updated:'2026-09-29',
+ title:L('Connect every island: when the cheapest line is a trap','连接所有岛屿：便宜的线路也可能多余','全部の しまを つなぐ：安い 線にも 気をつけよう'),
+ goal:L('Compare total costs, spot a loop and connect every island without wasting a line.','比较总费用，识别回路，让所有岛屿连通而不浪费线路。','合計の 費用を くらべ、わっかを 見つけ、むだなく 全部の しまを つなぎます。'),
+ ready:L('Use addition and compare whole numbers. Start on paper without a timer. Letters name islands; a cost is a puzzle number, not a real energy measurement.','需要会整数加法和大小比较。先用纸笔，不计时。字母代表岛屿，费用是题目中的数值，不是真实能耗。','たし算と 数の 大きさを 使います。紙で ゆっくり 考えましょう。文字は しまの 名前、費用は パズルの 数で、本物の 電気料金では ありません。'),
+ example:L('Connect A, B, C and D using exactly three of the six lines in the table. You can travel along each chosen line in either direction. Every island must be reachable from every other, and the total cost must be as small as possible.','从表中六条线路选三条连接A、B、C、D。所选线路可双向通行；任意两岛必须互相到达，而且总费用要最小。','表の6本から3本を えらび、A・B・C・Dを つなぎます。線は どちら向きにも 通れます。どの しまからも ほかの しまへ 行けて、合計の 費用が いちばん 小さくなるように しましょう。'),
+ steps:[L('Take A–B for 1, then B–C for 2. A, B and C are now one connected group. D is still alone.','先选A–B，费用1；再选B–C，费用2。A、B、C已连成一组，D仍孤立。','A–Bの1、B–Cの2を えらびます。A・B・Cは つながりましたが、Dは まだ ひとりです。'),L('Skip A–C for 3. A already reaches C through B, so this line would close a loop without bringing D into the group.','跳过费用3的A–C。A已经能经B到C，再加这条线只会形成回路，并不能接入D。','A–Cの3は とばします。AからBを 通ってCへ 行けるので、この 線では わっかが できるだけで、Dは つながりません。'),L('Take C–D for 4. All four islands connect, using three lines. The total is 1 + 2 + 4 = 7.','选费用4的C–D，四岛全部连通，正好三条线。总费用1＋2＋4＝7。','C–Dの4を えらぶと、3本で 全部が つながります。合計は1＋2＋4＝7です。'),L('Why is 7 the minimum here? Any solution needs a line to D costing at least 4. Its other two distinct lines cost at least 1 and 2. That gives a lower bound of 7, achieved by this network.','为什么7是本例最小值？任何解都要接入D，至少花4；另外两条不同线路至少花1和2。总费用至少7，而我们已达到7。','なぜ7が 最小でしょう。Dへ つなぐ 線には 少なくとも4、ほかの 別々の2本には 少なくとも1と2が 必要です。7より 小さくは できず、今の 答えは7です。')],
+ mistake:L('Choosing the three cheapest lines costs only 6 but leaves D isolated. Connecting everything is essential. A–B, B–C and B–D connects all islands for 9, but it is not the cheapest network.','只选最便宜的三条线，虽然只花6，却让D孤立。必须先满足全部连通。A–B、B–C、B–D全部连通但花9，也不是最优解。','安い3本だけだと 合計6ですが、Dが つながりません。A–B、B–C、B–Dなら 全部 つながりますが、合計9なので 最小では ありません。'),
+ practice:L('Keep every cost except B–D, which now costs 3 instead of 6. Which three lines would you choose? Explain why keeping A–C for 3 still does not help.','只把B–D的费用从6改成3，其余不变。你选哪三条？为什么同为3的A–C仍然不值得选？','B–Dだけ6から3に かえます。どの3本を えらびますか。同じ3のA–Cでは だめな 理由も 考えよう。'),
+ answer:L('A–B, B–C and B–D cost 1 + 2 + 3 = 6 and connect all islands. A line reaching D costs at least 3, and two other distinct lines cost at least 1 and 2, so 6 is minimal. A–C would only close the A–B–C loop.','选A–B、B–C、B–D，总费用1＋2＋3＝6。接入D至少花3，另两条不同线路至少花1和2，因此6最小。A–C只会封闭A–B–C回路。','A–B、B–C、B–Dで1＋2＋3＝6。Dへ 少なくとも3、ほかの2本に 少なくとも1と2なので、6が 最小です。A–CではA・B・Cの わっかが できます。'),
+ transfer:L('Open Island Grid in Logic Lab. Level 1 has five islands, level 2 has six; connect them with four or five lines respectively. Compare the printed costs, not how short lines look. Before submitting, trace a route to every island and check for loops.','在逻辑实验室打开群岛电网。难度1有五岛，用四条线；难度2有六岛，用五条线。比较标注费用，不凭视觉长短判断。提交前逐站检查可达性和回路。','ロジックラボの しまの でんりょくもうへ。レベル1は5つの しまを4本、レベル2は6つの しまを5本で つなぎます。見た目の 長さではなく、書かれた 費用を くらべます。答える 前に 全部の しまへ 行けるか、わっかが ないか 調べましょう。')
+});

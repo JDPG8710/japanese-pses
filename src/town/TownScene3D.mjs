@@ -129,11 +129,16 @@ export class TownScene {
  }
  updateAnswerLabels(){
   if(!this.mode||!this.answerLabels?.length)return;const width=this.canvas.clientWidth,height=this.canvas.clientHeight,placed=[];
+  const canvasRect=this.canvas.getBoundingClientRect();
+  const controls=[...this.canvas.parentElement.querySelectorAll('.world-controls button,.town-fs-fab,.course-controls button')].filter(el=>getComputedStyle(el).visibility!=='hidden').map(el=>el.getBoundingClientRect()).filter(r=>r.width&&r.height).map(r=>({x:r.left-canvasRect.left,y:r.top-canvasRect.top,w:r.width,h:r.height}));
   const labels=this.answerLabels.map(a=>({...a,p:new THREE.Vector3(a.t.x,a.t.y+(a.t.labelHeight||1.5),a.t.z).project(this.camera)})).sort((a,b)=>a.p.x-b.p.x);
-  for(const {el,p,t,line}of labels){el.hidden=p.z< -1||p.z>1||Math.abs(p.x)>1.2||Math.abs(p.y)>1.2;line.style.display=el.hidden?'none':'';if(el.hidden)continue;
+  for(const {el,p,t,line}of labels){el.hidden=p.z< -1||p.z>1;line.style.display=el.hidden?'none':'';if(el.hidden)continue;
    const w=el.offsetWidth,h=el.offsetHeight,anchorX=(p.x+1)*width/2,anchorY=(1-p.y)*height/2;let x=Math.max(4,Math.min(width-w-4,anchorX-w/2)),y=Math.max(4,Math.min(height-h-4,anchorY-h));
-   const candidates=[y];for(let i=1;i<=8;i++)candidates.push(y-i*(h+8),y+i*(h+8));
-   y=candidates.find(candidate=>candidate>=4&&candidate+h<=height-4&&!placed.some(r=>x<r.x+r.w+6&&x+w+6>r.x&&candidate<r.y+r.h+6&&candidate+h+6>r.y))??y;
+   const xs=[x,4,width-w-4,(width-w)/2],ys=[y];
+   for(let candidate=4;candidate+h<=height-4;candidate+=h+8)ys.push(candidate);
+   const candidates=xs.flatMap(cx=>ys.map(cy=>({x:cx,y:cy,cost:Math.abs(cx-x)+Math.abs(cy-y)}))).sort((a,b)=>a.cost-b.cost);
+   const free=candidates.find(c=>![...controls,...placed].some(r=>c.x<r.x+r.w+6&&c.x+w+6>r.x&&c.y<r.y+r.h+6&&c.y+h+6>r.y));
+   if(free){x=free.x;y=free.y;}
    el.style.left=x+'px';el.style.top=y+'px';const foot=new THREE.Vector3(t.x,t.y+(t.labelHeight||1.5)-1,t.z).project(this.camera);for(const [key,value]of Object.entries({x1:x+w/2,y1:y+h,x2:(foot.x+1)*width/2,y2:(1-foot.y)*height/2}))line.setAttribute(key,String(value));placed.push({x,y,w,h});
   }
  }

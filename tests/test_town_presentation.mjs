@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright-core';
 import {startTownPreview} from '../scripts/preview-town.mjs';
+import {TOWN_BUILDINGS} from '../src/town/TownBuildings.mjs';
 import {enterBuilding,position,moveTo} from './town_manual_controls.mjs';
 const preview=process.env.TOWN_TEST_ORIGIN?{origin:process.env.TOWN_TEST_ORIGIN,close:async()=>{}}:await startTownPreview(0,{built:process.env.TOWN_TEST_BUILT==='1'});
 const browser=await chromium.launch({channel:'chrome',headless:true,args:['--enable-unsafe-swiftshader']});
@@ -18,9 +19,9 @@ try{
   if(await page.locator('#town-canvas').getAttribute('data-view')!==view)await page.locator('[data-camera="view"]').click();
   for(const width of [320,390,820,1440]){
    await page.setViewportSize({width,height:1050});await page.waitForTimeout(200);
-   const metrics=await page.evaluate(()=>{const c=document.querySelector('#town-canvas').getBoundingClientRect(),q=document.querySelector('.world-task').getBoundingClientRect();return {questionBottom:q.bottom,canvasTop:c.top,overflow:document.documentElement.scrollWidth>innerWidth,labels:[...document.querySelectorAll('.scene-answer:not([hidden])')].map(el=>{const r=el.getBoundingClientRect();return {x:r.x,y:r.y,right:r.right,bottom:r.bottom,font:parseFloat(getComputedStyle(el).fontSize)};})};});
+   const metrics=await page.evaluate(()=>{const c=document.querySelector('#town-canvas').getBoundingClientRect(),q=document.querySelector('.world-task').getBoundingClientRect();return {questionBottom:q.bottom,canvasTop:c.top,overflow:document.documentElement.scrollWidth>innerWidth,controls:[...document.querySelectorAll('.world-controls button,.town-fs-fab,.course-controls button')].filter(e=>getComputedStyle(e).visibility!=='hidden').map(e=>{const r=e.getBoundingClientRect();return {x:r.x,y:r.y,right:r.right,bottom:r.bottom,w:r.width,h:r.height};}).filter(r=>r.w&&r.h),labels:[...document.querySelectorAll('.scene-answer:not([hidden])')].map(el=>{const r=el.getBoundingClientRect();return {x:r.x,y:r.y,right:r.right,bottom:r.bottom,font:parseFloat(getComputedStyle(el).fontSize)};})};});
    assert.ok(metrics.questionBottom<=metrics.canvasTop);assert.equal(metrics.overflow,false);assert.equal(metrics.labels.length,3,`${view} ${width} answers visible`);
-   for(let i=0;i<metrics.labels.length;i++){const a=metrics.labels[i];assert.ok(a.font>=22);for(const b of metrics.labels.slice(i+1))assert.ok(a.right<=b.x||b.right<=a.x||a.bottom<=b.y||b.bottom<=a.y,`${view} ${width} label overlap`);}
+   for(let i=0;i<metrics.labels.length;i++){const a=metrics.labels[i];assert.ok(a.font>=22);for(const b of metrics.controls)assert.ok(a.right<=b.x||b.right<=a.x||a.bottom<=b.y||b.bottom<=a.y,`${view} ${width} answer covered by control`);for(const b of metrics.labels.slice(i+1))assert.ok(a.right<=b.x||b.right<=a.x||a.bottom<=b.y||b.bottom<=a.y,`${view} ${width} label overlap`);}
    await page.screenshot({path:`.wrangler/town-3d-tests/answers-${view}-${width}.png`,fullPage:true});
   }
  }
@@ -28,6 +29,6 @@ try{
  await page.locator('[data-exit-game]').last().click();assert.equal((await position(page))[1],0);await page.waitForTimeout(500);assert.equal(await page.locator('#town-dialog').evaluate(d=>d.open),false);
  for(const lang of ['en','ja','zh']){await page.locator('#locale').selectOption(lang);assert.equal((await position(page))[1],0);}
  // Cancel an entry and move away: no immediate modal loop or unwanted game start.
- await moveTo(page,{x:-17,z:20.1},{finishWhenDialog:true});await page.locator('#town-dialog[open]').waitFor();assert.equal(await page.locator('[data-game]:visible').count(),1);await page.locator('.close-button').click();await page.waitForTimeout(600);assert.equal(await page.locator('#town-dialog').evaluate(d=>d.open),false);assert.equal(await page.locator('#town-canvas').getAttribute('data-mode'),null);
+ const b=TOWN_BUILDINGS.find(b=>b.id==='obby');await moveTo(page,{x:b.x,z:b.z-1.8},{finishWhenDialog:true});await page.locator('#town-dialog[open]').waitFor();assert.equal(await page.locator('[data-game]:visible').count(),1);await page.locator('.close-button').click();await page.waitForTimeout(600);assert.equal(await page.locator('#town-dialog').evaluate(d=>d.open),false);assert.equal(await page.locator('#town-canvas').getAttribute('data-mode'),null);
  assert.deepEqual(errors,[]);console.log('ok - exits, locale rebuilds and cancelled building entry stay grounded without reopening');
 }finally{await browser.close();await preview.close();}

@@ -55,7 +55,8 @@ for(const [file,lang,self] of localized){
 const robots=await readFile('robots.txt','utf8');
 assert.match(robots,/User-agent:\s*\*/i);
 assert.match(robots,/Allow:\s*\//i);
-assert.doesNotMatch(robots,/^Disallow:\s*\S/m,'Public pages must remain crawlable');
+assert.match(robots,/^Disallow:\s*\/api\/state\s*$/m,'Private state API must not be crawled');
+assert.doesNotMatch(robots,/^Disallow:\s*\/(?!api\/state\s*$)\S/m,'Public pages must remain crawlable');
 assert.match(robots,/Sitemap: https:\/\/piko-game\.com\/sitemap\.xml/);
 for(const [file,{html}] of sources){
  assert.doesNotMatch(html,/<link\s+rel="canonical"[^>]+\.html(?:"|\?)/i,`${file}: canonical must not point to a Pages redirect`);

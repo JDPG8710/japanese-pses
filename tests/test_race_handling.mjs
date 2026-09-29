@@ -50,15 +50,15 @@ console.log('Race handling: 16 car/track pairs, camera-relative A/D, reverse, ne
 for(const id of ['sunrise','harbor','mountain','neon']) {
  const track=getRaceTrack(id),metrics=buildPathMetrics(track.path);let result=null,calls=0;
  const run=createRaceGame({trackId:id,carId:'sports',skipLobby:true,onEnd:r=>{result=r;calls++;}});
- for(let i=0;i<9000&&!run.getState().ended;i++) {
-  const state=run.getState(),p=pointAtProgress(track.path,metrics,state.progress+4/metrics.total);
+ for(let i=0;i<30000&&!run.getState().ended;i++) {
+  const state=run.getState(),p=pointAtProgress(track.path,metrics,state.progress+8/metrics.total);
   const desired=Math.atan2(p.x-state.x,p.z-state.z),error=Math.atan2(Math.sin(desired-state.heading),Math.cos(desired-state.heading));
-  const target=Math.abs(error)>.6?11:22;
+  const target=Math.abs(error)>.6?12:27;
   run.setControls({throttle:state.speed<target?1:0,brake:state.speed>target+3?1:0,steer:Math.abs(error)>.045?-Math.sign(error):0});run.tick(1/60);
  }
  assert.ok(result,'race reaches an outcome through ordinary driving');
- assert.equal(result.cleared,id!=='neon','three complete races and one collision DNF');
+ assert.equal(result.cleared,true,'every longer route is completable without collisions');
  assert.equal(calls,1);run.tick(1);assert.equal(calls,1,'result emitted once');
  run.start();assert.equal(run.getState().ended,false);assert.equal(run.getState().lives,4);assert.equal(run.getState().score,0);run.destroy();
 }
-console.log('Race outcomes: three-lap clears, collision DNF, single settlement and retry passed');
+console.log('Race outcomes: four three-lap clears, single settlement and retry passed');

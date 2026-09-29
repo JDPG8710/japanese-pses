@@ -6,9 +6,10 @@ const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../dist');
 const harness=`<!doctype html><html lang="zh"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="/favicon.svg"><title>皮可环道 · 本地预览</title><link rel="stylesheet" href="/src/arcade/arcade.css"><style>*{box-sizing:border-box}body{margin:0;background:#0b1528;color:#ecf4ff;font-family:system-ui}button{font:inherit;cursor:pointer}.primary{background:#8bedd0;color:#102c35;border:0;border-radius:12px;font-weight:800}</style><script type="module">
 import {openArcadeShell} from '/src/arcade/ArcadeShell.mjs';
 import {createRaceGame} from '/src/arcade/RaceGame.mjs';
+import {getTownAudio} from '/src/town/TownAudio.mjs';
 const params=new URLSearchParams(location.search);
 window.shell=openArcadeShell({gameId:'race',locale:'zh',onExit:()=>{window.game.destroy();shell.destroy()},onRetry:()=>window.game.start()});
-window.game=createRaceGame({canvas:shell.canvas,locale:'zh',onHud:s=>shell.setHud(s),onEnd:r=>shell.showResult(r)});
+window.game=createRaceGame({canvas:shell.canvas,locale:'zh',audio:getTownAudio(),onHud:s=>shell.setHud(s),onEnd:r=>shell.showResult(r)});
 shell.root.addEventListener('click',e=>{if(e.target.closest('[data-shell="pause"]'))queueMicrotask(()=>shell.paused?game.pause():game.resume())});
 </script></html>`;
 export async function startRacePreview(port=0) {

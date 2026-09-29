@@ -17,6 +17,8 @@ export function disposeRaceScene(scene) {
   geometries.forEach(g => g.dispose());
   textures.forEach(t => t.dispose());
   materials.forEach(m => m.dispose());
+  scene.userData.raceEnvironment?.dispose();
+  scene.environment=null;scene.userData.raceEnvironment=null;
   scene.clear();
 }
 
@@ -79,9 +81,9 @@ export function buildRaceScenery({scene, renderer, group, track, metrics}) {
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = night ? 1.15 : 1.2;
+  renderer.toneMappingExposure = night ? 1.05 : 1.0;
   scene.background = new THREE.Color(sky);
-  scene.fog = new THREE.Fog(sky, night ? 85 : 100, 290);
+  scene.fog = new THREE.Fog(sky, night ? 120 : 170, 620);
   scene.add(new THREE.HemisphereLight(night ? 0x88a9ed : 0xd5ecff, 0x4e513c, night ? 1.3 : 1.65));
   const sun = new THREE.DirectionalLight(night ? 0xb7cdff : 0xffe0b1, night ? 1.5 : 3.0);
   sun.position.set(-45, 65, -30);
@@ -90,15 +92,23 @@ export function buildRaceScenery({scene, renderer, group, track, metrics}) {
   Object.assign(sun.shadow.camera, {left:-65, right:65, top:65, bottom:-65, near:1, far:180});
   sun.shadow.bias = -0.0004;
   sun.shadow.normalBias = 0.04;
-  scene.add(sun);
+  scene.add(sun);scene.add(sun.target);group.userData.sun=sun;
+  const envScene=new THREE.Scene();envScene.background=new THREE.Color(night?0x33465f:0xc0d8e9);
+  const envGeo=new THREE.SphereGeometry(100,16,12),envMat=new THREE.MeshBasicMaterial({color:night?0x445b79:0x9cc3dd,side:THREE.BackSide});
+  envScene.add(new THREE.Mesh(envGeo,envMat));
+  const panels=[];
+  for(const [x,y,z,w,h] of [[-35,35,20,25,50],[25,25,-25,40,12],[0,65,0,70,30]]){const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({color:night?0xa9c7ee:0xfff3d8,side:THREE.DoubleSide}));m.position.set(x,y,z);m.lookAt(0,0,0);envScene.add(m);panels.push(m);}
+  const pmrem=new THREE.PMREMGenerator(renderer),environment=pmrem.fromScene(envScene,.06);
+  scene.environment=environment.texture;scene.environmentIntensity=.65;scene.userData.raceEnvironment=environment;
+  pmrem.dispose();envGeo.dispose();envMat.dispose();panels.forEach(m=>{m.geometry.dispose();m.material.dispose();});
 
-  const skyGeo = new THREE.SphereGeometry(310, 32, 20);
+  const skyGeo = new THREE.SphereGeometry(850, 32, 20);
   const skyMat = new THREE.ShaderMaterial({side:THREE.BackSide, depthWrite:false, uniforms:{
     zenith:{value:new THREE.Color(night ? 0x030817 : 0x427da9)},
     horizon:{value:new THREE.Color(night ? 0x344568 : 0xb9d9ed)}
   }, vertexShader:'varying vec3 v; void main(){v=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
   fragmentShader:'uniform vec3 zenith;uniform vec3 horizon;varying vec3 v;void main(){float h=clamp(normalize(v).y,0.,1.);gl_FragColor=vec4(mix(horizon,zenith,pow(h,.55)),1.);\n #include <tonemapping_fragment>\n #include <colorspace_fragment>\n}'});
-  const dome = new THREE.Mesh(skyGeo, skyMat); dome.renderOrder = -1; group.add(dome);
+  const dome = new THREE.Mesh(skyGeo, skyMat); dome.renderOrder = -1; group.add(dome);group.userData.dome=dome;
 
   // Batch repeated scenery by shape/material to keep the mobile draw-call count bounded.
   const batches = new Map();
@@ -124,15 +134,17 @@ export function buildRaceScenery({scene, renderer, group, track, metrics}) {
 
   // Terrain is genuinely volumetric; the driveable area stays level with the physics surface.
   const groundTex = noiseTexture(harbor ? [139,135,117] : night ? [91,100,94] : [111,131,81], 25, 70);
-  const land = new THREE.PlaneGeometry(harbor ? 116 : 650, harbor ? 116 : 650, 100, 100);
+  const extent=Math.max(...track.path.map(p=>Math.max(Math.abs(p.x),Math.abs(p.z))))+190;
+  const land = new THREE.PlaneGeometry(extent*2,extent*2,120,120);
   land.rotateX(-Math.PI / 2);
   const pos = land.attributes.position;
   const colors = [];
   for (let i=0;i<pos.count;i++) {
     const x=pos.getX(i), z=pos.getZ(i), r=Math.hypot(x,z);
-    const hills = Math.max(0, r-82) * Math.exp(-Math.max(0,r-160)/180);
+    const roadDistance=projectOnPath(track.path,metrics,x,z).dist;
+    const hills = Math.max(0,roadDistance-30)*Math.exp(-Math.max(0,roadDistance-140)/200);
     const ridge = 0.22 + 0.25 * Math.sin(x*0.025+1)*Math.cos(z*0.029) + 0.12*Math.sin(x*0.056+z*0.042);
-    const h = harbor ? -0.13 : Math.max(0,hills*ridge*(alpine ? 1.2 : night ? 0.3 : 0.52))-0.13;
+    const h = harbor ? (roadDistance>48?-.9:-.13) : Math.max(0,hills*ridge*(alpine ? 1.2 : night ? 0.3 : 0.52))-0.13;
     pos.setY(i,h);
     const c = new THREE.Color(h>37 ? 0xe1e3da : h>22 ? 0x939b89 : h>8 ? 0x779471 : 0xffffff);
     colors.push(c.r,c.g,c.b);
@@ -141,22 +153,18 @@ export function buildRaceScenery({scene, renderer, group, track, metrics}) {
   const terrain = new THREE.Mesh(land,new THREE.MeshStandardMaterial({map:groundTex,roughness:1,vertexColors:true}));
   terrain.receiveShadow=true; group.add(terrain);
   if(harbor) {
-    const water=new THREE.Mesh(new THREE.PlaneGeometry(650,650),new THREE.MeshStandardMaterial({color:0x397e95,roughness:0.27,metalness:0.35,map:noiseTexture([155,188,194],18,95)}));
+    const water=new THREE.Mesh(new THREE.PlaneGeometry(extent*2.8,extent*2.8),new THREE.MeshStandardMaterial({color:0x397e95,roughness:0.27,metalness:0.35,map:noiseTexture([155,188,194],18,95)}));
     water.rotation.x=-Math.PI/2; water.position.y=-0.55; group.add(water);
     for(let i=0;i<26;i++) box(0x7faeb9,70+(i%5)*16,-0.53,-150+i*12,7+(i%4)*3,0.015,0.15);
-    // Quay wall, bollards, cranes and cargo ships beyond the playable circuit.
-    for(const side of [-1,1]) {
-      box(0x717c7b,side*58,-0.35,0,1,1.6,117);
-      for(let i=0;i<8;i++) {
-        const z=-46+i*13;
-        box(i%2 ? 0x547c8e:0xa56348,side*47,1.5,z,5,3,9);
-        for(let k=-2;k<=2;k++) box(0x354e59,side*49.53,1.5,z+k*1.6,0.06,2.7,0.08);
-      }
-      box(0x3e535e,side*76,0.8,10,9,2.4,31);
-      box(0xe0ddd1,side*76,3.2,20,7,3.4,7);
-      box(0xcb9b4b,side*55,10,-25,1,20,1);
-      box(0xcb9b4b,side*64,19.5,-25,23,0.7,0.8);
-      box(0x53626b,side*72,15,-25,0.08,9,0.08);
+    // Cargo yards follow the actual waterfront route instead of clustering at origin.
+    for(let i=0;i<36;i++){
+      const p=pointAtProgress(track.path,metrics,i/36),side=i%2?1:-1;
+      const x=p.x+p.nx*side*26,z=p.z+p.nz*side*26;
+      if(projectOnPath(track.path,metrics,x,z).dist<18)continue;
+      box(i%2?0x547c8e:0xa56348,x,1.6,z,5,3.2,11,p.heading);
+      for(let k=-2;k<=2;k++)box(0x354e59,x+Math.cos(p.heading)*2.52,1.6,z+k*1.8,.06,2.9,.08,p.heading);
+      if(i%6===0){box(0xd8a347,x,12,z,1.1,24,1.1);box(0xd8a347,x,23.5,z,28,.7,.9,p.heading);box(0x53626b,x+10,18,z,.1,10,.1);}
+      if(i%9===0){const sx=p.x+p.nx*side*75,sz=p.z+p.nz*side*75;if(projectOnPath(track.path,metrics,sx,sz).dist>58){box(0x354f60,sx,.6,sz,10,2.3,38,p.heading);box(0xdbddd7,sx,3.7,sz,8,4,8,p.heading);}}
     }
   }
 
@@ -214,9 +222,9 @@ export function buildRaceScenery({scene, renderer, group, track, metrics}) {
   }
   if(!night && !harbor) {
     for(let i=0;i<220;i++) {
-      const angle=i*2.399963, r=8+Math.sqrt(i/220)*84;
-      const x=Math.cos(angle)*r,z=Math.sin(angle)*r;
-      if(projectOnPath(track.path,metrics,x,z).dist<half+4 || r>82)continue;
+      const p=sample(i/220,(half+10+(i%7)*7)*(i%2?1:-1));
+      const x=p.x,z=p.z;
+      if(projectOnPath(track.path,metrics,x,z).dist<half+5)continue;
       tree(x,z,1.4+(i%7)*0.3,i);
     }
     for(let i=0;i<75;i++) {
@@ -233,8 +241,9 @@ export function buildRaceScenery({scene, renderer, group, track, metrics}) {
   }
   if(night || harbor) {
     for(let i=0;i<38;i++) {
-      const a=i/38*Math.PI*2,r=night?62+(i%4)*9:132+(i%4)*14;
-      const x=Math.cos(a)*r,z=Math.sin(a)*r,h=8+(i*13%29);
+      const p=sample(i/38,(half+26+(i%4)*11)*(i%2?1:-1));
+      const x=p.x,z=p.z,h=12+(i*13%39);
+      if(projectOnPath(track.path,metrics,x,z).dist<half+12)continue;
       box(i%2?0x344451:0x475761,x,h/2-0.1,z,6,h,7);
       box(0x6e808a,x,h,z,6.4,0.25,7.4);
       if(night)for(let row=0;row<Math.floor(h/2);row++)for(let col=-1;col<=1;col++) {
@@ -243,12 +252,12 @@ export function buildRaceScenery({scene, renderer, group, track, metrics}) {
       }
     }
   }
-  for(let i=0;i<16;i++) {
-    const p=sample(i/16,half+2.6);
+  for(let i=0;i<80;i++) {
+    const p=sample(i/80,half+2.6);
     box(0x596469,p.x,2.1,p.z,0.13,4.2,0.13);
     box(0x434e55,p.x,4.2,p.z,0.8,0.16,0.4);
     box(night?0xffdfa1:0xece4cb,p.x,4.1,p.z,0.65,0.025,0.3,0,true);
-    if(night && i%4===0) {const light=new THREE.PointLight(0xffcc88,13,13,2);light.position.set(p.x,3.8,p.z);group.add(light);}
+    if(night && i%20===0) {const light=new THREE.PointLight(0xffcc88,13,13,2);light.position.set(p.x,3.8,p.z);group.add(light);}
   }
   if(!night) {
     const canvas=document.createElement('canvas');canvas.width=256;canvas.height=128;

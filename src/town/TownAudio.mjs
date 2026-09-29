@@ -213,9 +213,17 @@ function createTownAudio() {
       synth.unlock();
       synth.playGentleError();
     },
-    raceHit() {
+    raceHit(strength=12) {
       synth.unlock();
-      synth.createTone({freq: 140, type: 'sawtooth', duration: 0.18, peakGain: 0.18, filterFreq: 400, pitchBend: {targetFreq: 70, duration: 0.15}});
+      const intensity=Math.min(1,Math.max(.15,strength/28));
+      synth.createTone({freq:100+intensity*40,type:'triangle',duration:.22,peakGain:.22*intensity,filterFreq:500,pitchBend:{targetFreq:38,duration:.18}});
+      // Short filtered noise supplies the tyre scrape / metal transient, behind the existing mute gain.
+      const ctx=synth.ctx;if(!ctx||!synth.sfxGain)return;
+      const duration=.12+intensity*.22,buffer=ctx.createBuffer(1,Math.ceil(ctx.sampleRate*duration),ctx.sampleRate),data=buffer.getChannelData(0);
+      for(let i=0;i<data.length;i++)data[i]=(Math.random()*2-1)*(1-i/data.length);
+      const source=ctx.createBufferSource(),filter=ctx.createBiquadFilter(),gain=ctx.createGain();source.buffer=buffer;
+      filter.type='lowpass';filter.frequency.value=900+intensity*1800;gain.gain.value=.22*intensity;
+      source.connect(filter);filter.connect(gain);gain.connect(synth.sfxGain);source.onended=()=>{source.disconnect();filter.disconnect();gain.disconnect();};source.start();
     },
     typeOk() {
       synth.unlock();

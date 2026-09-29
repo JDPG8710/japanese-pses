@@ -50,7 +50,7 @@
     "test:town:presentation": "node tests/test_town_presentation.mjs",
     "test:town:release": "node tests/test_town_release_browser.mjs",
     "test:town:exploration": "node tests/test_town_vehicles.mjs && node tests/test_town_exploration_browser.mjs",
-    "test:race": "node tests/test_race_handling.mjs && node tests/test_arcade_smoke.mjs",
+    "test:race": "node tests/test_race_handling.mjs && node tests/test_race_collisions.mjs && node tests/test_race_models.mjs && node tests/test_arcade_smoke.mjs",
     "test:race:browser": "node scripts/build.mjs && node tests/test_race_browser.mjs",
     "preview:race": "node scripts/preview-race.mjs",
     "test:town:feedback": "node scripts/build.mjs && node tests/test_town_feedback_browser.mjs"

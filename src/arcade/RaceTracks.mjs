@@ -45,79 +45,59 @@ function neonCity(cx, cz, scale = 1, n = 60) {
   return pts;
 }
 
+// Round authored corners, then sample by physical distance. Start halfway down the
+// long first straight so the player has time to accelerate before the first bend.
+function circuit(vertices, legacyLength) {
+  const points=vertices.map(([x,z])=>({x,z})), raw=[];
+  const mix=(a,b,t)=>({x:a.x+(b.x-a.x)*t,z:a.z+(b.z-a.z)*t});
+  const corners=points.map((p,i)=>{
+    const prev=points[(i+points.length-1)%points.length],next=points[(i+1)%points.length];
+    const cut=Math.min(75,Math.hypot(p.x-prev.x,p.z-prev.z)*.27,Math.hypot(next.x-p.x,next.z-p.z)*.27);
+    return {p,a:mix(p,prev,cut/Math.hypot(p.x-prev.x,p.z-prev.z)),b:mix(p,next,cut/Math.hypot(next.x-p.x,next.z-p.z))};
+  });
+  for(let i=0;i<corners.length;i++){
+    const {a,p,b}=corners[i],next=corners[(i+1)%corners.length].a;
+    for(let j=0;j<24;j++){const t=j/24;raw.push(mix(mix(a,p,t),mix(p,b,t),t));}
+    const steps=Math.ceil(Math.hypot(next.x-b.x,next.z-b.z)/3);
+    for(let j=0;j<steps;j++)raw.push(mix(b,next,j/steps));
+  }
+  const rawMetrics=buildPathMetrics(raw),scale=legacyLength*10/rawMetrics.total;
+  const target=mix(points[0],points[1],.5);
+  const start=projectOnPath(raw,rawMetrics,target.x,target.z).s;
+  const count=Math.ceil(rawMetrics.total*scale/3);
+  const path=Array.from({length:count},(_,i)=>{const p=pointAtProgress(raw,rawMetrics,start+i/count);return {x:p.x*scale,z:p.z*scale};});
+  // Correct sub-millimetre resampling loss to preserve the requested 10x length.
+  const correction=legacyLength*10/buildPathMetrics(path).total;
+  return path.map(p=>({x:p.x*correction,z:p.z*correction}));
+}
+
 /** Sample item spawn progress (0–1) along the centerline. */
-const ITEM_SLOTS = [0.12, 0.28, 0.45, 0.62, 0.78, 0.92];
+const ITEM_SLOTS = [0.06,0.12,0.2,0.28,0.36,0.45,0.54,0.62,0.7,0.78,0.86,0.94];
 
 export const RACE_TRACKS = Object.freeze([
-  Object.freeze({
-    id: 'sunrise',
-    laps: 3,
-    width: 7.2,
-    difficulty: 1,
-    path: oval(0, 0, 28, 18, 48),
-    itemSlots: ITEM_SLOTS,
-    theme: Object.freeze({
-      clear: 0x87b8e8,
-      fog: 0xa8c8e8,
-      asphalt: 0x2a3140,
-      shoulder: 0xd4a574,
-      accent: 0xffc857,
-      deco: 'trees',
-      banking: 0.04
-    })
-  }),
-  Object.freeze({
-    id: 'harbor',
-    laps: 3,
-    width: 7.6,
-    difficulty: 2,
-    path: harborLoop(0, 0, 1.05, 80),
-    itemSlots: ITEM_SLOTS,
-    theme: Object.freeze({
-      clear: 0x1a3a52,
-      fog: 0x243e55,
-      asphalt: 0x243044,
-      shoulder: 0x6b8a9e,
-      accent: 0x57dfff,
-      deco: 'docks',
-      banking: 0.06
-    })
-  }),
-  Object.freeze({
-    id: 'mountain',
-    laps: 3,
-    width: 6.4,
-    difficulty: 3,
-    path: mountain(0, 0, 1, 56),
-    itemSlots: ITEM_SLOTS,
-    theme: Object.freeze({
-      clear: 0x6a8f7a,
-      fog: 0x7a9a88,
-      asphalt: 0x333840,
-      shoulder: 0x5a6b4a,
-      accent: 0xc4e09a,
-      deco: 'rocks',
-      banking: 0.12
-    })
-  }),
-  Object.freeze({
-    id: 'neon',
-    laps: 3,
-    width: 6.8,
-    difficulty: 3,
-    path: neonCity(0, 0, 1.1, 60),
-    itemSlots: ITEM_SLOTS,
-    theme: Object.freeze({
-      clear: 0x0a0618,
-      fog: 0x120a28,
-      asphalt: 0x1a1430,
-      shoulder: 0x3a2060,
-      accent: 0xff4fd8,
-      deco: 'neon',
-      banking: 0.08
-    })
-  })
-]);
+  {id:'sunrise', width:13.5, difficulty:1, legacyLength:buildPathMetrics(oval(0,0,28,18,48)).total,
+   vertices:[[-240,-135],[240,-135],[240,135],[-240,135]],
+   theme:{clear:0x87b8e8,fog:0xa8c8e8,asphalt:0x2a3140,shoulder:0xd4a574,accent:0xffc857,deco:'trees',banking:0.04}},
+  {id:'harbor', width:14, difficulty:2, legacyLength:buildPathMetrics(harborLoop(0,0,1.05,80)).total,
+   vertices:[[-290,-150],[290,-150],[290,5],[80,5],[80,190],[-290,190]],
+   theme:{clear:0x1a3a52,fog:0x243e55,asphalt:0x243044,shoulder:0x6b8a9e,accent:0x57dfff,deco:'docks',banking:0.06}},
+  {id:'mountain', width:12.5, difficulty:3, legacyLength:buildPathMetrics(mountain(0,0,1,56)).total,
+   vertices:[[-265,-190],[230,-190],[275,-35],[100,25],[180,180],[-80,215],[-265,100],[-115,-25]],
+   theme:{clear:0x6a8f7a,fog:0x7a9a88,asphalt:0x333840,shoulder:0x5a6b4a,accent:0xc4e09a,deco:'rocks',banking:0.12}},
+  {id:'neon', width:13, difficulty:3, legacyLength:buildPathMetrics(neonCity(0,0,1.1,60)).total,
+   vertices:[[-260,-170],[260,-170],[260,65],[95,65],[95,190],[-260,190],[-260,55],[-125,-40]],
+   theme:{clear:0x0a0618,fog:0x120a28,asphalt:0x1a1430,shoulder:0x3a2060,accent:0xff4fd8,deco:'neon',banking:0.08}}
+].map(({vertices,...t})=>Object.freeze({...t,laps:3,itemSlots:ITEM_SLOTS,path:circuit(vertices,t.legacyLength),theme:Object.freeze(t.theme)})));
+
+/** Shared shape for selection thumbnails and the live minimap. */
+export function trackMap(track) {
+ const xs=track.path.map(p=>p.x),zs=track.path.map(p=>p.z);
+ const minX=Math.min(...xs),minZ=Math.min(...zs),w=Math.max(...xs)-minX,h=Math.max(...zs)-minZ;
+ const scale=160/Math.max(w,h);
+ const map=p=>({x:20+(160-w*scale)/2+(p.x-minX)*scale,y:20+(160-h*scale)/2+(p.z-minZ)*scale});
+ const points=track.path.map(p=>{const q=map(p);return `${q.x.toFixed(2)},${q.y.toFixed(2)}`;}).join(' ');
+ return {points,map};
+}
 
 export function getRaceTrack(id) {
   return RACE_TRACKS.find(t => t.id === id) || RACE_TRACKS[0];

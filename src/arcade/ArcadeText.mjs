@@ -56,10 +56,10 @@ export const ARCADE_TEXT = {
       dnf: 'DNF',
       useItem: 'Item',
       tracks: {
-        sunrise: {name: 'Sunrise Circuit', blurb: 'Gentle oval · beginner'},
-        harbor: {name: 'Harbor Loop', blurb: 'Wide turns · docks'},
-        mountain: {name: 'Mountain Pass', blurb: 'Tight turns · banked'},
-        neon: {name: 'Neon City', blurb: 'Night layout · aggressive'}
+        sunrise: {name: 'Sunrise Circuit', blurb: 'Long straights · flowing corners'},
+        harbor: {name: 'Harbor Loop', blurb: 'L-shaped waterfront · docks'},
+        mountain: {name: 'Mountain Pass', blurb: 'S-bends · mountain scenery'},
+        neon: {name: 'Neon City', blurb: 'City blocks · night chicane'}
       },
       cars: {
         sports: {name: 'Sports', blurb: 'Balanced all-rounder'},
@@ -131,10 +131,10 @@ export const ARCADE_TEXT = {
       dnf: '未完赛',
       useItem: '道具',
       tracks: {
-        sunrise: {name: '晨曦赛道', blurb: '简单椭圆 · 新手'},
-        harbor: {name: '港湾环线', blurb: '宽弯 · 码头风'},
-        mountain: {name: '山道关口', blurb: '急弯 · 倾斜感'},
-        neon: {name: '霓虹都市', blurb: '夜景 · 更具挑战'}
+        sunrise: {name: '晨曦赛道', blurb: '长直道 · 舒展宽弯'},
+        harbor: {name: '港湾环线', blurb: 'L 形港湾 · 码头折返'},
+        mountain: {name: '山道关口', blurb: '连续 S 弯 · 山地环线'},
+        neon: {name: '霓虹都市', blurb: '城市街区 · 夜间变向弯'}
       },
       cars: {
         sports: {name: '跑车', blurb: '均衡全能'},
@@ -206,10 +206,10 @@ export const ARCADE_TEXT = {
       dnf: 'リタイア',
       useItem: 'アイテム',
       tracks: {
-        sunrise: {name: 'サンライズ', blurb: 'かんたんオーバル'},
-        harbor: {name: 'ハーバーループ', blurb: 'ひろいコーナー'},
-        mountain: {name: 'マウンテンパス', blurb: 'きついカーブ'},
-        neon: {name: 'ネオンシティ', blurb: 'よるのテクニカル'}
+        sunrise: {name: 'サンライズ', blurb: 'ロングストレート・広いコーナー'},
+        harbor: {name: 'ハーバーループ', blurb: 'L字の港・ドックを周回'},
+        mountain: {name: 'マウンテンパス', blurb: '連続S字・山の景色'},
+        neon: {name: 'ネオンシティ', blurb: '街区コース・夜のシケイン'}
       },
       cars: {
         sports: {name: 'スポーツ', blurb: 'バランス型'},

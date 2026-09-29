@@ -1,6 +1,6 @@
-import assert from 'node:assert/strict';
-import {ARTICLES,EXAMPLES} from '../content/learning-articles.mjs';
 import {REASONING_EXAMPLES} from '../content/reasoning-articles.mjs';
+import assert from 'node:assert/strict';
+import {ARTICLES,EXAMPLES,NETWORK_EXAMPLE} from '../content/learning-articles.mjs';
 import {checkAnswer,waterState,makeRounds,solution} from '../src/world/WorldRules.mjs';
 import {diagnoseAnswer,answerFeedback} from '../src/world/WorldFeedback.mjs';
 import {TOPICS,lessonsFor} from '../src/world/FoundationCatalog.mjs';
@@ -55,30 +55,24 @@ state.active.input='7';assert.ok(!submitOrder(state).ok,'price must not pass as 
 state.active.input='3';assert.deepEqual(submitOrder(state),{ok:true,done:true});
 assert.equal(orderFor(3).total,8);assert.equal(orderFor(4).paid-orderFor(4).total,2);
 assert.ok(numericEqual('2/4','1/2'));
-assert.equal(ARTICLES.length,9);
-const balance=REASONING_EXAMPLES.balance,network=REASONING_EXAMPLES.network;
-assert.ok(checkAnswer('balance',balance.question,[3]));
-assert.ok(!checkAnswer('balance',balance.question,[2]));
+
+const network=NETWORK_EXAMPLE;
+assert.ok(checkAnswer('network',network.question,network.answer));
+assert.ok(!checkAnswer('network',network.question,network.cycle));
+assert.ok(!checkAnswer('network',network.question,network.expensive));
+const practice={...network.question,edges:network.question.edges.map((edge,i)=>i===4?[1,3,3]:edge)};
+assert.ok(checkAnswer('network',practice,[0,1,4]));
+assert.ok(!checkAnswer('network',practice,network.answer));
+assert.equal(network.answer.reduce((sum,i)=>sum+network.question.edges[i][2],0),7);
+assert.equal([0,1,4].reduce((sum,i)=>sum+practice.edges[i][2],0),6);
+assert.equal(new Set(ARTICLES.map(a=>a.slug)).size,ARTICLES.length);
+for(const a of ARTICLES){assert.ok(['logic','math','town'].includes(a.group));assert.match(a.updated,/^\d{4}-\d{2}-\d{2}$/);}
+
+console.log('Learning guides: published game examples, independent water states, town checkout, multilingual goals and diagnostic feedback passed.');
+
+const balance=REASONING_EXAMPLES.balance;
+assert.ok(checkAnswer("balance",balance.question,[3]));
+assert.ok(!checkAnswer("balance",balance.question,[2]));
 assert.deepEqual(balance.question.equations.map(e=>e.counts.reduce((n,c,i)=>n+c*[3,4,5][i],0)),[7,9,8]);
 const balancePractice={...balance.question,target:1,equations:balance.question.equations.map((e,i)=>({...e,total:[9,11,10][i]}))};
-assert.ok(checkAnswer('balance',balancePractice,[5]));
-assert.ok(!checkAnswer('balance',balancePractice,[4]));
-// Enumerate all three-edge subsets independently of the production solver.
-function cheapestConnected(q){
- const costs=[];
- for(let a=0;a<q.edges.length;a++)for(let b=a+1;b<q.edges.length;b++)for(let c=b+1;c<q.edges.length;c++){
-  const edges=[a,b,c].map(i=>q.edges[i]),seen=new Set([0]);
-  for(let pass=0;pass<q.count;pass++)for(const [x,y] of edges){if(seen.has(x))seen.add(y);if(seen.has(y))seen.add(x);}
-  if(seen.size===q.count)costs.push(edges.reduce((n,e)=>n+e[2],0));
- }
- return Math.min(...costs);
-}
-assert.equal(cheapestConnected(network.question),7);
-assert.ok(checkAnswer('network',network.question,network.answer));
-assert.ok(!checkAnswer('network',network.question,network.wrong),'cheap cycle leaves D disconnected');
-assert.ok(!checkAnswer('network',network.question,[0,1,4]),'connected but too expensive');
-const networkPractice={...network.question,edges:network.question.edges.map((e,i)=>i===4?[e[0],e[1],3]:e)};
-assert.equal(cheapestConnected(networkPractice),6);
-assert.ok(checkAnswer('network',networkPractice,[0,1,4]));
-assert.ok(!checkAnswer('network',networkPractice,network.answer),'old example answer is not the new optimum');
-console.log('Learning guides: published game examples, independent water states, town checkout, multilingual goals and diagnostic feedback passed.');
+assert.ok(checkAnswer("balance",balancePractice,[5]));

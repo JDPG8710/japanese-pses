@@ -11,7 +11,8 @@ try{
    page.on('pageerror',e=>errors.push(e.message));
    page.on('response',r=>{if(r.status()>=400&&!r.url().includes('/api/auth/session'))failed.push({url:r.url(),status:r.status()});});
    try{
-    const response=await page.goto(origin+route,{waitUntil:'networkidle',timeout:20000});
+    const response=await page.goto(origin+route,{waitUntil:'domcontentloaded',timeout:20000});
+    await page.waitForTimeout(1500);
     const consent=page.locator('[data-consent="necessary"]');if(await consent.isVisible())await consent.click();
     const state=await page.evaluate(()=>({title:document.title,headings:[...document.querySelectorAll('h1')].map(x=>x.textContent),overflow:document.documentElement.scrollWidth>innerWidth,overflowing:[...document.querySelectorAll('body *')].filter(x=>{const r=x.getBoundingClientRect();return r.width&&r.right>innerWidth+2;}).slice(0,5).map(x=>({tag:x.tagName,class:x.className,text:x.textContent.slice(0,60)})),text:document.body.innerText.slice(0,1600),links:[...document.querySelectorAll('a[href]')].map(x=>x.href)}));
     results.push({route,width,status:response.status(),errors,failed,...state});

@@ -12,6 +12,9 @@ try{
   assert.equal(await page.locator('h1').count(),1,route);
   assert.equal(await page.locator('link[rel="canonical"]').getAttribute('href'),`https://piko-game.com${route}`);
   assert.equal(await page.locator('link[rel="alternate"]').count(),4);
+  const article=ARTICLES.find(a=>a.slug===slug);
+  if(article)assert.equal(await page.locator('.guide-meta time').getAttribute('datetime'),article.updated);
+  if(slug==='network')assert.equal(await page.locator('.guide-table tbody tr').count(),6);
   if(slug==='coverage'){
    assert.equal(await page.locator('.coverage-year').count(),68);
    await page.locator('details').evaluateAll(nodes=>nodes.forEach(el=>el.open=true));
@@ -30,7 +33,7 @@ try{
    if(url.hash)assert.ok((await response.text()).includes(`id="${url.hash.slice(1)}"`),href);
    checked.add(href);
   }
-  if(locale==='zh'&&['','sudoku','make-ten','town-shop','balance','network'].includes(slug)){
+  if((locale==='zh'&&['','sudoku','make-ten','town-shop'].includes(slug))||(locale==='ja'&&slug==='network')){
    await page.screenshot({path:`${artifacts}/${slug||'library'}-desktop.png`,fullPage:true});
    await page.setViewportSize({width:390,height:844});
    await page.screenshot({path:`${artifacts}/${slug||'library'}-mobile.png`,fullPage:true});
@@ -42,7 +45,7 @@ try{
  await play.goto(`${preview.origin}/world?locale=zh#game-sudoku`);
  await play.locator('[data-consent="necessary"]').click();
  assert.equal(await play.locator('#game-sudoku .learning-link').getAttribute('href'),'/zh/guides/sudoku');
- for(const game of ['balance','network'])assert.equal(await play.locator(`#game-${game} .learning-link`).getAttribute('href'),`/zh/guides/${game}`);
+ assert.equal(await play.locator('#game-network .learning-link').getAttribute('href'),'/zh/guides/network');
  for(const game of ['sudoku','robot','water']){
   await play.locator(`[data-action="play:${game}"]`).click();await play.locator('.pt-start').click();
   await play.locator(`.game-${game}`).waitFor();

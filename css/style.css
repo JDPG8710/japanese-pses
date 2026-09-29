@@ -660,3 +660,18 @@ button {
   .map-stage-stop, .map-node-celebrate, .map-sparkles span, .map-art-shade { animation: none !important; transition: none !important; }
   .shop-hint-flash { animation: none !important; outline: 4px solid rgba(34,211,238,.7); outline-offset: -4px; }
 }
+
+/* Keep all eight Japanese-course controls reachable on narrow screens. */
+#japanese-hud .glass-panel { min-height:44px; }
+@media (max-width: 640px) {
+  #japanese-hud { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:4px; }
+  #japanese-hud > div { display:contents; }
+  #japanese-hud > div:first-child > div { display:none; }
+  #japanese-hud .glass-panel { width:100%; min-width:0; max-width:none; min-height:44px; margin:0; font-size:11px; justify-content:center; text-align:center; white-space:normal; overflow-wrap:anywhere; }
+  #japanese-hud .glass-panel { height:48px; min-height:48px !important; line-height:16px; }
+  #japanese-hud #user-profile-btn { width:100%; gap:2px; overflow:hidden; }
+  #japanese-hud #user-profile-btn span:last-child { display:none; }
+  #grade-tabs-container { top:116px !important; }
+  #subject-nav { top:168px !important; }
+  .map-node-layer { top:228px; }
+}

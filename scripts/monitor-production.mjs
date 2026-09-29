@@ -30,6 +30,7 @@ const CHECKS = [
   })),
   {id:'about-content',path:'/about',expectStatus:200,assert:text=>{
     if(!text.includes('id="contact"')||!text.includes('id="editorial"'))throw new Error('About/contact/editorial content missing');
+    if(!text.includes('href="mailto:j565718319@gmail.com"'))throw new Error('Contact email unavailable without JavaScript');
   }},
   ...['/monitor-missing-page','/ja/guides/monitor-missing-page'].map(path=>({
     id:`real-404:${path}`,path,expectStatus:404,assert:text=>{if(!text.includes('noindex,follow'))throw new Error('404 must not be indexed');}

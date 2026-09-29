@@ -122,7 +122,7 @@
   <div id="canvas-container"></div>
 
   <!-- トップステータスバー HUD -->
-  <header class="absolute top-4 left-6 right-6 z-10 flex justify-between items-center pointer-events-none">
+  <header id="japanese-hud" class="absolute top-4 left-6 right-6 z-10 flex justify-between items-center pointer-events-none">
     <div class="pointer-events-auto flex items-center gap-3">
       <!-- ユーザー名ログイン & プロファイル切り替えボタン -->
       <button id="user-profile-btn" class="glass-panel px-3.5 py-1.5 rounded-full hover:bg-slate-800 text-xs font-bold text-amber-300 flex items-center gap-2 transition border border-amber-500/40 shadow-lg shadow-amber-500/10">
@@ -1143,7 +1143,8 @@
       independentGameList.appendChild(button);
     });
 
-    document.getElementById('grade-first-mode-btn').addEventListener('click', () => {
+    document.getElementById('grade-first-mode-btn').addEventListener('click', (event) => {
+      event.stopPropagation();
       englishModeSelection = null;
       selectedModeByNode.clear();
       syncCurriculumSelection(0, null);

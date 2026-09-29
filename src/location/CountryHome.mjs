@@ -12,7 +12,7 @@ function regionName(code,locale){try{return new Intl.DisplayNames([locale],{type
 const fallback=COUNTRY_CODES.map(code=>({code,names:{en:regionName(code,'en'),ja:regionName(code,'ja'),zh:regionName(code,'zh')},polygons:[],center:[0,0]}));
 const escape=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export async function showCountryHome(){
-  if(new URLSearchParams(location.search).get('course')==='jp'){initSiteVisits(null);document.body.classList.remove('country-entry');return;}
+  if(new URLSearchParams(location.search).get('course')==='jp'){document.documentElement.lang='ja';document.title='Piko Game · 日本の小学コース';initSiteVisits(null);document.body.classList.remove('country-entry');return;}
   const host=document.querySelector('#country-home');
   const query=new URLSearchParams(location.search);
   // The public route is the About page.  Keep the globe behind its explicit

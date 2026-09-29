@@ -39,3 +39,19 @@ https://developers.google.com/search/docs/fundamentals/creating-helpful-content?
 2026-09-29にHTTP読み取りで /about と /ja/guides/ を確認。ともに200だがタイトルはホームと同じ Piko Game | Multilingual Learning Games for Primary Students であり、ガイドへのリンクはない。本番sitemap.xmlにも /ja/guides/ がない。存在しない /adsense-check-missing-20260929 も200とホームのタイトルを返した。本文全体は完全一致しないため、バイト一致とは報告しない。最新版ソースのガイド・運営案内・404対応が公開に反映されていない状態と整合する。
 
 今回の改善だけではこの公開差分は解消しない。既存改善を含む検証済み最新版の公開、その後の実URLでの再確認、AdSenseの再審査が残る。今回デプロイ・再審査送信はしていない。
+
+## 正式发布完成（2026-09-29，用户授权后）
+
+- 发布内容基于 ca3e53ea009ea8e94abd2dc43c0efee8dfbb5c99。
+- 正式域名：https://piko-game.com
+- Pages：https://b8c834f9.manabi-pop.pages.dev（manabi-pop / main）。
+- Worker：fb7888c6-04b6-463e-81b9-02e630b817d2，已确认100%流量；使用 --keep-vars 保留线上变量。
+- 迁移查询确认无待执行迁移；未重新导入题库。
+- 发布前新增后端验证：42,231项教材检查、1,035条语言化路径、25项本地D1/API检查通过。
+- 正式验证：45个站点地图URL及canonical、9项静态资源SHA-256与本地成果一致、根路径与指南子路径的不存在地址返回404。
+- 真实匿名浏览器：三语言资料库及新增网络指南、移动端显示、答案展开、游戏错误反馈、学年目标、小镇指南入口通过，无未捕获异常。
+- 正式监控8/8通过：主页、健康、国家识别、教材清单、两类排行榜、匿名会话与未登录课程请求限制。
+- 修订上线验证脚本，以实际教材清单长度替代旧的7篇常量，加入三语言网络指南检查。
+- 旧Pages部署 acca59d1-3a6e-415f-af09-404721cb60aa，旧Worker版本 5f8d0778-ae1f-4c6f-b3a0-71a534039964，供需要时回滚。
+
+此前记录的未反映问题已通过本次发布及正式验证解决。未操作AdSense管理界面或提交再审，审核结果仍由Google决定。

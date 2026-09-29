@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import {chromium} from 'playwright-core';
+import {ARTICLES} from '../content/learning-articles.mjs';
 
 // Compare public release assets and use an isolated, signed-out browser.
 // No authenticated games, database operations or AdSense actions are performed.
@@ -27,8 +28,11 @@ try{
  const context=await browser.newContext({viewport:{width:390,height:844}}),page=await context.newPage(),errors=[];
  page.on('pageerror',e=>errors.push(e.message));
  for(const locale of ['zh','en','ja']){
-  await page.goto(`${origin}/${locale}/guides/`);assert.equal(await page.locator('.guide-cards article').count(),7);
+  await page.goto(`${origin}/${locale}/guides/`);assert.equal(await page.locator('.guide-cards article').count(),ARTICLES.length);
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+  await page.goto(`${origin}/${locale}/guides/network`);
+  assert.equal(await page.locator('.guide-table tbody tr').count(),6);
+  await page.locator('details summary').click();assert.ok(await page.locator('details p').isVisible());
   await page.goto(`${origin}/${locale}/guides/make-ten`);await page.locator('details summary').click();assert.ok(await page.locator('details p').isVisible());
  }
  await page.goto(`${origin}/world?locale=zh`);

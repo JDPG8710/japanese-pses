@@ -1,4 +1,4 @@
-import {buildLandmark} from './TownLandmarks.mjs';
+import {buildLandmark,updateLandmarkNames} from './TownLandmarks.mjs';
 import {makeVehicle,vehicleStep,safeParking,flightFloor,VEHICLE_SPEED} from './TownVehicles.mjs';
 import {TOWN_BUILDINGS,CASUAL_ARCADE_IDS,buildingAt,frameSeconds} from './TownBuildings.mjs?v=7';
 import {ARCADE_TEXT} from './ArcadeText.mjs?v=6';
@@ -13,6 +13,7 @@ const toSave=p=>({x:p.x*25+550,y:p.z*25+380});
 export class TownScene {
  constructor(canvas,options){
   Object.assign(this,options);this.canvas=canvas;this.keys=new Set();this.path=[];this.position=new THREE.Vector3(toWorld(this.state.player).x,0,toWorld(this.state.player).z);this.velocity=0;this.grounded=true;this.near=null;this.clock=0;this.yaw=Math.PI;this.pitch=.32;this.distance=36;this.mode=null;this.cooldown=0;this.characterKey='';this.viewMode=this.state.expansion?.cameraMode||'third';this.firstPitch=.08;this.jumpCount=0;this.platformId=null;this.stick={x:0,y:0};this.vehicle='foot';this.lift=0;
+  this.nameMotion=window.matchMedia('(prefers-reduced-motion: reduce)');
   this.renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});this.renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5));this.renderer.shadowMap.enabled=true;this.renderer.shadowMap.type=THREE.PCFSoftShadowMap;this.renderer.outputColorSpace=THREE.SRGBColorSpace;this.renderer.toneMapping=THREE.ACESFilmicToneMapping;this.renderer.toneMappingExposure=1.15;
   this.world=new THREE.Scene();this.world.background=new THREE.Color(0xbfe8fb);this.world.fog=new THREE.Fog(0xbfe8fb,110,340);this.camera=new THREE.PerspectiveCamera(48,1,.1,520);this.cameraTarget=new THREE.Vector3().copy(this.position);this.ray=new THREE.Raycaster();
   this.world.add(new THREE.HemisphereLight(0xfffff0,0x93a9b6,2.5));const sun=new THREE.DirectionalLight(0xfff0d7,3);sun.position.set(-18,32,18);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-90,right:90,top:90,bottom:-90,near:1,far:220});sun.shadow.bias=-.0006;this.world.add(sun);this.sun=sun;
@@ -169,7 +170,13 @@ this.cameraTarget.lerp(this.position,Math.min(1,dt*8));this.render();requestAnim
   const first=this.viewMode==='first';this.canvas.dataset.view=this.viewMode;this.avatar.visible=!first;if(this.vehicleModel)this.vehicleModel.visible=!first;this.canvas.closest('.world-card')?.classList.toggle('is-first-person',first);
   const fov=first?76:48;if(this.camera.fov!==fov){this.camera.fov=fov;this.camera.updateProjectionMatrix();}
   if(first){const p=this.position;this.camera.position.set(p.x,p.y+(this.vehicle==='foot'?2.03:2.5),p.z);this.camera.lookAt(p.x-Math.sin(this.yaw)*Math.cos(this.firstPitch),p.y+(this.vehicle==='foot'?2.03:2.5)-Math.sin(this.firstPitch),p.z-Math.cos(this.yaw)*Math.cos(this.firstPitch));}
-  else{const p=this.cameraTarget;this.camera.position.set(p.x+Math.sin(this.yaw)*Math.cos(this.pitch)*this.distance,p.y+Math.sin(this.pitch)*this.distance+2,p.z+Math.cos(this.yaw)*Math.cos(this.pitch)*this.distance);this.camera.lookAt(p.x,p.y+(this.mode?1.3:this.vehicle==='foot'?6.5:3.5),p.z);}
+  else{const p=this.cameraTarget;
+   let roofFocus=6.5;
+   if(!this.mode&&this.vehicle==='foot')for(const model of this.environment.children){const name=model.userData.floatingName;if(!name)continue;const near=THREE.MathUtils.clamp((36-Math.hypot(p.x-model.position.x,p.z-model.position.z))/16,0,1);roofFocus=Math.max(roofFocus,6.5+near*Math.max(0,(name.roof+5)/2-6.5));}
+   this.canvas.closest('.world-card')?.classList.toggle('is-near-landmark',!this.mode&&roofFocus>8);
+   this.townLookHeight=(this.townLookHeight??roofFocus)+(roofFocus-(this.townLookHeight??roofFocus))*.08;
+   this.camera.position.set(p.x+Math.sin(this.yaw)*Math.cos(this.pitch)*this.distance,p.y+Math.sin(this.pitch)*this.distance+2,p.z+Math.cos(this.yaw)*Math.cos(this.pitch)*this.distance);this.camera.lookAt(p.x,p.y+(this.mode?1.3:this.vehicle==='foot'?this.townLookHeight:3.5),p.z);}
+  if(!this.mode)updateLandmarkNames(this.environment,this.camera,this.clock,this.canvas.clientHeight,this.nameMotion.matches);
   this.sun.position.set(this.position.x-12,this.position.y+25,this.position.z+14);this.sun.target.position.copy(this.position);this.sun.target.updateMatrixWorld();this.renderer.render(this.world,this.camera);this.updateAnswerLabels();
  }
 }

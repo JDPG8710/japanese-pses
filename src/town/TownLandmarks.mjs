@@ -1,4 +1,4 @@
-import {THREE,box,ball,label} from './Models3D.mjs';
+import {THREE,box,ball} from './Models3D.mjs';
 export const LANDMARK_HEIGHTS={obby:14,tower:23,runner:15,memory:13,garden:12,gear:13,fruit:14,breakout:15,race:12,ninja:16};
 const COLORS=[0xff747d,0xffca58,0x69dfc0,0x65b9ff,0xaa86ef];
 function shape(g,geometry,x,y,z,color){const m=new THREE.Mesh(geometry,new THREE.MeshStandardMaterial({color,roughness:.65}));m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;g.add(m);return m;}
@@ -70,5 +70,34 @@ export function buildLandmark(parent,b,title){
  }
  if(b.id==='gear')for(let y=.5;y<3.4;y+=.55)box(g,0,y,2.98,5.8,.06,.04,0xf2ca94);
  if(b.id==='garden')for(const x of [-1.7,1.7]){box(g,x,.45,-3.3,.8,.7,.5,0xc4946b);ball(g,x,1,-3.3,.5,0x91c96d);}
- label(g,title,0,3.85,-3.12,{width:5.5,size:40,background:'#'+facade[0].toString(16).padStart(6,'0'),color:'#ffffff'});g.userData.height=LANDMARK_HEIGHTS[b.id];return g;
+ // Measure the finished model, including flags and antennae, before placing the sign.
+ const roof=new THREE.Box3().setFromObject(g).max.y;
+ const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=256;
+ const ctx=canvas.getContext('2d');ctx.fillStyle='#101c36';ctx.beginPath();ctx.roundRect(8,8,1008,240,48);ctx.fill();
+ ctx.strokeStyle='#ffffff';ctx.lineWidth=10;ctx.stroke();ctx.fillStyle='#ffffff';
+ ctx.font='800 126px "Segoe UI", "Microsoft YaHei", sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(title,512,132,920);
+ const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;
+ const sign=new THREE.Sprite(new THREE.SpriteMaterial({map:texture,depthTest:true,depthWrite:false,toneMapped:false,fog:false}));
+ sign.name='floating-game-name';sign.userData.title=title;sign.scale.set(12,3,1);sign.position.set(0,roof+3.8,0);g.add(sign);
+ const orbit=ring(g,0,roof+1,0,2,0xffffff);orbit.name='name-orbit';orbit.rotation.x=Math.PI/2;
+ // Billboard lettering never turns edge-on; a gentle roll accompanies the rotating halo.
+ g.userData.floatingName={sign,orbit,roof,phase:Math.abs(b.x+b.z)*.13};
+ g.userData.height=LANDMARK_HEIGHTS[b.id];return g;
+}
+
+export function updateLandmarkNames(environment,camera,time,viewportHeight,reducedMotion=false){
+ const point=new THREE.Vector3();
+ for(const model of environment.children){
+  const item=model.userData.floatingName;if(!item)continue;
+  const {sign,orbit,roof,phase}=item,t=reducedMotion?0:time;
+  sign.getWorldPosition(point);const distance=camera.position.distanceTo(point);
+  // Keep distant names legible on phones without allowing unlimited map-wide banners.
+  const unitsPerPixel=2*distance*Math.tan(THREE.MathUtils.degToRad(camera.fov/2))/Math.max(1,viewportHeight);
+  const width=THREE.MathUtils.clamp(unitsPerPixel*144,12,22);sign.scale.set(width,width/4,1);
+  sign.position.y=roof+width/8+2.3+(reducedMotion?0:Math.sin(t*1.4+phase)*.3);
+  sign.material.rotation=reducedMotion?0:Math.sin(t*.8+phase)*.045;
+  sign.material.color.setHSL((t*.055+phase)%1,.8,.76);
+  orbit.rotation.z=t*.7+phase;orbit.rotation.y=reducedMotion?0:Math.sin(t*.6+phase)*.25;
+  orbit.material.color.copy(sign.material.color);
+ }
 }

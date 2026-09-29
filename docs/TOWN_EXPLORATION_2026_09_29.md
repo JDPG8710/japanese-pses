@@ -47,3 +47,12 @@
 - 正式 320／390／820／1440px 的真实 WebGL、十座建筑、移动、视角保存和控制器边界均通过。
 - 正式 49 个 URL、21 个关键文件与最终 dist 字节一致、三语言教材及 17／17 健康检查通过。
 - 最终逐栋渲染检查：建筑包含 42～84 个网格部件，包含专属立面、门窗、屋顶与装饰。截图保存在 `.wrangler/town-landmarks/`；全屏与飞机截图保存在 `.wrangler/town-exploration/`。
+
+
+## Rooftop game names
+
+Replaced small facade labels on all ten venues with high-resolution billboard signs above the measured model bounds, including flags and antennae. Dark panels preserve contrast as pastel lettering and borders cycle through colors. The signs gently roll and float while a halo rotates; lettering remains camera-facing. Distance scaling improves phone readability, with an upper size limit. Reduced-motion preferences stop the animation. Existing scene disposal releases sign textures and geometry.
+
+The walking third-person camera raises its focus smoothly near tall landmarks so the tower sign fits alongside the player. The instructional tip is hidden when that framing would put it over a roof sign. Learning-game cameras and controls retain their existing behavior.
+
+Validation: ten landmark browser renders; all ten roof clearances, rotation changes and hue transitions checked in Chrome; 390px mobile tower screenshot inspected. Standard release gates cover content, SEO, login, Japanese entry, 320/390/820/1440px WebGL layouts, joystick, vehicles and native/fallback fullscreen. Mobile verification uses browser emulation, not physical devices.

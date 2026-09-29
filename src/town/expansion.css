@@ -93,3 +93,6 @@
  .scene-viewport .world-controls[data-travel="plane"] .town-joystick{width:116px;height:116px}
  .scene-viewport .map-caption{max-width:45%}
 }
+
+/* Keep the roof name clear when the camera frames a nearby tall landmark. */
+.world-card.is-near-landmark #walk-tip{visibility:hidden}

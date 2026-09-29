@@ -40,4 +40,10 @@
 - [Roblox：Assemble modular environments](https://create.roblox.com/docs/tutorials/use-case-tutorials/modeling/assemble-modular-environments)
 - [MDN：requestFullscreen](https://developer.mozilla.org/en-US/docs/Web/API/Element/requestFullscreen)
 
-正式部署与线上验证结果在完成后追加。
+## 正式发布结果
+
+- 源码 `d7f08aa` 已合入远端 main，正式部署为 https://e6fea1e1.manabi-pop.pages.dev 。
+- 正式域名 https://piko-game.com/town?locale=zh 上复测通过：三种全屏路径、摇杆转向／移动与双指跳跃、手机飞机升降、汽车驾驶与重载保存、安全步行切换。
+- 正式 320／390／820／1440px 的真实 WebGL、十座建筑、移动、视角保存和控制器边界均通过。
+- 正式 49 个 URL、21 个关键文件与最终 dist 字节一致、三语言教材及 17／17 健康检查通过。
+- 最终逐栋渲染检查：建筑包含 42～84 个网格部件，包含专属立面、门窗、屋顶与装饰。截图保存在 `.wrangler/town-landmarks/`；全屏与飞机截图保存在 `.wrangler/town-exploration/`。

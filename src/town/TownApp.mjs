@@ -99,6 +99,7 @@ function submit(){
   const result=submitOrder(state);feedbackGood=result.ok;
   feedback=result.ok?w().correct:w()[phase==='basket'?'wrongBasket':phase==='total'?'wrongTotal':'wrongChange'];
   persist();refresh();if(result.done){modal='reward';translated=false;}renderModal();
+  if(result.ok)dialog.querySelector('.dialog-content')?.classList.add('game-success-animate');
   if(result.done)dialog.querySelector('[data-action="reward-next"]')?.focus();else if(!result.ok)$('order-feedback')?.scrollIntoView({block:'nearest'});
 }
 function listen(){

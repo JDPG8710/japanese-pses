@@ -96,3 +96,17 @@
 
 /* Keep the roof name clear when the camera frames a nearby tall landmark. */
 .world-card.is-near-landmark #walk-tip{visibility:hidden}
+/* Answer feedback is owned by the playable viewport, never the page sidebar. */
+.scene-viewport .game-feedback{position:absolute;z-index:5;top:var(--game-feedback-top,144px);left:12px;right:76px;max-width:430px;max-height:calc(100% - var(--game-feedback-top,144px) - 170px);overflow:auto;display:flex;align-items:center;gap:12px;padding:14px 16px;border:2px solid #8eddb4;border-radius:20px;color:#eafff3;background:#163b38ed;box-shadow:0 10px 30px #163b3833;pointer-events:none;isolation:isolate}
+.game-feedback[hidden]{display:none!important}.game-feedback strong{display:block;font-size:20px;line-height:1.3}.game-feedback p{font-size:13px;line-height:1.5;margin:5px 0 0;overflow-wrap:anywhere}.game-feedback-icon{font-size:38px;line-height:1;color:#ffda75;flex-shrink:0}.game-feedback[data-kind="partial"]{background:#214e5beb;border-color:#91d9e9}.game-feedback[data-kind="retry"]{background:#fff5dfed;color:#765037;border-color:#e4cbaa}.game-feedback[data-kind="retry"] .game-feedback-icon{color:#a57745}.game-feedback-spark{position:absolute;left:36px;top:35px;color:#ffda75;font-size:18px;font-style:normal;pointer-events:none;opacity:0}
+.game-feedback[data-animate="true"] .game-feedback-icon{animation:game-feedback-pop .65s cubic-bezier(.2,1.5,.5,1)}.game-feedback[data-animate="true"] .game-feedback-spark{animation:game-feedback-spark 1.3s var(--delay) ease-out both}
+.scene-answer.answer-correct{border-color:#50be86!important;background:#e8ffef;box-shadow:0 0 0 4px #75d9a077,0 5px 20px #28594733}.scene-answer.answer-correct:before{content:'✓ ';color:#187647;font-weight:900}
+.game-success-animate{animation:game-success-pulse 1s ease-out}.game-success-animate .order-feedback.good,.game-success-animate .rewards{animation:game-feedback-pop .65s ease-out}
+@keyframes game-feedback-pop{0%{transform:scale(.5);opacity:.2}65%{transform:scale(1.22)}100%{transform:scale(1);opacity:1}}
+@keyframes game-feedback-spark{0%{transform:translate(0,0) scale(.4);opacity:0}20%{opacity:1}100%{transform:translate(var(--dx),var(--dy)) rotate(100deg) scale(.5);opacity:0}}
+@keyframes game-success-pulse{0%,100%{box-shadow:0 0 0 0 #72d59a00}35%{box-shadow:0 0 0 8px #72d59a66}}
+@media(max-width:480px){.scene-viewport .game-feedback{left:8px;gap:8px;padding:10px;border-radius:14px}.game-feedback strong{font-size:17px}.game-feedback p{font-size:12px}.game-feedback-icon{font-size:28px}}
+@media(orientation:landscape) and (max-height:500px){.scene-viewport .game-feedback{top:8px;left:240px;right:204px;max-height:120px;padding:8px}.game-feedback strong{font-size:15px}.game-feedback p{font-size:11px}.game-feedback-icon{font-size:24px}}
+@media(prefers-reduced-motion:reduce){.game-feedback *,.game-success-animate,.game-success-animate *{animation:none!important}.game-feedback-spark{display:none}}
+
+.scene-viewport .course-controls [data-next-stage],.scene-viewport .course-controls [data-retry-stage]{width:auto;flex:1;min-width:0;max-width:180px}

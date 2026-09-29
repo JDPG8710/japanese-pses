@@ -7,7 +7,8 @@ import {arcadeText} from './ArcadeText.mjs?v=3';
 import {
   RACE_TRACKS, getRaceTrack, buildPathMetrics, projectOnPath, pointAtProgress
 } from './RaceTracks.mjs?v=1';
-import {RACE_CARS, getRaceCar, makeRaceCarMesh} from './RaceCars.mjs?v=1';
+import {buildRaceScenery, disposeRaceScene} from './RaceScenery.mjs?v=1';
+import {RACE_CARS, getRaceCar, makeRaceCarMesh} from './RaceCars.mjs?v=2';
 
 export {RACE_TRACKS, RACE_CARS};
 export const RACE_POWERUPS = Object.freeze(['boost', 'shield', 'oil', 'magnet']);
@@ -79,6 +80,8 @@ export function createRaceGame({
   let distance = 0; // cumulative meters along path (compat)
   let speed = 0;
   let heading = 0;
+  let steering = 0;
+  let cameraHeading = 0;
   let px = 0;
   let pz = 0;
   let progress = 0;
@@ -193,48 +196,43 @@ export function createRaceGame({
   function mountTouch() {
     if (!hasDom()) return;
     const stage = canvas.parentElement;
+    const labels = locale === 'zh' ? ['向左','向右','刹车','油门'] : locale === 'ja' ? ['ひだり','みぎ','ブレーキ','アクセル'] : ['Left','Right','Brake','Go'];
     touchEl = document.createElement('div');
     touchEl.className = 'race-touch';
     touchEl.innerHTML = `
       <div class="race-touch-steer">
-        <button type="button" data-touch="left" aria-label="left">◀</button>
-        <button type="button" data-touch="right" aria-label="right">▶</button>
+        <button type="button" data-touch="left" aria-label="${labels[0]}">◀</button>
+        <button type="button" data-touch="right" aria-label="${labels[1]}">▶</button>
       </div>
       <div class="race-touch-pedals">
-        <button type="button" data-touch="brake" aria-label="brake">ブレーキ<br>Brake</button>
-        <button type="button" data-touch="throttle" class="primary" aria-label="throttle">アクセル<br>Go</button>
+        <button type="button" data-touch="brake" aria-label="${labels[2]}">${labels[2]}</button>
+        <button type="button" data-touch="throttle" class="primary" aria-label="${labels[3]}">${labels[3]}</button>
       </div>
       <button type="button" class="race-touch-item" data-touch="item" aria-label="item">${esc(raceCopy.useItem || 'Item')}</button>`;
     stage.append(touchEl);
-    const setPad = (name, on) => {
-      if (name === 'left') touch.steer = on ? -1 : (touch.steer < 0 ? 0 : touch.steer);
-      if (name === 'right') touch.steer = on ? 1 : (touch.steer > 0 ? 0 : touch.steer);
-      if (name === 'throttle') touch.throttle = on ? 1 : 0;
-      if (name === 'brake') touch.brake = on ? 1 : 0;
-      if (name === 'item' && on) useHeldItem();
+    const pointers = new Map();
+    const update = () => {
+      const pressed = new Set(pointers.values());
+      touch.steer = Number(pressed.has('right')) - Number(pressed.has('left'));
+      touch.throttle = Number(pressed.has('throttle'));
+      touch.brake = Number(pressed.has('brake'));
+      touchEl.querySelectorAll('button').forEach(b => b.classList.toggle('active', pressed.has(b.dataset.touch)));
     };
     const down = e => {
       const b = e.target.closest('[data-touch]');
       if (!b) return;
       e.preventDefault();
-      setPad(b.dataset.touch, true);
+      b.setPointerCapture(e.pointerId);
+      pointers.set(e.pointerId, b.dataset.touch);
+      if (b.dataset.touch === 'item') useHeldItem();
+      update();
     };
-    const up = e => {
-      const b = e.target.closest?.('[data-touch]') || (e.changedTouches && touchEl.querySelector(`[data-touch].active`));
-      // release all if pointer left
-      const name = e.target.closest?.('[data-touch]')?.dataset?.touch;
-      if (name) setPad(name, false);
-      else {
-        touch.throttle = 0; touch.brake = 0; touch.steer = 0;
-      }
-    };
+    const up = e => { pointers.delete(e.pointerId); update(); };
     touchEl.addEventListener('pointerdown', down);
     touchEl.addEventListener('pointerup', up);
     touchEl.addEventListener('pointercancel', up);
-    touchEl.addEventListener('pointerleave', e => {
-      if (e.target === touchEl) { touch.throttle = 0; touch.brake = 0; touch.steer = 0; }
-    });
-    touchEl._raceHandlers = {down, up};
+    touchEl.addEventListener('lostpointercapture', up);
+    touchEl._raceHandlers = {down, up, pointers};
   }
 
   function unmountTouch() {
@@ -244,86 +242,11 @@ export function createRaceGame({
       touchEl.removeEventListener('pointerdown', h.down);
       touchEl.removeEventListener('pointerup', h.up);
       touchEl.removeEventListener('pointercancel', h.up);
+      touchEl.removeEventListener('lostpointercapture', h.up);
     }
     touchEl.remove();
     touchEl = null;
     touch.throttle = 0; touch.brake = 0; touch.steer = 0;
-  }
-
-  function clearScene() {
-    if (!graphics.ok) return;
-    const {scene} = graphics;
-    while (scene.children.length) scene.remove(scene.children[0]);
-  }
-
-  function buildTrackMesh(group) {
-    const theme = track.theme;
-    const path = track.path;
-    const half = track.width / 2;
-    const n = path.length;
-    for (let i = 0; i < n; i++) {
-      const a = path[i];
-      const b = path[(i + 1) % n];
-      const dx = b.x - a.x;
-      const dz = b.z - a.z;
-      const len = Math.hypot(dx, dz) || 1;
-      const mx = (a.x + b.x) / 2;
-      const mz = (a.z + b.z) / 2;
-      const ang = Math.atan2(dx, dz);
-      const road = boxMesh(track.width, 0.12, len + 0.15, theme.asphalt);
-      road.position.set(mx, 0, mz);
-      road.rotation.y = ang;
-      // fake banking
-      road.rotation.z = Math.sin(i / n * Math.PI * 2) * (theme.banking || 0);
-      group.add(road);
-      const shL = boxMesh(1.1, 0.1, len + 0.1, theme.shoulder);
-      shL.position.set(mx + Math.cos(ang) * (half + 0.55), 0.02, mz - Math.sin(ang) * (half + 0.55));
-      shL.rotation.y = ang;
-      const shR = boxMesh(1.1, 0.1, len + 0.1, theme.shoulder);
-      shR.position.set(mx - Math.cos(ang) * (half + 0.55), 0.02, mz + Math.sin(ang) * (half + 0.55));
-      shR.rotation.y = ang;
-      group.add(shL, shR);
-    }
-    // finish line
-    const start = pointAtProgress(path, metrics, 0);
-    const finish = boxMesh(track.width * 0.95, 0.08, 1.2, 0xffffff);
-    finish.position.set(start.x, 0.08, start.z);
-    finish.rotation.y = start.heading;
-    group.add(finish);
-
-    // décor
-    const deco = theme.deco;
-    for (let i = 0; i < 24; i++) {
-      const p = pointAtProgress(path, metrics, i / 24);
-      const side = i % 2 ? 1 : -1;
-      const ox = p.x + p.nx * side * (half + 2.2 + (i % 3) * 0.4);
-      const oz = p.z + p.nz * side * (half + 2.2 + (i % 3) * 0.4);
-      if (deco === 'trees') {
-        const trunk = boxMesh(0.35, 1.2, 0.35, 0x5a3a22);
-        trunk.position.set(ox, 0.6, oz);
-        const leaf = boxMesh(1.1, 1.4, 1.1, 0x3d8f5a);
-        leaf.position.set(ox, 1.7, oz);
-        group.add(trunk, leaf);
-      } else if (deco === 'docks') {
-        const crate = boxMesh(1.2, 1.0, 1.2, 0x8b6914);
-        crate.position.set(ox, 0.5, oz);
-        group.add(crate);
-      } else if (deco === 'rocks') {
-        const rock = boxMesh(1.4, 1.6 + (i % 3) * 0.4, 1.2, 0x6a7068);
-        rock.position.set(ox, 0.8, oz);
-        group.add(rock);
-      } else {
-        const pole = boxMesh(0.25, 2.4, 0.25, theme.accent);
-        pole.position.set(ox, 1.2, oz);
-        const lamp = sphereMesh(0.35, theme.accent, {emissive: theme.accent, emissiveIntensity: 0.8, segments: 8});
-        lamp.position.set(ox, 2.5, oz);
-        group.add(pole, lamp);
-      }
-    }
-    // ground plane
-    const ground = boxMesh(120, 0.05, 120, theme.clear === 0x0a0618 ? 0x120a20 : 0x3d5a40);
-    ground.position.y = -0.1;
-    group.add(ground);
   }
 
   function buildScene() {
@@ -331,25 +254,11 @@ export function createRaceGame({
       worldGroup = null;
       return;
     }
-    clearScene();
+    disposeRaceScene(graphics.scene);
     const {scene, camera, renderer} = graphics;
-    const theme = track.theme;
-    renderer.setClearColor(theme.clear, 1);
-    scene.background = new THREE.Color(theme.clear);
-    scene.fog = new THREE.Fog(theme.fog, 35, 110);
-    scene.add(new THREE.HemisphereLight(0xffffff, 0x334455, 1.2));
-    const sun = new THREE.DirectionalLight(0xfff2d8, theme.deco === 'neon' ? 0.7 : 1.5);
-    sun.position.set(8, 18, 6);
-    scene.add(sun);
-    if (theme.deco === 'neon') {
-      const neon = new THREE.PointLight(theme.accent, 1.4, 80);
-      neon.position.set(0, 8, 0);
-      scene.add(neon);
-    }
-
     worldGroup = new THREE.Group();
     scene.add(worldGroup);
-    buildTrackMesh(worldGroup);
+    buildRaceScenery({scene, renderer, group: worldGroup, track, metrics});
 
     itemGroup = new THREE.Group();
     scene.add(itemGroup);
@@ -419,6 +328,11 @@ export function createRaceGame({
     pz = start.z + start.nz * -1.2;
     heading = start.heading;
     speed = 0;
+    steering = 0;
+    cameraHeading = heading;
+    camX = px - Math.sin(heading) * 9;
+    camY = 4.3;
+    camZ = pz - Math.cos(heading) * 9;
     progress = 0.02;
     lastProgress = progress;
     crossedMid = false;
@@ -512,7 +426,7 @@ export function createRaceGame({
     const steerIn = inputSteer();
 
     if (thr > 0) {
-      speed += carDef.accel * thr * dt / carDef.mass;
+      speed += carDef.accel * 0.62 * thr * dt / carDef.mass;
     } else {
       speed *= Math.pow(0.25, dt); // coast friction
     }
@@ -522,8 +436,12 @@ export function createRaceGame({
     }
     speed = Math.max(-carDef.topSpeed * 0.25, Math.min(top, speed));
 
-    const steerRate = carDef.handling * (1.1 - Math.min(0.75, Math.abs(speed) / Math.max(1, carDef.topSpeed))) * gripMul;
-    heading += steerIn * steerRate * dt * Math.sign(speed || 1) * (Math.abs(speed) > 0.4 ? 1 : 0.35);
+    // With +Z forward, positive yaw turns LEFT in the chase camera.
+    // Smooth key presses, return promptly to neutral, and keep corners reachable at speed.
+    steering += (steerIn - steering) * (1 - Math.exp(-dt * (steerIn ? 12 : 18)));
+    const speedRatio = Math.min(1, Math.abs(speed) / carDef.topSpeed);
+    const steerRate = carDef.handling * (1 - speedRatio * 0.15) * gripMul;
+    heading -= steering * steerRate * dt * Math.sign(speed) * Math.min(1, Math.abs(speed) / 6);
 
     const forwardX = Math.sin(heading);
     const forwardZ = Math.cos(heading);
@@ -651,6 +569,11 @@ export function createRaceGame({
     if (playerMesh) {
       playerMesh.position.set(px, 0.2, pz);
       playerMesh.rotation.y = heading;
+      playerMesh.rotation.z = steering * Math.min(Math.abs(speed) / 35, 1) * 0.035;
+      for (const wheel of playerMesh.userData.wheels || []) {
+        wheel.rotation.y = wheel.userData.front ? -steering * 0.34 : 0;
+        wheel.children[0].rotation.x += speed * dt / 0.27;
+      }
       const flash = invuln > 0 && Math.floor(invuln / 80) % 2 === 0;
       playerMesh.visible = !flash;
     }
@@ -675,19 +598,18 @@ export function createRaceGame({
     onEnd?.({cleared, score, detail});
   }
 
-  function draw() {
+  function draw(dt = 1 / 60) {
     if (!graphics.ok || !playerMesh) return;
     const {camera, renderer, scene} = graphics;
-    const backX = px - Math.sin(heading) * 10;
-    const backZ = pz - Math.cos(heading) * 10;
-    const targetX = backX;
-    const targetY = 6.5 + Math.min(2, Math.abs(speed) * 0.04);
-    const targetZ = backZ;
-    camX += (targetX - camX) * 0.12;
-    camY += (targetY - camY) * 0.1;
-    camZ += (targetZ - camZ) * 0.12;
+    const angleDelta = Math.atan2(Math.sin(heading - cameraHeading), Math.cos(heading - cameraHeading));
+    cameraHeading += angleDelta * (1 - Math.exp(-8 * dt));
+    const follow = 1 - Math.exp(-12 * dt);
+    const back = 9 + Math.min(2, Math.abs(speed) * 0.035);
+    camX += (px - Math.sin(cameraHeading) * back - camX) * follow;
+    camY += (4.3 + Math.abs(speed) * 0.012 - camY) * follow;
+    camZ += (pz - Math.cos(cameraHeading) * back - camZ) * follow;
     camera.position.set(camX, camY, camZ);
-    camera.lookAt(px + Math.sin(heading) * 6, 1.0, pz + Math.cos(heading) * 6);
+    camera.lookAt(px + Math.sin(cameraHeading) * 9, 1.5, pz + Math.cos(cameraHeading) * 9);
     renderer.render(scene, camera);
   }
 
@@ -696,12 +618,12 @@ export function createRaceGame({
     const dt = Math.min(0.033, (ts - last) / 1000 || 0.016);
     last = ts;
     tick(dt);
-    draw();
+    draw(dt);
     if (running) raf = requestAnimationFrame(loop);
   }
 
   function onKeyDown(e) {
-    const k = e.key;
+    const k = ({KeyW:'w',KeyS:'s',KeyA:'a',KeyD:'d',KeyE:'e',Space:' '})[e.code] || e.key;
     if (k === 'ArrowUp' || k === 'w' || k === 'W') { keys.throttle = true; e.preventDefault(); }
     if (k === 'ArrowDown' || k === 's' || k === 'S') { keys.brake = true; e.preventDefault(); }
     if (k === 'ArrowLeft' || k === 'a' || k === 'A') { keys.left = true; e.preventDefault(); }
@@ -709,12 +631,20 @@ export function createRaceGame({
     if (k === ' ' || k === 'e' || k === 'E') { useHeldItem(); e.preventDefault(); }
   }
   function onKeyUp(e) {
-    const k = e.key;
+    const k = ({KeyW:'w',KeyS:'s',KeyA:'a',KeyD:'d',KeyE:'e',Space:' '})[e.code] || e.key;
     if (k === 'ArrowUp' || k === 'w' || k === 'W') keys.throttle = false;
     if (k === 'ArrowDown' || k === 's' || k === 'S') keys.brake = false;
     if (k === 'ArrowLeft' || k === 'a' || k === 'A') keys.left = false;
     if (k === 'ArrowRight' || k === 'd' || k === 'D') keys.right = false;
   }
+  function clearInput() {
+    for (const key of Object.keys(keys)) keys[key] = false;
+    touch.throttle = touch.brake = touch.steer = 0;
+    steering = 0;
+    touchEl?._raceHandlers?.pointers.clear();
+    touchEl?.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+  }
+  function onVisibility() { if (document.hidden) clearInput(); }
   function onResize() { resizeArcade3D(graphics, canvas); }
 
   function bind() {
@@ -722,15 +652,20 @@ export function createRaceGame({
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
     window.addEventListener('resize', onResize);
+    window.addEventListener('blur', clearInput);
+    if (typeof document !== 'undefined') document.addEventListener('visibilitychange', onVisibility);
   }
   function unbind() {
     if (typeof window === 'undefined') return;
     window.removeEventListener('keydown', onKeyDown);
     window.removeEventListener('keyup', onKeyUp);
     window.removeEventListener('resize', onResize);
+    window.removeEventListener('blur', clearInput);
+    if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', onVisibility);
   }
 
   function beginRace() {
+    clearInput();
     unmountLobby();
     track = getRaceTrack(selectedTrackId);
     carDef = getRaceCar(selectedCarId);
@@ -780,6 +715,7 @@ export function createRaceGame({
   }
 
   function pause() {
+    clearInput();
     running = false;
     typeof cancelAnimationFrame === 'function' && cancelAnimationFrame(raf);
   }
@@ -795,6 +731,7 @@ export function createRaceGame({
     unbind();
     unmountLobby();
     unmountTouch();
+    if (graphics.ok) disposeRaceScene(graphics.scene);
     disposeArcade3D(graphics);
   }
 
@@ -844,6 +781,8 @@ export function createRaceGame({
       score,
       distance,
       speed,
+      heading,
+      x: px, z: pz, steering,
       lap,
       progress,
       trackId: track.id,

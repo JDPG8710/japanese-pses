@@ -1,5 +1,6 @@
 // Authored lessons. Examples are fixed so that explanations can be checked
 // independently against the same rules used by the playable activities.
+import {REASONING_ARTICLES} from './reasoning-articles.mjs';
 const L=(en,zh,ja)=>({en,zh,ja});
 export const EXAMPLES={
  sudoku:{question:{size:4,boxRows:2,boxCols:2,givens:[1,0,3,0,0,4,0,2,2,0,4,0,0,3,0,1]},answer:[1,2,3,4,3,4,1,2,2,1,4,3,4,3,2,1]},
@@ -78,3 +79,5 @@ export const ARTICLES=[{
  answer:L('2 × 3 + 1 × 2 = 8, so change is 10 − 8 = 2. Check 8 + 2 = 10. The plural “apples” signals more than one apple, but the word “two” supplies the exact quantity.','2×3＋1×2＝8，找零10－8＝2，检查8＋2＝10。apples的复数形式表示不止一个苹果，具体数量仍要看two。','2×3＋1×2＝8、おつりは10－8＝2です。8＋2＝10。applesは 複数ですが、正確な 数はtwoで わかります。'),
  transfer:L('Enter the town and follow the guide to the shop. Later missions combine all three steps. Difficulty changes can alter quantities and prices on the next order, so reread them. Progress is stored in this browser; clearing its storage removes it.','进入小镇后按向导提示去商店，后续任务会串联三个步骤。改变难度可能让下一张订单的数量和价格变化，必须重新核对。进度保存在当前浏览器，清理网站存储会删除它。','まちの 案内に そって お店へ。あとの 任務で3つの 手順が つながります。難しさを 変えた 次の 注文は、数や ねだんを よみなおしましょう。進み具合は この ブラウザーに 保存され、保存データを 消すと なくなります。')
 }];
+
+ARTICLES.push(...REASONING_ARTICLES);

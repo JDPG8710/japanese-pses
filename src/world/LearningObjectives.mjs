@@ -51,7 +51,7 @@ export function lessonObjective(id,locale='en',language='en'){
  if(/^english[1-6]$/.test(id))return L('Practise English–Chinese vocabulary, dialogue, word order and short reading. Level labels guide practice; they are not exam certification.','练习英汉词汇、对话、句序和短文阅读。难度标签用于选择练习，不代表考试认证。','英中の 語彙、会話、語順、短文を れんしゅう。レベルは めやすで、試験の 認定ではありません。')[lang];
  return '';
 }
-const GUIDE_IDS={count:'counting',add20:'make-ten',fractions:'fractions',sudoku:'sudoku',robot:'robot',water:'water',town:'town-shop'};
+const GUIDE_IDS={count:'counting',add20:'make-ten',fractions:'fractions',sudoku:'sudoku',robot:'robot',water:'water',town:'town-shop',balance:'balance',network:'network'};
 export function guideUrl(id,locale='en'){return GUIDE_IDS[id]?`/${['en','zh','ja'].includes(locale)?locale:'en'}/guides/${GUIDE_IDS[id]}`:null;}
 export function guideLink(id,locale='en'){
  const url=guideUrl(id,locale);

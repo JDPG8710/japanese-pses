@@ -9,18 +9,12 @@ function oval(cx, cz, rx, rz, n = 48) {
   return pts;
 }
 
-function figureish(cx, cz, scale = 1, n = 64) {
+function harborLoop(cx, cz, scale = 1, n = 80) {
   const pts = [];
   for (let i = 0; i < n; i++) {
-    const t = (i / n) * Math.PI * 2;
-    // Rounded figure-8 / peanut: lemniscate-ish in XZ
-    const s = Math.sin(t);
-    const c = Math.cos(t);
-    const den = 1 + s * s;
-    pts.push({
-      x: cx + (scale * 22 * c) / den,
-      z: cz + (scale * 14 * s * c) / den
-    });
+    const t = i / n * Math.PI * 2 - Math.PI / 2;
+    // Broad waterfront bends; no self-intersection or pinched hairpins.
+    pts.push({x: cx + Math.cos(t) * 32 * scale, z: cz + Math.sin(t) * (18 + 2 * Math.cos(t)) * scale});
   }
   return pts;
 }
@@ -77,7 +71,7 @@ export const RACE_TRACKS = Object.freeze([
     laps: 3,
     width: 7.6,
     difficulty: 2,
-    path: figureish(0, 0, 1.05, 64),
+    path: harborLoop(0, 0, 1.05, 80),
     itemSlots: ITEM_SLOTS,
     theme: Object.freeze({
       clear: 0x1a3a52,

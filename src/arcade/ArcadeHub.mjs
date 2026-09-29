@@ -1,6 +1,6 @@
 import {arcadeText} from './ArcadeText.mjs?v=3';
 import {openArcadeShell, readBest, createStubCanvas} from './ArcadeShell.mjs';
-import {createRaceGame, RACE_DIFFICULTY, RACE_TRACKS, RACE_CARS, RACE_POWERUPS} from './RaceGame.mjs?v=4';
+import {createRaceGame, RACE_DIFFICULTY, RACE_TRACKS, RACE_CARS, RACE_POWERUPS} from './RaceGame.mjs?v=5';
 import {createBreakoutGame, BREAKOUT_DIFFICULTY} from './BreakoutGame.mjs?v=2';
 import {createFruitSlashGame, FRUIT_DIFFICULTY} from './FruitSlashGame.mjs';
 import {createNinjaTypeGame, NINJA_DIFFICULTY} from './NinjaTypeGame.mjs';

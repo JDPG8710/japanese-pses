@@ -33,7 +33,7 @@ export class TownScene {
  floor(x,z,w,d,y=0,color=0xa6cf83,id=null){const m=box(this.environment,x,y-.3,z,w,.6,d,color);this.platforms.push({x,z,w,d,y,id});return m;}
  tree(x,z,scale=1){const g=new THREE.Group();this.environment.add(g);g.position.set(x,0,z);g.scale.setScalar(scale);box(g,0,1,0,.42,2,.42,0xb98d68);box(g,0,2.4,0,1.8,1.5,1.8,0x64ad7a);box(g,.1,3.25,.05,1.3,.8,1.3,0x85c486);}
  house(x,z,color,roof,name,shop=false){const g=new THREE.Group();g.position.set(x,0,z);this.environment.add(g);box(g,0,2,0,7.8,4,5.7,color);box(g,0,4.15,0,8.5,.4,6.3,roof);box(g,0,4.5,0,7.4,.4,5.2,roof);box(g,0,4.85,0,6.2,.35,4.2,roof);box(g,0,1.35,2.89,1.5,2.7,.14,0x568b90);box(g,0,1.9,3,1.1,1.2,.1,0xafe2e4);box(g,.5,1.1,3.1,.12,.12,.12,0xffdc74);for(const px of [-2.5,2.5]){box(g,px,2,2.92,1.45,1.7,.15,0xfff4d9);box(g,px,2,3.03,1.18,1.4,.1,0x90d4e1);box(g,px,2,3.11,.06,1.4,.07,0xfff4d9);box(g,px,2,3.11,1.18,.06,.07,0xfff4d9);}if(shop)for(let i=0;i<8;i++)box(g,-3.5+i,3.2,3.35,1,.25,1.2,i%2?0xffefc9:0xf08b72);label(g,name,0,5.65,.5,{width:6});}
- clearEnvironment(){this.answerLayer?.replaceChildren();this.answerLabels=[];this.townLife=null;disposeGroup(this.environment);this.platforms=[];this.targets=[];this.hazards=[];this.npcs=[];}
+ clearEnvironment(){this.clearCelebration();this.answerLayer?.replaceChildren();this.answerLabels=[];this.townLife=null;disposeGroup(this.environment);this.platforms=[];this.targets=[];this.hazards=[];this.npcs=[];}
  buildTown(){
   this.clearEnvironment();
   // Sprawling footprint: districts reach ~±70 on x/z with roomy venue spacing.
@@ -127,7 +127,7 @@ export class TownScene {
  updateAnswerLabels(){
   if(!this.mode||!this.answerLabels?.length)return;const width=this.canvas.clientWidth,height=this.canvas.clientHeight,placed=[];
   const canvasRect=this.canvas.getBoundingClientRect();
-  const controls=[...this.canvas.parentElement.querySelectorAll('.world-controls button,.town-fs-fab,.course-controls button,.town-joystick,.town-ride')].filter(el=>getComputedStyle(el).visibility!=='hidden').map(el=>el.getBoundingClientRect()).filter(r=>r.width&&r.height).map(r=>({x:r.left-canvasRect.left,y:r.top-canvasRect.top,w:r.width,h:r.height}));
+  const controls=[...this.canvas.parentElement.querySelectorAll('.world-controls button,.town-fs-fab,.course-controls button,.town-joystick,.town-ride,.game-feedback:not([hidden])')].filter(el=>getComputedStyle(el).visibility!=='hidden').map(el=>el.getBoundingClientRect()).filter(r=>r.width&&r.height).map(r=>({x:r.left-canvasRect.left,y:r.top-canvasRect.top,w:r.width,h:r.height}));
   const labels=this.answerLabels.map(a=>({...a,p:new THREE.Vector3(a.t.x,a.t.y+(a.t.labelHeight||1.5),a.t.z).project(this.camera)})).sort((a,b)=>a.p.x-b.p.x);
   for(const {el,p,t,line}of labels){el.hidden=p.z< -1||p.z>1;line.style.display=el.hidden?'none':'';if(el.hidden)continue;
    const w=el.offsetWidth,h=el.offsetHeight,anchorX=(p.x+1)*width/2,anchorY=(1-p.y)*height/2;let x=Math.max(4,Math.min(width-w-4,anchorX-w/2)),y=Math.max(4,Math.min(height-h-4,anchorY-h));
@@ -141,6 +141,31 @@ export class TownScene {
  }
  respawn(){if(!this.spawn)return;this.position.set(this.spawn.x,this.spawn.y,this.spawn.z);this.velocity=0;this.grounded=true;this.platformId='start';this.jumpCount=0;this.path=[];this.keys.clear();this.cooldown=.9;}
  highlight(index){for(const t of this.targets)if(t.mesh){t.mesh.material.emissive.setHex(t.index===index?0xffffff:0x000000);t.mesh.material.emissiveIntensity=t.index===index?.55:0;}}
+ clearCelebration(){
+  if(this.celebration){this.world.remove(this.celebration.group);disposeGroup(this.celebration.group);this.celebration=null;}
+  for(const {el}of this.answerLabels||[])el.classList.remove('answer-correct');
+  delete this.canvas.dataset.celebrating;
+ }
+ celebrate(index,{partial=false}={}){
+  this.clearCelebration();const target=this.targets.find(t=>t.index===index);if(!target)return;
+  this.answerLabels?.find(a=>a.t.index===index)?.el.classList.add('answer-correct');
+  this.canvas.dataset.celebrating=partial?'partial':'success';
+  if(globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches)return;
+  const group=new THREE.Group();group.position.set(target.x,target.y+.12,target.z);this.world.add(group);
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(.65,.045,8,48),new THREE.MeshBasicMaterial({color:0xffda69,transparent:true,opacity:.95}));ring.rotation.x=-Math.PI/2;group.add(ring);
+  const particles=[];
+  for(let i=0;i<(partial?12:28);i++){
+   const angle=i*2.39996,mesh=new THREE.Mesh(new THREE.OctahedronGeometry(.06+i%3*.018),new THREE.MeshBasicMaterial({color:[0xffd45e,0x74e9ba,0xfff4c9][i%3],transparent:true}));
+   group.add(mesh);particles.push({mesh,angle,speed:.35+i%5*.12,lift:1.5+i%4*.2});
+  }
+  this.celebration={group,ring,particles,start:this.clock,duration:partial?1.2:2.3};
+ }
+ updateCelebration(){
+  const fx=this.celebration;if(!fx)return;const elapsed=this.clock-fx.start,t=elapsed/fx.duration;
+  if(t>=1){this.world.remove(fx.group);disposeGroup(fx.group);this.celebration=null;delete this.canvas.dataset.celebrating;return;}
+  fx.ring.scale.setScalar(1+t);fx.ring.material.opacity=1-t;
+  for(const p of fx.particles){p.mesh.position.set(Math.cos(p.angle)*elapsed*p.speed,.3+elapsed*p.lift-elapsed*elapsed*.7,Math.sin(p.angle)*elapsed*p.speed);p.mesh.rotation.set(elapsed*3,p.angle+elapsed*2,elapsed);p.mesh.material.opacity=1-t;}
+ }
  frame(now){const dt=this.last===null?0:frameSeconds(now,this.last);this.last=now;if(!this.mode)this.recoverTown();this.syncAvatar();const paused=this.isPaused()||document.hidden||this.contextLost;let moving=false;
   if(!paused){this.clock+=dt;this.cooldown=Math.max(0,this.cooldown-dt);let dx=0,dz=0;const locked=this.mode&&this.arcadeLocked;
    if(!locked){if(this.keys.has('ArrowLeft')||this.keys.has('a'))dx--;if(this.keys.has('ArrowRight')||this.keys.has('d'))dx++;if(this.keys.has('ArrowUp')||this.keys.has('w'))dz--;if(this.keys.has('ArrowDown')||this.keys.has('s'))dz++;if(this.vehicle!=='foot'){this.yaw-=dx*dt*1.8;dx=0;}if(this.stick.x||this.stick.y){this.yaw-=this.stick.x*dt*2.2;dx=0;dz=this.stick.y;}const sx=dx*Math.cos(this.yaw)+dz*Math.sin(this.yaw),sz=-dx*Math.sin(this.yaw)+dz*Math.cos(this.yaw);dx=sx;dz=sz;
@@ -170,6 +195,6 @@ this.cameraTarget.lerp(this.position,Math.min(1,dt*8));this.render();requestAnim
   const fov=first?76:48;if(this.camera.fov!==fov){this.camera.fov=fov;this.camera.updateProjectionMatrix();}
   if(first){const p=this.position;this.camera.position.set(p.x,p.y+(this.vehicle==='foot'?2.03:2.5),p.z);this.camera.lookAt(p.x-Math.sin(this.yaw)*Math.cos(this.firstPitch),p.y+(this.vehicle==='foot'?2.03:2.5)-Math.sin(this.firstPitch),p.z-Math.cos(this.yaw)*Math.cos(this.firstPitch));}
   else{const p=this.cameraTarget;this.camera.position.set(p.x+Math.sin(this.yaw)*Math.cos(this.pitch)*this.distance,p.y+Math.sin(this.pitch)*this.distance+2,p.z+Math.cos(this.yaw)*Math.cos(this.pitch)*this.distance);this.camera.lookAt(p.x,p.y+(this.mode?1.3:this.vehicle==='foot'?6.5:3.5),p.z);}
-  this.sun.position.set(this.position.x-12,this.position.y+25,this.position.z+14);this.sun.target.position.copy(this.position);this.sun.target.updateMatrixWorld();this.renderer.render(this.world,this.camera);this.updateAnswerLabels();
+  this.sun.position.set(this.position.x-12,this.position.y+25,this.position.z+14);this.sun.target.position.copy(this.position);this.sun.target.updateMatrixWorld();this.updateCelebration();this.renderer.render(this.world,this.camera);this.updateAnswerLabels();
  }
 }

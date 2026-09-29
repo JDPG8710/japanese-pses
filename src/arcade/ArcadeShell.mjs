@@ -104,6 +104,7 @@ export function openArcadeShell({gameId, locale = 'en', onExit, onRetry}) {
   function showResult({cleared, score, detail = ''}) {
     if (destroyed) return;
     ended = true;
+    overlay.dataset.outcome = cleared ? 'success' : 'retry';
     paused = false;
     pauseBtn.disabled = true;
     const saved = writeBest(gameId, score);

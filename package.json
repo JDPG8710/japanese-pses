@@ -35,17 +35,27 @@
     "db:seed": "node scripts/import-game-data-d1.mjs --remote",
     "deploy:worker": "wrangler deploy --config wrangler.toml",
     "test:production-ui": "node tests/test_login_lifecycle_browser.mjs && node tests/test_japanese_entry_browser.mjs",
-    "predeploy:pages": "npm run build && npm run test:learning && npm run test:content && npm run test:seo && npm run test:production-ui",
+    "predeploy:pages": "node scripts/check-release-source.mjs && npm run build && npm run test:learning && npm run test:content && npm run test:seo && npm run test:production-ui && npm run test:town:release",
     "deploy:pages": "wrangler pages deploy ./dist --project-name=manabi-pop --branch main",
     "deploy": "npm run test && npm run build && npm run db:migrate && npm run db:seed && npm run deploy:worker && npm run deploy:pages",
     "monitor:production": "node scripts/monitor-production.mjs",
-    "test:parental-gate": "node tests/test_parental_gate.mjs"
+    "test:parental-gate": "node tests/test_parental_gate.mjs",
+    "test:town:3d": "node tests/test_town_3d.mjs",
+    "test:town:3d:browser": "node tests/test_town_3d_browser.mjs",
+    "preview:town:3d": "node scripts/preview-town.mjs --port=4190",
+    "test:town:3d:edges": "node tests/test_town_3d_edges.mjs",
+    "test:town:platforms": "node tests/test_platform_course.mjs",
+    "test:town:touch": "node tests/test_town_touch.mjs",
+    "test:town:buildings": "node tests/test_town_buildings.mjs",
+    "test:town:presentation": "node tests/test_town_presentation.mjs",
+    "test:town:release": "node tests/test_town_release_browser.mjs"
   },
   "devDependencies": {
     "playwright-core": "^1.63.0",
     "wrangler": "4.125.0"
   },
   "dependencies": {
-    "chess.js": "^1.4.0"
+    "chess.js": "^1.4.0",
+    "three": "0.180.0"
   }
 }

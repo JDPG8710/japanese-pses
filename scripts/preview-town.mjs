@@ -20,4 +20,4 @@ export async function startTownPreview(port=0,{built=false}={}){
   await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(port,'127.0.0.1',resolve);});
   return {origin:`http://127.0.0.1:${server.address().port}`,close:()=>new Promise(resolve=>server.close(resolve))};
 }
-if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){const preview=await startTownPreview(Number(process.env.PIKO_TOWN_PORT||4187),{built:process.argv.includes('--built')});console.log(`${preview.origin}/town.html?locale=zh`);process.on('SIGINT',async()=>{await preview.close();process.exit(0);});}
+if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){const preview=await startTownPreview(Number(process.argv.find(a=>a.startsWith('--port='))?.split('=')[1]||process.env.PIKO_TOWN_PORT||4187),{built:process.argv.includes('--built')});console.log(`${preview.origin}/town.html?locale=zh`);process.on('SIGINT',async()=>{await preview.close();process.exit(0);});}

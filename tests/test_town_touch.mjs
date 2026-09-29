@@ -1,0 +1,30 @@
+import {enterBuilding} from './town_manual_controls.mjs';
+import assert from 'node:assert/strict';
+import {chromium} from 'playwright-core';
+import {startTownPreview} from '../scripts/preview-town.mjs';
+const preview=process.env.TOWN_TEST_ORIGIN?{origin:process.env.TOWN_TEST_ORIGIN,close:async()=>{}}:await startTownPreview(0,{built:process.env.TOWN_TEST_BUILT==='1'});
+const browser=await chromium.launch({channel:'chrome',headless:true,args:['--enable-unsafe-swiftshader']});
+try{
+ const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true}),page=await context.newPage();await page.goto(`${preview.origin}/town?locale=zh`);await page.locator('[data-action="begin"]').tap();try{await page.locator('[data-consent="necessary"]').waitFor({timeout:4000});await page.locator('[data-consent="necessary"]').tap();}catch{}
+ await enterBuilding(page,'obby');await page.locator('[data-camera="view"]').tap();await page.locator('#town-canvas[data-view="first"]').waitFor();assert.equal(await page.locator('[data-answer-platform]').count(),0);
+ await page.locator('.town-help-control').tap();assert.match(await page.locator('#dialog-body').innerText(),/答案只作提示/);assert.doesNotMatch(await page.locator('#dialog-body').innerText(),/自动带路/);await page.locator('.close-button').tap();
+ const start=await page.locator('#town-canvas').getAttribute('data-position');await page.locator('.world-controls').scrollIntoViewIfNeeded();const up=await page.locator('[data-direction="ArrowUp"]').boundingBox(),jump=await page.locator('[data-camera="jump"]').boundingBox();const session=await context.newCDPSession(page);
+ const finger0={id:0,x:up.x+up.width/2,y:up.y+up.height/2},finger1={id:1,x:jump.x+jump.width/2,y:jump.y+jump.height/2};
+ await session.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[finger0]});await session.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[finger0,finger1]});
+ await page.waitForFunction(()=>Number(document.querySelector('#town-canvas').dataset.position.split(',')[1])>.4);
+ assert.notEqual(await page.locator('#town-canvas').getAttribute('data-position'),start);assert.equal(await page.locator('#town-canvas').getAttribute('data-jumps'),'1');await session.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+ console.log('ok - genuine two-finger input moves and jumps in first person; one press starts exactly one jump');
+ await page.waitForTimeout(150);const released=(await page.locator('#town-canvas').getAttribute('data-position')).split(',').map(Number);
+ await page.waitForTimeout(200);const stopped=(await page.locator('#town-canvas').getAttribute('data-position')).split(',').map(Number);
+ assert.ok(Math.hypot(stopped[0]-released[0],stopped[2]-released[2])<.1,'releasing both fingers must stop movement');
+ assert.equal(await page.locator('.dpad .is-held').count(),0);
+ await page.locator('[data-town-fs]').tap();await page.waitForFunction(()=>document.fullscreenElement===document.documentElement);
+ await page.locator('.town-help-control').tap();await page.locator('#town-dialog[open]').waitFor();await page.locator('.close-button').tap();
+ await page.locator('[data-town-fs]').tap();await page.waitForFunction(()=>!document.fullscreenElement);
+ console.log('ok - releasing fingers stops movement; fullscreen retains overlay controls and help dialog');
+ await page.locator('[data-camera="view"]').tap();await page.locator('#town-canvas[data-view="third"]').waitFor();for(const width of [320,390,820]){await page.setViewportSize({width,height:844});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));const control=await page.locator('[data-camera="jump"]').boundingBox();assert.ok(control.width>=56);}console.log('ok - touch view switching and 320 / 390 / 820 controls fit without overflow');
+ await page.setViewportSize({width:844,height:390});await page.locator('#town-canvas').scrollIntoViewIfNeeded();
+ const c=await page.locator('#town-canvas').boundingBox();assert.ok(c.height<=390);
+ await page.locator('[data-exit-game]').tap();await page.locator('#town-canvas:not([data-mode])').waitFor();
+ console.log('ok - landscape play and in-view return to town');
+}finally{await browser.close();await preview.close();}

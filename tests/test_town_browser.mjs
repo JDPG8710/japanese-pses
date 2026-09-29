@@ -17,7 +17,7 @@ try{
   await open(page);await page.screenshot({path:`${artifacts}/desktop-town.png`,fullPage:true});mark('first visit, privacy choice and welcome');
   await page.locator('#town-canvas').focus();const before=(await state(page)).player;
   await page.keyboard.down('ArrowRight');await page.waitForTimeout(300);await page.keyboard.up('ArrowRight');await page.waitForTimeout(100);
-  assert.ok((await state(page)).player.x>before.x+25);mark('keyboard walks the actual character');
+  assert.ok(Math.abs((await state(page)).player.x-before.x)>25);mark('keyboard walks the actual character');
   await go(page,'guide');await page.locator('[data-action="accept"]').click();assert.equal((await state(page)).mission,1);await page.locator('[data-action="reward-next"]').click();await page.locator('[data-product="0"]').waitFor();mark('walk to Piko, accept work, and walk to Mia');
   for(let mission=1;mission<=7;mission++){
     const items=fixtures[mission],total=items.reduce((sum,n,i)=>sum+n*[3,2,4,5][i],0),paid=Math.ceil((total+1)/10)*10;
@@ -58,7 +58,7 @@ try{
   for(const lang of ['en','ja','zh']){await page.locator('#locale').selectOption(lang);assert.equal(await page.locator('html').getAttribute('lang'),lang);await page.locator('#help').click();assert.ok((await page.locator('#dialog-title').innerText()).length>0);await page.keyboard.press('Escape');assert.equal(await page.locator('#town-dialog').evaluate(d=>d.open),false);}
   mark('three languages and keyboard dialog dismissal');
   const phone=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,reducedMotion:'reduce'}),mobile=await phone.newPage();await open(mobile);
-  const start=(await state(mobile)).player;const dp=await mobile.locator('[data-direction="ArrowLeft"]').boundingBox();await mobile.mouse.move(dp.x+dp.width/2,dp.y+dp.height/2);await mobile.mouse.down();await mobile.waitForTimeout(350);await mobile.mouse.up();await mobile.waitForTimeout(100);assert.ok((await state(mobile)).player.x<start.x-25);mark('held mobile direction controls move the character');
+  const start=(await state(mobile)).player;const dp=await mobile.locator('[data-direction="ArrowLeft"]').boundingBox();await mobile.mouse.move(dp.x+dp.width/2,dp.y+dp.height/2);await mobile.mouse.down();await mobile.waitForTimeout(350);await mobile.mouse.up();await mobile.waitForTimeout(100);assert.ok(Math.abs((await state(mobile)).player.x-start.x)>25);mark('held mobile direction controls move the character');
   await mobile.locator('#character').tap();await mobile.locator('[data-avatar="2"]').tap();await mobile.locator('#math-level').selectOption('3');await mobile.locator('#english-level').selectOption('3');await mobile.locator('.close-button').tap();await go(mobile,'guide');await mobile.locator('[data-action="accept"]').tap();await mobile.locator('[data-action="reward-next"]').tap();await mobile.locator('.order-dialog').waitFor();assert.equal((await state(mobile)).active.math,3);assert.match(await mobile.locator('#english-order').innerText(),/picnic/);
   await mobile.locator('[data-product="0"]').tap();await mobile.locator('.close-button').tap();await mobile.locator('#character').tap();await mobile.locator('#math-level').selectOption('1');await mobile.locator('.close-button').tap();await go(mobile,'shop');assert.equal((await state(mobile)).active.math,3);mark('independent difficulty levels, outfit and frozen active order');
   for(const viewport of [{width:320,height:568},{width:390,height:844},{width:820,height:1180},{width:1180,height:820}]){

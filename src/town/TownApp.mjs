@@ -1,24 +1,26 @@
 import {TEXT} from './TownText.mjs?v=2';
-import {SAVE_KEY,PRODUCTS,FURNITURE,MISSIONS,PLACES,PLACE_ARCADE,loadState,restoreState,saveState,startOrder,submitOrder,completeMission,buyFurniture,placeFurniture,englishOrder} from './TownRules.mjs?v=2';
-import {TownScene,AVATAR_COLORS} from './TownScene.mjs?v=2';
-import {startArcade,ARCADE_IDS} from '../arcade/ArcadeHub.mjs?v=1';
-import {arcadeText} from '../arcade/ArcadeText.mjs?v=1';
+import {getTownAudio} from './TownAudio.mjs?v=1';
+import {SAVE_KEY,PRODUCTS,FURNITURE,MISSIONS,PLACES,loadState,restoreState,saveState,startOrder,submitOrder,completeMission,buyFurniture,placeFurniture,englishOrder} from './TownRules.mjs?v=4';
+import {TownScene,AVATAR_COLORS} from './TownScene3D.mjs?v=5';
+import {createExpansion} from './TownExpansion.mjs?v=5';
+import {ARCADE_TEXT} from './ArcadeText.mjs?v=7';
 
 const $=id=>document.getElementById(id),esc=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let storage;try{storage=localStorage;}catch{}
 const params=new URLSearchParams(location.search);let savedLocale;try{savedLocale=storage?.getItem('world-locale');}catch{}
 let locale=[params.get('locale'),savedLocale,navigator.language?.slice(0,2),'en'].find(l=>TEXT[l]);
 const state=loadState(storage),w=()=>TEXT[locale],dialog=$('town-dialog');
-let modal=null,arcadeBusy=false,translated=false,feedback='',feedbackGood=false,selected=null,saveOK=true,scene;
+let modal=null,translated=false,feedback='',feedbackGood=false,selected=null,saveOK=true,scene,expansion,syncTownFs=()=>{};
 const label=p=>p[locale]||p.en;
 function persist(){saveOK=saveState(storage,state);$('save-status').textContent=saveOK?w().saved:w().saveFail;$('save-status').classList.toggle('save-error',!saveOK);}
 function button(action,text,cls=''){return `<button type="button" data-action="${action}" class="${cls}">${esc(text)}</button>`;}
 function shell(title,content,kind=''){
+  expansion?.disposePreview();
   $('dialog-body').innerHTML=`<div class="dialog-heading"><div><p class="eyebrow">${esc(w().chapter)}</p><h2 id="dialog-title">${esc(title)}</h2></div>${button('close','×','close-button')}</div><div class="dialog-content ${kind}">${content}</div>`;
   dialog.querySelector('.close-button').setAttribute('aria-label',w().close);
   if(!dialog.open){dialog.showModal();dialog.querySelector('button')?.focus();}
 }
-function close(){dialog.close();modal=null;feedback='';translated=false;scene?.stop();$('town-canvas').focus({preventScroll:true});window.speechSynthesis?.cancel();}
+function close(){expansion?.disposePreview();dialog.close();modal=null;feedback='';translated=false;scene?.stop();$('town-canvas').focus({preventScroll:true});window.speechSynthesis?.cancel();}
 dialog.addEventListener('cancel',e=>{e.preventDefault();close();});
 function refresh(){
   $('town-guide-link').href=`/${locale}/guides/town-shop`;
@@ -26,10 +28,8 @@ function refresh(){
   document.documentElement.lang=locale;document.title=w().title+' · Piko Game';$('locale').value=locale;
   const texts={'town-title':'title','town-tag':'tag','world-link':'back','chapter':'chapter','mission-label':'mission','progress-label':'progress','journal-label':'journal','local-note':'local','walk-tip':'walk','coins-label':'coins','xp-label':'xp','guide-label':'guide','shop-label':'shop','home-label':'home','character':'settings','privacy-link':'privacy','terms-link':'terms'};
   for(const [id,key]of Object.entries(texts))$(id).textContent=w()[key];
-  $('help').setAttribute('aria-label',w().help);
-  if($('legend-title')){$('legend-title').textContent=w().legendTitle;$('legend-tip').textContent=w().legendTip;for(const id of ['fruit','breakout','race','ninja']){const el=$(`legend-${id}`);if(el)el.textContent=w()[`${id}Short`];}}
-  $('world-link').href=`world.html?${new URLSearchParams({locale,...(params.get('country')?{country:params.get('country')}:{})})}`;
-  $('town-canvas').setAttribute('aria-label',`${w().title}. ${w().helpKeys}`);
+  $('help').setAttribute('aria-label',w().help);$('world-link').href=`world.html?${new URLSearchParams({locale,...(params.get('country')?{country:params.get('country')}:{})})}`;
+  $('town-canvas').setAttribute('aria-label',`${w().title}. ${ARCADE_TEXT[locale].controls}. ${ARCADE_TEXT[locale].touch}`);
   $('coins').textContent=state.coins;$('xp').textContent=state.xp;
   const finished=state.mission>=10;
   $('mission-number').textContent=finished?'✦':String(state.mission+1).padStart(2,'0');
@@ -38,10 +38,9 @@ function refresh(){
   $('go-mission').textContent=`${w().explore} → ${w()[`${finished?'home':MISSIONS[state.mission].place}Short`]}`;
   $('progress').value=state.mission;$('progress').setAttribute('aria-label',w().progress);$('progress-count').textContent=`${state.mission} / 10`;
   $('journal').innerHTML=w().missions.map((name,i)=>`<li class="${i<state.mission?'complete':i===state.mission?'current':''}"><span>${i<state.mission?'✓':String(i+1).padStart(2,'0')}</span>${esc(name)}</li>`).join('');
-  updateNear(scene?.near);$('save-status').textContent=saveOK?w().local:w().saveFail;
+  updateNear(scene?.near);$('save-status').textContent=saveOK?w().local:w().saveFail;expansion?.rerender();
 }
-function nearLabel(id){return {guide:'Piko',shop:'Mia',home:'Noah',fruit:w().fruitShort,breakout:w().breakoutShort,race:w().raceShort,ninja:w().ninjaShort}[id]||id;}
-function updateNear(id){$('interact').disabled=!id;$('interact').textContent=id?`${w().talk} · ${nearLabel(id)}`:w().near;}
+function updateNear(id){$('interact').disabled=!id;$('interact').textContent=id?`${w().talk} · ${{guide:'Piko',shop:'Mia',home:'Noah'}[id]}`:w().near;$('interact').setAttribute('aria-label',$('interact').textContent);$('interact').title=$('interact').textContent;}
 function intro(){modal='intro';shell(w().hello,`<div class="welcome-art" aria-hidden="true"><span>☀</span><b>⌂</b><i>✳</i></div><p class="intro-copy">${w().intro}</p><div class="intro-features"><span>🔤 English</span><span>🔢 Maths</span><span>🌱 My home</span></div>${button('begin',w().start,'primary wide')}<small class="local-detail">${w().local}</small>`,'welcome');}
 function showPlace(id){
   scene?.stop();feedback='';translated=false;window.speechSynthesis?.cancel();
@@ -52,9 +51,10 @@ function showPlace(id){
 }
 function renderModal(){
   if(modal==='intro'){intro();return;}
-  if(modal==='help'){shell(w().help,`<div class="npc-talk"><span>🧭</span><p>${w().helpText}</p></div><p>${w().helpKeys}</p>${button('close',w().close,'primary')}`);return;}
+  if(modal==='help'){shell(w().help,`<div class="npc-talk"><span>🧭</span><p>${expansion?.isPlaying()?ARCADE_TEXT[locale].guideNote:w().helpText}</p></div><p>${ARCADE_TEXT[locale].controls}</p><p>${ARCADE_TEXT[locale].touch}</p>${button('close',w().close,'primary')}`);return;}
   if(modal==='settings'){
     shell(w().settings,`<p>${w().chooseAvatar}</p><div class="outfits">${AVATAR_COLORS.map((color,i)=>`<button type="button" data-avatar="${i}" style="--outfit:${color}" aria-pressed="${state.avatar===i}"><span class="mini-person" aria-hidden="true"></span>${w().avatars[i]}</button>`).join('')}</div><div class="level-settings">${['math','english'].map(k=>`<label>${w()[k]}<select id="${k}-level">${w()[`${k}Levels`].map((name,i)=>`<option value="${i+1}" ${state[k]===i+1?'selected':''}>${name}</option>`).join('')}</select></label>`).join('')}</div><p class="muted">${w().difficultyNote}</p>${button('close',w().close,'primary')}`);
+    expansion?.decorateSettings();
     for(const k of ['math','english'])$(`${k}-level`).onchange=e=>{state[k]=Number(e.target.value);persist();};return;
   }
   if(modal==='guide'){
@@ -68,17 +68,11 @@ function renderModal(){
     if(!state.active){shell('Mia · '+w().shopShort,`<div class="npc-talk"><span>👩‍🍳</span><p>${state.mission===0?w().waitShop:state.mission===10?w().completedShop:w().allShop}</p></div>${button('close',w().close,'primary')}`);return;}
     renderOrder();return;
   }
-  if(PLACE_ARCADE[modal]){renderArcade(modal);return;}
   if(modal==='home'){renderHome();return;}
   if(modal==='reward'){
     shell(w().reward,`<div class="reward-star" aria-hidden="true">✦</div><p>${w().rewardText}</p><div class="rewards"><b>${w().rewardCoins}</b><b>${w().rewardXP}</b></div>${state.mission===8?`<p class="gift">🪴 ${w().plantGift}</p>`:''}<p>${esc(w().missions[state.mission]||w().done)}</p>${button('reward-next',w().next,'primary wide')}`,'reward');return;
   }
   if(modal==='certificate')certificate();
-}
-function renderArcade(id){
-  const game=PLACE_ARCADE[id], t=arcadeText(locale), g=t.games[game];
-  const icon={fruit:'🍉',breakout:'🧱',race:'🏎️',ninja:'🥷'}[id];
-  shell(w()[id]||g.title,`<div class="npc-talk"><span>${icon}</span><p>${w()[id+'Welcome']}</p></div><p class="muted">${esc(g.blurb)} · ${esc(t.hardHint||t.hardHint)}</p><div class="arcade-actions">${button('play-arcade:'+game,w().playArcade,'primary wide')}${button('close',w().close)}</div>`,'arcade-venue');
 }
 function certificate(){shell(w().finished,`<div class="certificate"><span aria-hidden="true">🏅</span><p>PIKO TOWN · CHAPTER 01</p><h3>${w().badge}</h3><p>${w().finishedText}</p><div class="rewards"><b>${state.stats.correct} ${w().correctCount}</b><b>${state.stats.hints} ${w().hintCount}</b></div><small>${w().hintUsed}</small></div>${button('close',w().close,'primary wide')}`);}
 function itemSummary(a){return a.items.flatMap((n,i)=>n?[`${PRODUCTS[i].icon} ${label(PRODUCTS[i])} × ${n}`]:[]).join(' · ');}
@@ -115,12 +109,6 @@ dialog.addEventListener('click',e=>{
   const el=e.target.closest('button');if(!el)return;
   const a=el.dataset.action;
   if(a==='close'){close();return;}
-  if(a?.startsWith('play-arcade:')){
-    const id=a.slice('play-arcade:'.length);if(!ARCADE_IDS.includes(id))return;
-    close();arcadeBusy=true;
-    startArcade(id,{locale,onExit:()=>{arcadeBusy=false;$('town-canvas').focus({preventScroll:true});}});
-    return;
-  }
   if(a==='begin'){state.started=true;persist();close();return;}
   if(a==='accept'&&state.mission===0){completeMission(state,0);persist();refresh();modal='reward';renderModal();return;}
   if(a==='celebrate'&&state.mission===9){completeMission(state,9);persist();refresh();modal='certificate';renderModal();return;}
@@ -137,23 +125,84 @@ dialog.addEventListener('click',e=>{
   if(el.dataset.furniture){const id=el.dataset.furniture;if(state.owned.includes(id)||buyFurniture(state,id)){selected=id;persist();refresh();renderModal();}return;}
   if(el.dataset.slot!==undefined){const i=Number(el.dataset.slot);if(selected){const previous=state.mission;placeFurniture(state,selected,i);feedback=previous===8&&state.mission===9?`${w().reward} ${w().rewardCoins} · ${w().missions[9]}`:'';selected=null;}else if(state.room[i]){selected=state.room[i];state.room[i]=null;}persist();refresh();renderModal();}
 });
-$('locale').onchange=e=>{locale=e.target.value;try{storage?.setItem('world-locale',locale);}catch{}const q=new URLSearchParams(location.search);q.set('locale',locale);history.replaceState(null,'',`${location.pathname}?${q}`);refresh();if(modal)renderModal();};
+$('locale').onchange=e=>{locale=e.target.value;try{storage?.setItem('world-locale',locale);}catch{}const q=new URLSearchParams(location.search);q.set('locale',locale);history.replaceState(null,'',`${location.pathname}?${q}`);refresh();if(typeof syncTownFs==='function')syncTownFs();if(typeof syncTownMute==='function')syncTownMute();if(modal)renderModal();};
 $('help').onclick=()=>{modal='help';scene.stop();renderModal();};
 $('character').onclick=()=>{modal='settings';scene.stop();renderModal();};
 $('go-mission').onclick=()=>{if(!state.started){intro();return;}scene.travel(state.mission>=10?'home':MISSIONS[state.mission].place);};
 $('interact').onclick=()=>{if(scene.near)showPlace(scene.near);};
 document.querySelectorAll('[data-travel]').forEach(el=>el.onclick=()=>{if(!state.started){intro();return;}scene.travel(el.dataset.travel);});
 document.querySelectorAll('[data-direction]').forEach(el=>{
-  el.addEventListener('pointerdown',e=>{e.preventDefault();if(dialog.open||!state.started)return;el.setPointerCapture(e.pointerId);scene.direction(el.dataset.direction,true);});
-  for(const type of ['pointerup','pointercancel','lostpointercapture'])el.addEventListener(type,()=>scene.direction(el.dataset.direction,false));
+  el.addEventListener('pointerdown',e=>{e.preventDefault();if(dialog.open||!state.started||expansion?.isArcadeOpen?.())return;el.setPointerCapture(e.pointerId);el.classList.add('is-held');scene.direction(el.dataset.direction,true);});
+  for(const type of ['pointerup','pointercancel','lostpointercapture'])el.addEventListener(type,()=>{el.classList.remove('is-held');scene.direction(el.dataset.direction,false);});
   el.addEventListener('keydown',e=>{if(e.key===' '||e.key==='Enter'){e.preventDefault();scene.direction(el.dataset.direction,true);}});
   el.addEventListener('keyup',()=>scene.direction(el.dataset.direction,false));
   el.addEventListener('blur',()=>scene.direction(el.dataset.direction,false));
 });
-scene=new TownScene($('town-canvas'),{state,words:w,onArrive:showPlace,onMove:()=>{if(state.started)persist();},onNear:updateNear,isPaused:()=>dialog.open||!state.started||arcadeBusy});
+try{scene=new TownScene($('town-canvas'),{state,words:w,locale:()=>locale,onArrive:showPlace,onMove:()=>{if(state.started)persist();},onNear:updateNear,isPaused:()=>dialog.open||!state.started||!!expansion?.isArcadeOpen?.()});
+scene.onGraphicsError=()=>{const el=document.createElement('div');el.className='graphics-error';el.setAttribute('role','alert');el.textContent=ARCADE_TEXT[locale].webgl;document.querySelector('.world-card').append(el);};
+expansion=createExpansion({state,scene,persist,refresh,shell,close,getLocale:()=>locale});
+}catch(error){const el=document.createElement('div');el.className='graphics-error';el.setAttribute('role','alert');el.textContent=ARCADE_TEXT[locale].webgl;document.querySelector('.world-card').append(el);console.error('3D scene unavailable',error);scene={stop(){},travel(){},direction(){},near:null};}
 window.addEventListener('pagehide',()=>{if(state.started)persist();});
 window.addEventListener('storage',e=>{if(e.key===SAVE_KEY&&e.newValue){try{Object.assign(state,restoreState(JSON.parse(e.newValue)));scene.stop();if(dialog.open)close();refresh();}catch{}}});
+
+function setupTownFullscreen(){
+  const viewport=document.querySelector('.scene-viewport')||document.querySelector('.world-card');
+  if(!viewport||viewport.querySelector('.town-fs-fab'))return;
+  const btn=document.createElement('button');
+  btn.type='button';btn.className='town-fs-fab';btn.dataset.townFs='1';
+  const sync=()=>{
+    const on=!!(document.fullscreenElement||document.webkitFullscreenElement);
+    btn.setAttribute('aria-pressed',on?'true':'false');
+    btn.textContent=on?'⛶':'⛶';
+    btn.setAttribute('aria-label',on?(w().fullscreenExit||'Exit full screen'):(w().fullscreenEnter||'Full screen'));
+    btn.title=btn.getAttribute('aria-label');
+  };
+  btn.addEventListener('click',e=>{
+    e.preventDefault();e.stopPropagation();
+  const target=document.documentElement;
+    try{
+      if(document.fullscreenElement||document.webkitFullscreenElement){
+        (document.exitFullscreen||document.webkitExitFullscreen)?.call(document)?.catch?.(()=>{});
+      }else{
+        (target.requestFullscreen||target.webkitRequestFullscreen)?.call(target)?.catch?.(()=>{});
+      }
+    }catch{}
+  });
+  btn.addEventListener('pointerdown',e=>e.stopPropagation());
+  viewport.append(btn);
+  document.addEventListener('fullscreenchange',sync);
+  document.addEventListener('webkitfullscreenchange',sync);
+  sync();
+  return sync;
+}
+syncTownFs=setupTownFullscreen()||(()=>{});
+const townAudio=getTownAudio();
+function setupTownMute(){
+  const viewport=document.querySelector('.scene-viewport')||document.querySelector('.world-card');
+  if(!viewport||viewport.querySelector('.town-mute-fab'))return ()=>{};
+  const btn=document.createElement('button');
+  btn.type='button';btn.className='town-fs-fab town-mute-fab';
+  const sync=()=>{
+    const on=townAudio.isMuted();
+    btn.setAttribute('aria-pressed',on?'true':'false');
+    btn.textContent=on?'🔇':'🔊';
+    btn.setAttribute('aria-label',on?(w().unmute||'Unmute'):(w().mute||'Mute'));
+    btn.title=btn.getAttribute('aria-label');
+  };
+  btn.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();townAudio.toggleMute();sync();});
+  btn.addEventListener('pointerdown',e=>e.stopPropagation());
+  viewport.append(btn);
+  window.addEventListener('AUDIO_MUTE_TOGGLED',sync);
+  sync();
+  return sync;
+}
+const syncTownMute=setupTownMute();
+const kickTownAudio=()=>{townAudio.unlock();townAudio.startTown();};
+['pointerdown','keydown','touchstart'].forEach(evt=>window.addEventListener(evt,kickTownAudio,{once:true,passive:true}));
+
 refresh();
+if(typeof syncTownFs==='function')syncTownFs();
+if(typeof syncTownMute==='function')syncTownMute();
 // 言語設定後に既存の同意UIを初期化する。新規訪問でも町と同じ言語で表示する。
 await import('../privacy/ConsentManager.mjs?v=1');
 if(!state.started)intro();

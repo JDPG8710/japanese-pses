@@ -89,13 +89,14 @@ export function createPlayroom({ api, getLocale, getIdentity, setIdentity, getRo
     const i=getIdentity(), t=text();
     const chessProgress=i?.tutorials?.chess||0;
     const isChess = new URLSearchParams(location.search).get('game') === 'chess';
+    const isTown = /(?:^|\/)town(?:\.html)?$/.test(location.pathname) || new URLSearchParams(location.search).get('game') === 'town';
     const catalog=`<section class="game-catalog">
       <div class="catalog-header">
         <span class="kid-badge">🎈 ${esc(t.hubTitle || '趣味棋类乐园')}</span>
         <h2 class="catalog-title">${esc(t.hubDesc || '选一个喜欢的棋盘游戏，开始今天的智慧大冒险吧！')}</h2>
       </div>
-      <div class="game-choice-grid">
-        <article class="kid-game-card go-card ${!isChess ? 'active-game' : ''}" data-target-game="go">
+      <div class="game-choice-grid three-games">
+        <article class="kid-game-card go-card ${!isChess && !isTown ? 'active-game' : ''}" data-target-game="go">
           <div class="kid-game-card-top">
             <div class="kid-game-icon-wrap go-bg">
               <span class="kid-game-icon">⚪⚫</span>
@@ -121,6 +122,20 @@ export function createPlayroom({ api, getLocale, getIdentity, setIdentity, getRo
             <p class="kid-game-desc">${esc(t.chessDesc || more().chessHint)}</p>
           </div>
           <a href="/arena.html?game=chess&lang=${getLocale()}" class="kid-game-enter-btn chess-btn" data-pr="open-chess">${esc(t.playChess || more().open)}</a>
+        </article>
+
+        <article class="kid-game-card town-card ${isTown ? 'active-game' : ''}" data-target-game="town">
+          <div class="kid-game-card-top">
+            <div class="kid-game-icon-wrap town-bg">
+              <img class="kid-game-brand" src="/assets/playroom/piko-town-brand.png" width="64" height="64" alt="" loading="lazy" decoding="async">
+            </div>
+            <span class="kid-game-tag">${esc(t.townBadge || '3D Town')}</span>
+          </div>
+          <div class="kid-game-info">
+            <h3>${esc(t.townTitle || 'Piko Town')}</h3>
+            <p class="kid-game-desc">${esc(t.townDesc || '')}</p>
+          </div>
+          <a href="/town.html?locale=${getLocale()}" class="kid-game-enter-btn town-btn" data-pr="open-town">${esc(t.playTown || more().open)}</a>
         </article>
       </div>
     </section>`;

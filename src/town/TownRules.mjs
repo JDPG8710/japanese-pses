@@ -1,4 +1,6 @@
 // 小镇规则与浏览器解耦。所有数值都以整数星币表示；第一版只保存本机进度。
+import {buildingBlocks} from './TownBuildings.mjs?v=7';
+import {newExpansion,restoreExpansion} from './ArcadeRules.mjs?v=2';
 export const SAVE_KEY = 'piko-town-v1';
 export const PRODUCTS = [
   {id:'apple',icon:'🍎',en:'apple',plural:'apples',zh:'苹果',ja:'りんご',price:3},
@@ -26,26 +28,18 @@ export const MISSIONS = [
   {place:'home',kind:'decorate'},
   {place:'guide',kind:'opening'}
 ];
-export const WORLD = Object.freeze({w:1800,h:1200});
 export const PLACES = {
-  guide:{x:900,y:520},
-  shop:{x:300,y:430},
-  home:{x:1500,y:480},
-  fruit:{x:480,y:210},
-  ninja:{x:1520,y:170},
-  breakout:{x:250,y:940},
-  race:{x:1600,y:980}
+  // Plaza / shop / home districts (world ≈ guide 0,8 · shop -18,-8 · home 16,-6)
+  guide:{x:550,y:580},
+  shop:{x:100,y:180},
+  home:{x:950,y:230}
 };
-export const PLACE_ARCADE = Object.freeze({fruit:'fruit',breakout:'breakout',race:'race',ninja:'ninja'});
-export const OBSTACLES = [
-  {x:150,y:230,w:270,h:155}, {x:1380,y:300,w:250,h:145},
-  {x:835,y:355,w:130,h:75}, {x:780,y:820,w:240,h:150},
-  {x:360,y:80,w:180,h:70}, {x:1420,y:60,w:200,h:70},
-  {x:90,y:830,w:130,h:85}, {x:1500,y:870,w:190,h:70},
-  {x:80,y:520,w:90,h:110}, {x:1650,y:560,w:100,h:140}
-];
+// Decorative plaza blockers only — building walls come from buildingBlocks.
+export const OBSTACLES = [];
+// Sprawl map ~±70 world → save space via (w*25+550, w*25+380).
+export const WORLD_BOUNDS=Object.freeze({minX:-1450,maxX:2550,minY:-1620,maxY:2380});
 export function canWalk(x,y){
-  return x>=50&&x<=WORLD.w-50&&y>=90&&y<=WORLD.h-60&&!OBSTACLES.some(r=>x>r.x-14&&x<r.x+r.w+14&&y>r.y-10&&y<r.y+r.h+12);
+  return x>=WORLD_BOUNDS.minX&&x<=WORLD_BOUNDS.maxX&&y>=WORLD_BOUNDS.minY&&y<=WORLD_BOUNDS.maxY&&!buildingBlocks((x-550)/25,(y-380)/25)&&!OBSTACLES.some(r=>x>r.x-14&&x<r.x+r.w+14&&y>r.y-10&&y<r.y+r.h+12);
 }
 export function movePlayer(player,dx,dy){
   const next={...player};
@@ -58,7 +52,7 @@ export function findPath(from,to){
   const step=10,key=(x,y)=>`${x},${y}`,sx=Math.round(from.x/step),sy=Math.round(from.y/step),tx=Math.round(to.x/step),ty=Math.round(to.y/step);
   if(!canWalk(tx*step,ty*step))return [];
   const queue=[[sx,sy]],parents=new Map([[key(sx,sy),null]]);let end;
-  for(let n=0;n<queue.length&&n<50000;n++){
+  for(let n=0;n<queue.length&&n<200000;n++){
     const [x,y]=queue[n];if(x===tx&&y===ty){end=[x,y];break;}
     for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){
       const xx=x+dx,yy=y+dy,k=key(xx,yy);
@@ -71,7 +65,7 @@ export function findPath(from,to){
   const result=[];for(let cur=end;parents.get(key(...cur));cur=parents.get(key(...cur)))result.unshift({x:cur[0]*step,y:cur[1]*step});
   return result;
 }
-export function newState(){return {version:1,mission:0,coins:0,xp:0,math:1,english:1,avatar:0,player:{x:900,y:720},owned:[],room:Array(9).fill(null),active:null,stats:{correct:0,mistakes:0,hints:0},started:false};}
+export function newState(){return {expansion:newExpansion(),version:1,mission:0,coins:0,xp:0,math:1,english:1,avatar:0,player:{x:560,y:555},owned:[],room:Array(9).fill(null),active:null,stats:{correct:0,mistakes:0,hints:0},started:false};}
 const integer=(x,min,max,fallback)=>Number.isInteger(x)&&x>=min&&x<=max?x:fallback;
 export function orderFor(mission,math=1,english=1){
   const spec=MISSIONS[mission];if(!spec||!spec.items)return null;
@@ -81,7 +75,7 @@ export function orderFor(mission,math=1,english=1){
 }
 export function restoreState(raw){
   const s=newState();if(!raw||raw.version!==1)return s;
-  s.mission=integer(raw.mission,0,10,0);s.coins=integer(raw.coins,0,10000,0);s.xp=integer(raw.xp,0,10000,0);
+  s.expansion=restoreExpansion(raw.expansion);s.mission=integer(raw.mission,0,10,0);s.coins=integer(raw.coins,0,1000000000,0);s.xp=integer(raw.xp,0,1000000000,0);
   s.math=integer(raw.math,1,3,1);s.english=integer(raw.english,1,3,1);s.avatar=integer(raw.avatar,0,3,0);s.started=raw.started===true;
   if(canWalk(raw.player?.x,raw.player?.y)&&Number.isFinite(raw.player.x)&&Number.isFinite(raw.player.y))s.player={x:raw.player.x,y:raw.player.y};
   s.owned=FURNITURE.filter(f=>Array.isArray(raw.owned)&&raw.owned.includes(f.id)).map(f=>f.id);

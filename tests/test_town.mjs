@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
-import {newState,restoreState,loadState,saveState,orderFor,startOrder,submitOrder,completeMission,buyFurniture,placeFurniture,canWalk,movePlayer,findPath,PLACES,PLACE_ARCADE,MISSIONS,FURNITURE,englishOrder} from '../src/town/TownRules.mjs';
+import {newState,restoreState,loadState,saveState,orderFor,startOrder,submitOrder,completeMission,buyFurniture,placeFurniture,canWalk,movePlayer,findPath,PLACES,MISSIONS,FURNITURE,englishOrder} from '../src/town/TownRules.mjs';
 import {TEXT} from '../src/town/TownText.mjs';
 import {townEntry} from '../src/town/TownEntry.mjs';
+import {WORLD_BOUNDS} from '../src/town/TownRules.mjs';
+import {TOWN_BUILDINGS} from '../src/town/TownBuildings.mjs';
 let checks=0;const check=(name,fn)=>{fn();checks++;console.log(`ok ${checks} - ${name}`);};
 check('all 9 combinations of independent levels complete the entire story',()=>{
   for(let math=1;math<=3;math++)for(let english=1;english<=3;english++){
@@ -41,18 +43,16 @@ check('every place is reachable from every other place and the initial spawn',()
     let p={...from};for(const dest of route){let steps=0;while(Math.hypot(dest.x-p.x,dest.y-p.y)>=4&&steps++<50){const d=Math.hypot(dest.x-p.x,dest.y-p.y);p=movePlayer(p,(dest.x-p.x)/d*3,(dest.y-p.y)/d*3);}assert.ok(steps<50,`movement stuck: ${JSON.stringify({from,to,p,dest})}`);}
   }
 });
-check('buildings, lake and town edges block movement',()=>{
-  assert.equal(canWalk(200,280),false);assert.equal(canWalk(850,880),false);assert.equal(canWalk(44,500),false);assert.deepEqual(findPath(newState().player,{x:200,y:280}),[]);
-  const p={x:900,y:443};assert.deepEqual(movePlayer(p,0,-5),p);
-});
-check('arcade venues are mapped and reachable leisure spots',()=>{
-  assert.deepEqual(Object.keys(PLACE_ARCADE).sort(),['breakout','fruit','ninja','race']);
-  for(const id of Object.keys(PLACE_ARCADE))assert.ok(PLACES[id],id);
-  const spawn=newState().player;
-  for(const id of Object.keys(PLACE_ARCADE)){
-    const route=findPath(spawn,PLACES[id]);assert.ok(route.length>0,id);
-    assert.ok(canWalk(PLACES[id].x+30,PLACES[id].y+35),id+' approach');
+check('3D district building walls and expanded town edges block movement',()=>{
+  for(const b of TOWN_BUILDINGS){
+    const wall={x:(b.x+2.5)*25+550,y:b.z*25+380};
+    assert.equal(canWalk(wall.x,wall.y),false);
+    const front={x:b.x*25+550,y:(b.z-2)*25+380};
+    assert.equal(canWalk(front.x,front.y),true);
   }
+  const p={x:WORLD_BOUNDS.minX,y:380};
+  assert.equal(canWalk(p.x-1,p.y),false);assert.deepEqual(movePlayer(p,-5,0),p);
+  assert.deepEqual(findPath(newState().player,{x:WORLD_BOUNDS.maxX+60,y:380}),[]);
 });
 check('every locale covers all UI fields, mission names and objectives',()=>{
   for(const l of ['zh','en','ja']){assert.deepEqual(Object.keys(TEXT[l]).sort(),Object.keys(TEXT.en).sort());assert.equal(TEXT[l].missions.length,MISSIONS.length);assert.equal(TEXT[l].objectives.length,MISSIONS.length);for(const f of FURNITURE)assert.ok(f[l]);assert.ok(!townEntry(l,'CN').includes('undefined'));}

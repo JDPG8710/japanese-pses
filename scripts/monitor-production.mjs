@@ -22,6 +22,12 @@ const TIMEOUT_MS = Number(process.env.MONITOR_TIMEOUT_MS || 15000);
 const OUT_DIR = join(ROOT, '.wrangler', 'monitor');
 
 const CHECKS = [
+  {id:'town-3d-entry',path:'/src/town/TownApp.mjs',expectStatus:200,assert:text=>{
+    if(!text.includes("from './TownScene3D.mjs"))throw new Error('Town entry regressed from the 3D renderer');
+  }},
+  {id:'town-3d-renderer',path:'/src/town/TownScene3D.mjs',expectStatus:200,assert:text=>{
+    if(!text.includes('new THREE.WebGLRenderer')||!text.includes('new THREE.PerspectiveCamera'))throw new Error('3D renderer missing or replaced by an HTML fallback');
+  }},
   ...['en','zh','ja'].map(locale=>({
     id:`learning-library-${locale}`,path:`/${locale}/guides/`,expectStatus:200,
     assert:text=>{

@@ -1,10 +1,11 @@
-import {arcadeText} from './ArcadeText.mjs';
+import {arcadeText} from './ArcadeText.mjs?v=3';
 import {openArcadeShell, readBest, createStubCanvas} from './ArcadeShell.mjs';
-import {createRaceGame, RACE_DIFFICULTY} from './RaceGame.mjs';
-import {createBreakoutGame, BREAKOUT_DIFFICULTY} from './BreakoutGame.mjs';
+import {createRaceGame, RACE_DIFFICULTY, RACE_TRACKS, RACE_CARS, RACE_POWERUPS} from './RaceGame.mjs?v=4';
+import {createBreakoutGame, BREAKOUT_DIFFICULTY} from './BreakoutGame.mjs?v=2';
 import {createFruitSlashGame, FRUIT_DIFFICULTY} from './FruitSlashGame.mjs';
 import {createNinjaTypeGame, NINJA_DIFFICULTY} from './NinjaTypeGame.mjs';
 import {recordPlay} from '../stats/PlayCounts.js';
+import {getTownAudio} from '../town/TownAudio.mjs?v=1';
 
 export const ARCADE_IDS = Object.freeze(['race', 'breakout', 'fruit', 'ninja']);
 
@@ -67,6 +68,9 @@ export function startArcade(id, {locale = 'en', onExit} = {}) {
   if (!ARCADE_IDS.includes(id)) return null;
   activeSession?.destroy?.();
   void recordPlay(playKeyForArcade(id));
+  const audio = typeof window !== 'undefined' ? getTownAudio() : null;
+  audio?.unlock?.();
+  audio?.enterArcade?.(id);
 
   let game = null;
   let wasPaused = false;
@@ -76,6 +80,7 @@ export function startArcade(id, {locale = 'en', onExit} = {}) {
     onExit() {
       game?.destroy?.();
       activeSession = null;
+      audio?.exitToTown?.();
       onExit?.();
     },
     onRetry() {
@@ -89,6 +94,7 @@ export function startArcade(id, {locale = 'en', onExit} = {}) {
     return FACTORIES[id]({
       canvas: shell.canvas,
       locale,
+      audio,
       autoStart: true,
       onHud(stats) {
         if (shell.paused || shell.ended) return;
@@ -142,4 +148,4 @@ export function createArcadeHeadless(id, {locale = 'en'} = {}) {
   return state;
 }
 
-export {ART};
+export {ART, RACE_TRACKS, RACE_CARS, RACE_POWERUPS};

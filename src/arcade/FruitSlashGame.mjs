@@ -1,35 +1,37 @@
-/** Hard fruit slash: fast throws, many bombs, short window, combo gate to clear waves. */
+/** 3D fruit slash — blade trail, split halves, juice bursts. */
+import {
+  createArcadeRenderer, resizeArcade3D, disposeArcade3D, sphereMesh, boxMesh, THREE,
+  spawnParticleBurst, updateParticles, createSlashTrail
+} from './Arcade3D.mjs?v=2';
+
 export const FRUIT_DIFFICULTY = Object.freeze({
-  lives: 3,
-  clearWaves: 8,
-  minComboToCreditWave: 4,
-  throwIntervalStart: 0.55,
-  throwIntervalMin: 0.22,
-  bombChanceStart: 0.28,
-  bombChanceMax: 0.48,
-  fruitSpeed: 420,
-  gravity: 620,
-  slashRadius: 28,
+  lives: 4,
+  clearWaves: 6,
+  minComboToCreditWave: 2,
+  throwIntervalStart: 0.85,
+  throwIntervalMin: 0.42,
+  bombChanceStart: 0.14,
+  bombChanceMax: 0.28,
+  fruitSpeed: 7.5,
+  gravity: 9.5,
+  slashRadius: 0.85,
   missLifeCost: true
 });
 
-const FRUITS = ['🍎', '🍊', '🍋', '🍉', '🍇', '🍓', '🍑', '🥝'];
+const FRUIT_COLORS = [0xff6b6b, 0xff9f43, 0xffd45e, 0x7dffb3, 0xc791ff, 0xff8fab];
 
-export function createFruitSlashGame({canvas, onHud, onEnd, autoStart = true} = {}) {
-  const W = canvas?.width || 360;
-  const H = canvas?.height || 640;
-  const ctx = canvas?.getContext?.('2d');
+export function createFruitSlashGame({canvas, onHud, onEnd, audio = null, autoStart = true} = {}) {
   const D = FRUIT_DIFFICULTY;
-
+  const graphics = createArcadeRenderer(canvas, {clear: 0x152418});
   let lives = D.lives;
   let score = 0;
   let wave = 1;
   let waveHits = 0;
-  let waveNeed = 6;
+  let waveNeed = 5;
   let combo = 0;
-  let bestCombo = 0;
   let creditedWaves = 0;
   let items = [];
+  let halves = [];
   let particles = [];
   let spawnTimer = 0;
   let running = false;
@@ -37,9 +39,12 @@ export function createFruitSlashGame({canvas, onHud, onEnd, autoStart = true} = 
   let raf = 0;
   let last = 0;
   let slicing = false;
-  let lastX = 0;
-  let lastY = 0;
-  let trail = [];
+  let lastPoint = null;
+  let itemGroup = null;
+  let fxGroup = null;
+  let trail = null;
+  const ray = graphics.ok ? new THREE.Raycaster() : null;
+  const slashPlane = graphics.ok ? new THREE.Plane(new THREE.Vector3(0, 0, 1), 0) : null;
 
   function hud() {
     onHud?.({
@@ -48,221 +53,248 @@ export function createFruitSlashGame({canvas, onHud, onEnd, autoStart = true} = 
       extra: `${waveHits}/${waveNeed} · ${combo}x · W${creditedWaves}/${D.clearWaves}`
     });
   }
-
   function bombChance() {
-    return Math.min(D.bombChanceMax, D.bombChanceStart + wave * 0.02);
+    return Math.min(D.bombChanceMax, D.bombChanceStart + wave * 0.015);
+  }
+
+  function buildScene() {
+    if (!graphics.ok) return;
+    const {scene, camera} = graphics;
+    while (scene.children.length) scene.remove(scene.children[0]);
+    scene.add(new THREE.HemisphereLight(0xfff5e0, 0x3a5a40, 1.35));
+    const sun = new THREE.DirectionalLight(0xffe8b0, 1.4);
+    sun.position.set(-3, 10, 6);
+    scene.add(sun);
+    const ground = boxMesh(16, 0.2, 10, 0x3d7a45);
+    ground.position.set(0, -2.2, -1);
+    scene.add(ground);
+    itemGroup = new THREE.Group();
+    scene.add(itemGroup);
+    fxGroup = new THREE.Group();
+    scene.add(fxGroup);
+    trail = createSlashTrail(scene, {color: 0xfff6c8, maxPoints: 16});
+    camera.position.set(0, 1.5, 8);
+    camera.lookAt(0, 0.5, 0);
+    resizeArcade3D(graphics, canvas);
   }
 
   function spawn() {
     const isBomb = Math.random() < bombChance();
-    const x = 40 + Math.random() * (W - 80);
-    const speed = D.fruitSpeed + wave * 18 + Math.random() * 80;
-    const angle = -Math.PI / 2 + (Math.random() * 0.9 - 0.45);
+    const color = isBomb ? 0x222830 : FRUIT_COLORS[Math.floor(Math.random() * FRUIT_COLORS.length)];
+    const x = (Math.random() - 0.5) * 8;
+    const speed = D.fruitSpeed + wave * 0.35 + Math.random() * 1.5;
+    const mesh = graphics.ok
+      ? sphereMesh(isBomb ? 0.45 : 0.4, color, {segments: 12})
+      : null;
+    if (mesh) {
+      mesh.position.set(x, -2.5, (Math.random() - 0.5) * 2);
+      itemGroup.add(mesh);
+    }
     items.push({
-      x,
-      y: H + 20,
-      vx: Math.cos(angle) * speed * 0.35,
-      vy: Math.sin(angle) * speed,
-      r: isBomb ? 22 : 20,
+      x, y: -2.5, z: mesh?.position.z || 0,
+      vx: (Math.random() - 0.5) * 2.5,
+      vy: speed,
+      vz: (Math.random() - 0.5) * 0.8,
       bomb: isBomb,
-      glyph: isBomb ? '💣' : FRUITS[Math.floor(Math.random() * FRUITS.length)],
       alive: true,
+      mesh,
+      color,
       spun: Math.random() * Math.PI * 2
     });
   }
 
-  function slashAt(x, y) {
-    let hit = false;
-    for (const item of items) {
-      if (!item.alive) continue;
-      const dx = item.x - x;
-      const dy = item.y - y;
-      if (dx * dx + dy * dy > (item.r + D.slashRadius) ** 2) continue;
-      item.alive = false;
-      hit = true;
-      if (item.bomb) {
-        combo = 0;
-        lives -= 1;
-        burst(item.x, item.y, '#ff5c7a');
-        if (lives <= 0) return finish(false);
-      } else {
-        combo += 1;
-        bestCombo = Math.max(bestCombo, combo);
-        waveHits += 1;
-        score += 80 + combo * 25;
-        burst(item.x, item.y, '#ffe08a');
-        if (waveHits >= waveNeed) completeWave();
-      }
-    }
-    if (!hit && slicing) {/* air slash — no combo break for miss while moving */}
-    hud();
-  }
-
-  function completeWave() {
-    const credited = combo >= D.minComboToCreditWave;
-    if (credited) {
-      creditedWaves += 1;
-      score += 400 + wave * 50;
-    } else {
-      // Harsh: wave not credited without combo — and a soft life sting
-      lives = Math.max(0, lives - 1);
-      score = Math.max(0, score - 150);
-      if (lives <= 0) return finish(false);
-    }
-    wave += 1;
-    waveHits = 0;
-    waveNeed = Math.min(12, 6 + Math.floor(wave / 2));
-    combo = 0;
-    items = items.filter(i => i.alive && i.y < H);
-    hud();
-    if (creditedWaves >= D.clearWaves) return finish(true);
-  }
-
-  function burst(x, y, color) {
-    for (let i = 0; i < 8; i++) {
-      particles.push({
-        x, y,
-        vx: (Math.random() - 0.5) * 220,
-        vy: (Math.random() - 0.5) * 220,
-        life: 0.35 + Math.random() * 0.25,
-        color
+  function splitFruit(item, point) {
+    if (!graphics.ok || !fxGroup) return;
+    const origin = new THREE.Vector3(item.x, item.y, item.z);
+    particles = particles.concat(spawnParticleBurst(fxGroup, origin, {
+      count: 14, color: item.color || 0xff6b6b, speed: 5, life: 0.42, size: 0.09
+    }));
+    for (const side of [-1, 1]) {
+      const half = sphereMesh(0.28, item.color || 0xff6b6b, {segments: 10});
+      half.scale.set(1, 0.55, 1);
+      half.position.copy(origin);
+      fxGroup.add(half);
+      halves.push({
+        mesh: half,
+        x: item.x, y: item.y, z: item.z,
+        vx: item.vx + side * (2.8 + Math.random()),
+        vy: item.vy * 0.35 + 1.5 + Math.random(),
+        vz: item.vz + (Math.random() - 0.5),
+        spin: side * 8,
+        life: 0.85
       });
     }
   }
 
-  function tick(dt) {
-    if (!running || ended) return;
-    const interval = Math.max(D.throwIntervalMin, D.throwIntervalStart - wave * 0.03);
-    spawnTimer -= dt;
-    if (spawnTimer <= 0) {
-      spawn();
-      if (Math.random() < 0.35 + wave * 0.03) spawn();
-      spawnTimer = interval * (0.7 + Math.random() * 0.5);
-    }
-
+  function slashAt(point) {
+    let hit = false;
     for (const item of items) {
       if (!item.alive) continue;
-      item.vy += D.gravity * dt;
-      item.x += item.vx * dt;
-      item.y += item.vy * dt;
-      item.spun += dt * 4;
-      if (item.y > H + 60 && !item.bomb) {
-        item.alive = false;
+      const dx = item.x - point.x;
+      const dy = item.y - point.y;
+      const dz = item.z - point.z;
+      if (dx * dx + dy * dy + dz * dz > (D.slashRadius) ** 2) continue;
+      item.alive = false;
+      if (item.mesh) item.mesh.visible = false;
+      hit = true;
+      if (item.bomb) {
+        lives -= 1;
         combo = 0;
-        if (D.missLifeCost && Math.random() < 0.55) {
-          lives -= 1;
-          if (lives <= 0) return finish(false);
+        try { audio?.bomb?.(); } catch {}
+        if (graphics.ok && fxGroup) {
+          particles = particles.concat(spawnParticleBurst(fxGroup, new THREE.Vector3(item.x, item.y, item.z), {
+            count: 16, color: 0xff5533, speed: 6, life: 0.35, size: 0.11
+          }));
+        }
+        hud();
+        if (lives <= 0) finish(false);
+      } else {
+        try { audio?.fruitCut?.(); } catch {}
+        splitFruit(item, point);
+        combo += 1;
+        score += 10 + combo * 2;
+        waveHits += 1;
+        if (waveHits >= waveNeed && combo >= D.minComboToCreditWave) {
+          creditedWaves += 1;
+          wave += 1;
+          waveHits = 0;
+          waveNeed = Math.min(8, 4 + wave);
+          if (creditedWaves >= D.clearWaves) return finish(true);
         }
       }
     }
-    items = items.filter(i => i.alive && i.y < H + 80);
+    if (hit) hud();
+  }
 
-    particles = particles.filter(p => {
-      p.life -= dt;
-      p.x += p.vx * dt;
-      p.y += p.vy * dt;
-      return p.life > 0;
+  function pointerToWorld(e) {
+    if (!graphics.ok) return null;
+    const rect = canvas.getBoundingClientRect();
+    const ndc = new THREE.Vector2(
+      ((e.clientX - rect.left) / rect.width) * 2 - 1,
+      -((e.clientY - rect.top) / rect.height) * 2 + 1
+    );
+    ray.setFromCamera(ndc, graphics.camera);
+    const hit = new THREE.Vector3();
+    if (!ray.ray.intersectPlane(slashPlane, hit)) return null;
+    return hit;
+  }
+
+  function tick(dt) {
+    if (!running || ended) return;
+    spawnTimer -= dt;
+    if (spawnTimer <= 0) {
+      spawn();
+      if (Math.random() < 0.25) spawn();
+      const t = Math.max(D.throwIntervalMin, D.throwIntervalStart - wave * 0.04);
+      spawnTimer = t * (0.8 + Math.random() * 0.4);
+    }
+    items = items.filter(item => {
+      if (!item.alive) {
+        if (item.mesh) itemGroup?.remove(item.mesh);
+        return false;
+      }
+      item.vy -= D.gravity * dt;
+      item.x += item.vx * dt;
+      item.y += item.vy * dt;
+      item.z += item.vz * dt;
+      item.spun += dt * 4;
+      if (item.mesh) {
+        item.mesh.position.set(item.x, item.y, item.z);
+        item.mesh.rotation.x = item.spun;
+        item.mesh.rotation.y = item.spun * 0.7;
+      }
+      if (item.y < -3.5) {
+        if (!item.bomb && D.missLifeCost) combo = 0;
+        if (item.mesh) itemGroup?.remove(item.mesh);
+        return false;
+      }
+      return true;
     });
-    trail = trail.filter(p => (p.life -= dt) > 0);
+    halves = halves.filter(h => {
+      h.life -= dt;
+      h.vy -= D.gravity * dt;
+      h.x += h.vx * dt;
+      h.y += h.vy * dt;
+      h.z += h.vz * dt;
+      if (h.mesh) {
+        h.mesh.position.set(h.x, h.y, h.z);
+        h.mesh.rotation.z += h.spin * dt;
+        h.mesh.material.transparent = true;
+        h.mesh.material.opacity = Math.max(0, h.life / 0.85);
+      }
+      if (h.life <= 0 || h.y < -4) {
+        fxGroup?.remove(h.mesh);
+        h.mesh?.geometry?.dispose?.();
+        h.mesh?.material?.dispose?.();
+        return false;
+      }
+      return true;
+    });
+    particles = updateParticles(particles, dt, fxGroup);
+    trail?.update(dt);
     hud();
   }
 
   function finish(cleared) {
-    ended = true;
-    running = false;
+    ended = true; running = false;
     typeof cancelAnimationFrame === 'function' && cancelAnimationFrame(raf);
-    onEnd?.({cleared, score, detail: `combo ${bestCombo}`});
+    onEnd?.({cleared, score, detail: `${creditedWaves} waves`});
   }
 
   function draw() {
-    if (!ctx) return;
-    ctx.fillStyle = '#101828';
-    ctx.fillRect(0, 0, W, H);
-    ctx.fillStyle = '#1c2740';
-    ctx.fillRect(0, H - 48, W, 48);
-    for (const p of trail) {
-      ctx.globalAlpha = Math.max(0, p.life * 2);
-      ctx.strokeStyle = '#9ef7ff';
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.moveTo(p.x0, p.y0);
-      ctx.lineTo(p.x1, p.y1);
-      ctx.stroke();
-    }
-    ctx.globalAlpha = 1;
-    for (const item of items) {
-      if (!item.alive) continue;
-      ctx.save();
-      ctx.translate(item.x, item.y);
-      ctx.rotate(item.spun);
-      ctx.font = '32px system-ui,sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(item.glyph, 0, 0);
-      ctx.restore();
-    }
-    for (const p of particles) {
-      ctx.globalAlpha = Math.max(0, p.life * 2);
-      ctx.fillStyle = p.color;
-      ctx.fillRect(p.x, p.y, 4, 4);
-    }
-    ctx.globalAlpha = 1;
+    if (!graphics.ok) return;
+    graphics.renderer.render(graphics.scene, graphics.camera);
   }
-
   function loop(ts) {
     if (!running) return;
     const dt = Math.min(0.033, (ts - last) / 1000 || 0.016);
-    last = ts;
-    tick(dt);
-    draw();
+    last = ts; tick(dt); draw();
     if (running) raf = requestAnimationFrame(loop);
-  }
-
-  function toLocal(e) {
-    const rect = canvas.getBoundingClientRect();
-    return {
-      x: ((e.clientX - rect.left) / rect.width) * W,
-      y: ((e.clientY - rect.top) / rect.height) * H
-    };
   }
 
   function onDown(e) {
     slicing = true;
-    const p = toLocal(e);
-    lastX = p.x; lastY = p.y;
-    slashAt(p.x, p.y);
-    canvas.setPointerCapture?.(e.pointerId);
+    lastPoint = pointerToWorld(e);
+    if (lastPoint) {
+      try { audio?.slash?.(); } catch {}
+      trail?.push(lastPoint);
+      slashAt(lastPoint);
+    }
   }
   function onMove(e) {
     if (!slicing) return;
-    const p = toLocal(e);
-    trail.push({x0: lastX, y0: lastY, x1: p.x, y1: p.y, life: 0.18});
-    const steps = Math.max(1, Math.ceil(Math.hypot(p.x - lastX, p.y - lastY) / 12));
-    for (let i = 1; i <= steps; i++) {
-      const t = i / steps;
-      slashAt(lastX + (p.x - lastX) * t, lastY + (p.y - lastY) * t);
+    const p = pointerToWorld(e);
+    if (p) {
+      trail?.push(p);
+      slashAt(p);
+      lastPoint = p;
     }
-    lastX = p.x; lastY = p.y;
   }
-  function onUp() { slicing = false; }
+  function onUp() { slicing = false; lastPoint = null; }
+  function onResize() { resizeArcade3D(graphics, canvas); }
 
   function bind() {
     canvas?.addEventListener?.('pointerdown', onDown);
     canvas?.addEventListener?.('pointermove', onMove);
     canvas?.addEventListener?.('pointerup', onUp);
     canvas?.addEventListener?.('pointercancel', onUp);
+    typeof window !== 'undefined' && window.addEventListener('resize', onResize);
   }
   function unbind() {
     canvas?.removeEventListener?.('pointerdown', onDown);
     canvas?.removeEventListener?.('pointermove', onMove);
     canvas?.removeEventListener?.('pointerup', onUp);
     canvas?.removeEventListener?.('pointercancel', onUp);
+    typeof window !== 'undefined' && window.removeEventListener('resize', onResize);
   }
 
   function start() {
-    lives = D.lives; score = 0; wave = 1; waveHits = 0; waveNeed = 6;
-    combo = 0; bestCombo = 0; creditedWaves = 0; items = []; particles = []; trail = [];
-    spawnTimer = 0.3; ended = false; running = true; last = performance.now?.() || 0; hud();
+    lives = D.lives; score = 0; wave = 1; waveHits = 0; waveNeed = 5;
+    combo = 0; creditedWaves = 0; items = []; halves = []; particles = []; spawnTimer = 0.3; ended = false;
+    if (itemGroup) while (itemGroup.children.length) itemGroup.remove(itemGroup.children[0]);
+    if (fxGroup) while (fxGroup.children.length) fxGroup.remove(fxGroup.children[0]);
+    trail?.clear();
+    running = true; last = performance.now?.() || 0; hud();
     typeof cancelAnimationFrame === 'function' && cancelAnimationFrame(raf);
     if (typeof requestAnimationFrame === 'function') raf = requestAnimationFrame(loop);
   }
@@ -272,9 +304,16 @@ export function createFruitSlashGame({canvas, onHud, onEnd, autoStart = true} = 
     running = true; last = performance.now?.() || 0;
     if (typeof requestAnimationFrame === 'function') raf = requestAnimationFrame(loop);
   }
-  function destroy() { running = false; typeof cancelAnimationFrame === 'function' && cancelAnimationFrame(raf); unbind(); }
+  function destroy() {
+    running = false;
+    typeof cancelAnimationFrame === 'function' && cancelAnimationFrame(raf);
+    unbind();
+    trail?.dispose?.();
+    disposeArcade3D(graphics);
+  }
 
+  buildScene();
   bind();
   if (autoStart) start();
-  return {start, pause, resume, destroy, tick, draw, getState: () => ({lives, score, wave, combo, creditedWaves, ended})};
+  return {start, pause, resume, destroy, tick, draw, getState: () => ({lives, score, wave, combo, creditedWaves, ended, gl: graphics.ok})};
 }

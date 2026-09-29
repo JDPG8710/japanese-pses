@@ -53,7 +53,7 @@ export function openArcadeShell({gameId, locale = 'en', onExit, onRetry}) {
       </header>
       <p class="arcade-tip"><b>${esc(t.tip)}</b> · ${esc(copy.tip)}</p>
       <div class="arcade-stage">
-        <canvas class="arcade-canvas" width="360" height="640" aria-label="${esc(copy.title)}"></canvas>
+        <canvas class="arcade-canvas" width="960" height="540" aria-label="${esc(copy.title)}"></canvas>
         <div class="arcade-overlay hidden" data-overlay>
           <div class="arcade-overlay-card">
             <p class="arcade-overlay-kicker" data-overlay-kicker></p>
@@ -71,11 +71,27 @@ export function openArcadeShell({gameId, locale = 'en', onExit, onRetry}) {
   document.body.classList.add('arcade-open');
 
   const canvas = root.querySelector('.arcade-canvas');
+  const stage = root.querySelector('.arcade-stage');
   const overlay = root.querySelector('[data-overlay]');
   const pauseBtn = root.querySelector('[data-shell="pause"]');
   let paused = false;
   let ended = false;
   let destroyed = false;
+  let enteredFullscreen = false;
+
+  function requestFs() {
+    const target = root;
+    const req = target.requestFullscreen || target.webkitRequestFullscreen || document.documentElement.requestFullscreen;
+    try {
+      const p = req?.call(target) || req?.call(document.documentElement);
+      if (p && typeof p.then === 'function') {
+        p.then(() => { enteredFullscreen = true; }).catch(() => {});
+      } else if (document.fullscreenElement || document.webkitFullscreenElement) {
+        enteredFullscreen = true;
+      }
+    } catch {/* graceful fallback: CSS full-bleed already covers viewport */}
+  }
+  requestFs();
 
   function setHud({score, lives, best, extra} = {}) {
     if (destroyed) return;
@@ -112,9 +128,20 @@ export function openArcadeShell({gameId, locale = 'en', onExit, onRetry}) {
     }
   }
 
+  function exitFs() {
+    try {
+      if (enteredFullscreen && (document.fullscreenElement || document.webkitFullscreenElement)) {
+        (document.exitFullscreen || document.webkitExitFullscreen)?.call(document);
+      }
+    } catch {/* ignore */}
+    enteredFullscreen = false;
+  }
+
   function destroy() {
     if (destroyed) return;
     destroyed = true;
+    exitFs();
+    resizeObs?.disconnect?.();
     root.remove();
     document.body.classList.remove('arcade-open');
   }
@@ -142,19 +169,22 @@ export function openArcadeShell({gameId, locale = 'en', onExit, onRetry}) {
 
   root.addEventListener('click', onShellClick);
 
-  // Keep canvas sized for mobile while preserving logical 360×640 coords.
+  // Fill the stage; buffer matches CSS size * dpr for sharp Three.js / canvas.
   function fit() {
-    const stage = root.querySelector('.arcade-stage');
-    const maxW = Math.min(stage.clientWidth, 420);
-    const maxH = Math.min(window.innerHeight - 160, 720);
-    const scale = Math.min(maxW / 360, maxH / 640);
-    canvas.style.width = `${Math.floor(360 * scale)}px`;
-    canvas.style.height = `${Math.floor(640 * scale)}px`;
+    const w = Math.max(2, stage.clientWidth || window.innerWidth);
+    const h = Math.max(2, stage.clientHeight || Math.floor(window.innerHeight * 0.72));
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.style.width = `${w}px`;
+    canvas.style.height = `${h}px`;
+    canvas.width = Math.floor(w * dpr);
+    canvas.height = Math.floor(h * dpr);
+    canvas.dispatchEvent(new Event('arcade-resize'));
   }
   fit();
+  const resizeObs = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(fit) : null;
+  resizeObs?.observe(stage);
   window.addEventListener('resize', fit);
 
-  const prevDestroy = destroy;
   return {
     root,
     canvas,
@@ -166,7 +196,7 @@ export function openArcadeShell({gameId, locale = 'en', onExit, onRetry}) {
     destroy() {
       window.removeEventListener('resize', fit);
       root.removeEventListener('click', onShellClick);
-      prevDestroy();
+      destroy();
     },
     fit
   };
@@ -176,8 +206,8 @@ function esc(value) {
   return String(value).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
 }
 
-/** Minimal canvas stub for node smoke tests (no DOM). */
-export function createStubCanvas(width = 360, height = 640) {
+/** Minimal canvas stub for node smoke tests (no DOM / no WebGL). */
+export function createStubCanvas(width = 960, height = 540) {
   const noop = () => {};
   const ctx = {
     fillStyle: '#000',
@@ -217,6 +247,9 @@ export function createStubCanvas(width = 360, height = 640) {
     addEventListener: noop,
     removeEventListener: noop,
     setPointerCapture: noop,
-    getContext() { return ctx; }
+    getContext(type) {
+      if (type === 'webgl' || type === 'webgl2') return null;
+      return ctx;
+    }
   };
 }

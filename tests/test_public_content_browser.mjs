@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {mkdir} from 'node:fs/promises';
 import {chromium} from 'playwright-core';
 import {startContentPreview} from '../scripts/preview-content.mjs';
-const preview=await startContentPreview(),browser=await chromium.launch({channel:process.env.BROWSER_CHANNEL||'chrome',headless:true});
+const preview=process.env.BASE_URL?{origin:process.env.BASE_URL,close:async()=>{}}:await startContentPreview(),browser=await chromium.launch({channel:process.env.BROWSER_CHANNEL||'chrome',headless:true});
 const artifacts='.wrangler/public-content-tests';await mkdir(artifacts,{recursive:true});
 try{
   const readOnly=await browser.newContext({javaScriptEnabled:false});

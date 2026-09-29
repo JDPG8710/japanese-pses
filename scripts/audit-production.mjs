@@ -6,7 +6,7 @@ const results=[];const out='.wrangler/production-audit';await mkdir(out,{recursi
 try{
  for(const width of [390,1280]){
   const context=await browser.newContext({viewport:{width,height:900}});
-  for(const route of ['/','/?country=JP','/ja/','/world?locale=zh','/grades?country=CN&curriculum=CN63&year=Y1&locale=zh','/learn?country=CN&curriculum=CN63&year=Y1&lesson=add20&locale=zh','/town?locale=zh','/arena?lang=zh','/ja/guides/','/about']){
+  for(const route of ['/','/?choose-country=1','/?course=jp','/ja/','/world?locale=zh','/grades?country=CN&curriculum=CN63&year=Y1&locale=zh','/learn?country=CN&curriculum=CN63&year=Y1&lesson=add20&locale=zh','/town?locale=zh','/arena?lang=zh','/ja/guides/','/about']){
    const page=await context.newPage(),errors=[],failed=[];
    page.on('pageerror',e=>errors.push(e.message));
    page.on('response',r=>{if(r.status()>=400&&!r.url().includes('/api/auth/session'))failed.push({url:r.url(),status:r.status()});});
@@ -25,7 +25,7 @@ try{
  }
  const links=[...new Set(results.flatMap(x=>x.links||[]))].filter(x=>x.startsWith(origin));
  const broken=[];
- for(let i=0;i<links.length;i+=8)await Promise.all(links.slice(i,i+8).map(async link=>{try{const r=await fetch(link,{signal:AbortSignal.timeout(15000)});if(r.status()>=400)broken.push({link,status:r.status()});await r.body?.cancel();}catch(e){broken.push({link,error:e.message});}}));
+ for(let i=0;i<links.length;i+=8)await Promise.all(links.slice(i,i+8).map(async link=>{try{const r=await fetch(link,{signal:AbortSignal.timeout(15000)});if(r.status>=400)broken.push({link,status:r.status});await r.body?.cancel();}catch(e){broken.push({link,error:e.message});}}));
  console.log('Broken links:',JSON.stringify(broken));
  await writeFile(`${out}/report.json`,JSON.stringify({origin,results,broken},null,2));
 }finally{await browser.close();}

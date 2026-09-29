@@ -22,6 +22,21 @@ const TIMEOUT_MS = Number(process.env.MONITOR_TIMEOUT_MS || 15000);
 const OUT_DIR = join(ROOT, '.wrangler', 'monitor');
 
 const CHECKS = [
+  ...['en','zh','ja'].map(locale=>({
+    id:`learning-library-${locale}`,path:`/${locale}/guides/`,expectStatus:200,
+    assert:text=>{
+      if(!text.includes(`href="https://piko-game.com/${locale}/guides/"`)||!text.includes('class="guide-cards"'))throw new Error('Learning library missing or replaced by another page');
+    }
+  })),
+  {id:'about-content',path:'/about',expectStatus:200,assert:text=>{
+    if(!text.includes('id="contact"')||!text.includes('id="editorial"'))throw new Error('About/contact/editorial content missing');
+  }},
+  ...['/monitor-missing-page','/ja/guides/monitor-missing-page'].map(path=>({
+    id:`real-404:${path}`,path,expectStatus:404,assert:text=>{if(!text.includes('noindex,follow'))throw new Error('404 must not be indexed');}
+  })),
+  {id:'robots-private-state',path:'/robots.txt',expectStatus:200,assert:text=>{
+    if(!/^Disallow:\s*\/api\/state\s*$/m.test(text))throw new Error('Private state crawl exclusion missing');
+  }},
   {
     id: 'home',
     path: '/',

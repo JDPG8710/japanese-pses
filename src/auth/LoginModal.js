@@ -70,9 +70,16 @@ export class LoginModal extends EventTarget {
       status.classList.remove('hidden');
     }));
     this.element.querySelector('[data-action="close"]').addEventListener('click', () => this.hide());
+    this.element.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && !this.busy) { event.preventDefault(); this.hide(); }
+    });
   }
 
   async show({ message } = {}) {
+    if (this._pendingShow) return this._pendingShow;
+    this._previousFocus = document.activeElement;
+    this._previousOverflow = document.body.style.overflow;
+    this._pendingShow = new Promise(resolve => { this._hideResolve = resolve; });
     localizeAuth(this.element);
     this.element.classList.remove('hidden');
     this.element.classList.add('flex');
@@ -80,18 +87,20 @@ export class LoginModal extends EventTarget {
     this.element.querySelector('#auth-upcoming').classList.add('hidden');
     if (message) this.element.querySelector('#auth-message').textContent = authText(message);
     else this.element.querySelector('#auth-message').textContent = authText('ゲームはログインなしでも遊べます。Googleでログインすると、別の端末でも学習きろくを引き継げます。');
-    await this.ensureTurnstile();
-    return new Promise(resolve => {
-      this._hideResolve = resolve;
-    });
+    this.element.querySelector('[data-action="close"]').focus();
+    // Dismissal must resolve even while the external verification script loads.
+    void this.ensureTurnstile();
+    return this._pendingShow;
   }
 
   hide() {
     this.element.classList.add('hidden');
     this.element.classList.remove('flex');
-    document.body.style.overflow = '';
+    document.body.style.overflow = this._previousOverflow ?? '';
     const resolve = this._hideResolve;
     this._hideResolve = null;
+    this._pendingShow = null;
+    this._previousFocus?.focus();
     if (resolve) resolve({ dismissed: true });
   }
 

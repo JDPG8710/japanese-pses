@@ -8,7 +8,7 @@ import {ARTICLES} from '../content/learning-articles.mjs';
 // No authenticated games, database operations or AdSense actions are performed.
 const origin=(process.env.BASE_URL||'https://piko-game.com').replace(/\/$/,''),sitemap=await readFile('dist/sitemap.xml','utf8');
 const routes=[...sitemap.matchAll(/<loc>https:\/\/piko-game\.com([^<]*)<\/loc>/g)].map(m=>m[1]);
-const assets=['/sitemap.xml','/src/world/WorldFeedback.mjs','/src/world/LearningObjectives.mjs','/src/world/FoundationMath.mjs','/src/world/WorldPlay.mjs','/src/world/GradeEntry.mjs','/src/town/TownApp.mjs','/css/learning-guide.css','/css/site-content.css'];
+const assets=['/robots.txt','/src/auth/LoginModal.js','/sitemap.xml','/src/world/WorldFeedback.mjs','/src/world/LearningObjectives.mjs','/src/world/FoundationMath.mjs','/src/world/WorldPlay.mjs','/src/world/GradeEntry.mjs','/src/town/TownApp.mjs','/css/learning-guide.css','/css/site-content.css'];
 const hash=value=>createHash('sha256').update(value).digest('hex');
 for(let i=0;i<routes.length;i+=6)await Promise.all(routes.slice(i,i+6).map(async route=>{
  const r=await fetch(origin+route,{redirect:'manual',signal:AbortSignal.timeout(20000)});assert.equal(r.status,200,route);

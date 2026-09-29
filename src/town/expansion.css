@@ -66,3 +66,30 @@
   .scene-viewport .town-fs-fab{top:8px;right:72px}
   .scene-viewport .town-mute-fab{top:8px;right:136px}
 }
+
+/* One analog stick replaces the arrow pad and separate turning buttons. */
+.scene-viewport .town-joystick{position:absolute;left:max(12px,env(safe-area-inset-left));bottom:max(12px,env(safe-area-inset-bottom));width:144px;height:144px;border-radius:50%;background:#18395330;border:2px solid #ffffff90;box-shadow:inset 0 0 0 16px #ffffff18,0 3px 12px #23425320;pointer-events:auto;touch-action:none;display:grid;place-items:center;user-select:none;-webkit-user-select:none}
+.stick-thumb{width:60px;height:60px;border-radius:50%;border:2px solid #fff9;background:#f5fcff80;box-shadow:0 3px 12px #152d4e30;transform:translate(var(--stick-x,0px),var(--stick-y,0px));pointer-events:none}
+.stick-directions{position:absolute;color:#fff;font-size:20px;letter-spacing:20px;left:22px;opacity:.75;pointer-events:none}
+.town-joystick.is-held{border-color:#fff;background:#32779860}.town-joystick:focus-visible{outline:3px solid #ffe291}
+.scene-viewport [data-camera="reset"]{left:6px}.scene-viewport .camera-controls .view-toggle{left:62px}
+.scene-viewport .town-ride{position:absolute;top:8px;left:124px;width:104px;height:56px;padding:4px;min-height:56px;background:#203b5280;color:#fff;border:1px solid #fff9;border-radius:14px;font-size:12px;pointer-events:auto;touch-action:manipulation}
+.scene-viewport .town-ride option{color:#203b52;background:#fff}.scene-viewport .town-ride[hidden]{display:none}
+.scene-viewport .town-descend{position:absolute;right:88px;bottom:max(12px,env(safe-area-inset-bottom));width:56px;height:56px;font-size:26px}.town-descend[hidden]{display:none}
+.scene-viewport .world-controls[data-travel="car"] .jump-button{display:none}
+.scene-viewport .world-controls[data-travel="plane"] .town-joystick{width:128px;height:128px}
+/* Works even when an embedded browser has no native Fullscreen API. */
+.town-immersive{overscroll-behavior:none;background:#bfe8fb}
+.town-immersive .town-main{position:fixed;inset:0;z-index:1000;width:100%;height:var(--town-view-height,100dvh);max-width:none;margin:0;padding:0;background:#bfe8fb}
+.town-immersive .town-layout{display:block;width:100%;height:100%}
+.town-immersive .world-card{display:flex;flex-direction:column;height:100%;border:0;border-radius:0}
+.town-immersive .world-top,.town-immersive .page-heading,.town-immersive .quest-panel,.town-immersive .arcade-panel,.town-immersive .place-links,.town-immersive #save-status{display:none}
+.town-immersive .world-task{flex:0 0 auto;max-height:96px;overflow:auto;padding:8px 14px;font-size:18px}
+.town-immersive .scene-viewport{flex:1 1 auto;min-height:0}
+.town-immersive .scene-viewport #town-canvas{height:100%!important;min-height:0!important;max-height:none!important}
+.town-immersive [data-town-fs]{background:#7b314bcc}
+@media(orientation:landscape) and (max-height:500px){
+ .scene-viewport .town-joystick{width:124px;height:124px}
+ .scene-viewport .world-controls[data-travel="plane"] .town-joystick{width:116px;height:116px}
+ .scene-viewport .map-caption{max-width:45%}
+}

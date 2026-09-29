@@ -8,8 +8,8 @@ try{
  const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true}),page=await context.newPage();await page.goto(`${preview.origin}/town?locale=zh`);await page.locator('[data-action="begin"]').tap();try{await page.locator('[data-consent="necessary"]').waitFor({timeout:4000});await page.locator('[data-consent="necessary"]').tap();}catch{}
  await enterBuilding(page,'obby');await page.locator('[data-camera="view"]').tap();await page.locator('#town-canvas[data-view="first"]').waitFor();assert.equal(await page.locator('[data-answer-platform]').count(),0);
  await page.locator('.town-help-control').tap();assert.match(await page.locator('#dialog-body').innerText(),/答案只作提示/);assert.doesNotMatch(await page.locator('#dialog-body').innerText(),/自动带路/);await page.locator('.close-button').tap();
- const start=await page.locator('#town-canvas').getAttribute('data-position');await page.locator('.world-controls').scrollIntoViewIfNeeded();const up=await page.locator('[data-direction="ArrowUp"]').boundingBox(),jump=await page.locator('[data-camera="jump"]').boundingBox();const session=await context.newCDPSession(page);
- const finger0={id:0,x:up.x+up.width/2,y:up.y+up.height/2},finger1={id:1,x:jump.x+jump.width/2,y:jump.y+jump.height/2};
+ const start=await page.locator('#town-canvas').getAttribute('data-position');await page.locator('.world-controls').scrollIntoViewIfNeeded();const up=await page.locator('.town-joystick').boundingBox(),jump=await page.locator('[data-camera="jump"]').boundingBox();const session=await context.newCDPSession(page);
+ const finger0={id:0,x:up.x+up.width/2,y:up.y+up.height/2-38},finger1={id:1,x:jump.x+jump.width/2,y:jump.y+jump.height/2};
  await session.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[finger0]});await session.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[finger0,finger1]});
  await page.waitForFunction(()=>Number(document.querySelector('#town-canvas').dataset.position.split(',')[1])>.4);
  assert.notEqual(await page.locator('#town-canvas').getAttribute('data-position'),start);assert.equal(await page.locator('#town-canvas').getAttribute('data-jumps'),'1');await session.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
@@ -17,7 +17,7 @@ try{
  await page.waitForTimeout(150);const released=(await page.locator('#town-canvas').getAttribute('data-position')).split(',').map(Number);
  await page.waitForTimeout(200);const stopped=(await page.locator('#town-canvas').getAttribute('data-position')).split(',').map(Number);
  assert.ok(Math.hypot(stopped[0]-released[0],stopped[2]-released[2])<.1,'releasing both fingers must stop movement');
- assert.equal(await page.locator('.dpad .is-held').count(),0);
+ assert.equal(await page.locator('.town-joystick.is-held').count(),0);
  await page.locator('[data-town-fs]').tap();await page.waitForFunction(()=>document.fullscreenElement===document.documentElement);
  await page.locator('.town-help-control').tap();await page.locator('#town-dialog[open]').waitFor();await page.locator('.close-button').tap();
  await page.locator('[data-town-fs]').tap();await page.waitForFunction(()=>!document.fullscreenElement);

@@ -1,3 +1,4 @@
+import {setupTownFullscreen as createTownFullscreen} from './TownFullscreen.mjs';
 import {TEXT} from './TownText.mjs?v=2';
 import {getTownAudio} from './TownAudio.mjs?v=1';
 import {SAVE_KEY,PRODUCTS,FURNITURE,MISSIONS,PLACES,loadState,restoreState,saveState,startOrder,submitOrder,completeMission,buyFurniture,placeFurniture,englishOrder} from './TownRules.mjs?v=4';
@@ -150,30 +151,9 @@ function setupTownFullscreen(){
   if(!viewport||viewport.querySelector('.town-fs-fab'))return;
   const btn=document.createElement('button');
   btn.type='button';btn.className='town-fs-fab';btn.dataset.townFs='1';
-  const sync=()=>{
-    const on=!!(document.fullscreenElement||document.webkitFullscreenElement);
-    btn.setAttribute('aria-pressed',on?'true':'false');
-    btn.textContent=on?'⛶':'⛶';
-    btn.setAttribute('aria-label',on?(w().fullscreenExit||'Exit full screen'):(w().fullscreenEnter||'Full screen'));
-    btn.title=btn.getAttribute('aria-label');
-  };
-  btn.addEventListener('click',e=>{
-    e.preventDefault();e.stopPropagation();
-  const target=document.documentElement;
-    try{
-      if(document.fullscreenElement||document.webkitFullscreenElement){
-        (document.exitFullscreen||document.webkitExitFullscreen)?.call(document)?.catch?.(()=>{});
-      }else{
-        (target.requestFullscreen||target.webkitRequestFullscreen)?.call(target)?.catch?.(()=>{});
-      }
-    }catch{}
-  });
-  btn.addEventListener('pointerdown',e=>e.stopPropagation());
   viewport.append(btn);
-  document.addEventListener('fullscreenchange',sync);
-  document.addEventListener('webkitfullscreenchange',sync);
-  sync();
-  return sync;
+  const fullscreen=createTownFullscreen({button:btn,scene,getLabel:on=>on?(w().fullscreenExit||'Exit full screen'):(w().fullscreenEnter||'Full screen')});
+  return fullscreen.refresh;
 }
 syncTownFs=setupTownFullscreen()||(()=>{});
 const townAudio=getTownAudio();

@@ -35,7 +35,7 @@
     "db:seed": "node scripts/import-game-data-d1.mjs --remote",
     "deploy:worker": "wrangler deploy --config wrangler.toml",
     "test:production-ui": "node tests/test_login_lifecycle_browser.mjs && node tests/test_japanese_entry_browser.mjs",
-    "predeploy:pages": "node scripts/check-release-source.mjs && npm run build && npm run test:learning && npm run test:content && npm run test:seo && npm run test:production-ui && npm run test:town:release",
+    "predeploy:pages": "node scripts/check-release-source.mjs && npm run build && npm run test:learning && npm run test:content && npm run test:seo && npm run test:production-ui && npm run test:town:release && npm run test:town:exploration",
     "deploy:pages": "wrangler pages deploy ./dist --project-name=manabi-pop --branch main",
     "deploy": "npm run test && npm run build && npm run db:migrate && npm run db:seed && npm run deploy:worker && npm run deploy:pages",
     "monitor:production": "node scripts/monitor-production.mjs",
@@ -48,7 +48,8 @@
     "test:town:touch": "node tests/test_town_touch.mjs",
     "test:town:buildings": "node tests/test_town_buildings.mjs",
     "test:town:presentation": "node tests/test_town_presentation.mjs",
-    "test:town:release": "node tests/test_town_release_browser.mjs"
+    "test:town:release": "node tests/test_town_release_browser.mjs",
+    "test:town:exploration": "node tests/test_town_vehicles.mjs && node tests/test_town_exploration_browser.mjs"
   },
   "devDependencies": {
     "playwright-core": "^1.63.0",

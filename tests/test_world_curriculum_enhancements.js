@@ -9,6 +9,7 @@ module.exports=({describe,test,assert,loadESModule})=>{
  const words=loadESModule(path.join(root,'src/world/FoundationWords.mjs'));
  const english=loadESModule(path.join(root,'src/world/FoundationEnglish.mjs'));
  const japaneseGames=loadESModule(path.join(root,'MiniGameSystem.js'));
+ const choiceQuality=loadESModule(path.join(root,'src/runtime/ChoiceQuality.mjs'));
 
  describe('世界模式：同年级关卡、英语挑战与文案准确性',()=>{
   test('中国1—6年级总关卡与日本同年级实际关卡数一致',()=>{
@@ -67,6 +68,16 @@ module.exports=({describe,test,assert,loadESModule})=>{
    assert.ok(basic.some(question=>question.prompt.includes('We have time to open the window.')&&question.correct==='私たちには窓を開ける時間があります。'));
    const eiken3=japaneseGames.getEnglishQuestionBank('EIKEN3');
    assert.ok(eiken3.some(question=>question.prompt.includes('I had a chance to study for the test.')&&question.correct==='私はテストに向けて勉強する機会がありました。'));
+  });
+
+  test('日本英语小游戏抽出的每道题选项都通过迷惑性与长度检查',()=>{
+   const canvas={width:800,height:600,style:{},getContext:()=>new Proxy({},{get:()=>()=>({width:10})}),addEventListener(){},removeEventListener(){},getBoundingClientRect:()=>({left:0,top:0,width:800,height:600})};
+   for(const mode of ['BASIC','EIKEN3','EIKEN2','SHORT_READING','LONG_READING'])for(let level=1;level<=5;level++){
+    const game=new japaneseGames.ContextMatchGame(canvas,{difficulty:mode},()=>{},5,level);
+    assert.strictEqual(game.questions.length,10);
+    for(const q of game.questions)assert.deepStrictEqual(choiceQuality.auditChoiceSet({prompt:q.prompt,correct:q.correct,choices:q.options}),[],`${mode} ${q.id}`);
+    if(game.destroy)game.destroy();
+   }
   });
 
   test('全球课程不再自动加ruby，拼音学习题仍然保留',()=>{

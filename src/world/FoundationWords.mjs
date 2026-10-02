@@ -2,75 +2,75 @@
 // Row format: prompt | correct | distractor | distractor | explanation.
 const banks={
 en:{
-2:`Choose the plural of child.|children|childs|childes|Child has the irregular plural children.
-Choose the past tense of go.|went|goed|going|Went describes going in the past.
+2:`Choose the plural of child.|children|childs|childen|Child has the irregular plural children.
+Choose the past tense of go.|went|goed|gone|Went describes going in the past; gone needs has or have.
 Complete: She ___ to school every day.|walks|walk|walking|Use walks with she in the present tense.
-Which word names a person?|teacher|quickly|sleep|A teacher is a person.
-Which word describes an action?|jump|yellow|table|Jump tells what someone does.
-Which word describes a noun?|soft|under|run|Soft can describe a blanket.
-Choose the plural of mouse.|mice|mouses|mousees|Mouse has the irregular plural mice.
+Which word names a person?|teacher|kitchen|blanket|A teacher is a person; a kitchen is a place and a blanket is a thing.
+Which word describes an action?|jump|juice|jeans|Jump tells what someone does.
+Which word can describe a noun?|soft|sofa|softly|Soft can describe a blanket; softly describes an action.
+Choose the plural of mouse.|mice|mouses|mousen|Mouse has the irregular plural mice.
 Complete: I saw ___ owl.|an|a|some|Use an before the vowel sound in owl.
-Which sentence asks a question?|Where is my bag?|My bag is blue.|Here is my bag.|Where asks for information.
+Which question asks about a place?|Where is my bag?|What is in my bag?|Whose bag is this?|Where asks about a place.
 Complete: The two dogs ___ playing.|are|is|am|Use are for more than one dog.
 Which word is the opposite of empty?|full|small|light|Full and empty describe opposite amounts.
-Choose the past tense of eat.|ate|eated|eating|Ate is the past tense of eat.`,
-3:`The path was narrow, so we walked one behind another. What does narrow mean?|not wide|very long|very bright|Walking in single file suggests little width.
+Choose the past tense of eat.|ate|eated|eaten|Ate is the past tense of eat; eaten needs has or have.`,
+3:`The path was narrow, so we walked one behind another. What does narrow mean?|not wide|not long|not flat|Walking in single file suggests little width.
 Mina whispered so the baby would not wake. How did she speak?|quietly|angrily|quickly|A whisper is very quiet speech.
 Which prefix makes happy mean its opposite?|un-|re-|pre-|Unhappy means not happy.
 Which word means to write again?|rewrite|unwrite|prewrite|Re- means again.
-The glass was fragile. We carried it carefully. What does fragile mean?|easily broken|very heavy|brightly coloured|Careful handling protects something easily broken.
+The glass was fragile. We carried it carefully. What does fragile mean?|easily broken|easily lost|easily cleaned|Careful handling protects something easily broken.
 Which is a complete sentence?|The birds sing.|Under the tree.|A bright red hat.|The birds sing has a subject and a verb.
 Choose the possessive form for one girl: the ___ bag.|girl's|girls|girls'|An apostrophe and s show possession by one girl.
-Which word is an adverb in The rabbit moved slowly?|slowly|rabbit|the|Slowly tells how it moved.
-Complete: Yesterday, we ___ a nest.|found|find|finding|Yesterday requires the past tense found.
+Which word is an adverb in The early bird sang softly?|softly|early|bird|Softly tells how the bird sang; early describes the bird here.
+Complete: Yesterday, we ___ a nest.|found|find|finded|Yesterday requires the past tense found.
 Which word belongs with transport?|bicycle|blanket|cabbage|A bicycle carries people from place to place.
 The room was silent. What would you notice?|no sound|no light|no chairs|Silent describes a lack of sound.
-Which suffix changes care into an adjective?|careful|caringly|carement|Careful describes someone who takes care.`,
+Which word means full of care?|careful|carefully|careless|Careful means full of care; careless means without care.`,
 4:`Complete: We stayed inside ___ it was raining.|because|although|unless|Because introduces the reason.
 Complete: ___ it was cold, we enjoyed the walk.|Although|Because|Until|Although introduces a contrast.
-Which opening signals the last step?|Finally,|First,|Meanwhile,|Finally introduces the last event in a sequence.
+Which opening signals the last step?|Finally,|Secondly,|Suddenly,|Finally introduces the last event in a sequence.
 Which sentence uses a comma after an opening phrase?|After lunch, we read.|After, lunch we read.|After lunch we, read.|The opening phrase ends after lunch.
-Which title fits a paragraph about roots taking in water?|How roots help plants|Birds in winter|A day at the beach|A title should match the main topic.
+Which title fits a paragraph about roots taking in water?|How roots help plants|How birds find water|How leaves change colour|A title should match the main topic.
 Which sentence is an opinion?|This is the best park.|The park has two gates.|The park opens at nine.|Best expresses a personal judgement.
 Complete: Lee forgot his coat. ___, he felt cold.|As a result|In contrast|For example|The second event is a result of the first.
 Which sentence is in the past tense?|We built a shelter.|We build a shelter.|We will build a shelter.|Built describes a completed past action.
 Which word links two similar ideas?|also|however|instead|Also adds a related idea.
-Which detail belongs in instructions for planting seeds?|Cover the seeds with soil.|My favourite colour is green.|The bus arrives at eight.|Instructions include actions needed for the task.
+Which detail belongs in instructions for planting seeds?|Cover the seeds with soil.|Seeds come in many colours.|Seeds are sold in packets.|Instructions tell the reader what to do.
 Complete: Check the map ___ you leave.|before|because|although|Before shows the order of events.
-What should a new paragraph usually introduce?|a new focus|a random letter|the same sentence again|Paragraphs organise related ideas into groups.`,
+What should a new paragraph usually introduce?|a new main idea|a new page number|a new font size|Paragraphs organise related ideas into groups.`,
 5:`Ava packed an umbrella after looking at dark clouds. What is the best inference?|She expected rain.|It had already snowed.|She disliked sunlight.|The umbrella and clouds support an expectation of rain.
 The library lights went out. Jo used a torch to finish reading. What can we infer?|Jo wanted to keep reading.|Jo had finished the book.|The library was outdoors.|Using a torch shows a wish to continue.
-The wind whispered through the leaves. Which technique is used?|personification|a factual measurement|a question|Whispered gives the wind a human action.
+The wind whispered through the leaves. Which technique is used?|personification|exaggeration|rhyming words|Whispered gives the wind a human action.
 Which sentence uses a simile?|The lake was like a mirror.|The lake was deep.|The lake covered two hectares.|Like makes an explicit comparison.
 Which summary keeps the main idea: The class planted trees, watered them weekly and measured their growth?|The class cared for and studied trees.|The class only measured water.|The class cut down trees.|A summary combines the main actions without inventing details.
-Which source best checks a claim about yesterday's rainfall?|a dated weather record|an undated joke|a shoe advertisement|A relevant dated measurement can support the claim.
+Which source best checks a claim about yesterday's rainfall?|a dated weather record|a weather record from last year|a friend's guess about rain|A relevant dated measurement can support the claim.
 Noah returned a lost wallet without a reward. Which trait does this action best suggest?|honesty|impatience|carelessness|Returning another person's property supports honesty.
-Which sentence gives evidence for Our garden attracts insects?|We counted six bee visits in ten minutes.|Our garden is wonderful.|Everyone must love flowers.|A counted observation supplies evidence.
-Which sentence is the most precise?|The seedling grew 3 cm in a week.|It grew a lot.|It did something.|A quantity and time make the statement precise.
+Which sentence gives evidence for Our garden attracts insects?|We counted six bee visits in ten minutes.|We think bees love our garden.|Our garden looks very colourful.|A counted observation supplies evidence.
+Which sentence is the most precise?|The seedling grew 3 cm in a week.|The seedling grew a lot in 7 days.|The seedling grew quite tall lately.|A quantity and a time make the statement precise.
 Complete: The two teams disagreed; ___, they listened to each other.|however|therefore|for example|However marks a contrast with the disagreement.
-Which question encourages an explanation?|Why did the character change her plan?|Was the bag blue?|Is the title short?|Why asks for reasons.
+Which question encourages an explanation?|Why did the character change her plan?|Did the character change her plan?|When did the character change her plan?|Why asks for reasons.
 Which revision removes repetition: The tiny small seed fell?|The tiny seed fell.|The tiny small little seed fell.|The tiny seed seed fell.|Tiny and small repeat the same idea.`,
 6:`A poster says Everyone loves this game but reports no survey. What is missing?|evidence for the claim|a longer game name|a brighter border|Everyone is a broad claim requiring evidence.
 Which sentence correctly separates two independent clauses?|It rained; we stayed inside.|It rained, we stayed inside.|It rained we stayed inside.|A semicolon can join related independent clauses.
 One article describes benefits; another lists costs. What should a comparison include?|evidence from both|only the first title|only personal preference|A comparison considers both sources.
-Which revision is clearest: They put it there?|The pupils put the model on the shelf.|They put that there.|Those ones put it there.|Specific nouns remove unclear references.
+Which revision is clearest: They put it there?|The pupils put the model on the shelf.|They put the model over there.|The pupils put it on that.|Specific nouns remove unclear references.
 Which question tests a source's reliability?|Who collected the information and how?|Is the logo my favourite colour?|Does it have many exclamation marks?|Method and authorship help assess reliability.
 Which sentence expresses possibility rather than certainty?|The path might be wet.|The path is wet.|The path must be wet.|Might expresses possibility.
 Which detail weakens the claim All birds fly?|Penguins cannot fly.|Sparrows can fly.|Many birds have wings.|One valid counterexample disproves all.
 Which is a balanced conclusion about a small survey?|These pupils preferred A; others may differ.|Everyone everywhere prefers A.|No further research is possible.|The conclusion stays within the sample's limits.
 Which sentence uses formal language?|Please return the form by Friday.|Hey, chuck the form back.|Gimme that thing sometime.|Please and a precise request suit a formal notice.
 Which revision keeps the meaning of Despite the rain, the match continued?|Although it rained, the match continued.|Because it rained, the match stopped.|Before it rained, the match ended.|Although preserves the contrast.
-Which statement distinguishes fact from interpretation?|The chart rose by 5; this may indicate growth.|The chart proves every idea.|Any guess is a measurement.|It separates a number from its possible meaning.
-What is the best first step when editing an argument?|Check whether reasons support the conclusion.|Add unrelated facts.|Replace every short word.|An argument needs relevant support.`,
+Which statement distinguishes fact from interpretation?|The chart rose by 5; this may indicate growth.|The chart rose by 5, so it proves every idea.|The chart looks nice, so growth is certain.|It separates a number from its possible meaning.
+What is the best first step when editing an argument?|Check whether reasons support the conclusion.|Check whether every word is long enough.|Add as many unrelated facts as possible.|An argument needs relevant support.`,
 7:`A survey asks only club members whether their club is enjoyable. What is a limitation?|The sample may favour the club.|It includes too many non-members.|It measures every child's opinion.|Membership can make the sample unrepresentative.
-Which statement confuses correlation with cause?|Ice-cream sales and swimming rise, so ice cream causes swimming.|Both may increase in warm weather.|More evidence is needed.|Two things changing together does not prove causation.
-Which conclusion follows from Some pupils cycle?|At least one pupil cycles.|All pupils cycle.|No pupils walk.|Some establishes existence, not universality.
-Which evidence is strongest for a local bus timetable?|the operator's current timetable|a five-year-old poster|an anonymous guess|The current operator is the relevant primary source.
+Which statement confuses correlation with cause?|Ice-cream sales and swimming rise, so ice cream causes swimming.|Ice-cream sales and swimming both rise in warm weather.|Ice-cream sales and swimming rise, but more evidence is needed.|Two things changing together does not prove causation.
+Which conclusion follows from Some pupils cycle?|At least one pupil cycles.|Every pupil cycles.|No pupil cycles.|Some establishes existence, not universality.
+Which evidence is strongest for a local bus timetable?|the operator's current timetable|a timetable photo from five years ago|a neighbour's guess about times|The current operator is the relevant primary source.
 Which phrase signals uncertainty?|The results suggest|The results prove everything|There is no possible doubt|Suggest leaves room for other explanations.
-Why acknowledge a counterargument?|to examine a competing explanation|to hide the evidence|to replace the topic|Considering alternatives strengthens evaluation.
+Why acknowledge a counterargument?|to examine a competing explanation|to hide the competing evidence|to change the topic of the essay|Considering alternatives strengthens evaluation.
 Which headline overstates a trial with ten people?|New snack loved by everyone|Ten volunteers tried a snack|Small snack trial reports results|Everyone goes beyond the small sample.
-What makes a quotation useful in an argument?|its relevance and context|its length alone|its unusual font|Relevant contextual evidence supports reasoning.
-Which statement is testable?|This route is 200 m shorter.|This route is the nicest.|This route feels magical.|Distance can be measured.
+What makes a quotation useful in an argument?|its relevance and context|its length and colour|its font and size|Relevant contextual evidence supports reasoning.
+Which statement is testable?|This route is 200 m shorter.|This route is 200 times more fun.|This route feels more magical.|Distance can be measured; fun and magic cannot.
 An author sells the product being reviewed. What should readers consider?|a possible conflict of interest|automatic proof of dishonesty|automatic proof of accuracy|An interest may influence presentation but does not alone prove truth or falsehood.
 Which summary avoids bias?|The proposal has listed benefits and costs.|Only foolish people oppose it.|It has no possible disadvantages.|Neutral wording describes both sides without insults.
 Two sources disagree. What should you do?|compare dates, methods and evidence|choose the louder claim|ignore both without reading|Differences in method or date may explain disagreement.`},
@@ -138,10 +138,20 @@ zh:{
 }};
 const enSounds='cat dog sun hat pig map bed fox pen log hen bus cup rat van net leg fan jam red sit win box gum ten mop fish ship chin thin'.split(' ');
 const zhSounds=[['山','shān'],['水','shuǐ'],['火','huǒ'],['木','mù'],['日','rì'],['月','yuè'],['田','tián'],['土','tǔ'],['人','rén'],['口','kǒu'],['手','shǒu'],['足','zú'],['目','mù'],['耳','ěr'],['白','bái'],['云','yún'],['雨','yǔ'],['风','fēng'],['花','huā'],['草','cǎo'],['鸟','niǎo'],['鱼','yú'],['牛','niú'],['羊','yáng'],['马','mǎ'],['米','mǐ'],['车','chē'],['门','mén'],['书','shū'],['天','tiān']];
+// Phonics distractors look or sound like the answer (b/d/p, m/n, at/ap/an),
+// and always have the same length, so the letter shape alone gives nothing away.
+const LETTER_CONFUSIONS={b:'dp',c:'ks',d:'bp',f:'tv',g:'jq',h:'nk',j:'gy',l:'ti',m:'nw',n:'mh',p:'bq',r:'nv',s:'cz',t:'fl',v:'wf',w:'vm'};
+const RIMES=['at','ap','an','ag','ad','og','ot','op','ob','ox','un','ug','up','us','ut','um','ig','ip','it','in','id','ix','ed','en','et','eg','ex','am','ish','ash','esh','ush','ill','ell'];
+function letterDistractors(correct,i){const pool=[...(LETTER_CONFUSIONS[correct]||'bdp')].filter(x=>x!==correct);return i%2?pool.reverse():pool;}
+function rimeDistractors(correct,i){
+ const vowel=correct.match(/[aeiou]/)?.[0],end=correct.slice(1);
+ const ranked=RIMES.filter(r=>r!==correct&&r.length===correct.length).map(r=>({r,score:(r.includes(vowel)?2:0)+(r.slice(1)===end?2:0)})).sort((a,b)=>b.score-a.score||RIMES.indexOf(a.r)-RIMES.indexOf(b.r)).slice(0,4).map(x=>x.r);
+ return [ranked[i%ranked.length],ranked[(i+1)%ranked.length]];
+}
 export function wordPool(stage,language){
  if(!['en','zh'].includes(language))throw new Error('Unsupported learning language');
  if(stage<=1){
-  if(language==='en')return enSounds.map((word,i)=>{const correct=stage===0?word[0]:word.replace(/^[^aeiou]+/,'');const choices=[correct,...(stage===0?['a','b','c','d','f','g']:['at','og','un','ip','en','ox']).filter(x=>x!==correct).slice(i%3,i%3+2)];return {id:`phonics-${stage}-${i}`,kind:'choice',prompt:stage===0?`Which letter begins “${word}”?`:`Which ending completes “${word}” after its starting consonant sound?`,correct,choices,hint:'Say the word slowly and look at its letters.',explanation:`${word}: ${stage===0?'first letter':'ending'} ${correct}.`,lang:language};});
+  if(language==='en')return enSounds.map((word,i)=>{const correct=stage===0?word[0]:word.replace(/^[^aeiou]+/,'');const choices=[correct,...(stage===0?letterDistractors(correct,i):rimeDistractors(correct,i))];return {id:`phonics-${stage}-${i}`,kind:'choice',prompt:stage===0?`Which letter begins “${word}”?`:`Which ending completes “${word}” after its starting consonant sound?`,correct,choices,hint:'Say the word slowly and look at its letters.',explanation:`${word}: ${stage===0?'first letter':'ending'} ${correct}.`,lang:language};});
   return zhSounds.map(([word,correct],i)=>({id:`pinyin-${stage}-${i}`,kind:'choice',prompt:stage===0?`“${word}”的拼音是哪一个？`:`选择“${word}”的正确读音。`,correct,choices:[correct,...zhSounds.map(x=>x[1]).filter(x=>x!==correct).slice(i%20,i%20+2)],hint:'轻声读一读，注意声母、韵母和声调。',explanation:`“${word}”读作${correct}。`,lang:language}));
  }
  const source=banks[language][stage];

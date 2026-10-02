@@ -3,6 +3,7 @@ import {mathPool,numericEqual} from './FoundationMath.mjs';
 import {wordPool} from './FoundationWords.mjs';
 import {sciencePool} from './FoundationScience.mjs';
 import {englishPool} from './FoundationEnglish.mjs';
+import {repairChoices} from '../runtime/ChoiceQuality.mjs';
 export {CONTENT_VERSION};
 export function questionPool(input){
  const route=validateFoundation(input);if(!route)throw new Error('INVALID_LESSON');
@@ -17,7 +18,11 @@ export function makeFoundationRounds(input,seed){
  const shuffle=items=>{const a=[...items];for(let i=a.length-1;i>0;i--){const j=Math.floor(random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
  const pool=questionPool(input);
  if(pool.length<12||new Set(pool.map(q=>q.id)).size!==pool.length)throw new Error('INVALID_POOL');
- return shuffle(pool).slice(0,10).map(q=>({...q,...(q.choices?{choices:shuffle(q.choices)}:{})}));
+ // English option sets get a last runtime check: a set whose answer could be
+ // spotted by shape alone is repaired from same-format answers in the pool.
+ const english=route.subject==='english'||(route.subject==='language'&&route.learningLanguage==='en');
+ const guard=q=>english&&q.choices?repairChoices(q,pool.filter(x=>x.id!==q.id&&x.format===q.format&&x.correct!==q.correct).map(x=>x.correct)):q;
+ return shuffle(pool).slice(0,10).map(guard).map(q=>({...q,...(q.choices?{choices:shuffle(q.choices)}:{})}));
 }
 export function publicQuestion(q,tries=0){
  if(!q)return null;

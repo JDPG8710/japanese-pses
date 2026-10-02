@@ -4,7 +4,7 @@
   "private": true,
   "description": "譌･譛ｬ縺ｮ蟆丞ｭｦ逕溷髄縺第弌蝗ｳ謨呵ご繧ｲ繝ｼ繝",
   "scripts": {
-    "test": "node tests/test_e2e_runner.js",
+    "test": "node tests/test_e2e_runner.js && node tests/test_english_choice_quality.mjs",
     "test:town": "node tests/test_town.mjs",
     "test:town:browser": "node tests/test_town_browser.mjs",
     "preview:town": "node scripts/preview-town.mjs",
@@ -35,7 +35,7 @@
     "db:seed": "node scripts/import-game-data-d1.mjs --remote",
     "deploy:worker": "wrangler deploy --config wrangler.toml",
     "test:production-ui": "node tests/test_login_lifecycle_browser.mjs && node tests/test_japanese_entry_browser.mjs",
-    "predeploy:pages": "node scripts/check-release-source.mjs && npm run build && npm run test:learning && npm run test:content && npm run test:seo && npm run test:production-ui && npm run test:town:release && npm run test:town:exploration",
+    "predeploy:pages": "node scripts/check-release-source.mjs && npm run build && npm run test:english-choices && npm run test:learning && npm run test:content && npm run test:seo && npm run test:production-ui && npm run test:town:release && npm run test:town:exploration",
     "deploy:pages": "wrangler pages deploy ./dist --project-name=manabi-pop --branch main",
     "deploy": "npm run test && npm run build && npm run db:migrate && npm run db:seed && npm run deploy:worker && npm run deploy:pages",
     "monitor:production": "node scripts/monitor-production.mjs",
@@ -53,7 +53,9 @@
     "test:race": "node tests/test_race_handling.mjs && node tests/test_race_collisions.mjs && node tests/test_race_models.mjs && node tests/test_arcade_smoke.mjs",
     "test:race:browser": "node scripts/build.mjs && node tests/test_race_browser.mjs",
     "preview:race": "node scripts/preview-race.mjs",
-    "test:town:feedback": "node scripts/build.mjs && node tests/test_town_feedback_browser.mjs"
+    "test:town:feedback": "node scripts/build.mjs && node tests/test_town_feedback_browser.mjs",
+    "test:english-choices": "node tests/test_english_choice_quality.mjs",
+    "audit:english-choices": "node scripts/audit-english-choices.mjs"
   },
   "devDependencies": {
     "playwright-core": "^1.63.0",

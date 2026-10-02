@@ -1,5 +1,8 @@
 // Pure question generation: safe to import without creating game UI.
-function shuffleCopy(items) { const result=[...items]; for(let i=result.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[result[i],result[j]]=[result[j],result[i]];} return result; }
+// Distractors are chosen to be as confusable as the correct answer: same
+// sentence frame or same action, similar length, and (for reading) things that
+// are really mentioned in the passage. See src/runtime/ChoiceQuality.mjs.
+import {pickDistractors,distractorDistance,auditChoiceSet} from '../runtime/ChoiceQuality.mjs?v=1';
 
 function expandNaturalEnglishPairs(actions, frames, prefix) {
   const pairs = [];
@@ -40,38 +43,67 @@ function makeEnglishReadingBank(longMode = false) {
     ['the nursing home', 'read a picture book aloud', 'spend time with older residents', 'received helpful storytelling advice'],
     ['the shopping street', 'survey reusable bag use', 'study environmentally friendly habits', 'collected forty responses']
   ];
-  const placeOptions = scenarios.map(item => item[0]);
-  const actionOptions = scenarios.map(item => item[1]);
-  const reasonOptions = scenarios.map(item => item[2]);
-  const outcomeOptions = scenarios.map(item => item[3]);
+  const fields = [0, 1, 2, 3];
+  const format = (type, value, name) => type === 2 ? `To ${value}.` : type === 3 ? `${name} ${value}.` : value;
   return Array.from({ length: 200 }, (_, index) => {
     const name = names[index % names.length];
-    const scenario = scenarios[Math.floor(index / names.length) % scenarios.length];
+    const friend = names[(index + 3) % names.length];
+    const scenarioIndex = Math.floor(index / names.length) % scenarios.length;
+    const scenario = scenarios[scenarioIndex];
     const day = days[index % days.length];
+    const questionType = fields[index % 4];
+    const correct = format(questionType, scenario[questionType], name);
+    // The decoy scenario is really mentioned in the passage, so the child has
+    // to read which detail belongs to whom instead of spotting the only option
+    // that appears in the text.
+    const decoyRanking = scenarios.map((item, i) => ({ item, i }))
+      .filter(entry => entry.i !== scenarioIndex)
+      .sort((a, b) => distractorDistance(correct, format(questionType, a.item[questionType], name)) - distractorDistance(correct, format(questionType, b.item[questionType], name)) || a.i - b.i);
+    const decoy = decoyRanking[index % 3].item;
     const [place, action, reason, outcome] = scenario;
+    const [dPlace, dAction, dReason, dOutcome] = decoy;
     const passage = longMode
-      ? `On ${day}, ${name} visited ${place} with a small school team. Their main task was to ${action}. Before starting, they discussed safety rules and divided the work fairly. They chose this activity because they wanted to ${reason}. Although one part of the task was difficult, the team exchanged ideas and continued carefully. By the end of the visit, ${name} ${outcome} and wrote a reflection for the next class.`
-      : `On ${day}, ${name} went to ${place} after school. ${name} wanted to ${action} because the class hoped to ${reason}. In the end, ${name} ${outcome}.`;
-    const questionType = index % 4;
-    const specs = [
-      [`Where did ${name} go?`, place, placeOptions],
-      [`What did ${name} plan to do?`, action, actionOptions],
-      [`Why did ${name} choose the activity?`, `To ${reason}.`, reasonOptions.map(item => `To ${item}.`)],
-      [`What happened at the end?`, `${name} ${outcome}.`, outcomeOptions.map(item => `${name} ${item}.`)]
-    ];
-    const [prompt, correct, sourceOptions] = specs[questionType];
-    const distractors = sourceOptions.filter(item => item !== correct);
+      ? `On ${day}, ${name} visited ${place} with a small school team. The team had first planned to go to ${dPlace}, but that visit was moved to another week. Their main task was to ${action}, while another group was asked to ${dAction}. Before starting, they discussed safety rules and divided the work fairly. ${name}'s team chose this activity because they wanted to ${reason}. ${friend}, who was in the other group, wanted to ${dReason}. Although one part of the task was difficult, the team exchanged ideas and continued carefully. By the end of the visit, ${friend} ${dOutcome}, while ${name} ${outcome} and wrote a reflection for the next class.`
+      : `On ${day}, ${name} wanted to visit ${dPlace}, but it was closed, so ${name} went to ${place} after school. ${name} planned to ${action}, not ${dAction}. ${name}'s class hoped to ${reason}, while ${friend} wanted to ${dReason}. In the end, ${friend} ${dOutcome}, and ${name} ${outcome}.`;
+    const prompts = [`Where did ${name} go?`, `What did ${name} plan to do?`, `Why did ${name} choose the activity?`, `What happened to ${name} at the end?`];
+    const prompt = `${passage}\n\n${prompts[questionType]}`;
+    const decoyOption = format(questionType, decoy[questionType], name);
+    const pool = scenarios.filter(item => item !== scenario && item !== decoy).map(item => format(questionType, item[questionType], name));
+    const options = [correct, ...pickDistractors(correct, pool, { count: 3, prompt, variety: Math.floor(index / 4), fixed: [decoyOption] })];
     return {
       id: `${longMode ? 'LONG' : 'SHORT'}_${index}`,
       passage,
-      prompt: `${passage}\n\n${prompt}`,
+      prompt,
       correct,
-      options: [correct, ...shuffleCopy(distractors).slice(0, 3)]
+      options
     };
   });
 }
 
+// Translation distractors: one option keeps the same action but changes the
+// sentence frame (tests the grammar), two keep the same frame but change the
+// action (tests vocabulary). All four therefore look alike.
+function translationOptions(pairs, pair, index, actionCount, frameCount) {
+  const actionIndex = Math.floor(index / frameCount), frameIndex = index % frameCount;
+  const sameAction = pairs.filter((item, i) => Math.floor(i / frameCount) === actionIndex && i !== index).map(item => item.jpn);
+  const sameFrame = pairs.filter((item, i) => i % frameCount === frameIndex && i !== index).map(item => item.jpn);
+  const [frameTwin] = pickDistractors(pair.jpn, sameAction, { count: 1, variety: actionIndex });
+  const vocabulary = pickDistractors(pair.jpn, sameFrame, { count: 3, variety: actionIndex + frameIndex, fixed: [frameTwin] });
+  const options = [pair.jpn, ...vocabulary];
+  if (auditChoiceSet({ correct: pair.jpn, choices: options }).length) {
+    return [pair.jpn, ...pickDistractors(pair.jpn, [...sameAction, ...sameFrame], { count: 3, variety: index })];
+  }
+  return options;
+}
+
+const BANK_CACHE = new Map();
+// Banks are deterministic, so build each mode once and hand out copies.
 export function getEnglishQuestionBank(mode = 'BASIC') {
+  if (!BANK_CACHE.has(mode)) BANK_CACHE.set(mode, buildEnglishQuestionBank(mode));
+  return BANK_CACHE.get(mode).map(question => ({ ...question, options: [...question.options] }));
+}
+
+function buildEnglishQuestionBank(mode) {
   const basicActions = [
     ['read picture books', '絵本を読む'], ['play soccer', 'サッカーをする'], ['practice the piano', 'ピアノを練習する'], ['draw animals', '動物の絵を描く'],
     ['visit the library', '図書館へ行く'], ['help my family', '家族を手伝う'], ['cook breakfast', '朝ごはんを作る'], ['water the flowers', '花に水をやる'],
@@ -129,9 +161,12 @@ export function getEnglishQuestionBank(mode = 'BASIC') {
     : mode === 'EIKEN3'
       ? expandNaturalEnglishPairs(eiken3Actions, eiken3Frames, 'E3')
       : expandNaturalEnglishPairs(basicActions, basicFrames, 'BASIC');
-  return pairs.map((pair, index) => {
-    const distractors = [1, 7, 19].map(offset => pairs[(index + offset) % pairs.length].jpn);
-    return { id: pair.id, prompt: `「${pair.eng}」の意味として最も近いものは？`, correct: pair.jpn, options: [pair.jpn, ...distractors] };
-  });
+  const frameCount = mode === 'EIKEN2' ? eiken2Frames.length : mode === 'EIKEN3' ? eiken3Frames.length : basicFrames.length;
+  return pairs.map((pair, index) => ({
+    id: pair.id,
+    prompt: `「${pair.eng}」の意味として最も近いものは？`,
+    correct: pair.jpn,
+    options: translationOptions(pairs, pair, index, pairs.length / frameCount, frameCount)
+  }));
 }
 

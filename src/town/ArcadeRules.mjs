@@ -38,6 +38,14 @@ export function startRun(s,mode,seed=Date.now()){
  const e=s.expansion??=newExpansion();
  return e.runs[mode]??=( {mode,seed:seed>>>0,stage:1,math:s.math,english:s.english,hearts:3,streak:0,solved:false,memoryIndex:0,hinted:false});
 }
+// [English, picture, Chinese, Japanese]; every topic has at least three words.
+export const RUNNER_TOPICS=[
+ [['apple','🍎','苹果','りんご'],['banana','🍌','香蕉','バナナ'],['milk','🥛','牛奶','ミルク'],['bread','🍞','面包','パン'],['carrot','🥕','胡萝卜','にんじん']],
+ [['cat','🐱','猫','ねこ'],['frog','🐸','青蛙','かえる'],['dog','🐶','狗','いぬ'],['rabbit','🐰','兔子','うさぎ']],
+ [['sun','☀️','太阳','たいよう'],['star','⭐','星星','ほし'],['moon','🌙','月亮','つき'],['cloud','☁️','云','くも']],
+ [['book','📘','书','ほん'],['ball','⚽','球','ボール'],['hat','🎩','帽子','ぼうし'],['umbrella','☂️','伞','かさ']],
+ [['tree','🌳','树','き'],['flower','🌷','花','はな'],['leaf','🍁','叶子','はっぱ'],['cactus','🌵','仙人掌','サボテン']]
+];
 function random(seed){let a=seed>>>0;return ()=>{a+=0x6d2b79f5;let t=a;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return ((t^(t>>>14))>>>0)/4294967296;};}
 export function questionFor(r){
  const rng=random((r.seed+Math.imul(r.stage,2654435761))>>>0),pick=n=>Math.floor(rng()*n),band=Math.min(4,Math.floor((r.stage-1)/8));
@@ -49,9 +57,11 @@ export function questionFor(r){
  else{answer=a;question=`${a*b} ÷ ${b} = ?`;explanation=`${a*b} ÷ ${b} = ${answer}`;}
  let options;
  if(r.mode==='runner'){
-  const vocab=[['apple','🍎','苹果','りんご'],['banana','🍌','香蕉','バナナ'],['book','📘','书','ほん'],['cat','🐱','猫','ねこ'],['frog','🐸','青蛙','かえる'],['sun','☀️','太阳','たいよう'],['tree','🌳','树','き'],['milk','🥛','牛奶','ミルク'],['star','⭐','星星','ほし']];
-  const index=pick(vocab.length),word=vocab[index];
-  options=[word,vocab[(index+1+pick(3))%vocab.length],vocab[(index+5+pick(3))%vocab.length]].map(v=>v[1]);answer=word[1];
+  // Picture choices come from the same topic (three animals, three foods...)
+  // so the child must read the word instead of spotting the odd topic.
+  const topic=RUNNER_TOPICS[pick(RUNNER_TOPICS.length)],index=pick(topic.length),word=topic[index];
+  const rest=topic.filter((_,i)=>i!==index),first=rest.splice(pick(rest.length),1)[0],second=rest[pick(rest.length)];
+  options=[word,first,second].map(v=>v[1]);answer=word[1];
   question=r.english===1?word[0]:r.english===2?`Find the ${word[0]}.`:`Please deliver the ${word[0]} to the blue gate.`;
   explanation=`${word[0]} = ${word[1]} · ${word[2]} · ${word[3]}`;
  }else if(r.mode==='garden'){

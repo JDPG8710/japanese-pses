@@ -17,7 +17,9 @@ const browser=await chromium.launch({channel:'chrome',headless:true});
 const origin=process.env.BASE_URL||`http://127.0.0.1:${server.address().port}`;
 await mkdir('.wrangler/japanese-entry',{recursive:true});
 try{
- for(const width of [320,390,768,1280]){
+ // Cover each HUD layout and its edges: 4x2 grid (≤1023px, incl. tablets),
+ // one row without title (1024–1279px) and one row with title (≥1280px).
+ for(const width of [320,390,600,641,768,820,1023,1024,1280]){
   const page=await browser.newPage({viewport:{width,height:900}}),errors=[];
   page.on('pageerror',e=>errors.push(e.message));
   await page.goto(origin+'/?course=jp');
@@ -40,5 +42,5 @@ try{
   await page.screenshot({path:`.wrangler/japanese-entry/${width}.png`,fullPage:true});
   assert.deepEqual(errors,[]);await page.close();
  }
- console.log('Japanese course: direct language, grade/game entry, reachable HUD, no overlap/overflow at 320/390/768/1280px passed.');
+ console.log('Japanese course: direct language, grade/game entry, reachable HUD, no overlap/overflow at 320–1280px (9 widths) passed.');
 }finally{await browser.close();await new Promise(r=>server.close(r));}

@@ -661,17 +661,44 @@ button {
   .shop-hint-flash { animation: none !important; outline: 4px solid rgba(34,211,238,.7); outline-offset: -4px; }
 }
 
-/* Keep all eight Japanese-course controls reachable on narrow screens. */
-#japanese-hud .glass-panel { min-height:44px; }
-@media (max-width: 640px) {
-  #japanese-hud { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:4px; }
+/* Japanese-course HUD and the centred grade menu.
+   The HUD holds eight controls and the grade menu is fixed and centred just
+   below it, so the HUD must never be taller than the space above the menu.
+   Labels never wrap in the one-row layouts (a wrapped label made a control
+   two or three lines tall and pushed it under the menu at 641–1023px).
+   ≤1023px: the controls form a 4×2 grid and the grade menu, subject bar and
+   map move below it. 1024–1279px: one row without the title.
+   ≥1280px: one row with the title. */
+#japanese-hud .glass-panel { min-height:44px; white-space:nowrap; }
+@media (max-width: 1023px) {
+  #japanese-hud { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:4px; top:6px !important; left:8px !important; right:8px !important; }
   #japanese-hud > div { display:contents; }
   #japanese-hud > div:first-child > div { display:none; }
-  #japanese-hud .glass-panel { width:100%; min-width:0; max-width:none; min-height:44px; margin:0; font-size:11px; justify-content:center; text-align:center; white-space:normal; overflow-wrap:anywhere; }
-  #japanese-hud .glass-panel { height:48px; min-height:48px !important; line-height:16px; }
-  #japanese-hud #user-profile-btn { width:100%; gap:2px; overflow:hidden; }
+  #japanese-hud .glass-panel { display:flex; align-items:center; width:100%; min-width:0; max-width:none; height:48px; min-height:48px !important; margin:0; padding-inline:.4rem !important; font-size:13px; line-height:16px; justify-content:center; text-align:center; white-space:normal; overflow:hidden; overflow-wrap:anywhere; }
+  #japanese-hud #user-profile-btn { width:100%; max-width:none; gap:4px; }
   #japanese-hud #user-profile-btn span:last-child { display:none; }
   #grade-tabs-container { top:116px !important; }
+}
+@media (max-width: 768px) {
   #subject-nav { top:168px !important; }
   .map-node-layer { top:228px; }
+}
+@media (min-width: 769px) and (max-width: 1023px) {
+  .map-caption { top:10.5rem; }
+  .map-node-layer { top:13.75rem; }
+}
+@media (max-width: 640px) {
+  #japanese-hud .glass-panel { font-size:11px; gap:2px; }
+}
+@media (min-width: 1024px) {
+  #japanese-hud { gap:8px; }
+  #japanese-hud > div:first-child { min-width:0; }
+  #japanese-hud > div:first-child > div { min-width:0; }
+  #japanese-hud > div:first-child > div > * { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+}
+@media (min-width: 1024px) and (max-width: 1279px) {
+  #japanese-hud #current-user-name { max-width:7rem; overflow:hidden; text-overflow:ellipsis; }
+  #japanese-hud > div:first-child > div,
+  #japanese-hud #user-profile-btn span:last-child { display:none; }
+  #japanese-hud > div:last-child { gap:8px; }
 }

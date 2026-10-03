@@ -83,7 +83,7 @@
 .town-immersive .town-main{position:fixed;inset:0;z-index:1000;width:100%;height:var(--town-view-height,100dvh);max-width:none;margin:0;padding:0;background:#bfe8fb}
 .town-immersive .town-layout{display:block;width:100%;height:100%}
 .town-immersive .world-card{display:flex;flex-direction:column;height:100%;border:0;border-radius:0}
-.town-immersive .world-top,.town-immersive .page-heading,.town-immersive .quest-panel,.town-immersive .arcade-panel,.town-immersive .place-links,.town-immersive #save-status{display:none}
+.town-immersive .world-top,.town-immersive .page-heading,.town-immersive .quest-panel,.town-immersive .arcade-panel,.town-immersive .place-links,.town-immersive #save-status,.town-immersive #town-progression,.town-immersive #town-online{display:none}
 .town-immersive .world-task{flex:0 0 auto;max-height:96px;overflow:auto;padding:8px 14px;font-size:18px}
 .town-immersive .scene-viewport{flex:1 1 auto;min-height:0}
 .town-immersive .scene-viewport #town-canvas{height:100%!important;min-height:0!important;max-height:none!important}

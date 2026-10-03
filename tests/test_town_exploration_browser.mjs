@@ -16,6 +16,7 @@ try{
   assert.equal(await page.locator('[data-direction],[data-camera="left"],[data-camera="right"]').count(),0);
   await page.locator('[data-town-fs]').tap();await page.locator('html.town-immersive').waitFor({state:'attached'});
   await page.waitForTimeout(250);const area=await page.locator('.scene-viewport').boundingBox();assert.ok(area.height>=820&&area.y<2,fullscreen+' must fill viewport');
+  assert.equal(await page.locator('#town-progression').isVisible(),false);assert.equal(await page.locator('#town-online').isVisible(),false);
   await page.locator('.town-help-control').tap();await page.locator('#town-dialog[open]').waitFor();await page.locator('.close-button').tap();
   const cdp=await context.newCDPSession(page),stick=await page.locator('.town-joystick').boundingBox(),jump=await page.locator('[data-camera="jump"]').boundingBox();
   const finger={id:0,x:stick.x+stick.width/2+28,y:stick.y+stick.height/2-32},finger2={id:1,x:jump.x+jump.width/2,y:jump.y+jump.height/2};
@@ -26,6 +27,7 @@ try{
   await page.waitForTimeout(200);const stopped=await position(page);await page.waitForTimeout(200);const still=await position(page);assert.ok(Math.hypot(still[0]-stopped[0],still[2]-stopped[2])<.1);
   await page.screenshot({path:`.wrangler/town-exploration/fullscreen-${fullscreen}.png`});
   await page.locator('[data-town-fs]').tap();await page.locator('html:not(.town-immersive)').waitFor();assert.equal(await page.evaluate(()=>document.body.style.overflow),'');
+  assert.equal(await page.locator('#town-progression').isVisible(),true);assert.equal(await page.locator('#town-online').isVisible(),true);
   console.log(`ok - ${fullscreen} fullscreen, help, analog movement/steering + simultaneous jump and release`);
   if(fullscreen==='missing'){
    await page.locator('.town-ride').selectOption('car');await page.locator('#town-canvas[data-vehicle="car"]').waitFor();assert.equal(await page.locator('[data-camera="jump"]').isVisible(),false);

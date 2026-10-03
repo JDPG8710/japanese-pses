@@ -51,7 +51,7 @@ try{
    const inside=await feedback.evaluate(el=>{const r=el.getBoundingClientRect(),c=document.querySelector('#town-canvas').getBoundingClientRect();return r.left>=c.left&&r.right<=c.right&&r.top>=c.top&&r.bottom<=c.bottom;});assert.equal(inside,true,'fullscreen contains feedback');
   }
   await page.screenshot({path:`.wrangler/town-feedback/${mode}-${width}.png`,fullPage:true});
-  await page.locator('[data-next-stage]').click();assert.equal(await feedback.count(),0);assert.equal(await page.locator('.game-feedback').isVisible(),false);assert.equal((await readSave(page)).coins,coins);
+  assert.equal(await page.locator('[data-next-stage]').count(),0);await page.waitForFunction(()=>document.querySelector('.arcade-panel').dataset.solved==='false');assert.equal(await feedback.count(),0);assert.equal(await page.locator('.game-feedback').isVisible(),false);assert.equal((await readSave(page)).coins,coins);
   await page.locator('[data-exit-game]').click();assert.equal(await page.locator('.game-feedback').isVisible(),false);
   assert.deepEqual(errors,[]);await context.close();console.log(`PASS ${mode} ${width}px: in-game animation, reward and next/exit cleanup`);
  }

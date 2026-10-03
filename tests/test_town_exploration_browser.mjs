@@ -15,7 +15,7 @@ try{
   await page.locator('#town-canvas[data-renderer="webgl-3d"][data-landmarks="themed-v1"]').waitFor();
   assert.equal(await page.locator('[data-direction],[data-camera="left"],[data-camera="right"]').count(),0);
   await page.locator('[data-town-fs]').tap();await page.locator('html.town-immersive').waitFor({state:'attached'});
-  await page.waitForTimeout(250);const area=await page.locator('.scene-viewport').boundingBox();assert.ok(area.height>=820&&area.y<2,fullscreen+' must fill viewport');
+  await page.waitForTimeout(250);const area=await page.locator('.scene-viewport').boundingBox();const hint=await page.locator('.map-caption').boundingBox();assert.ok(hint.y<2&&Math.abs(area.y-hint.height)<2&&Math.abs(area.y+area.height-844)<2&&area.width>=388,fullscreen+' must fill viewport below the dedicated hint row');
   assert.equal(await page.locator('#town-progression').isVisible(),false);assert.equal(await page.locator('#town-online').isVisible(),false);
   await page.locator('.town-help-control').tap();await page.locator('#town-dialog[open]').waitFor();await page.locator('.close-button').tap();
   const cdp=await context.newCDPSession(page),stick=await page.locator('.town-joystick').boundingBox(),jump=await page.locator('[data-camera="jump"]').boundingBox();

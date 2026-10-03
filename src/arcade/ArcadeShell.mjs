@@ -1,3 +1,4 @@
+import {scheduleAutoAdvance,autoAdvanceText} from '../town/AutoAdvance.mjs';
 import {rankingMarkup} from './ArcadeRanking.mjs';
 import {arcadeText} from './ArcadeText.mjs';
 import {progressionLabel,townPointsLabel} from '../town/TownProgression.mjs';
@@ -83,6 +84,7 @@ export function openArcadeShell({gameId, locale = 'en', onExit, onRetry}) {
   let progressLevel=1,rankStatus=null;
   let paused = false;
   let ended = false;
+  let cancelAdvance=()=>{};
   let destroyed = false;
   let enteredFullscreen = false;
   const board=document.createElement('div');root.querySelector('.arcade-overlay-actions').before(board);
@@ -116,6 +118,10 @@ export function openArcadeShell({gameId, locale = 'en', onExit, onRetry}) {
     root.querySelector('.arcade-hard').textContent = progressionLabel(difficulty,locale);
   }
 
+  function restart(){
+    if(destroyed)return;cancelAdvance();rankStatus=null;overlay.classList.add('hidden');ended=false;paused=false;pauseBtn.disabled=false;pauseBtn.textContent=t.pause;root.querySelector('[data-shell="retry"]').hidden=false;root.querySelector('[data-auto-next]')?.remove();onRetry?.();
+  }
+
   function showResult({cleared, score, detail = '', reward, next}) {
     if (destroyed || ended) return;
     ended = true;
@@ -129,6 +135,8 @@ export function openArcadeShell({gameId, locale = 'en', onExit, onRetry}) {
     root.querySelector('[data-overlay-kicker]').textContent = cleared ? '★' : '×';
     root.querySelector('[data-overlay-title]').textContent = cleared ? t.cleared : t.gameOver;
     root.querySelector('[data-overlay-body]').textContent = `${t.score} ${Math.floor(score)}${detail ? ` · ${detail}` : ''} · ${t.best} ${saved}${reward?.awarded ? ` · +${townPointsLabel(reward.points,locale)} · ${progressionLabel(next,locale)}` : ''}`;
+    root.querySelector('[data-shell="retry"]').hidden=!!cleared;
+    if(cleared){const message=document.createElement('p');message.dataset.autoNext='';message.setAttribute('role','status');message.textContent=autoAdvanceText(locale);root.querySelector('.arcade-overlay-actions').before(message);cancelAdvance=scheduleAutoAdvance(restart);}
     root.querySelector('[data-shell="retry"]').textContent = cleared ? ({zh:'下一关 →',ja:'つぎのレベル →',en:'Next challenge →'}[locale] || 'Next challenge →') : t.retry;
   }
 
@@ -160,6 +168,7 @@ export function openArcadeShell({gameId, locale = 'en', onExit, onRetry}) {
   function destroy() {
     if (destroyed) return;
     destroyed = true;
+    cancelAdvance();
     exitFs();
     resizeObs?.disconnect?.();
     window.removeEventListener('resize', fit);
@@ -179,13 +188,7 @@ export function openArcadeShell({gameId, locale = 'en', onExit, onRetry}) {
       return;
     }
     if (action === 'retry') {
-      rankStatus=null;
-      overlay.classList.add('hidden');
-      ended = false;
-      paused = false;
-      pauseBtn.disabled = false;
-      pauseBtn.textContent = t.pause;
-      onRetry?.();
+      restart();
       return;
     }
     if (action === 'board'){if(ended){void refreshRanking();return;}setPaused(!paused);return;}

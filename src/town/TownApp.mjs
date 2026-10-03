@@ -1,3 +1,4 @@
+import {scheduleAutoAdvance,autoAdvanceText} from './AutoAdvance.mjs';
 import {setupTownFullscreen as createTownFullscreen} from './TownFullscreen.mjs';
 import {TEXT} from './TownText.mjs?v=2';
 import {getTownAudio} from './TownAudio.mjs?v=1';
@@ -14,17 +15,19 @@ let storage;try{storage=localStorage;}catch{}
 const params=new URLSearchParams(location.search);let savedLocale;try{savedLocale=storage?.getItem('world-locale');}catch{}
 let locale=[params.get('locale'),savedLocale,navigator.language?.slice(0,2),'en'].find(l=>TEXT[l]);
 const state=loadState(storage),w=()=>TEXT[locale],dialog=$('town-dialog');
+let cancelAdvance=()=>{};
 let modal=null,translated=false,feedback='',feedbackGood=false,selected=null,saveOK=true,scene,expansion,multiplayer,syncTownFs=()=>{};
 const label=p=>p[locale]||p.en;
 function persist(){saveOK=saveState(storage,state);$('save-status').textContent=saveOK?w().saved:w().saveFail;$('save-status').classList.toggle('save-error',!saveOK);}
 function button(action,text,cls=''){return `<button type="button" data-action="${action}" class="${cls}">${esc(text)}</button>`;}
 function shell(title,content,kind=''){
+  cancelAdvance();
   expansion?.disposePreview();
   $('dialog-body').innerHTML=`<div class="dialog-heading"><div><p class="eyebrow">${esc(w().chapter)}</p><h2 id="dialog-title">${esc(title)}</h2></div>${button('close','×','close-button')}</div><div class="dialog-content ${kind}">${content}</div>`;
   dialog.querySelector('.close-button').setAttribute('aria-label',w().close);
   if(!dialog.open){dialog.showModal();dialog.querySelector('button')?.focus();}
 }
-function close(){expansion?.disposePreview();dialog.close();modal=null;feedback='';translated=false;scene?.stop();$('town-canvas').focus({preventScroll:true});window.speechSynthesis?.cancel();}
+function close(){cancelAdvance();expansion?.disposePreview();dialog.close();modal=null;feedback='';translated=false;scene?.stop();$('town-canvas').focus({preventScroll:true});window.speechSynthesis?.cancel();}
 dialog.addEventListener('cancel',e=>{e.preventDefault();close();});
 function refresh(){
   $('town-guide-link').href=`/${locale}/guides/town-shop`;
@@ -77,7 +80,7 @@ function renderModal(){
   }
   if(modal==='home'){renderHome();return;}
   if(modal==='reward'){
-    shell(w().reward,`<div class="reward-star" aria-hidden="true">✦</div><p>${w().rewardText}</p><div class="rewards"><b>${w().rewardCoins}</b><b>${w().rewardXP}</b></div>${state.mission===8?`<p class="gift">🪴 ${w().plantGift}</p>`:''}<p>${esc(w().missions[state.mission]||w().done)}</p>${button('reward-next',w().next,'primary wide')}`,'reward');return;
+    shell(w().reward,`<div class="reward-star" aria-hidden="true">✦</div><p>${w().rewardText}</p><div class="rewards"><b>${w().rewardCoins}</b><b>${w().rewardXP}</b></div>${state.mission===8?`<p class="gift">🪴 ${w().plantGift}</p>`:''}<p>${esc(w().missions[state.mission]||w().done)}</p><p data-auto-next role="status">${autoAdvanceText(locale)}</p>`,'reward');const mission=state.mission;cancelAdvance=scheduleAutoAdvance(()=>{if(modal!=='reward'||state.mission!==mission)return;close();scene.travel(mission>=1&&mission<=7?'shop':mission===8?'home':'guide');});return;
   }
   if(modal==='certificate')certificate();
 }
@@ -106,7 +109,7 @@ function submit(){
   feedback=result.ok?w().correct:w()[phase==='basket'?'wrongBasket':phase==='total'?'wrongTotal':'wrongChange'];
   persist();refresh();if(result.done){modal='reward';translated=false;}renderModal();
   if(result.ok)dialog.querySelector('.dialog-content')?.classList.add('game-success-animate');
-  if(result.done)dialog.querySelector('[data-action="reward-next"]')?.focus();else if(!result.ok)$('order-feedback')?.scrollIntoView({block:'nearest'});
+  if(!result.ok)$('order-feedback')?.scrollIntoView({block:'nearest'});
 }
 function listen(){
   if(!state.active)return;
@@ -120,7 +123,6 @@ dialog.addEventListener('click',e=>{
   if(a==='begin'){state.started=true;persist();close();return;}
   if(a==='accept'&&state.mission===0){completeMission(state,0);persist();refresh();modal='reward';renderModal();return;}
   if(a==='celebrate'&&state.mission===9){completeMission(state,9);persist();refresh();modal='certificate';renderModal();return;}
-  if(a==='reward-next'){close();if(state.mission>=1&&state.mission<=7)scene.travel('shop');return;}
   if(a==='listen'){listen();return;}
   if(a==='translate'&&state.active){translated=!translated;renderModal();return;}
   if(a==='hint'&&state.active){if(!state.active.hinted){state.stats.hints++;state.active.hinted=true;persist();}renderModal();return;}

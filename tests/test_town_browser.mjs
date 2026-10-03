@@ -18,7 +18,7 @@ try{
   await page.locator('#town-canvas').focus();const before=(await state(page)).player;
   await page.keyboard.down('ArrowRight');await page.waitForTimeout(300);await page.keyboard.up('ArrowRight');await page.waitForTimeout(100);
   assert.ok(Math.abs((await state(page)).player.x-before.x)>25);mark('keyboard walks the actual character');
-  await go(page,'guide');await page.locator('[data-action="accept"]').click();assert.equal((await state(page)).mission,1);await page.locator('[data-action="reward-next"]').click();await page.locator('[data-product="0"]').waitFor();mark('walk to Piko, accept work, and walk to Mia');
+  await go(page,'guide');await page.locator('[data-action="accept"]').click();assert.equal((await state(page)).mission,1);await page.locator('.reward').waitFor({state:'hidden'});await page.locator('[data-product="0"]').waitFor();mark('walk to Piko, accept work, and walk to Mia');
   for(let mission=1;mission<=7;mission++){
     const items=fixtures[mission],total=items.reduce((sum,n,i)=>sum+n*[3,2,4,5][i],0),paid=Math.ceil((total+1)/10)*10;
     assert.equal((await state(page)).mission,mission);
@@ -46,11 +46,11 @@ try{
       else await page.locator('#coin-answer').fill(String(paid-total));
       await page.locator('[data-action="submit"]').click();
     }
-    await page.locator('[data-action="reward-next"]').waitFor();assert.equal((await state(page)).mission,mission+1);await page.locator('[data-action="reward-next"]').click();
+    await page.locator('.reward [data-auto-next]').waitFor();assert.equal((await state(page)).mission,mission+1);await page.locator('.reward').waitFor({state:'hidden'});
     if(mission<7)await page.locator('.order-dialog').waitFor();
   }
   mark('all seven shop missions: English items, total, change and three full sales');
-  await go(page,'home');assert.ok((await state(page)).owned.includes('plant'));await page.locator('[data-furniture="plant"]').click();await page.locator('[data-slot="4"]').click();assert.equal((await state(page)).mission,9);
+  await page.locator('.home-dialog').waitFor();assert.ok((await state(page)).owned.includes('plant'));await page.locator('[data-furniture="plant"]').click();await page.locator('[data-slot="4"]').click();assert.equal((await state(page)).mission,9);
   await page.locator('[data-furniture="books"]').click();assert.equal((await state(page)).coins,37);await page.locator('[data-slot="0"]').click();await page.locator('[data-furniture="plant"]').click();await page.locator('[data-slot="8"]').click();assert.equal((await state(page)).room[4],null);assert.equal((await state(page)).room[8],'plant');
   await page.screenshot({path:`${artifacts}/desktop-home.png`,fullPage:true});await page.locator('.close-button').click();mark('earn, buy and move furniture without duplicate rewards');
   await go(page,'guide');await page.locator('[data-action="celebrate"]').click();assert.equal((await state(page)).mission,10);assert.equal((await state(page)).xp,100);assert.equal((await state(page)).coins,42);await page.screenshot({path:`${artifacts}/certificate.png`,fullPage:true});
@@ -60,7 +60,7 @@ try{
   const phone=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,reducedMotion:'reduce'}),mobile=await phone.newPage();await open(mobile);
   // Walk away from Piko at spawn: forward movement is now correctly stopped by his solid body.
   const start=(await state(mobile)).player;await mobile.locator('.town-joystick').scrollIntoViewIfNeeded();const dp=await mobile.locator('.town-joystick').boundingBox();await mobile.mouse.move(dp.x+dp.width/2,dp.y+dp.height/2+40);await mobile.mouse.down();await mobile.waitForTimeout(350);await mobile.mouse.up();await mobile.waitForTimeout(100);assert.ok(Math.hypot((await state(mobile)).player.x-start.x,(await state(mobile)).player.y-start.y)>25);mark('held mobile direction controls move the character');
-  await mobile.locator('#character').tap();await mobile.locator('[data-avatar="2"]').tap();await mobile.locator('#math-level').selectOption('3');await mobile.locator('#english-level').selectOption('3');await mobile.locator('.close-button').tap();await go(mobile,'guide');await mobile.locator('[data-action="accept"]').tap();await mobile.locator('[data-action="reward-next"]').tap();await mobile.locator('.order-dialog').waitFor();assert.equal((await state(mobile)).active.math,3);assert.match(await mobile.locator('#english-order').innerText(),/picnic/);
+  await mobile.locator('#character').tap();await mobile.locator('[data-avatar="2"]').tap();await mobile.locator('#math-level').selectOption('3');await mobile.locator('#english-level').selectOption('3');await mobile.locator('.close-button').tap();await go(mobile,'guide');await mobile.locator('[data-action="accept"]').tap();await mobile.locator('.order-dialog').waitFor();assert.equal((await state(mobile)).active.math,3);assert.match(await mobile.locator('#english-order').innerText(),/picnic/);
   await mobile.locator('[data-product="0"]').tap();await mobile.locator('.close-button').tap();await mobile.locator('#character').tap();await mobile.locator('#math-level').selectOption('1');await mobile.locator('.close-button').tap();await go(mobile,'shop');assert.equal((await state(mobile)).active.math,3);mark('independent difficulty levels, outfit and frozen active order');
   for(const viewport of [{width:320,height:568},{width:390,height:844},{width:820,height:1180},{width:1180,height:820}]){
     await mobile.setViewportSize(viewport);assert.ok(await mobile.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert.ok(await mobile.locator('#town-dialog').evaluate(d=>d.scrollWidth<=d.clientWidth+1));await mobile.screenshot({path:`${artifacts}/order-${viewport.width}.png`,fullPage:true});

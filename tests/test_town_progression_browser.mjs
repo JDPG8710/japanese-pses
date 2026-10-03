@@ -28,14 +28,16 @@ try{
   assert.equal(await page.evaluate(()=>testState.townProgress.infiniteRound),0);
   assert.equal(await page.evaluate(()=>testState.townProgress.points),24);
   await page.keyboard.press('1');assert.equal(await page.evaluate(()=>testState.townProgress.points),24);
-  await page.locator('[data-shell="retry"]').click();
+  assert.equal(await page.locator('[data-shell="retry"]:visible').count(),0);
+  await page.locator('[data-overlay]').waitFor({state:'hidden'});
   assert.match(await page.locator('.arcade-hard').innerText(),/20 \/ 20/);
   await complete();
   assert.equal(await page.evaluate(()=>testState.townProgress.infiniteRound),1);
   assert.equal(await page.evaluate(()=>testState.townProgress.points),49);
   assert.match(await page.locator('[data-overlay-body]').innerText(),/无限挑战/);
   await page.screenshot({path:`.wrangler/town-progression/clear20-${width}.png`,fullPage:true});
-  await page.locator('[data-shell="retry"]').click();
+  assert.equal(await page.locator('[data-shell="retry"]:visible').count(),0);
+  await page.locator('[data-overlay]').waitFor({state:'hidden'});
   assert.match(await page.locator('.arcade-hard').innerText(),/无限挑战/);
   await page.locator('.arcade-hud [data-shell="back"]').click();
   assert.equal(await page.locator('.arcade-shell').count(),0);

@@ -19,7 +19,7 @@ try{
  for(const mode of ['obby','tower']){
   if(mode==='tower'){await page.locator('[data-exit-game]').last().click();await enterBuilding(page,'tower');}
   for(const target of [0,1,2]){
-   let s=await read(page),r=s.expansion.runs[mode];if(r.solved){await page.locator('[data-next-stage]').click();r=(await read(page)).expansion.runs[mode];}if(r.hearts===0){await page.locator('[data-retry-stage]').click();r=(await read(page)).expansion.runs[mode];}
+   let s=await read(page),r=s.expansion.runs[mode];if(r.solved){await page.waitForFunction(mode=>!JSON.parse(localStorage.getItem('piko-town-v1')).expansion.runs[mode].solved,mode);r=(await read(page)).expansion.runs[mode];}if(r.hearts===0){await page.locator('[data-retry-stage]').click();r=(await read(page)).expansion.runs[mode];}
    const previous=r.hearts;await reachSkyTarget(page,mode,target);await page.waitForFunction(({mode,previous})=>{const r=JSON.parse(localStorage.getItem('piko-town-v1')).expansion.runs[mode];return r.solved||r.hearts<previous;},{mode,previous},{timeout:25000});
    s=await read(page);r=s.expansion.runs[mode];assert.equal(r.solved,questionFor(r).answer===target,`must reach the intended ${mode} target ${target}`);
   }

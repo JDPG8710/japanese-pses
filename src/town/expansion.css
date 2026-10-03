@@ -113,3 +113,10 @@ body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}input,
 @media(prefers-reduced-motion:reduce){.game-feedback *,.game-success-animate,.game-success-animate *{animation:none!important}.game-feedback-spark{display:none}}
 
 .scene-viewport .course-controls [data-next-stage],.scene-viewport .course-controls [data-retry-stage]{width:auto;flex:1;min-width:0;max-width:180px}
+
+/* Keep walking hints in their own row, outside the overlaid controls. */
+.world-card > .map-caption{position:static;display:flex;min-height:32px;padding:6px 12px;background:#fffdf5;color:#244932;max-width:none}
+.world-card > .map-caption #walk-tip{max-width:100%;font-size:12px;line-height:1.5;padding:0;background:transparent}
+
+.world-card > .map-caption #walk-tip{visibility:visible}
+body.playing-island .world-card > .map-caption{display:none}

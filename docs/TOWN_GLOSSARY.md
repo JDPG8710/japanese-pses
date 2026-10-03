@@ -43,6 +43,14 @@ copies, CJK characters in English and Chinese-only hanzi in Japanese.
 | Grown-up approval | 家长确认 | a grown-up's OK | おうちの人のOK |
 | Lives (arcade) | 生命 | Lives | ライフ |
 | Combo | 连击 | Combo | コンボ |
+| Loading screen title | Piko 学习小镇准备中 | Getting Piko Town ready | ピコタウンをじゅんび中 |
+| Reload (after an error) | 重新加载 | Reload | もういちどよみこむ |
+| Design parts / assets | 设计零件 | design parts | デザインのパーツ |
+| Machines (designer category) | 精细机械作品 | Machines | メカのさくひん |
+| Finish & animate | 完成作品 · 播放动画 | Finish & animate | かんせい・うごかす |
+| Must-have parts | 必装零件 | must-have parts | ひつようなパーツ |
+| Engine "heart" lessons | 发动机之心 | heart | しんぞう |
+| Celebration done | 看完啦 | Done watching | みおわった |
 
 ## Naming standard: transcreation, not translation
 

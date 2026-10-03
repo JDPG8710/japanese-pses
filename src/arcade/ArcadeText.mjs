@@ -21,7 +21,7 @@ export const ARCADE_TEXT = {
     tip: 'Tip',
     combo: 'Combo',
     games: {
-      bubble: {title:'Dream Builder',tag:'DRAW & BUILD',blurb:'Design planes, cars, phones, rockets, robots, boats and houses on a big canvas – then spin your creation in 3D!',tip:'Open the floating menus to build, draw and colour. In 3D, drag to spin; pinch or scroll to zoom.'},
+      bubble: {title:'Dream Builder',tag:'DRAW & BUILD',blurb:'Design planes, cars, phones, rockets, robots, boats, houses and engines – then build, colour and watch your creation move!',tip:'Open the floating menus to build, draw and colour. In 3D, drag to spin; pinch or scroll to zoom.'},
       rhythm: {title:'Beat Parade',tag:'RHYTHM',blurb:'Bang four bright drums to a happy beat and build a combo!',tip:'Tap a drum (or press D/F/J/K or 1–4) when its note hits the white line.'},
       race: {
         title: 'Piko Circuit',
@@ -98,7 +98,7 @@ export const ARCADE_TEXT = {
     tip: '提示',
     combo: '连击',
     games: {
-      bubble: {title:'奇思妙想工坊',tag:'画画 · 组装',blurb:'在大画布上设计飞机、汽车、手机、火箭、机器人、小船和房子，还能转着看 3D 作品！',tip:'打开浮动菜单来组装、上色和画画。3D 里拖动可以旋转，双指或滚轮可以缩放。'},
+      bubble: {title:'奇思妙想工坊',tag:'画画 · 组装',blurb:'在大画布上设计飞机、汽车、手机、火箭、机器人、小船、房子和发动机，做好后还能看 3D 作品动起来！',tip:'打开浮动菜单来组装、上色和画画。3D 里拖动可以旋转，双指或滚轮可以缩放。'},
       rhythm: {title:'咚咚鼓乐队',tag:'音乐节奏',blurb:'跟着星光音乐敲准鼓点，冲连击！',tip:'点一下开始音乐。音符碰到白线时敲鼓，可按 D/F/J/K 或 1–4。'},
       race: {
         title: '皮可赛道',
@@ -175,7 +175,7 @@ export const ARCADE_TEXT = {
     tip: 'ヒント',
     combo: 'コンボ',
     games: {
-      bubble: {title:'つくってラボ',tag:'おえかき・くみたて',blurb:'ひこうき・くるま・スマホ・ロケット・ロボット・ふね・おうちをデザイン。3Dでくるっと見てみよう！',tip:'メニューをひらいて、くみたて・いろぬり。3Dはドラッグでまわして、2本ゆびでズーム。'},
+      bubble: {title:'つくってラボ',tag:'おえかき・くみたて',blurb:'ひこうき・くるま・スマホ・ロケット・ロボット・ふね・おうち・エンジンをデザイン。できたら、うごくところを見てみよう！',tip:'メニューをひらいて、くみたて・いろぬり。3Dはドラッグでまわして、2本ゆびでズーム。'},
       rhythm: {title:'ドンドンたいこ',tag:'リズム',blurb:'4つのたいこで、たのしいリズムにのってたたこう！',tip:'おんぷが白いせんにきたら、たいこをタップ。キーボードは D/F/J/K か 1〜4。'},
       race: {
         title: 'ピコサーキット',

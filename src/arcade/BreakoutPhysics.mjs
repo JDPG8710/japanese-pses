@@ -1,5 +1,5 @@
-export const BREAKOUT_BACK_Z=-6;
-import {breakoutLayoutFor} from './BreakoutLayouts.mjs';
+export const BREAKOUT_BACK_Z=-6-BREAKOUT_FIELD_EXTENSION;
+import {breakoutLayoutFor,BREAKOUT_FIELD_EXTENSION} from './BreakoutLayouts.mjs';
 export function breakoutBrickLayout(D){
  return breakoutLayoutFor(D).bricks;
 }

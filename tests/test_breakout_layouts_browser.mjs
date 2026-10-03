@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {BREAKOUT_FIELD_EXTENSION} from '../src/arcade/BreakoutLayouts.mjs';
 import {mkdir} from 'node:fs/promises';
 import {chromium} from 'playwright-core';
 import {startTownPreview} from '../scripts/preview-town.mjs';
@@ -16,8 +17,8 @@ try{
   }
   assert.equal(signatures.size,20);await boot(20,21);assert.match(await page.locator('.arcade-canvas').getAttribute('data-breakout-layout'),/pattern-1-cycle-1/);await page.locator('.arcade-canvas').screenshot({path:`.wrangler/breakout-layouts/${width}-endless-21.png`});
   // A real pointer launch aimed at the first bumper must bounce, without clearing it.
-  await boot(1);const r=await page.locator('.arcade-canvas').boundingBox(),x=r.x+(.5-1.3/10)*r.width;
-  await page.mouse.move(x,r.y+r.height*.8);await page.waitForTimeout(350);await page.mouse.click(x,r.y+r.height*.8);await page.waitForFunction(()=>game.getState().wallHits>0,{},{timeout:10000});
+  await boot(1);const r=await page.locator('.arcade-canvas').boundingBox(),setup=await page.evaluate(()=>game.getState()),b=setup.ballStates[0],w=setup.wallStates[0],aim=-b.vx*(w.z+w.d/2+setup.difficulty.ballRadius-b.z)/b.vz,halfW=Math.max(6,(6.5+BREAKOUT_FIELD_EXTENSION/2)*r.width/r.height),x=r.x+(.5+aim/(2*halfW))*r.width;
+  await page.mouse.move(x,r.y+r.height*.8);await page.waitForTimeout(350);assert.ok(Math.abs((await page.evaluate(()=>game.getState().paddleX))-aim)<.05,'pointer matches visible playfield after camera fit');await page.mouse.click(x,r.y+r.height*.8);await page.waitForFunction(()=>game.getState().wallHits>0,{},{timeout:10000});
   const s=await page.evaluate(()=>game.getState());assert.equal(s.wallStates.length,1);assert.equal(s.score,0,'steel bumper impact does not award brick points');assert.ok(s.ballStates[0].vz>0,'ball rebounds toward the paddle');
   await page.locator('[data-shell="pause"]').click();await page.evaluate(()=>game.pause());const before=await page.evaluate(()=>game.getState().ballStates);await page.waitForTimeout(120);assert.deepEqual(await page.evaluate(()=>game.getState().ballStates),before);await page.evaluate(()=>{game.destroy();shell.destroy();});
   assert.deepEqual(errors,[]);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));console.log(`Breakout layouts ${width}px: all twenty real 3D scenes, names, steel barriers, endless remix, pointer launch and actual wall rebound passed`);await context.close();

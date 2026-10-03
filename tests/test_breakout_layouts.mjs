@@ -6,6 +6,14 @@ import {createStubCanvas} from '../src/arcade/ArcadeShell.mjs';
 const brickSignatures=new Set(),wallSignatures=new Set();
 for(let level=1;level<=20;level++){
  const D=breakoutDifficultyFor({level}),layout=breakoutLayoutFor(D),walls=layout.walls,bricks=layout.bricks.map(b=>({...b,hits:2}));
+ // Even the nearest permanent bumper must leave half a second at maximum speed.
+ const paddleFront=6.2-.35-D.ballRadius;
+ const nearest=Math.max(...[...walls,...bricks].map(b=>b.z+b.d/2+D.ballRadius));
+ assert.ok(paddleFront-nearest>=8,`level ${level}: reaction corridor is too short`);
+ assert.ok((paddleFront-nearest)/D.ballSpeedMax>=.5);
+ const descending={x:0,z:nearest+.01,vx:.001,vz:D.ballSpeedMax};let paddleHits=0;
+ advanceBreakoutBall(descending,.49,{D,paddleX:0,paddleW:D.paddleWidth,bricks:[],onPaddle:()=>paddleHits++});
+ assert.equal(paddleHits,0,'a descending ball cannot reach the paddle within 490ms');
  brickSignatures.add(JSON.stringify(layout.bricks));wallSignatures.add(JSON.stringify(walls));assert.ok(walls.length>0);assert.ok(bricks.length>=20);
  // Check physically open routes from the paddle to the entire brick garden.
  const cell=.08,r=D.ballRadius,queue=[[0,5.2]],seen=new Set();let garden=false;
@@ -23,7 +31,7 @@ for(let level=1;level<=20;level++){
  for(const locale of ['en','zh','ja'])assert.ok(breakoutLayoutFor(D,locale).name);
 }
 assert.equal(brickSignatures.size,BREAKOUT_LAYOUT_COUNT);assert.equal(wallSignatures.size,BREAKOUT_LAYOUT_COUNT);
-for(const round of [1,20,21,40,41,80,81,1000000]){const a=breakoutLayoutFor({level:20,infiniteRound:round}),b=breakoutLayoutFor({level:20,infiniteRound:round});assert.deepEqual(a,b);assert.ok(a.walls.length>0);assert.notDeepEqual(a,breakoutLayoutFor({level:20}));}
+for(const round of [1,20,21,40,41,80,81,1000000]){const a=breakoutLayoutFor({level:20,infiniteRound:round}),b=breakoutLayoutFor({level:20,infiniteRound:round});assert.deepEqual(a,b);const D=breakoutDifficultyFor({level:20,infiniteRound:round}),nearest=Math.max(...[...a.walls,...a.bricks].map(p=>p.z+p.d/2+D.ballRadius));assert.ok((6.2-.35-D.ballRadius-nearest)/D.ballSpeedMax>=.5,'endless reaction corridor');assert.ok(a.walls.length>0);assert.notDeepEqual(a,breakoutLayoutFor({level:20}));}
 {
  const D=breakoutDifficultyFor({level:1}),wall={x:0,z:1,w:2,d:.32},ball={x:0,z:2,vx:.01,vz:-14},original={...wall};let count=0;
  advanceBreakoutBall(ball,.1,{D,paddleX:0,paddleW:2,bricks:[],walls:[wall],onWall:()=>count++});assert.equal(count,1);assert.ok(ball.vz>0);assert.deepEqual(wall,original,'walls are never damaged or credited as bricks');

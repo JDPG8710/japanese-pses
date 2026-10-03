@@ -1,3 +1,4 @@
+export const BREAKOUT_FIELD_EXTENSION=7;
 // Twenty authored patterns. Permanent bumpers stay below the brick garden,
 // with open routes around them; none can seal a brick inside a room.
 const masks=[
@@ -56,7 +57,7 @@ export function breakoutLayoutFor(difficulty={},locale='en'){
  const index=(level-1+round)%20,cycle=Math.floor(round/20),mirror=cycle%2?-1:1,reverse=Math.floor(cycle/2)%2;
  const shift=cycle?Math.sin(cycle*.73)*.08:0;
  const cols=8,rows=7,gap=.12,width=8.64,w=(width-gap*7)/8,d=.47,stride=.65;
- const bricks=[];masks[index].forEach((line,r)=>[...line].forEach((cell,c)=>{if(cell==='#')bricks.push({x:mirror*(-width/2+w/2+c*(w+gap))+shift,z:-.8-(reverse?r:6-r)*stride,w,d,row:r,col:c});}));
- const walls=barriers[index].map(([x,z,w,d])=>({x:x*mirror,z:z+(cycle?Math.sin(cycle*.9)*.12:0),w,d}));
+ const bricks=[];masks[index].forEach((line,r)=>[...line].forEach((cell,c)=>{if(cell==='#')bricks.push({x:mirror*(-width/2+w/2+c*(w+gap))+shift,z:-.8-BREAKOUT_FIELD_EXTENSION-(reverse?r:6-r)*stride,w,d,row:r,col:c});}));
+ const walls=barriers[index].map(([x,z,w,d])=>({x:x*mirror,z:z-BREAKOUT_FIELD_EXTENSION+(cycle?Math.sin(cycle*.9)*.12:0),w,d}));
  return {id:`pattern-${index+1}-cycle-${cycle}`,index:index+1,name:(names[locale]||names.en)[index],bricks,walls};
 }

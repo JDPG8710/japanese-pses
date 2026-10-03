@@ -1,7 +1,7 @@
 /** 3D perspective breakout — paddle, ball, brick wall, power-ups + spark VFX. */
 import {normalizeDifficulty,challengeRandom} from '../town/TownProgression.mjs';
 import {breakoutBrickLayout,advanceBreakoutBall,BREAKOUT_BACK_Z,stabilizeBreakoutBall} from './BreakoutPhysics.mjs';
-import {breakoutLayoutFor} from './BreakoutLayouts.mjs';
+import {breakoutLayoutFor,BREAKOUT_FIELD_EXTENSION} from './BreakoutLayouts.mjs';
 import {
   createArcadeRenderer, resizeArcade3D, disposeArcade3D, boxMesh, sphereMesh, THREE,
   spawnParticleBurst, updateParticles, capsulePowerMesh
@@ -18,7 +18,7 @@ export const BREAKOUT_DIFFICULTY = Object.freeze({
   brickHitsMin: 1,
   brickHitsMax: 2,
   playWidth: 10,
-  playDepth: 14,
+  playDepth: 14+BREAKOUT_FIELD_EXTENSION,
   powerDropChance: 0.38
 });
 
@@ -116,11 +116,11 @@ export function createBreakoutGame({canvas, onHud, onEnd, audio = null, autoStar
     sun.position.set(4, 12, 8);
     scene.add(sun);
     const floor = boxMesh(D.playWidth + 2, 0.1, D.playDepth + 4, 0x1a2a44);
-    floor.position.set(0, -0.05, 2);
+    floor.position.set(0, -0.05, 2-BREAKOUT_FIELD_EXTENSION/2);
     scene.add(floor);
     for (const x of [-D.playWidth / 2 - 0.3, D.playWidth / 2 + 0.3]) {
       const wall = boxMesh(0.35, 1.2, D.playDepth + 2, 0x2a4060);
-      wall.position.set(x, 0.5, 1);
+      wall.position.set(x, 0.5, 1-BREAKOUT_FIELD_EXTENSION/2);
       scene.add(wall);
     }
     const back = boxMesh(D.playWidth + 1, 1.2, 0.35, 0x2a4060);
@@ -319,7 +319,7 @@ export function createBreakoutGame({canvas, onHud, onEnd, audio = null, autoStar
   function movePaddle(clientX) {
     const rect = canvas.getBoundingClientRect();
     const t = (clientX - rect.left) / rect.width;
-    paddleTargetX = (t - 0.5) * D.playWidth;
+    paddleTargetX = (t - 0.5) * (graphics.ok ? graphics.camera.right-graphics.camera.left : D.playWidth);
     paddleTargetX = Math.max(-D.playWidth / 2 + paddleW / 2, Math.min(D.playWidth / 2 - paddleW / 2, paddleTargetX));
   }
   function onPointerDown(e) {
@@ -348,8 +348,8 @@ export function createBreakoutGame({canvas, onHud, onEnd, audio = null, autoStar
   function onBlur() { keyHeld.left = false; keyHeld.right = false; }
   function onResize() {
     resizeArcade3D(graphics, canvas);if(!graphics.ok)return;
-    const camera=graphics.camera,r=canvas.getBoundingClientRect(),aspect=r.width/Math.max(1,r.height),halfW=Math.max(6,6.5*aspect),halfH=halfW/aspect;
-    camera.left=-halfW;camera.right=halfW;camera.top=halfH;camera.bottom=-halfH;camera.position.set(0,11,12);camera.lookAt(0,0,.5);camera.updateProjectionMatrix();camera.updateMatrixWorld();
+    const camera=graphics.camera,r=canvas.getBoundingClientRect(),aspect=r.width/Math.max(1,r.height),halfW=Math.max(6,(6.5+BREAKOUT_FIELD_EXTENSION/2)*aspect),halfH=halfW/aspect;
+    camera.left=-halfW;camera.right=halfW;camera.top=halfH;camera.bottom=-halfH;camera.position.set(0,11,12-BREAKOUT_FIELD_EXTENSION/2);camera.lookAt(0,0,.5-BREAKOUT_FIELD_EXTENSION/2);camera.updateProjectionMatrix();camera.updateMatrixWorld();
   }
 
   function bind() {

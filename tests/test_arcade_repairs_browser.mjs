@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {BREAKOUT_FIELD_EXTENSION} from '../src/arcade/BreakoutLayouts.mjs';
 import {mkdir} from 'node:fs/promises';
 import {chromium} from 'playwright-core';
 import {startTownPreview} from '../scripts/preview-town.mjs';
@@ -15,7 +16,7 @@ try{
    window.game=createBreakoutGame({canvas:shell.canvas,difficulty:{level:20},seed:18,onHud:s=>shell.setHud(s),onEnd:r=>shell.showResult(r)});
   });
   await page.locator('.arcade-canvas').waitFor();assert.equal(await page.evaluate(()=>game.getState().gl),true);await page.keyboard.press('Enter');
-  for(let i=0;i<100;i++){const x=await page.evaluate(()=>game.getState().ballStates[0]?.x||0),r=await page.locator('.arcade-canvas').boundingBox();await page.mouse.move(r.x+(x/10+.5)*r.width,r.y+r.height*.8);await page.waitForTimeout(40);}
+  for(let i=0;i<200;i++){const x=await page.evaluate(()=>game.getState().ballStates[0]?.x||0),r=await page.locator('.arcade-canvas').boundingBox();await page.mouse.move(r.x+(x/(2*Math.max(6,(6.5+BREAKOUT_FIELD_EXTENSION/2)*r.width/r.height))+.5)*r.width,r.y+r.height*.8);await page.waitForTimeout(40);}
   assert.ok(await page.evaluate(()=>game.getState().score>0),'real launched ball must break bricks');
   await page.screenshot({path:`.wrangler/arcade-repairs/bricks-${width}.png`,fullPage:true});await page.evaluate(()=>{game.destroy();shell.destroy();});
   await page.evaluate(async()=>{

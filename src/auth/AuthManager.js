@@ -18,16 +18,20 @@ export class AuthManager extends EventTarget {
       return this.session;
     }
     const session = await this.getSession();
+    await this.loadProviders();
+    this.session = session?.authenticated
+      ? { mode: 'authenticated', ...session }
+      : { mode: 'anonymous', authenticated: false, user: null };
+    return this.session;
+  }
+
+  async loadProviders() {
     try {
       const response = await this.fetchImpl(`${this.apiBase}/auth/providers`, { credentials: 'include' });
       const result = response.ok ? await response.json() : {};
       this.modal.element.querySelector('[data-provider="line"]').hidden = !result.providers?.includes('line');
       this.modal.updateButtonState();
     } catch { /* Keep unconfigured providers hidden. */ }
-    this.session = session?.authenticated
-      ? { mode: 'authenticated', ...session }
-      : { mode: 'anonymous', authenticated: false, user: null };
-    return this.session;
   }
 
   async getSession() {
@@ -40,6 +44,7 @@ export class AuthManager extends EventTarget {
   async showLogin({ message } = {}) {
     if (this.localMode) return this.session;
     if (!this.modal) return null;
+    await this.loadProviders();
     return this.modal.show({ message });
   }
 

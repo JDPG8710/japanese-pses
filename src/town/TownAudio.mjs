@@ -106,9 +106,16 @@ function createTownAudio() {
       synth.playSlash();
       synth.createTone({freq: 640, type: 'sine', duration: 0.1, peakGain: 0.16, pitchBend: {targetFreq: 320, duration: 0.09}});
     },
-    bomb() {
+    bomb(kind='classic') {
       synth.unlock();
-      synth.playGentleError();
+      if(synth.isMuted())return;
+      const ctx=synth.ctx;if(!ctx||!synth.sfxGain)return;
+      const heavy=kind==='spike',ice=kind==='ice',duration=heavy?.65:.48;
+      synth.createTone({freq:heavy?150:ice?210:125,type:'triangle',duration,peakGain:heavy?.28:.23,attack:.004,decay:.18,filterFreq:900,pitchBend:{targetFreq:ice?75:38,duration:duration*.8}});
+      const buffer=ctx.createBuffer(1,Math.ceil(ctx.sampleRate*duration),ctx.sampleRate),data=buffer.getChannelData(0);
+      for(let i=0;i<data.length;i++)data[i]=(Math.random()*2-1)*Math.exp(-i/data.length*4.5);
+      const source=ctx.createBufferSource(),filter=ctx.createBiquadFilter(),gain=ctx.createGain(),now=ctx.currentTime;source.buffer=buffer;filter.type='lowpass';filter.frequency.setValueAtTime(ice?4200:heavy?2400:1900,now);filter.frequency.exponentialRampToValueAtTime(ice?1200:220,now+duration);gain.gain.setValueAtTime(heavy?.32:.25,now);gain.gain.exponentialRampToValueAtTime(.0001,now+duration);source.connect(filter);filter.connect(gain);gain.connect(synth.sfxGain);source.onended=()=>{source.disconnect();filter.disconnect();gain.disconnect();};source.start(now);
+      if(kind==='clock'||ice)for(let i=0;i<3;i++)synth.createTone({freq:(ice?1400:850)*Math.pow(ice?1.25:.75,i),type:'sine',duration:.16,peakGain:.095,startTime:i*.085,attack:.003});
     },
     raceHit(strength=12) {
       synth.unlock();

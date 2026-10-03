@@ -1,6 +1,7 @@
 /** 3D fruit slash — blade trail, split halves, juice bursts. */
 import {normalizeDifficulty,challengeRandom} from '../town/TownProgression.mjs';
 import {createFruitVisuals,FRUIT_TYPES,FRUIT_SIZES,FRUIT_BOMBS} from './FruitVisuals.mjs';
+import {createFruitExplosion} from './FruitExplosion.mjs';
 export {FRUIT_TYPES,FRUIT_SIZES,FRUIT_BOMBS} from './FruitVisuals.mjs';
 import {
   createArcadeRenderer, resizeArcade3D, disposeArcade3D, sphereMesh, boxMesh, THREE,
@@ -28,12 +29,13 @@ export function fruitDifficultyFor(difficulty) {
  return Object.freeze({...FRUIT_DIFFICULTY,clearWaves:6+Math.floor(s*3),throwIntervalStart:.85/(1+.28*s),throwIntervalMin:.42/(1+.2*s),bombChanceStart:.14+.06*s,bombChanceMax:.28+.04*s,fruitSpeed:7.5+.4*s,gravity:9.5+1.2*s,slashRadius:.85-.12*s});
 }
 
-export function createFruitSlashGame({canvas, onHud, onEnd, audio = null, autoStart = true, difficulty, seed=Date.now()} = {}) {
+export function createFruitSlashGame({canvas, onHud, onEnd, audio = null, autoStart = true, difficulty, seed=Date.now(),locale='en'} = {}) {
   const D = fruitDifficultyFor(difficulty);
   let random=challengeRandom(seed);
   const graphics = createArcadeRenderer(canvas, {clear: 0x152418});
   const visuals=graphics.ok?createFruitVisuals():null;
   let remainingTime=D.timeLimit,frozenFor=0,lastAward=0;
+  let explosions=null,pendingResult=null,resultDelay=0;
   let lives = D.lives;
   let score = 0;
   let wave = 1;
@@ -83,6 +85,7 @@ export function createFruitSlashGame({canvas, onHud, onEnd, audio = null, autoSt
     scene.add(itemGroup);
     fxGroup = new THREE.Group();
     scene.add(fxGroup);
+    explosions=createFruitExplosion(fxGroup,locale);
     trail = createSlashTrail(scene, {color: 0xfff6c8, maxPoints: 16});
     camera.position.set(0, 1.5, 8);
     camera.lookAt(0, 0.5, 0);
@@ -137,10 +140,11 @@ export function createFruitSlashGame({canvas, onHud, onEnd, audio = null, autoSt
         const effect=FRUIT_BOMBS.find(b=>b.id===item.kind);
         lives-=effect.lives||0;remainingTime=Math.max(0,remainingTime-(effect.seconds||0));frozenFor=effect.freeze||0;lastAward=0;
         combo = 0;
-        try { audio?.bomb?.(); } catch {}
+        try { audio?.bomb?.(item.kind); } catch {}
+        explosions?.add(item,item.kind);
         if (graphics.ok && fxGroup) {
           particles = particles.concat(spawnParticleBurst(fxGroup, new THREE.Vector3(item.x, item.y, item.z), {
-            count: 16, color: effect.color, speed: 6, life: 0.35, size: 0.11
+            count: 28, color: effect.color, speed: 5, life: 0.6, size: 0.13
           }));
         }
         hud();
@@ -178,7 +182,8 @@ export function createFruitSlashGame({canvas, onHud, onEnd, audio = null, autoSt
   }
 
   function tick(dt) {
-    if (!running || ended) return;
+    if (!running) return;
+    if(ended){if(pendingResult){const elapsed=Math.max(0,Number(dt)||0);particles=updateParticles(particles,Math.min(.05,elapsed),fxGroup);explosions?.update(elapsed);resultDelay-=elapsed;if(resultDelay<=0){const result=pendingResult;pendingResult=null;running=false;onEnd?.(result);}}return;}
     const elapsed=Number.isFinite(dt)?Math.max(0,dt):0;remainingTime=Math.max(0,remainingTime-elapsed);frozenFor=Math.max(0,frozenFor-elapsed);dt=Math.min(.05,elapsed);
     if(remainingTime<=0){hud();return finish(false);}
     spawnTimer -= dt;
@@ -227,15 +232,18 @@ export function createFruitSlashGame({canvas, onHud, onEnd, audio = null, autoSt
       return true;
     });
     particles = updateParticles(particles, dt, fxGroup);
+    explosions?.update(dt);
     trail?.update(dt);
     hud();
   }
 
   function finish(cleared) {
     if(ended)return;
-    ended = true; running = false;
-    typeof cancelAnimationFrame === 'function' && cancelAnimationFrame(raf);
-    onEnd?.({cleared, score, detail: `⏱ ${Math.ceil(remainingTime)}s · ${creditedWaves}/${D.clearWaves}`});
+    ended = true;
+    const result={cleared,score,detail:`⏱ ${Math.ceil(remainingTime)}s · ${creditedWaves}/${D.clearWaves}`};
+    // Let the final bomb visibly explode before the result overlay covers the scene.
+    if(graphics.ok&&explosions?.active.length){pendingResult=result;resultDelay=.72;return;}
+    running=false;typeof cancelAnimationFrame === 'function' && cancelAnimationFrame(raf);onEnd?.(result);
   }
 
   function draw() {
@@ -294,6 +302,7 @@ export function createFruitSlashGame({canvas, onHud, onEnd, audio = null, autoSt
     lives = D.lives; score = 0; wave = 1; waveHits = 0; waveNeed = 5;
     combo = 0; creditedWaves = 0; items = []; halves = []; particles = []; spawnTimer = 0.3; ended = false;
     remainingTime=D.timeLimit;frozenFor=0;lastAward=0;lastPoint=null;slicing=false;
+    pendingResult=null;resultDelay=0;explosions?.clear();
     if (itemGroup) while (itemGroup.children.length) itemGroup.remove(itemGroup.children[0]);
     if (fxGroup) while (fxGroup.children.length) fxGroup.remove(fxGroup.children[0]);
     trail?.clear();
@@ -303,7 +312,7 @@ export function createFruitSlashGame({canvas, onHud, onEnd, audio = null, autoSt
   }
   function pause() { running = false;slicing=false;lastPoint=null; typeof cancelAnimationFrame === 'function' && cancelAnimationFrame(raf); }
   function resume() {
-    if (ended) return;
+    if (ended&&!pendingResult) return;
     running = true; last = performance.now?.() || 0;
     if (typeof requestAnimationFrame === 'function') raf = requestAnimationFrame(loop);
   }
@@ -312,6 +321,7 @@ export function createFruitSlashGame({canvas, onHud, onEnd, audio = null, autoSt
     typeof cancelAnimationFrame === 'function' && cancelAnimationFrame(raf);
     unbind();
     trail?.dispose?.();
+    explosions?.dispose();pendingResult=null;
     disposeArcade3D(graphics);
     visuals?.dispose();
   }
@@ -321,5 +331,5 @@ export function createFruitSlashGame({canvas, onHud, onEnd, audio = null, autoSt
   if (autoStart) start();
   return {start, pause, resume, destroy, tick, draw, slashAt,
     projectToScreen(point){if(!graphics.ok)return null;const p=new THREE.Vector3(point.x,point.y,point.z||0).project(graphics.camera),r=canvas.getBoundingClientRect();return {x:r.left+(p.x+1)*r.width/2,y:r.top+(1-p.y)*r.height/2};},
-    getState: () => ({difficulty:D, lives, score, wave, combo, creditedWaves, remainingTime,frozenFor,lastAward,items:items.filter(i=>i.alive).map(({x,y,z,vx,vy,vz,bomb,kind,radius,size,points})=>({x,y,z,vx,vy,vz,bomb,kind,radius,size,points})), ended, gl: graphics.ok})};
+    getState: () => ({difficulty:D, lives, score, wave, combo, creditedWaves, remainingTime,frozenFor,lastAward,explosions:explosions?.active||[],pendingResult:!!pendingResult,items:items.filter(i=>i.alive).map(({x,y,z,vx,vy,vz,bomb,kind,radius,size,points})=>({x,y,z,vx,vy,vz,bomb,kind,radius,size,points})), ended, gl: graphics.ok})};
 }

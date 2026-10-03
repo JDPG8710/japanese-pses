@@ -63,7 +63,8 @@
     "test:english-choices": "node tests/test_english_choice_quality.mjs",
     "audit:english-choices": "node scripts/audit-english-choices.mjs",
     "test:arcade:repairs": "node tests/test_arcade_repairs.mjs",
-    "test:arcade:repairs:browser": "node tests/test_arcade_repairs_browser.mjs"
+    "test:arcade:repairs:browser": "node tests/test_arcade_repairs_browser.mjs",
+    "test:fruit:bombs": "node tests/test_fruit_bombs_browser.mjs"
   },
   "devDependencies": {
     "playwright-core": "^1.63.0",

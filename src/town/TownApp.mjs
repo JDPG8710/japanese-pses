@@ -31,15 +31,16 @@ function close(){cancelAdvance();expansion?.disposePreview();dialog.close();moda
 dialog.addEventListener('cancel',e=>{e.preventDefault();close();});
 function refresh(){
   $('town-guide-link').href=`/${locale}/guides/town-shop`;
-  $('town-guide-link').textContent={en:'Shop worked example',zh:'商店例题与解析',ja:'お店の 例題と 解説'}[locale];
+  $('town-guide-link').textContent={en:'Shop example, step by step',zh:'商店例题讲解',ja:'おみせのれいだいとかいせつ'}[locale];
   document.documentElement.lang=locale;document.title=w().title+' · Piko Game';$('locale').value=locale;
-  const texts={'town-title':'title','town-tag':'tag','world-link':'back','chapter':'chapter','mission-label':'mission','progress-label':'progress','journal-label':'journal','local-note':'local','walk-tip':'walk','coins-label':'coins','xp-label':'xp','guide-label':'guide','shop-label':'shop','home-label':'home','character':'settings','privacy-link':'privacy','terms-link':'terms'};
-  for(const [id,key]of Object.entries(texts))$(id).textContent=w()[key];
+  const texts={'town-title':'title','town-tag':'tag','world-link':'back','chapter':'chapter','mission-label':'mission','progress-label':'progress','journal-label':'journal','local-note':'local','walk-tip':'walk','coins-label':'coins','xp-label':'xp','guide-label':'guide','shop-label':'shop','home-label':'home','character':'settings','privacy-link':'privacy','terms-link':'terms','town-eyebrow':'eyebrow','guide-sub':'guideSub','shop-sub':'shopSub','home-sub':'homeSub','town-footer':'footer'};
+  for(const [id,key]of Object.entries(texts))if($(id))$(id).textContent=w()[key];
+  for(const [id,key]of Object.entries({'town-map':'mapLabel','town-dpad':'moveLabel','town-places':'placesLabel'}))$(id)?.setAttribute('aria-label',w()[key]);
   $('help').setAttribute('aria-label',w().help);$('world-link').href=`/?${new URLSearchParams({locale})}`;
   $('town-canvas').setAttribute('aria-label',`${w().title}. ${ARCADE_TEXT[locale].controls}. ${ARCADE_TEXT[locale].touch}`);
   $('coins').textContent=state.coins;$('xp').textContent=state.xp;
   townDifficulty(state);
-  $('town-progression').textContent=`${progressionLabel(state,locale)} · ${townPointsLabel(state.townProgress.points,locale)} · ${{zh:'通关任一游戏即可晋级，20关后无限挑战',en:'Clear any game to advance. Endless play after level 20.',ja:'ゲームを クリアして レベルアップ。20の あとは むげんチャレンジ。'}[locale]}`;
+  $('town-progression').textContent=`${progressionLabel(state,locale)} · ${townPointsLabel(state.townProgress.points,locale)} · ${{zh:'通过任意一个游戏就能升级，20 级以后是无尽挑战',en:'Clear any game to level up. After level 20, the challenge never ends!',ja:'どれかのゲームをクリアするとレベルアップ。20のあとはエンドレスチャレンジ！'}[locale]}`;
   multiplayer?.refreshLocale();
   const finished=state.mission>=10;
   $('mission-number').textContent=finished?'✦':String(state.mission+1).padStart(2,'0');
@@ -51,7 +52,7 @@ function refresh(){
   updateNear(scene?.near);$('save-status').textContent=saveOK?w().local:w().saveFail;expansion?.rerender();
 }
 function updateNear(id){$('interact').disabled=!id;$('interact').textContent=id?`${w().talk} · ${{guide:'Piko',shop:'Mia',home:'Noah'}[id]}`:w().near;$('interact').setAttribute('aria-label',$('interact').textContent);$('interact').title=$('interact').textContent;}
-function intro(){modal='intro';shell(w().hello,`<div class="welcome-art" aria-hidden="true"><span>☀</span><b>⌂</b><i>✳</i></div><p class="intro-copy">${w().intro}</p><div class="intro-features"><span>🔤 English</span><span>🔢 Maths</span><span>🌱 My home</span></div>${button('begin',w().start,'primary wide')}<small class="local-detail">${w().local}</small>`,'welcome');}
+function intro(){modal='intro';shell(w().hello,`<div class="welcome-art" aria-hidden="true"><span>☀</span><b>⌂</b><i>✳</i></div><p class="intro-copy">${w().intro}</p><div class="intro-features"><span>🔤 ${w().featEnglish}</span><span>🔢 ${w().featMaths}</span><span>🌱 ${w().featHome}</span></div>${button('begin',w().start,'primary wide')}<small class="local-detail">${w().local}</small>`,'welcome');}
 function showPlace(id){
   scene?.stop();feedback='';translated=false;window.speechSynthesis?.cancel();
   if(!state.started){intro();return;}
@@ -101,7 +102,7 @@ function renderOrder(){
 }
 function renderHome(){
   if(selected&&!state.owned.includes(selected))selected=null;
-  shell(w().homeShort,`<div class="npc-talk compact"><span>🧑‍🎨</span><p>${state.mission>=8?w().homeReady:w().homeWelcome}</p></div><div class="home-layout"><div><div class="room-wall"><div class="room-window" aria-hidden="true">☀</div><span>HOME SWEET HOME</span></div><div class="room-floor">${state.room.map((id,i)=>{const f=FURNITURE.find(f=>f.id===id);return `<button type="button" data-slot="${i}" aria-label="${w().slot} ${i+1}: ${f?esc(label(f)):w().emptySlot}" class="${f?'furnished':''}">${f?`<span>${f.icon}</span>`:'<span>＋</span>'}</button>`;}).join('')}</div><p class="room-instruction">${selected?`${w().selected}: ${label(FURNITURE.find(f=>f.id===selected))}`:w().place}</p><p class="muted">${w().roomHint}</p></div><div class="furniture-catalog"><h3>${w().furniture} <small>✦ ${state.coins}</small></h3>${FURNITURE.map(f=>{const owned=state.owned.includes(f.id);return `<button type="button" data-furniture="${f.id}" class="furniture ${selected===f.id?'selected':''}" ${!owned&&(f.id==='plant'||state.coins<f.price)?'disabled':''} aria-pressed="${selected===f.id}"><span>${f.icon}</span><div><b>${esc(label(f))}</b><small>${owned?w().owned:f.id==='plant'?w().lockedPlant:`${w().buy} · ${f.price} ✦`}</small></div>${owned?'<i>✓</i>':''}</button>`;}).join('')}</div></div><p class="order-feedback good" role="status">${esc(feedback)}</p>${button('close',w().close,'primary')}`,'home-dialog');
+  shell(w().homeShort,`<div class="npc-talk compact"><span>🧑‍🎨</span><p>${state.mission>=8?w().homeReady:w().homeWelcome}</p></div><div class="home-layout"><div><div class="room-wall"><div class="room-window" aria-hidden="true">☀</div><span>${w().homeSign}</span></div><div class="room-floor">${state.room.map((id,i)=>{const f=FURNITURE.find(f=>f.id===id);return `<button type="button" data-slot="${i}" aria-label="${w().slot} ${i+1}: ${f?esc(label(f)):w().emptySlot}" class="${f?'furnished':''}">${f?`<span>${f.icon}</span>`:'<span>＋</span>'}</button>`;}).join('')}</div><p class="room-instruction">${selected?`${w().selected}: ${label(FURNITURE.find(f=>f.id===selected))}`:w().place}</p><p class="muted">${w().roomHint}</p></div><div class="furniture-catalog"><h3>${w().furniture} <small>✦ ${state.coins}</small></h3>${FURNITURE.map(f=>{const owned=state.owned.includes(f.id);return `<button type="button" data-furniture="${f.id}" class="furniture ${selected===f.id?'selected':''}" ${!owned&&(f.id==='plant'||state.coins<f.price)?'disabled':''} aria-pressed="${selected===f.id}"><span>${f.icon}</span><div><b>${esc(label(f))}</b><small>${owned?w().owned:f.id==='plant'?w().lockedPlant:`${w().buy} · ${f.price} ✦`}</small></div>${owned?'<i>✓</i>':''}</button>`;}).join('')}</div></div><p class="order-feedback good" role="status">${esc(feedback)}</p>${button('close',w().close,'primary')}`,'home-dialog');
 }
 function submit(){
   const phase=state.active?.phase;if(!phase)return;

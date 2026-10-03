@@ -1,6 +1,6 @@
 import {THREE} from './Arcade3D.mjs';
 const COLORS={classic:0xffae46,spike:0xff647a,clock:0xc397ff,ice:0x83e7ff};
-const LABELS={zh:{classic:'砰！−1 ♥',spike:'尖刺爆炸！−2 ♥',clock:'时间爆炸！−5秒',ice:'冰爆！刀刃冻结'},en:{classic:'BOOM! −1 ♥',spike:'SPIKE BOOM! −2 ♥',clock:'TIME BLAST! −5s',ice:'ICE BURST! Frozen blade'},ja:{classic:'ドーン！−1 ♥',spike:'とげ爆発！−2 ♥',clock:'時計爆発！−5秒',ice:'氷の爆発！刃がこおる'}};
+const LABELS={zh:{classic:'轰！−1 ♥',spike:'刺刺炸弹！−2 ♥',clock:'时间炸弹！−5秒',ice:'冰冻！刀刃冻住了'},en:{classic:'BOOM! −1 ♥',spike:'SPIKY BOOM! −2 ♥',clock:'TIME BOMB! −5s',ice:'FREEZE! Blade frozen'},ja:{classic:'ドカーン！−1 ♥',spike:'トゲトゲばくはつ！−2 ♥',clock:'とけいばくだん！−5びょう',ice:'カチコチ！刃がこおった'}};
 export function createFruitExplosion(parent,locale='en'){
  const sphere=new THREE.SphereGeometry(1,16,12),ring=new THREE.RingGeometry(.78,1,48),active=[];
  function remove(e){parent.remove(e.group);e.group.traverse(o=>{o.material?.map?.dispose();o.material?.dispose();});}

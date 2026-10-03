@@ -47,9 +47,9 @@ const barriers=[
  [[0,.65,2.4,.32],[-2.7,1.9,.4,1.2],[2.7,1.9,.4,1.2],[-3.4,3.3,1.2,.32],[3.4,3.3,1.2,.32]]
 ];
 const names={
- zh:['彩虹阶梯','小镇拱门','蝴蝶双翼','花园菱形','星际十字','波浪长廊','爱心果园','潮汐港湾','向上箭头','棋盘公园','皇冠城堡','双塔守门','环形星球','春日花篮','钻石矿洞','巨龙脊背','火箭起飞','流星阵列','水晶宫殿','彩虹终章'],
- en:['Rainbow Steps','Town Arch','Butterfly Wings','Garden Diamond','Star Cross','Wave Corridor','Heart Orchard','Tidal Harbor','Upward Arrow','Checker Park','Crown Castle','Twin Towers','Ring Planet','Spring Basket','Diamond Mine','Dragon Ridge','Rocket Launch','Meteor Field','Crystal Palace','Rainbow Finale'],
- ja:['にじの階段','まちのアーチ','ちょうの羽','ひし形ガーデン','星の十字','波のろうか','ハート果樹園','しおの港','上むきの矢','チェック公園','王冠の城','ふたつの塔','わっかの星','春のかご','ダイヤの洞窟','りゅうの背','ロケット発射','流星ひろば','水晶の宮殿','にじのフィナーレ']
+ zh:['彩虹阶梯','小镇拱门','蝴蝶翅膀','花园菱形','星星十字','波浪走廊','爱心果园','潮汐海港','冲上去箭头','棋盘公园','皇冠城堡','双塔守门','环形星球','春天花篮','钻石矿洞','巨龙的背','火箭发射','流星雨','水晶宫殿','彩虹大结局'],
+ en:['Rainbow Steps','Town Arch','Butterfly Wings','Garden Diamond','Star Cross','Wavy Hallway','Heart Orchard','Tide Harbour','Up We Go','Checkerboard Park','Crown Castle','Tower Gate','Ring Planet','Spring Flower Basket','Diamond Mine','Dragon\'s Back','Blast Off!','Meteor Shower','Crystal Palace','Rainbow Finale'],
+ ja:['にじのかいだん','まちのアーチ','ちょうちょのはね','ひしがたガーデン','ほしの十字','なみなみろうか','ハートのかじゅえん','しおかぜのみなと','うえむきやじるし','チェックもようのこうえん','おうかんのおしろ','ふたごのとう','わっかのほし','はるのはなかご','ダイヤのどうくつ','ドラゴンのせなか','ロケットはっしゃ','ながれぼし','すいしょうのおしろ','にじのフィナーレ']
 };
 export const BREAKOUT_LAYOUT_COUNT=20;
 export function breakoutLayoutFor(difficulty={},locale='en'){

@@ -15,8 +15,8 @@ for (const locale of ['en', 'zh', 'ja']) {
   assert.ok(t.section && t.play && t.games.race.title);
   for (const id of ARCADE_IDS) assert.ok(t.games[id].title && t.games[id].blurb);
 }
-assert.equal(ARCADE_TEXT.zh.section, '休闲街机');
-assert.equal(ARCADE_TEXT.ja.section, 'アーケード');
+assert.equal(ARCADE_TEXT.zh.section, '游戏街');
+assert.equal(ARCADE_TEXT.ja.section, 'ゲームセンター');
 assert.ok(ARCADE_TEXT.en.race.tracks.sunrise.name);
 assert.ok(ARCADE_TEXT.zh.race.cars.kart.name);
 assert.ok(ARCADE_TEXT.ja.race.powerups.boost);
@@ -81,7 +81,7 @@ const fr = createFruitSlashGame({canvas: createStubCanvas(), autoStart: false, o
 fr.start(); fr.tick(1/60); fr.destroy();
 
 const html = arcadeSectionMarkup('zh');
-assert.match(html, /休闲街机/);
+assert.match(html, /游戏街/);
 assert.match(html, /data-action="arcade:race"/);
 assert.match(html, /data-action="arcade:ninja"/);
 

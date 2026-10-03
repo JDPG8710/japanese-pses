@@ -231,7 +231,7 @@ export function createRaceGame({
       for(const p of chips){p.mesh.geometry.dispose();p.mesh.geometry=new THREE.BoxGeometry(.06,.03,.09);p.mesh.rotation.set(Math.random()*3,Math.random()*3,Math.random()*3);}
       particles.push(...sparks,...chips);
     }
-    if(raceUI){const el=raceUI.querySelector('.race-impact');el.hidden=false;el.dataset.severity=strength>9?'heavy':'light';el.textContent=locale==='zh'?(shielded?'护盾吸收撞击':strength>9?'猛烈撞击 · 车身受损':'擦碰 · 稳住方向'):locale==='ja'?(shielded?'シールドでガード':strength>9?'衝突・車体ダメージ':'接触・ハンドルを整えよう'):(shielded?'Shield absorbed impact':strength>9?'Heavy impact · body damage':'Contact · steady the steering');}
+    if(raceUI){const el=raceUI.querySelector('.race-impact');el.hidden=false;el.dataset.severity=strength>9?'heavy':'light';el.textContent=locale==='zh'?(shielded?'护盾挡住了撞击！':strength>9?'砰！撞得好重':'蹭到了 · 稳住方向盘'):locale==='ja'?(shielded?'シールドでガード！':strength>9?'ガシャーン！おおきくぶつかった':'こつん！ハンドルをまっすぐ'):(shielded?'Shield blocked the hit!':strength>9?'Crash! Big bump':'Bump! Keep it steady');}
   }
   function acceptVelocity(vx,vz){
     const fx=Math.sin(heading),fz=Math.cos(heading);speed=vx*fx+vz*fz;
@@ -261,7 +261,7 @@ export function createRaceGame({
         <button type="button" data-touch="brake" aria-label="${labels[2]}">${labels[2]}</button>
         <button type="button" data-touch="throttle" class="primary" aria-label="${labels[3]}">${labels[3]}</button>
       </div>
-      <button type="button" class="race-touch-item" data-touch="item" aria-label="item">${esc(raceCopy.useItem || 'Item')}</button>`;
+      <button type="button" class="race-touch-item" data-touch="item" aria-label="${esc(raceCopy.useItem || 'Item')}">${esc(raceCopy.useItem || 'Item')}</button>`;
     stage.append(touchEl);
     const pointers = new Map();
     const update = () => {

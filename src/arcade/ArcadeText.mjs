@@ -2,8 +2,8 @@
 export const ARCADE_TEXT = {
   en: {
     section: 'Arcade',
-    sectionKicker: 'CASUAL · 3D ARCADE',
-    sectionIntro: 'Six fun arcades: racing, breakout, fruit slash, typing, creative design, and rhythm drums.',
+    sectionKicker: 'FUN · 3D ARCADE',
+    sectionIntro: 'Six fun games: racing, brick breaking, fruit slicing, typing, designing and drumming.',
     play: 'Play',
     best: 'Best',
     score: 'Score',
@@ -15,213 +15,213 @@ export const ARCADE_TEXT = {
     retry: 'Try again',
     back: 'Back',
     gameOver: 'Game over',
-    cleared: 'You cleared it!',
-    hardHint: '3D · clearable',
+    cleared: 'You did it!',
+    hardHint: '3D · beatable',
     paused: 'Paused',
     tip: 'Tip',
     combo: 'Combo',
     games: {
-      bubble: {title:'Little Designer',tag:'DRAW & BUILD',blurb:'Design aircraft, vehicles, phones, rockets, robots, boats and buildings on a full-screen canvas. Explore your work in 3D.',tip:'Open floating menus to assemble, draw and color. Drag in 3D to rotate; pinch or scroll to zoom.'},
-      rhythm: {title:'Rhythm Parade',tag:'RHYTHM',blurb:'Catch a cheerful beat with four colorful drums.',tip:'Tap a drum or press 1–4 when its note reaches the white line.'},
+      bubble: {title:'Little Designer',tag:'DRAW & BUILD',blurb:'Design planes, cars, phones, rockets, robots, boats and houses on a big canvas – then spin your creation in 3D!',tip:'Open the floating menus to build, draw and colour. In 3D, drag to spin; pinch or scroll to zoom.'},
+      rhythm: {title:'Rhythm Parade',tag:'RHYTHM',blurb:'Bang four bright drums to a happy beat and build a combo!',tip:'Tap a drum (or press D/F/J/K or 1–4) when its note hits the white line.'},
       race: {
         title: 'Piko Circuit',
         tag: 'RACING',
-        blurb: 'Pick a track and car, then drive the loop — throttle, brake, steer, and grab items.',
-        tip: '↑/W gas · ↓/S brake · ←→/A D steer · Space use item · on-screen pads on mobile'
+        blurb: 'Pick a track and a car, then hit the gas, brake, steer and grab items!',
+        tip: '↑/W go · ↓/S brake · ←→/A D steer · Space: item · phone: on-screen buttons'
       },
       breakout: {
-        title: 'Brick Siege',
+        title: 'Brick Blitz',
         tag: 'BREAKOUT',
-        blurb: 'Twenty brick patterns and bumper routes: find a path, smash the bricks, and catch power-ups.',
-        tip: 'Drag or use ← → · click/Space to launch · gold-capped steel walls bounce the ball and cannot be cleared'
+        blurb: '20 brick layouts with bumpers and walls: find a way through, smash the bricks and catch power-ups!',
+        tip: 'Drag or ← → · click/Space to launch · gold-edged steel walls can\'t be broken – bounce off them!'
       },
       fruit: {
         title: 'Fruit Storm',
-        tag: 'SLASH',
-        blurb: 'Slash flying fruit, dodge bombs, and build a big combo.',
-        tip: '55 seconds · small/medium/large fruit: 30/20/10 + combo · bombs: −1 heart, spikes −2, clock −5s, ice freezes the blade'
+        tag: 'SLICE',
+        blurb: '55 seconds of flying fruit! Slice it all, dodge the bombs and build a big combo.',
+        tip: 'Small/medium/large fruit: 30/20/10 + combo · bomb −1 life, spiky −2, clock −5s, ice freezes your blade'
       },
       ninja: {
-        title: 'Ninja Type',
+        title: 'Ninja Typing',
         tag: 'TYPING',
-        blurb: 'Type the glowing word panels before they reach you.',
+        blurb: 'Type the glowing words before they reach you!',
         tip: 'Keyboard only · type each glowing word'
       }
     },
     race: {
-      lobbyKicker: 'CIRCUIT SELECT',
+      lobbyKicker: 'CHOOSE A TRACK',
       lobbyTitle: 'Piko Circuit',
-      lobbyHint: 'Choose a looping track and a car class, then race to finish the laps.',
+      lobbyHint: 'Choose a track and a car, then race to finish all the laps.',
       pickTrack: 'Track',
       pickCar: 'Car',
       lap: 'Lap',
-      dnf: 'DNF',
+      dnf: 'Didn\'t finish',
       useItem: 'Item',
       tracks: {
-        sunrise: {name: 'Sunrise Circuit', blurb: 'Long straights · flowing corners'},
-        harbor: {name: 'Harbor Loop', blurb: 'L-shaped waterfront · docks'},
-        mountain: {name: 'Mountain Pass', blurb: 'S-bends · mountain scenery'},
-        neon: {name: 'Neon City', blurb: 'City blocks · night chicane'}
+        sunrise: {name: 'Sunrise Circuit', blurb: 'Long straights · wide, smooth bends'},
+        harbor: {name: 'Harbour Loop', blurb: 'L-shaped seafront · round the docks'},
+        mountain: {name: 'Mountain Pass', blurb: 'Twisty S-bends · mountain views'},
+        neon: {name: 'Neon City', blurb: 'City streets · zigzag at night'}
       },
       cars: {
-        sports: {name: 'Sports', blurb: 'Balanced all-rounder'},
-        gt: {name: 'GT', blurb: 'High top speed · heavier'},
-        openwheel: {name: 'Open Wheel', blurb: 'Quick accel · sharp handling'},
-        kart: {name: 'Kart', blurb: 'Snappy turns · kid-friendly'}
+        sports: {name: 'Sports car', blurb: 'Good at everything'},
+        gt: {name: 'GT', blurb: 'Super fast · a bit heavy'},
+        openwheel: {name: 'Formula car', blurb: 'Quick off the line · sharp turns'},
+        kart: {name: 'Kart', blurb: 'Zippy turns · easy to drive'}
       },
       powerups: {
         boost: 'Boost',
         shield: 'Shield',
-        oil: 'Oil',
+        oil: 'Oil slick',
         magnet: 'Magnet'
       }
     }
   },
   zh: {
-    section: '休闲街机',
-    sectionKicker: '休闲 · 3D街机',
-    sectionIntro: '六款趣味街机：竞速、打砖块、切水果、打字、小小设计师、节奏鼓队。',
+    section: '游戏街',
+    sectionKicker: '轻松玩 · 3D 街机',
+    sectionIntro: '六款好玩的小游戏：赛车、打砖块、切水果、打字、小小设计师和节奏鼓。',
     play: '开始',
-    best: '最佳',
+    best: '最高分',
     score: '得分',
     lives: '生命',
-    wave: '波次',
+    wave: '第几波',
     distance: '距离',
     pause: '暂停',
-    resume: '继续',
-    retry: '再来',
+    resume: '继续玩',
+    retry: '再玩一次',
     back: '返回',
-    gameOver: '结束了',
-    cleared: '通关！',
-    hardHint: '3D · 可通关',
-    paused: '已暂停',
+    gameOver: '游戏结束',
+    cleared: '通关啦！',
+    hardHint: '3D · 能通关',
+    paused: '暂停中',
     tip: '提示',
     combo: '连击',
     games: {
-      bubble: {title:'小小设计师',tag:'绘画组装',blurb:'全屏设计飞机、汽车、手机、火箭、机器人、船舶和建筑，旋转欣赏自己的 3D 作品。',tip:'打开悬浮菜单组装、配色和绘画。3D 预览中拖动旋转，双指或滚轮缩放。'},
-      rhythm: {title:'节奏鼓队',tag:'音乐节奏',blurb:'跟随星光伴奏敲准鼓点，挑战连击！',tip:'点击开始音乐。音符抵达白线时敲鼓，按 D/F/J/K 或 1–4。'},
+      bubble: {title:'小小设计师',tag:'画画 · 组装',blurb:'在大画布上设计飞机、汽车、手机、火箭、机器人、小船和房子，还能转着看 3D 作品！',tip:'打开浮动菜单来组装、上色和画画。3D 里拖动可以旋转，双指或滚轮可以缩放。'},
+      rhythm: {title:'节奏鼓队',tag:'音乐节奏',blurb:'跟着星光音乐敲准鼓点，冲连击！',tip:'点一下开始音乐。音符碰到白线时敲鼓，可按 D/F/J/K 或 1–4。'},
       race: {
-        title: '皮可环道',
+        title: '皮可赛道',
         tag: '赛车',
-        blurb: '先选赛道和车型，再自己油门刹车过弯，捡道具完成圈数。',
-        tip: '↑/W 油门 · ↓/S 刹车 · ←→/A D 转向 · 空格用道具 · 手机用屏幕按钮'
+        blurb: '先挑赛道和赛车，再自己踩油门、刹车、转弯，捡道具跑完全程！',
+        tip: '↑/W 油门 · ↓/S 刹车 · ←→/A D 转向 · 空格用道具 · 手机点屏幕按钮'
       },
       breakout: {
-        title: '打砖块围城',
+        title: '砖块大作战',
         tag: '打砖块',
-        blurb: '20 种砖阵与挡墙路线，绕开钢墙、击碎彩砖，接住道具！',
-        tip: '拖动或 ← → · 点击/空格发球 · 金色顶边钢墙不可消除，要绕行或借它反弹'
+        blurb: '20 种砖阵和挡板路线：绕开钢墙，打碎彩砖，接住道具！',
+        tip: '拖动或按 ← → · 点击/空格发球 · 金边钢墙打不碎，绕过去或借它反弹'
       },
       fruit: {
         title: '水果风暴',
         tag: '切水果',
-        blurb: '55 秒水果挑战：六种水果、三种大小，躲开四种炸弹，完成连击！',
-        tip: '小/中/大水果：30/20/10 分＋连击 · 普通弹扣1命、尖刺扣2命、时钟扣5秒、冰冻刀刃'
+        blurb: '55 秒切水果挑战：六种水果、三种大小，躲开四种炸弹，冲连击！',
+        tip: '小/中/大水果：30/20/10 分＋连击 · 普通炸弹扣 1 命、尖刺扣 2 命、时钟扣 5 秒、冰块冻住刀刃'
       },
       ninja: {
         title: '忍者打字',
         tag: '打字',
-        blurb: '落下的词很快。输错就掉命，速度还会再加快。',
-        tip: '只用键盘 · 输入飞近的文字面板'
+        blurb: '发光的单词板飞过来啦，在它碰到你之前打出来！',
+        tip: '只用键盘 · 打出飞来的发光单词'
       }
     },
     race: {
-      lobbyKicker: '赛道选择',
-      lobbyTitle: '皮可环道',
-      lobbyHint: '选择环形赛道和车型，开完指定圈数即可通关。',
+      lobbyKicker: '选择赛道',
+      lobbyTitle: '皮可赛道',
+      lobbyHint: '挑一条赛道和一辆车，跑完规定圈数就通关！',
       pickTrack: '赛道',
       pickCar: '车型',
       lap: '圈',
-      dnf: '未完赛',
+      dnf: '没跑完',
       useItem: '道具',
       tracks: {
-        sunrise: {name: '晨曦赛道', blurb: '长直道 · 舒展宽弯'},
-        harbor: {name: '港湾环线', blurb: 'L 形港湾 · 码头折返'},
-        mountain: {name: '山道关口', blurb: '连续 S 弯 · 山地环线'},
-        neon: {name: '霓虹都市', blurb: '城市街区 · 夜间变向弯'}
+        sunrise: {name: '朝阳赛道', blurb: '长长直道 · 宽宽大弯'},
+        harbor: {name: '海港环线', blurb: 'L 形海港 · 码头掉头'},
+        mountain: {name: '山间小路', blurb: '连续 S 弯 · 山景一路'},
+        neon: {name: '霓虹都市', blurb: '城市街区 · 夜间急弯'}
       },
       cars: {
-        sports: {name: '跑车', blurb: '均衡全能'},
-        gt: {name: 'GT', blurb: '极速高 · 更重'},
-        openwheel: {name: '开轮', blurb: '加速快 · 转向灵'},
-        kart: {name: '卡丁车', blurb: '转弯快 · 儿童友好'}
+        sports: {name: '跑车', blurb: '样样都不错'},
+        gt: {name: 'GT', blurb: '跑得最快 · 比较重'},
+        openwheel: {name: '方程式赛车', blurb: '起步快 · 转向灵'},
+        kart: {name: '卡丁车', blurb: '转弯灵活 · 最好开'}
       },
       powerups: {
         boost: '加速',
         shield: '护盾',
-        oil: '机油',
+        oil: '油渍',
         magnet: '磁铁'
       }
     }
   },
   ja: {
-    section: 'アーケード',
-    sectionKicker: 'カジュアル · 3D',
-    sectionIntro: '6つの ゲーム。レース・ブロック・フルーツ・タイピング・デザイン・ドラム。',
+    section: 'ゲームセンター',
+    sectionKicker: 'たのしい 3Dゲーム',
+    sectionIntro: 'あそべるゲームは6つ！レース、ブロックくずし、フルーツぎり、タイピング、デザイン、たいこ。',
     play: 'あそぶ',
     best: 'ベスト',
     score: 'スコア',
     lives: 'ライフ',
     wave: 'ウェーブ',
     distance: 'きょり',
-    pause: 'いちじていし',
+    pause: 'ストップ',
     resume: 'つづける',
     retry: 'もういちど',
     back: 'もどる',
     gameOver: 'ゲームオーバー',
     cleared: 'クリア！',
     hardHint: '3D · クリアできる',
-    paused: 'いちじていし中',
+    paused: 'ストップ中',
     tip: 'ヒント',
     combo: 'コンボ',
     games: {
-      bubble: {title:'ちいさな デザイナー',tag:'おえかき',blurb:'ひこうき・くるま・スマホ・ロケット・ロボット・ふね・たてものを デザイン。3D で くるっと みよう！',tip:'メニューを ひらいて くみたて・いろぬり。3D は ドラッグで かいてん、2ほんゆびで ズーム。'},
-      rhythm: {title:'リズム たいこ',tag:'リズム',blurb:'4つの たいこで たのしい リズムを つくろう。',tip:'おとが しろい せんに きたら タップ。キーボードは1〜4。'},
+      bubble: {title:'ちいさなデザイナー',tag:'おえかき・くみたて',blurb:'ひこうき・くるま・スマホ・ロケット・ロボット・ふね・おうちをデザイン。3Dでくるっと見てみよう！',tip:'メニューをひらいて、くみたて・いろぬり。3Dはドラッグでまわして、2本ゆびでズーム。'},
+      rhythm: {title:'リズムたいこ',tag:'リズム',blurb:'4つのたいこで、たのしいリズムにのってたたこう！',tip:'おんぷが白いせんにきたら、たいこをタップ。キーボードは D/F/J/K か 1〜4。'},
       race: {
         title: 'ピコサーキット',
         tag: 'レース',
-        blurb: 'コースとくるまをえらんで、アクセル・ブレーキ・ハンドルで周回しよう。',
-        tip: '↑/W アクセル · ↓/S ブレーキ · ←→/A D ハンドル · スペースでアイテム · スマホは画面ボタン'
+        blurb: 'コースとくるまをえらんで、アクセル・ブレーキ・ハンドルでぐるっと走ろう！',
+        tip: '↑/W アクセル · ↓/S ブレーキ · ←→/A D ハンドル · スペース：アイテム · スマホは画面ボタン'
       },
       breakout: {
-        title: 'ブロック包囲',
+        title: 'ブロックだいさくせん',
         tag: 'ブロックくずし',
-        blurb: '20のブロック模様と壁のコース。道を見つけてブロックをくずそう！',
-        tip: 'ドラッグ / ← → · クリック/スペースで発射 · 金色のふちの壁はこわせない。はね返りを使おう'
+        blurb: '20しゅるいのブロックとかべのコース！みちを見つけて、ブロックをくずそう！',
+        tip: 'ドラッグか ← → · クリック/スペースでボールを出す · 金のふちのかべはこわれないよ。はねかえりをつかおう'
       },
       fruit: {
         title: 'フルーツストーム',
-        tag: 'フルーツカット',
-        blurb: 'とんでくるフルーツをカット！ばくだんにはちゅういして、コンボをのばそう。',
-        tip: '55秒 · 小/中/大: 30/20/10点＋コンボ · 通常−1ライフ、とげ−2、時計−5秒、氷は刃をとめる'
+        tag: 'フルーツぎり',
+        blurb: '55びょうのフルーツチャレンジ！とんでくるフルーツをきって、ばくだんはよけよう。',
+        tip: '小/中/大：30/20/10点＋コンボ · ばくだん −1ライフ、トゲ −2、とけい −5びょう、こおりは刃がとまる'
       },
       ninja: {
         title: 'にんじゃタイピング',
         tag: 'タイピング',
-        blurb: 'ちかづくことばパネルを、とどくまえにタイプしよう。',
-        tip: 'キーボードだけ · ひかることばをうってね'
+        blurb: 'ちかづいてくることばパネルを、とどくまえにタイプしよう！',
+        tip: 'キーボードだけ · ひかることばをうとう'
       }
     },
     race: {
-      lobbyKicker: 'コース選択',
+      lobbyKicker: 'コースをえらぶ',
       lobbyTitle: 'ピコサーキット',
-      lobbyHint: 'ループコースとくるまをえらんで、指定ラップをゴールしよう。',
+      lobbyHint: 'コースとくるまをえらんで、きまったラップを走りきろう！',
       pickTrack: 'コース',
       pickCar: 'くるま',
       lap: 'ラップ',
       dnf: 'リタイア',
       useItem: 'アイテム',
       tracks: {
-        sunrise: {name: 'サンライズ', blurb: 'ロングストレート・広いコーナー'},
-        harbor: {name: 'ハーバーループ', blurb: 'L字の港・ドックを周回'},
-        mountain: {name: 'マウンテンパス', blurb: '連続S字・山の景色'},
-        neon: {name: 'ネオンシティ', blurb: '街区コース・夜のシケイン'}
+        sunrise: {name: 'サンライズサーキット', blurb: 'ながいストレートと ひろいカーブ'},
+        harbor: {name: 'みなとループ', blurb: 'L字のみなとを ぐるっと'},
+        mountain: {name: 'やまみちコース', blurb: 'くねくねS字と やまのけしき'},
+        neon: {name: 'ネオンシティ', blurb: 'まちの中を走る よるのジグザグ'}
       },
       cars: {
-        sports: {name: 'スポーツ', blurb: 'バランス型'},
-        gt: {name: 'GT', blurb: '最高速重視'},
-        openwheel: {name: 'オープンホイール', blurb: '加速とハンドリング'},
-        kart: {name: 'カート', blurb: 'まがりやすい'}
+        sports: {name: 'スポーツカー', blurb: 'なんでもバランスよし'},
+        gt: {name: 'GT', blurb: 'さいこうそくがはやい · ちょっとおもい'},
+        openwheel: {name: 'フォーミュラカー', blurb: 'かそくがはやい · よくまがる'},
+        kart: {name: 'カート', blurb: 'まがりやすくて うんてんしやすい'}
       },
       powerups: {
         boost: 'ブースト',

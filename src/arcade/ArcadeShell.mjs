@@ -52,7 +52,7 @@ export function openArcadeShell({gameId, locale = 'en', onExit, onRetry}) {
           <span data-hud="best">${esc(t.best)} ${readBest(gameId)}</span>
         </div>
         <div class="arcade-hud-actions">
-          <button type="button" data-shell="board">${esc({zh:'排行榜',en:'Ranking',ja:'ランキング'}[locale])}</button>
+          <button type="button" data-shell="board">${esc({zh:'排行榜',en:'Rankings',ja:'ランキング'}[locale])}</button>
           <button type="button" data-shell="pause">${esc(t.pause)}</button>
           <button type="button" data-shell="back">${esc(t.back)}</button>
         </div>
@@ -66,7 +66,7 @@ export function openArcadeShell({gameId, locale = 'en', onExit, onRetry}) {
             <h2 data-overlay-title></h2>
             <p data-overlay-body></p>
             <div class="arcade-overlay-actions">
-              ${gameId==='bubble'?`<button type="button" data-shell="download">${esc({zh:'下载作品',ja:'ほぞん',en:'Download'}[locale])}</button>`:''}
+              ${gameId==='bubble'?`<button type="button" data-shell="download">${esc({zh:'下载作品',ja:'ダウンロード',en:'Download'}[locale])}</button>`:''}
               <button type="button" class="primary" data-shell="retry">${esc(t.retry)}</button>
               <button type="button" data-shell="back">${esc(t.back)}</button>
             </div>
@@ -111,8 +111,8 @@ export function openArcadeShell({gameId, locale = 'en', onExit, onRetry}) {
     if (best != null) root.querySelector('[data-hud="best"]').textContent = `${t.best} ${best}`;
   }
 
-  async function refreshRanking(){const level=progressLevel;board.innerHTML={zh:'加载排行榜…',ja:'よみこみ…',en:'Loading ranking…'}[locale];const markup=await rankingMarkup(gameId,level,locale);if(!destroyed&&level===progressLevel){board.innerHTML=markup;if(rankStatus)setRankStatus(rankStatus);}}
-  function setRankStatus(status){if(destroyed)return;rankStatus=status;board.querySelector('[data-rank-status]')?.remove();const text=status==='login'?{zh:'登录后成绩才会进入玩家排行榜',ja:'ログインすると ランキングに のります',en:'Sign in to enter the player ranking'}:{zh:'成绩上传失败，本机成绩已保存',ja:'スコアの そうしんに しっぱいしました',en:'Upload failed; score saved on this device'};const p=document.createElement('p');p.dataset.rankStatus='';p.textContent=text[locale];board.append(p);}
+  async function refreshRanking(){const level=progressLevel;board.innerHTML={zh:'排行榜加载中…',ja:'ランキングをよみこみ中…',en:'Loading rankings…'}[locale];const markup=await rankingMarkup(gameId,level,locale);if(!destroyed&&level===progressLevel){board.innerHTML=markup;if(rankStatus)setRankStatus(rankStatus);}}
+  function setRankStatus(status){if(destroyed)return;rankStatus=status;board.querySelector('[data-rank-status]')?.remove();const text=status==='login'?{zh:'登录后，成绩才能上排行榜哦',ja:'ログインするとランキングにのれるよ',en:'Sign in to get on the rankings'}:{zh:'成绩没传上去，但已经存在这台设备上了',ja:'スコアをおくれなかったけど、このきかいにほぞんしたよ',en:'Couldn\'t upload – your score is saved on this device'};const p=document.createElement('p');p.dataset.rankStatus='';p.textContent=text[locale];board.append(p);}
   function setProgress(difficulty) {
     progressLevel=difficulty.level;
     root.querySelector('.arcade-hard').textContent = progressionLabel(difficulty,locale);
@@ -137,7 +137,7 @@ export function openArcadeShell({gameId, locale = 'en', onExit, onRetry}) {
     root.querySelector('[data-overlay-body]').textContent = `${t.score} ${Math.floor(score)}${detail ? ` · ${detail}` : ''} · ${t.best} ${saved}${reward?.awarded ? ` · +${townPointsLabel(reward.points,locale)} · ${progressionLabel(next,locale)}` : ''}`;
     root.querySelector('[data-shell="retry"]').hidden=!!cleared;
     if(cleared){const message=document.createElement('p');message.dataset.autoNext='';message.setAttribute('role','status');message.textContent=autoAdvanceText(locale);root.querySelector('.arcade-overlay-actions').before(message);cancelAdvance=scheduleAutoAdvance(restart);}
-    root.querySelector('[data-shell="retry"]').textContent = cleared ? ({zh:'下一关 →',ja:'つぎのレベル →',en:'Next challenge →'}[locale] || 'Next challenge →') : t.retry;
+    root.querySelector('[data-shell="retry"]').textContent = cleared ? ({zh:'下一关 →',ja:'つぎのレベル →',en:'Next level →'}[locale] || 'Next challenge →') : t.retry;
   }
 
   function setPaused(next) {

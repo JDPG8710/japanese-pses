@@ -45,7 +45,7 @@ export function renderDesignPart(c,p,{ghost=false,shadow=true}={}){
  c.restore();
 }
 export function designTransform(width,height,kit){const b=kit.bounds,s=Math.min((width-40)/b.w,(height-64)/b.h);return {scale:Math.max(.05,s),x:(width-b.w*s)/2-b.x*s,y:(height-b.h*s)/2-b.y*s};}
-export function renderDesignScene(c,{kit,parts,strokes=[],selected=null,grid=true,ghosts=true,demo=false,clean=false},width,height){
+export function renderDesignScene(c,{kit,parts,strokes=[],selected=null,grid=true,ghosts=true,demo=false,clean=false,labels=['PIKO / PRODUCT DESIGN STUDIO','FRONT / REAR']},width,height){
  c.save();c.fillStyle='#f5f7fa';c.fillRect(0,0,width,height);if(!clean&&grid){c.strokeStyle='#dce3ed';c.lineWidth=.5;for(let x=20;x<width;x+=24){c.beginPath();c.moveTo(x,0);c.lineTo(x,height);c.stroke();}for(let y=20;y<height;y+=24){c.beginPath();c.moveTo(0,y);c.lineTo(width,y);c.stroke();}}
  const t=designTransform(width,height,kit);c.translate(t.x,t.y);c.scale(t.scale,t.scale);
  const ordered=[...parts].sort((a,b)=>a.z-b.z);if(ghosts&&!clean&&!demo)for(const p of ordered)if(!p.placed)renderDesignPart(c,{...p,x:p.tx,y:p.ty,rotation:0,scale:1},{ghost:true,shadow:false});
@@ -54,7 +54,7 @@ export function renderDesignScene(c,{kit,parts,strokes=[],selected=null,grid=tru
  if(strokes.length&&c.canvas?.ownerDocument){const layer=c.canvas.ownerDocument.createElement('canvas');layer.width=Math.ceil(width);layer.height=Math.ceil(height);const ink=layer.getContext('2d');ink.translate(t.x,t.y);ink.scale(t.scale,t.scale);for(const stroke of strokes){ink.globalCompositeOperation=stroke.erase?'destination-out':'source-over';ink.strokeStyle=stroke.color;ink.lineWidth=stroke.size;ink.lineCap='round';ink.lineJoin='round';ink.beginPath();stroke.points.forEach((p,i)=>i?ink.lineTo(p.x,p.y):ink.moveTo(p.x,p.y));ink.stroke();}c.save();c.translate(-t.x/t.scale,-t.y/t.scale);c.scale(1/t.scale,1/t.scale);c.drawImage(layer,0,0);c.restore();}
 
  if(selected&&!clean&&!demo){const p=parts.find(p=>p.id===selected&&p.placed);if(p){c.save();c.translate(p.x,p.y);c.rotate((p.rotation||0)*Math.PI/180);c.scale(p.scale||1,p.scale||1);c.strokeStyle='#c98c48';c.lineWidth=1.5/t.scale;c.setLineDash([5/t.scale,4/t.scale]);c.strokeRect(-p.w/2-5,-p.h/2-5,p.w+10,p.h+10);c.setLineDash([]);c.fillStyle='#c98c48';for(const x of [-p.w/2-5,p.w/2+5])for(const y of [-p.h/2-5,p.h/2+5])c.fillRect(x-3/t.scale,y-3/t.scale,6/t.scale,6/t.scale);c.restore();}}
- c.restore();if(!clean){c.fillStyle='#8795a7';c.font='10px system-ui';c.textAlign='left';c.fillText('PIKO / PRODUCT DESIGN STUDIO',18,height-15);c.textAlign='right';c.fillText('FRONT / REAR',width-18,height-15);}
+ c.restore();if(!clean){c.fillStyle='#8795a7';c.font='10px system-ui';c.textAlign='left';c.fillText(labels[0],18,height-15);c.textAlign='right';c.fillText(labels[1],width-18,height-15);}
  return t;
 }
 export function thumbnail(doc,kit,part=null){const canvas=doc.createElement('canvas');canvas.width=180;canvas.height=100;const c=canvas.getContext('2d');if(part){c.fillStyle='#edf1f6';c.fillRect(0,0,180,100);const s=Math.min(144/part.w,74/part.h);c.translate(90,50);c.scale(s,s);renderDesignPart(c,{...part,x:0,y:0},{shadow:false});}else renderDesignScene(c,{kit,parts:kit.parts,demo:true,grid:false,clean:true},180,100);return canvas.toDataURL('image/png');}

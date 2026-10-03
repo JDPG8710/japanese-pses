@@ -39,7 +39,7 @@ export const ARCADE_TEXT = {
         title: 'Fruit Storm',
         tag: 'SLASH',
         blurb: 'Slash flying fruit, dodge bombs, and build a big combo.',
-        tip: 'Swipe through fruit · bombs cost a life'
+        tip: '55 seconds · small/medium/large fruit: 30/20/10 + combo · bombs: −1 heart, spikes −2, clock −5s, ice freezes the blade'
       },
       ninja: {
         title: 'Ninja Type',
@@ -115,8 +115,8 @@ export const ARCADE_TEXT = {
       fruit: {
         title: '水果风暴',
         tag: '切水果',
-        blurb: '水果飞得很快，炸弹很多。连击不够整波不算。',
-        tip: '在 3D 中滑动切水果 · 炸弹扣命'
+        blurb: '55 秒水果挑战：六种水果、三种大小，躲开四种炸弹，完成连击！',
+        tip: '小/中/大水果：30/20/10 分＋连击 · 普通弹扣1命、尖刺扣2命、时钟扣5秒、冰冻刀刃'
       },
       ninja: {
         title: '忍者打字',
@@ -193,7 +193,7 @@ export const ARCADE_TEXT = {
         title: 'フルーツストーム',
         tag: 'フルーツカット',
         blurb: 'とんでくるフルーツをカット！ばくだんにはちゅういして、コンボをのばそう。',
-        tip: 'スワイプでカット · ばくだんはライフがへる'
+        tip: '55秒 · 小/中/大: 30/20/10点＋コンボ · 通常−1ライフ、とげ−2、時計−5秒、氷は刃をとめる'
       },
       ninja: {
         title: 'にんじゃタイピング',

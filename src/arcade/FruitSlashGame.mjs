@@ -1,5 +1,7 @@
 /** 3D fruit slash — blade trail, split halves, juice bursts. */
 import {normalizeDifficulty,challengeRandom} from '../town/TownProgression.mjs';
+import {createFruitVisuals,FRUIT_TYPES,FRUIT_SIZES,FRUIT_BOMBS} from './FruitVisuals.mjs';
+export {FRUIT_TYPES,FRUIT_SIZES,FRUIT_BOMBS} from './FruitVisuals.mjs';
 import {
   createArcadeRenderer, resizeArcade3D, disposeArcade3D, sphereMesh, boxMesh, THREE,
   spawnParticleBurst, updateParticles, createSlashTrail
@@ -16,10 +18,10 @@ export const FRUIT_DIFFICULTY = Object.freeze({
   fruitSpeed: 7.5,
   gravity: 9.5,
   slashRadius: 0.85,
-  missLifeCost: true
+  missLifeCost: true,
+  timeLimit:55
 });
 
-const FRUIT_COLORS = [0xff6b6b, 0xff9f43, 0xffd45e, 0x7dffb3, 0xc791ff, 0xff8fab];
 
 export function fruitDifficultyFor(difficulty) {
  const s=normalizeDifficulty(difficulty).scale;
@@ -30,6 +32,8 @@ export function createFruitSlashGame({canvas, onHud, onEnd, audio = null, autoSt
   const D = fruitDifficultyFor(difficulty);
   let random=challengeRandom(seed);
   const graphics = createArcadeRenderer(canvas, {clear: 0x152418});
+  const visuals=graphics.ok?createFruitVisuals():null;
+  let remainingTime=D.timeLimit,frozenFor=0,lastAward=0;
   let lives = D.lives;
   let score = 0;
   let wave = 1;
@@ -57,7 +61,7 @@ export function createFruitSlashGame({canvas, onHud, onEnd, audio = null, autoSt
     onHud?.({
       score,
       lives,
-      extra: `${waveHits}/${waveNeed} · ${combo}x · W${creditedWaves}/${D.clearWaves}`
+      extra: `⏱ ${Math.ceil(remainingTime)}s · ${waveHits}/${waveNeed} · ${combo}x · W${creditedWaves}/${D.clearWaves}${frozenFor>0?' · ❄':''}${lastAward?` · +${lastAward}`:''}`
     });
   }
   function bombChance() {
@@ -82,33 +86,16 @@ export function createFruitSlashGame({canvas, onHud, onEnd, audio = null, autoSt
     trail = createSlashTrail(scene, {color: 0xfff6c8, maxPoints: 16});
     camera.position.set(0, 1.5, 8);
     camera.lookAt(0, 0.5, 0);
-    resizeArcade3D(graphics, canvas);
+    onResize();
   }
 
   function spawn() {
-    const isBomb = random() < bombChance();
-    const color = isBomb ? 0x222830 : FRUIT_COLORS[Math.floor(random() * FRUIT_COLORS.length)];
-    const x = (random() - 0.5) * 8;
-    const speed = D.fruitSpeed + wave * 0.35 + random() * 1.5;
-    const z=(random()-.5)*2;
-    const mesh = graphics.ok
-      ? sphereMesh(isBomb ? 0.45 : 0.4, color, {segments: 12})
-      : null;
-    if (mesh) {
-      mesh.position.set(x, -2.5, z);
-      itemGroup.add(mesh);
-    }
-    items.push({
-      x, y: -2.5, z,
-      vx: (random() - 0.5) * 2.5,
-      vy: speed,
-      vz: (random() - 0.5) * 0.8,
-      bomb: isBomb,
-      alive: true,
-      mesh,
-      color,
-      spun: random() * Math.PI * 2
-    });
+    const isBomb=random()<bombChance(),spec=isBomb?FRUIT_BOMBS[Math.floor(random()*FRUIT_BOMBS.length)]:FRUIT_TYPES[Math.floor(random()*FRUIT_TYPES.length)];
+    const size=FRUIT_SIZES[Math.floor(random()*FRUIT_SIZES.length)],radius=isBomb?.46:size.radius;
+    const x=(random()-.5)*5.4,speed=D.fruitSpeed+Math.min(2,wave*.22)+random()*1.5,z=0;
+    const mesh=visuals?(isBomb?visuals.bomb(spec.id,radius):visuals.fruit(spec.id,radius)):null;
+    if(mesh){mesh.position.set(x,-2.5,z);itemGroup.add(mesh);}
+    items.push({x,y:-2.5,z,vx:(random()-.5)*1.5,vy:speed,vz:0,bomb:isBomb,kind:spec.id,size:size.id,radius,points:isBomb?0:size.points,alive:true,mesh,color:spec.color,spun:random()*Math.PI*2});
   }
 
   function splitFruit(item, point) {
@@ -118,8 +105,7 @@ export function createFruitSlashGame({canvas, onHud, onEnd, audio = null, autoSt
       count: 14, color: item.color || 0xff6b6b, speed: 5, life: 0.42, size: 0.09
     }));
     for (const side of [-1, 1]) {
-      const half = sphereMesh(0.28, item.color || 0xff6b6b, {segments: 10});
-      half.scale.set(1, 0.55, 1);
+      const half = visuals.half(item.kind,item.radius,side);
       half.position.copy(origin);
       fxGroup.add(half);
       halves.push({
@@ -135,33 +121,36 @@ export function createFruitSlashGame({canvas, onHud, onEnd, audio = null, autoSt
   }
 
   function slashAt(point) {
-    if(!running||ended)return;
+    if(!running||ended||frozenFor>0)return;
     let hit = false;
     for (const item of items) {
       if (!item.alive) continue;
-      const dx = item.x - point.x;
-      const dy = item.y - point.y;
-      const dz = item.z - point.z;
-      if (dx * dx + dy * dy + dz * dz > (D.slashRadius) ** 2) continue;
+
+      const from=lastPoint||point,sx=point.x-from.x,sy=point.y-from.y,den=sx*sx+sy*sy;
+      const t=den?Math.max(0,Math.min(1,((item.x-from.x)*sx+(item.y-from.y)*sy)/den)):0;
+      const ex=item.x-from.x-sx*t,ey=item.y-from.y-sy*t;
+      if (ex*ex+ey*ey > (item.radius+D.slashRadius*.2) ** 2) continue;
       item.alive = false;
       if (item.mesh) item.mesh.visible = false;
       hit = true;
       if (item.bomb) {
-        lives -= 1;
+        const effect=FRUIT_BOMBS.find(b=>b.id===item.kind);
+        lives-=effect.lives||0;remainingTime=Math.max(0,remainingTime-(effect.seconds||0));frozenFor=effect.freeze||0;lastAward=0;
         combo = 0;
         try { audio?.bomb?.(); } catch {}
         if (graphics.ok && fxGroup) {
           particles = particles.concat(spawnParticleBurst(fxGroup, new THREE.Vector3(item.x, item.y, item.z), {
-            count: 16, color: 0xff5533, speed: 6, life: 0.35, size: 0.11
+            count: 16, color: effect.color, speed: 6, life: 0.35, size: 0.11
           }));
         }
         hud();
-        if (lives <= 0) finish(false);
+        if (lives <= 0||remainingTime<=0) return finish(false);
+        if(frozenFor>0)break;
       } else {
         try { audio?.fruitCut?.(); } catch {}
         splitFruit(item, point);
         combo += 1;
-        score += 10 + combo * 2;
+        lastAward=item.points+Math.min(10,combo*2);score+=lastAward;
         waveHits += 1;
         if (waveHits >= waveNeed && combo >= D.minComboToCreditWave) {
           creditedWaves += 1;
@@ -190,6 +179,8 @@ export function createFruitSlashGame({canvas, onHud, onEnd, audio = null, autoSt
 
   function tick(dt) {
     if (!running || ended) return;
+    const elapsed=Number.isFinite(dt)?Math.max(0,dt):0;remainingTime=Math.max(0,remainingTime-elapsed);frozenFor=Math.max(0,frozenFor-elapsed);dt=Math.min(.05,elapsed);
+    if(remainingTime<=0){hud();return finish(false);}
     spawnTimer -= dt;
     if (spawnTimer <= 0) {
       spawn();
@@ -228,13 +219,9 @@ export function createFruitSlashGame({canvas, onHud, onEnd, audio = null, autoSt
       if (h.mesh) {
         h.mesh.position.set(h.x, h.y, h.z);
         h.mesh.rotation.z += h.spin * dt;
-        h.mesh.material.transparent = true;
-        h.mesh.material.opacity = Math.max(0, h.life / 0.85);
       }
       if (h.life <= 0 || h.y < -4) {
         fxGroup?.remove(h.mesh);
-        h.mesh?.geometry?.dispose?.();
-        h.mesh?.material?.dispose?.();
         return false;
       }
       return true;
@@ -248,7 +235,7 @@ export function createFruitSlashGame({canvas, onHud, onEnd, audio = null, autoSt
     if(ended)return;
     ended = true; running = false;
     typeof cancelAnimationFrame === 'function' && cancelAnimationFrame(raf);
-    onEnd?.({cleared, score, detail: `${creditedWaves} waves`});
+    onEnd?.({cleared, score, detail: `⏱ ${Math.ceil(remainingTime)}s · ${creditedWaves}/${D.clearWaves}`});
   }
 
   function draw() {
@@ -257,7 +244,7 @@ export function createFruitSlashGame({canvas, onHud, onEnd, audio = null, autoSt
   }
   function loop(ts) {
     if (!running) return;
-    const dt = Math.min(0.033, (ts - last) / 1000 || 0.016);
+    const dt = Math.max(0, (ts - last) / 1000 || 0.016);
     last = ts; tick(dt); draw();
     if (running) raf = requestAnimationFrame(loop);
   }
@@ -265,11 +252,12 @@ export function createFruitSlashGame({canvas, onHud, onEnd, audio = null, autoSt
   function onDown(e) {
     if(!running||ended)return;
     slicing = true;
-    lastPoint = pointerToWorld(e);
-    if (lastPoint) {
+    canvas.setPointerCapture?.(e.pointerId);
+    const point = pointerToWorld(e);lastPoint=point;
+    if (point) {
       try { audio?.slash?.(); } catch {}
-      trail?.push(lastPoint);
-      slashAt(lastPoint);
+      trail?.push(point);
+      slashAt(point);
     }
   }
   function onMove(e) {
@@ -282,13 +270,14 @@ export function createFruitSlashGame({canvas, onHud, onEnd, audio = null, autoSt
     }
   }
   function onUp() { slicing = false; lastPoint = null; }
-  function onResize() { resizeArcade3D(graphics, canvas); }
+  function onResize() { resizeArcade3D(graphics, canvas);if(graphics.ok){graphics.camera.position.set(0,.6,Math.max(8,3.6/(Math.tan(55*Math.PI/360)*graphics.camera.aspect)));graphics.camera.lookAt(0,.6,0);} }
 
   function bind() {
     canvas?.addEventListener?.('pointerdown', onDown);
     canvas?.addEventListener?.('pointermove', onMove);
     canvas?.addEventListener?.('pointerup', onUp);
     canvas?.addEventListener?.('pointercancel', onUp);
+    canvas?.addEventListener?.('arcade-resize',onResize);
     typeof window !== 'undefined' && window.addEventListener('resize', onResize);
   }
   function unbind() {
@@ -296,6 +285,7 @@ export function createFruitSlashGame({canvas, onHud, onEnd, audio = null, autoSt
     canvas?.removeEventListener?.('pointermove', onMove);
     canvas?.removeEventListener?.('pointerup', onUp);
     canvas?.removeEventListener?.('pointercancel', onUp);
+    canvas?.removeEventListener?.('arcade-resize',onResize);
     typeof window !== 'undefined' && window.removeEventListener('resize', onResize);
   }
 
@@ -303,6 +293,7 @@ export function createFruitSlashGame({canvas, onHud, onEnd, audio = null, autoSt
     random=challengeRandom(seed);
     lives = D.lives; score = 0; wave = 1; waveHits = 0; waveNeed = 5;
     combo = 0; creditedWaves = 0; items = []; halves = []; particles = []; spawnTimer = 0.3; ended = false;
+    remainingTime=D.timeLimit;frozenFor=0;lastAward=0;lastPoint=null;slicing=false;
     if (itemGroup) while (itemGroup.children.length) itemGroup.remove(itemGroup.children[0]);
     if (fxGroup) while (fxGroup.children.length) fxGroup.remove(fxGroup.children[0]);
     trail?.clear();
@@ -310,7 +301,7 @@ export function createFruitSlashGame({canvas, onHud, onEnd, audio = null, autoSt
     typeof cancelAnimationFrame === 'function' && cancelAnimationFrame(raf);
     if (typeof requestAnimationFrame === 'function') raf = requestAnimationFrame(loop);
   }
-  function pause() { running = false; typeof cancelAnimationFrame === 'function' && cancelAnimationFrame(raf); }
+  function pause() { running = false;slicing=false;lastPoint=null; typeof cancelAnimationFrame === 'function' && cancelAnimationFrame(raf); }
   function resume() {
     if (ended) return;
     running = true; last = performance.now?.() || 0;
@@ -322,10 +313,13 @@ export function createFruitSlashGame({canvas, onHud, onEnd, audio = null, autoSt
     unbind();
     trail?.dispose?.();
     disposeArcade3D(graphics);
+    visuals?.dispose();
   }
 
   buildScene();
   bind();
   if (autoStart) start();
-  return {start, pause, resume, destroy, tick, draw, getState: () => ({difficulty:D, lives, score, wave, combo, creditedWaves, items:items.filter(i=>i.alive).map(({x,y,z,vx,vy,vz,bomb})=>({x,y,z,vx,vy,vz,bomb})), ended, gl: graphics.ok})};
+  return {start, pause, resume, destroy, tick, draw, slashAt,
+    projectToScreen(point){if(!graphics.ok)return null;const p=new THREE.Vector3(point.x,point.y,point.z||0).project(graphics.camera),r=canvas.getBoundingClientRect();return {x:r.left+(p.x+1)*r.width/2,y:r.top+(1-p.y)*r.height/2};},
+    getState: () => ({difficulty:D, lives, score, wave, combo, creditedWaves, remainingTime,frozenFor,lastAward,items:items.filter(i=>i.alive).map(({x,y,z,vx,vy,vz,bomb,kind,radius,size,points})=>({x,y,z,vx,vy,vz,bomb,kind,radius,size,points})), ended, gl: graphics.ok})};
 }

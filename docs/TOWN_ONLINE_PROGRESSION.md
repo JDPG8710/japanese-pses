@@ -40,8 +40,8 @@ npm run test:town:release
 
 ## 发布
 
-本次只完成本地实现与验证，未发布线上。发布时先部署 `wrangler.toml` 对应 Worker，使 `TOWN_ROOMS` 绑定及 `town-v1` SQLite Durable Object 迁移生效，再发布本次 `dist` 到 Pages。现有 Pages `/api/*` 代理继续转发到 Worker；本功能不需要 D1 教材迁移或重新导入教材。
+已于 2026-10-03 发布上线：Worker 版本 `552bb81e-335b-4d93-99a1-42e04424d1fb`，Pages 部署 `67dc150e`，发布源 `8e14406`。`TOWN_ROOMS` 绑定与 `town-v1` SQLite Durable Object 迁移已生效。现有 Pages `/api/*` 代理继续转发到 Worker；本功能不需要 D1 教材迁移或重新导入教材。
 
-已执行 Worker `deploy --dry-run`，确认包含 `TOWN_ROOMS`。上线后应以两个独立浏览器检查同房、不同房、重连及实际代理 WebSocket 升级。
+生产域名已通过两个独立浏览器的联机、移动、车辆、表情、共同挑战、断线重连和退出检查；WebSocket 经真实 Pages 代理连接。API 健康检查 200，四种屏宽的场馆、移动与布局检查通过。发布前总回归为 216/216。
 
 主要代码：`src/town/TownProgression.mjs`、`TownMultiplayer.mjs`、`TownRemotePlayers.mjs`、`TownLife.mjs`，`src/arcade/BubbleGame.mjs`、`RhythmGame.mjs`，以及 `worker/town-api.mjs`、`town-room.mjs`。

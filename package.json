@@ -61,7 +61,9 @@
     "test:town:feedback": "node scripts/build.mjs && node tests/test_town_feedback_browser.mjs",
     "test:town:music": "node tests/test_town_music_browser.mjs",
     "test:english-choices": "node tests/test_english_choice_quality.mjs",
-    "audit:english-choices": "node scripts/audit-english-choices.mjs"
+    "audit:english-choices": "node scripts/audit-english-choices.mjs",
+    "test:arcade:repairs": "node tests/test_arcade_repairs.mjs",
+    "test:arcade:repairs:browser": "node tests/test_arcade_repairs_browser.mjs"
   },
   "devDependencies": {
     "playwright-core": "^1.63.0",

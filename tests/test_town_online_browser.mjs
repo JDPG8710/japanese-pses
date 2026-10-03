@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {mkdir} from 'node:fs/promises';
 import {chromium} from 'playwright-core';
 import {startTownOnlinePreview} from '../scripts/preview-town-online.mjs';
-const preview=await startTownOnlinePreview(0,{built:process.env.TOWN_TEST_BUILT==='1'}),browser=await chromium.launch({channel:'chrome',headless:true,args:['--enable-unsafe-swiftshader']});
+const preview=process.env.TOWN_TEST_ORIGIN?{origin:process.env.TOWN_TEST_ORIGIN,close:async()=>{}}:await startTownOnlinePreview(0,{built:process.env.TOWN_TEST_BUILT==='1'}),browser=await chromium.launch({channel:'chrome',headless:true,args:['--enable-unsafe-swiftshader']});
 const errors=[];await mkdir('.wrangler/town-online',{recursive:true});
 try{
  const hostContext=await browser.newContext({viewport:{width:1440,height:1000}}),guestContext=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});

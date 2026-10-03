@@ -3,6 +3,7 @@ import { townRoute } from './town-api.mjs';
 import { worldRoute } from './world-games.mjs';
 import { goRoute } from './go-api.mjs';
 import { foundationRoute } from './foundation-games.mjs';
+import { amcRoute, amcDeleteStatements } from './amc-progress.mjs';
 import { countryResponse, isCnSafeModeActive, normalizeCountry } from '../src/location/Country.mjs';
 import { playCountsRoute } from './play-counts.mjs';
 import { siteVisitsRoute } from './site-visits.mjs';
@@ -52,6 +53,7 @@ async function routeRequest(request, env) {
   if (url.pathname.startsWith('/api/arcade/')) return arcadeRoute(request, env, { authenticate, json, HttpError });
   if (url.pathname.startsWith('/api/world/')) return worldRoute(request, env, { authenticate, json, HttpError });
   if (url.pathname.startsWith('/api/foundation/')) return foundationRoute(request, env, { authenticate, json, HttpError });
+  if (url.pathname.startsWith('/api/amc/')) return amcRoute(request, env, { authenticate, json, HttpError });
   if (url.pathname === '/api/auth/turnstile-verify' && request.method === 'POST') return handleTurnstile(request, env);
   if (url.pathname === '/api/auth/google') return handleOAuth('google', request, env);
   if (url.pathname === '/api/auth/apple') return handleOAuth('apple', request, env);
@@ -482,6 +484,10 @@ async function handleStateDelete(request, env) {
     database.prepare('DELETE FROM game_attempts WHERE user_id = ?1').bind(session.sub),
     database.prepare('DELETE FROM user_profiles WHERE user_id = ?1').bind(session.sub)
   ]);
+  // AMC hub progress (migration 0017). Kept separate so that deleting the
+  // main learning data still works if the AMC tables are not migrated yet.
+  try { await database.batch(amcDeleteStatements(database, session.sub)); }
+  catch (error) { console.warn('AMC progress delete skipped', error instanceof Error ? error.message : 'unknown'); }
   return json({ deleted: true, userId: session.sub }, 200, request, env);
 }
 

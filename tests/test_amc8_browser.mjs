@@ -33,6 +33,8 @@ try {
   browser = await chromium.launch({ channel: 'chrome', headless: true });
   const origin = process.env.AMC8_TEST_ORIGIN || `http://127.0.0.1:${server.address().port}`;
   const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+  // Signed-out visitor: the Worker answers GET /api/amc/progress with {authenticated:false}.
+  await page.route('**/api/amc/**', route => route.fulfill({ status: 200, contentType: 'application/json', body: '{"authenticated":false}' }));
   const drillCards = '.course-card:has([data-start])';
   for (const locale of ['ja', 'zh', 'en']) {
     // The old AMC 8 address forwards to the AMC hub at level 8.
@@ -73,7 +75,7 @@ try {
     await page.locator('[data-next]').click();
   }
   assert.match(await page.locator('.result strong').first().textContent(), /10/);
-  assert.equal(await page.evaluate(() => localStorage.getItem('piko-independent-practice:v1:amc8:number')), '10');
+  assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('piko-amc-guest:v1') || '{}').progress?.drill?.number?.best), 10, 'signed-out drill best kept in the browser guest store');
   await page.goto(`${origin}/`);
   assert.equal(await page.locator('.about-play-actions a[href="/amc?lang=en"]').count(), 1);
   await page.locator('#country-home-play-now').click();
@@ -123,7 +125,7 @@ try {
   assert.equal(await page.locator(drillCards).count(), 5, 'country picker → AMC shows practice');
 
   // Learn view: same level as practice, deep-linkable, translated, with local progress.
-  await page.evaluate(key => localStorage.removeItem(key), LESSON_KEY);
+  await page.evaluate(() => localStorage.removeItem('piko-amc-guest:v1'));
   for (const width of [390, 1280]) {
     await page.setViewportSize({ width, height: 900 });
     for (const locale of ['zh', 'en', 'ja']) {
@@ -158,7 +160,7 @@ try {
   await page.locator('[data-lesson="geometry"]').last().click();
   assert.equal(new URL(page.url()).searchParams.get('lesson'), 'geometry');
   await page.locator('.mark-done').click();
-  assert.deepEqual(JSON.parse(await page.evaluate(key => localStorage.getItem(key), LESSON_KEY)), ['geometry']);
+  assert.deepEqual(await page.evaluate(() => Object.entries(JSON.parse(localStorage.getItem('piko-amc-guest:v1') || '{}').progress.lessons['8']).filter(([, v]) => v.done).map(([id]) => id)), ['geometry']);
   assert.equal(await page.locator('.mark-done').textContent(), LEARN_TEXT.zh.markUndo);
   await page.selectOption('#locale', 'ja');
   assert.equal(await page.locator('#lesson-title').textContent(), LESSONS.find(l => l.id === 'geometry').title.ja, 'language switch keeps the open lesson');

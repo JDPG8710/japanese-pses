@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta name="turnstile-site-key" content="0x4AAAAAAEZrRJQcMv2tk9IP" />
+  <script>/* Back to the AMC hub after sign-in (Google/LINE OAuth always returns to /?auth=...). Same-origin allow-listed paths only. */(function(){try{var q=new URLSearchParams(location.search),s=q.get('auth');if(!s)return;var r=sessionStorage.getItem('piko-auth-return');sessionStorage.removeItem('piko-auth-return');if(s==='success'&&r&&/^\/amc(\.html)?(\?[A-Za-z0-9=&%._-]*)?$/.test(r))location.replace(r);}catch(e){}})();</script>
   <meta name="google-adsense-account" content="ca-pub-8738651569097071" data-tag-for-child-directed-treatment="1" data-tag-for-under-age-of-consent="1" />
   <script type="module" src="/src/privacy/ConsentManager.mjs?v=aed480fe2fd5"></script>
   <title>Piko Game | Multilingual Learning Games for Primary Students</title>

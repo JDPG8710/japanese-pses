@@ -124,3 +124,30 @@
 .archive-list li{display:flex;flex-direction:column;justify-content:space-between}
 .level-switch{align-items:stretch}
 .level-switch button{justify-content:flex-start;height:100%}
+
+/* Account binding (AmcProgressStore): sign-in prompt / sync status. */
+.amc-account{display:flex;align-items:center;gap:12px;margin-top:16px;padding:12px 14px;border:2px solid var(--line);border-radius:14px;background:var(--surface);box-shadow:var(--shadow-sm);text-align:left}
+.amc-account>div{flex:1;min-width:0}
+.amc-account p{margin:0;line-height:1.5}
+.amc-account-icon{flex:none;font-size:1.4rem}
+.amc-account-title{font-weight:800;color:var(--text)}
+.amc-account-status{color:var(--text-2);font-size:.92rem}
+.amc-account-note{margin-top:4px!important;color:var(--muted);font-size:.85rem}
+.amc-account.is-guest{border-color:var(--sun-line);background:linear-gradient(135deg,#fffaf0,#fff4dc)}
+.amc-account.is-user{border-color:#8cc9c0;background:linear-gradient(135deg,#f3fcfa,#e9f7f4)}
+.amc-account.is-user[data-sync="retrying"],.amc-account.is-user[data-sync="offline"],.amc-account.is-user[data-sync="expired"]{border-color:var(--sun-line);background:#fff8ec}
+.amc-account button{flex:none;white-space:normal}
+.save-note{margin:14px 0}
+.save-note .amc-account{margin-top:0}
+.mock-history{margin:6px 0 0;font-size:.85rem}
+@media (max-width:560px){.amc-account{flex-wrap:wrap}.amc-account button{width:100%}}
+#auth-modal{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;background:rgba(15,23,42,.88);padding:16px}
+#auth-modal.hidden,#auth-modal .hidden{display:none!important}
+#auth-modal section{width:min(100%,460px);padding:24px;border-radius:24px;background:#fffdf6;color:#243b35}
+#auth-modal h1{font-size:1.6rem}
+#auth-modal p{font-size:14px}
+#auth-modal button{width:100%;margin:6px 0}
+#auth-turnstile{display:flex;justify-content:center;margin-top:16px}
+#auth-error{padding:10px;color:#a03d29}
+#auth-modal .auth-benefit-card span{color:#475569}
+#auth-modal .auth-privacy-link{color:#3f51b5}

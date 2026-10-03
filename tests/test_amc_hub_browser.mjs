@@ -46,6 +46,8 @@ try {
   const origin = `http://127.0.0.1:${server.address().port}`;
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
   const page = await context.newPage();
+  // Signed-out visitor: the Worker answers GET /api/amc/progress with {authenticated:false}.
+  await page.route('**/api/amc/**', route => route.fulfill({ status: 200, contentType: 'application/json', body: '{"authenticated":false}' }));
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
   page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
@@ -183,7 +185,7 @@ try {
     await page.locator('#result-title').waitFor();
     assert.match(await page.locator('.score-value').textContent(), new RegExp(`${size} / ${size}`));
     assert.equal(await page.locator('.review-item').count(), size);
-    assert.equal(await page.evaluate(key => localStorage.getItem(key), `piko-amc-real:v1:${level}:${area}`), String(size));
+    assert.equal(await page.evaluate(key => JSON.parse(localStorage.getItem('piko-amc-guest:v1') || '{}').progress.real[key].best, `${level}:${area}`), size);
     if (level === '10') await shot('mobile-amc10-set-result-zh');
   }
   // Wrong answer and blank answer paths.

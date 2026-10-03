@@ -2,7 +2,7 @@
 // Practise, Learn and Registration. Level, view and open lesson live in the
 // URL (?lang=&level=&view=&lesson=) so links, reloads, the back button and
 // language switches keep the learner where they were.
-import {TOPICS,FAMILIES,ARCHIVE,OFFICIAL_SAMPLE,amcBank,topicExamples,createSession,gradeResponse,resultFor,progressKey,shuffle} from './PracticeData.mjs';
+import {TOPICS,FAMILIES,ARCHIVE,OFFICIAL_SAMPLE,amcBank,topicExamples,createSession,gradeResponse,resultFor,shuffle} from './PracticeData.mjs';
 import {LESSONS,STAGES,FACTS,SOURCES,FACTS_CHECKED,LEARN_TEXT,LESSON_KEY,lessonForTopic} from './AmcLessons.mjs';
 import {UPPER} from './AmcUpperLessons.mjs';
 import {AMC8_AREAS,AMC8_REAL_BANK} from './AmcBank8.mjs';
@@ -12,14 +12,16 @@ import {LETTERS,citation,aopsUrl} from './AmcRealCore.mjs';
 import {REGISTRATION,REG_VERIFIED} from './AmcRegistration.mjs';
 import {HUB_TEXT} from './AmcHubText.mjs';
 import {TEXT} from './PracticeText.mjs';
+import {AmcProgressStore} from './AmcProgressStore.mjs';
 
 const LEVELS=['8','10','12'],VIEWS=['practice','learn','register'];
 const app=document.querySelector('#practice-app'),tabSlot=document.querySelector('#view-tabs');
 const params=new URLSearchParams(location.search);
 let locale=['ja','zh','en'].includes(params.get('lang'))?params.get('lang'):'ja';
 let h=HUB_TEXT[locale],t=TEXT[locale];
-let storage;try{storage=localStorage;const key='piko-practice-storage-check';storage.setItem(key,'1');storage.removeItem(key);}catch{storage=undefined;}
-let storageOK=!!storage;
+// Progress is bound to the signed-in account (D1 via /api/amc/*); signed-out
+// learners keep a browser-local copy that is merged into the account once.
+const progress=new AmcProgressStore();
 let level='8',view='practice',lessonId=null,drill=null,rs=null,timer=null;
 
 const esc=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -54,17 +56,37 @@ function writeState(push=false){
   if(push)history.pushState(null,'',url);else history.replaceState(null,'',url);
 }
 
-// ---------- storage ----------
-const memory=new Map();
-function getItem(key){try{return storageOK?storage.getItem(key):memory.get(key)??null;}catch{return memory.get(key)??null;}}
-function setItem(key,value){memory.set(key,value);try{if(storageOK)storage.setItem(key,value);}catch{storageOK=false;chrome();}}
-function doneLessons(){
-  const d=levelData();try{const saved=JSON.parse(getItem(d.key)||'[]');return new Set(Array.isArray(saved)?saved.filter(id=>d.lessons.some(lesson=>lesson.id===id)):[]);}catch{return new Set();}
+// ---------- progress (account-bound, see AmcProgressStore.mjs) ----------
+function doneLessons(){const d=levelData(),saved=progress.lessonsDone(level);return new Set([...saved].filter(id=>d.lessons.some(lesson=>lesson.id===id)));}
+function setLessonDone(id,done){progress.setLesson(level,id,done);}
+const realBest=(lv,area,size)=>Math.min(size,progress.realBest(lv,area));
+const readDrillBest=id=>progress.drillBest(id);
+const acct=()=>h.account;
+function accountStatus(){
+  if(progress.mode==='loading')return acct().loading;
+  if(progress.mode!=='user')return progress.storageOK?acct().guestLocal:acct().unavailable;
+  return acct()[progress.status]||acct().synced;
 }
-function setLessonDone(id,done){const ids=doneLessons();if(done)ids.add(id);else ids.delete(id);setItem(levelData().key,JSON.stringify([...ids]));}
-const realKey=(lv,area)=>`piko-amc-real:v1:${lv}:${area}`;
-function readNumber(key,max){const value=Number(getItem(key));return Number.isFinite(value)&&value>=0&&value<=max?value:0;}
-const readDrillBest=id=>{const v=readNumber(progressKey('amc8',id),10);return Number.isInteger(v)?v:0;};
+function accountBanner(){
+  if(progress.mode==='user')return `<div class="amc-account is-user" data-amc-account="user" data-sync="${esc(progress.status)}" role="status" aria-live="polite"><span class="amc-account-icon" aria-hidden="true">☁️</span><div><p class="amc-account-title">${esc(acct().user(progress.user.displayName||'Piko'))}</p><p class="amc-account-status">${accountStatus()}${progress.merged?` ${acct().merged}`:''}</p></div>${progress.status==='expired'?`<button type="button" class="primary" data-login>${acct().login}</button>`:''}</div>`;
+  if(progress.mode==='loading')return `<div class="amc-account is-loading" data-amc-account="loading" role="status" aria-live="polite"><span class="amc-account-icon" aria-hidden="true">⏳</span><div><p class="amc-account-status">${acct().loading}</p></div></div>`;
+  return `<div class="amc-account is-guest" data-amc-account="guest" role="status" aria-live="polite"><span class="amc-account-icon" aria-hidden="true">🔒</span><div><p class="amc-account-title">${acct().guestTitle}</p><p class="amc-account-status">${acct().guestBody}</p><p class="amc-account-note" data-login-note hidden></p></div><button type="button" class="primary" data-login>${acct().login}</button></div>`;
+}
+function saveNote(){return `<div class="save-note" data-save-note>${accountBanner()}</div>`;}
+function refreshAccount(){
+  for(const el of document.querySelectorAll('[data-amc-account]'))el.outerHTML=accountBanner();
+  const footer=document.querySelector('#practice-footer p');if(footer)footer.textContent=footerText();
+}
+function footerText(){return progress.mode==='user'?acct().footerUser:progress.storageOK?acct().footerGuest:acct().unavailable;}
+async function login(button){
+  try{sessionStorage.setItem('piko-auth-return',`${location.pathname}${location.search}`);}catch{}
+  try{
+    const {AuthManager}=await import('../auth/AuthManager.js');
+    const auth=new AuthManager({apiBase:'/api',turnstileSiteKey:document.querySelector('meta[name="turnstile-site-key"]')?.content||''});
+    if(auth.localMode){const note=button?.closest('[data-amc-account]')?.querySelector('[data-login-note]');if(note){note.hidden=false;note.textContent=acct().localDev;}return;}
+    await auth.showLogin({message:acct().guestBody});
+  }catch(error){console.error(error);}
+}
 
 // ---------- chrome ----------
 function stopTimer(){if(timer){clearInterval(timer);timer=null;}}
@@ -75,7 +97,7 @@ function chrome(){
   document.querySelector('#language-label').textContent=h.language;
   const other=document.querySelector('[data-other-course]');
   if(other){other.textContent=h.eikenLink;other.href=`/eiken.html?lang=${locale}`;other.hidden=false;}
-  document.querySelector('#practice-footer').innerHTML=`<p>${storageOK?h.saved:h.unavailable}</p><p class="muted">${h.bankNote}</p><a href="/index.html">${h.footerBack}</a>`;
+  document.querySelector('#practice-footer').innerHTML=`<p>${esc(footerText())}</p><p class="muted">${h.bankNote}</p><a href="/index.html">${h.footerBack}</a>`;
 }
 function hideTabs(){if(tabSlot){tabSlot.hidden=true;tabSlot.innerHTML='';}}
 function showTabs(){
@@ -84,17 +106,18 @@ function showTabs(){
 }
 function hero(){
   return `<section class="hero hub-hero"><p class="eyebrow">${h.eyebrow}</p><h1>${h.title}</h1><p>${h.intro}</p>
-<div class="level-switch" role="group" aria-label="${h.levelLabel}">${LEVELS.map(lv=>`<button type="button" data-level="${lv}" aria-pressed="${lv===level}"><strong>AMC ${lv}</strong><span>${h.levels[lv]}</span></button>`).join('')}</div></section>`;
+<div class="level-switch" role="group" aria-label="${h.levelLabel}">${LEVELS.map(lv=>`<button type="button" data-level="${lv}" aria-pressed="${lv===level}"><strong>AMC ${lv}</strong><span>${h.levels[lv]}</span></button>`).join('')}</div>${accountBanner()}</section>`;
 }
 
 // ---------- practice home ----------
 function realSection(){
   const list=areas();
   return `<section class="hub-section" aria-labelledby="real-title"><h2 id="real-title">${h.realTitle} · AMC ${level}</h2><p>${h.realIntro}</p>
-<div class="course-grid real-grid">${list.map(a=>{const n=bank().filter(p=>p.area===a.id).length,size=Math.min(10,n),best=readNumber(realKey(level,a.id),size);
+<div class="course-grid real-grid">${list.map(a=>{const n=bank().filter(p=>p.area===a.id).length,size=Math.min(10,n),best=realBest(level,a.id,size);
   return `<article class="course-card" data-real-card="${a.id}"><span class="icon" aria-hidden="true">${a.icon}</span><h3>${esc(pick(a.title))}</h3><p>${esc(pick(a.goal))}</p><p class="muted">${h.realCount(n)}</p><div class="best"><p class="pill">${h.best}: ${best}/${size}</p><div class="meter" aria-hidden="true"><span style="width:${best/size*100}%"></span></div></div><div class="card-actions"><button type="button" class="primary" data-real="${a.id}">${h.realStart}</button></div></article>`;}).join('')}
-<article class="course-card mock-card"><span class="icon" aria-hidden="true">⏱️</span><h3>${h.mockTitle}</h3><p>${h.mockIntro[level]}</p><div class="best"><p class="pill">${h.best}: ${readNumber(realKey(level,'mock'),150)}${level==='8'?'/25':'/150'}</p></div><div class="card-actions"><button type="button" class="primary" data-mock>${h.mockStart}</button></div></article></div></section>`;
+<article class="course-card mock-card"><span class="icon" aria-hidden="true">⏱️</span><h3>${h.mockTitle}</h3><p>${h.mockIntro[level]}</p><div class="best"><p class="pill">${h.best}: ${progress.mockBest(level)}${level==='8'?'/25':'/150'}</p>${mockHistoryLine()}</div><div class="card-actions"><button type="button" class="primary" data-mock>${h.mockStart}</button></div></article></div></section>`;
 }
+function mockHistoryLine(){const list=progress.mockHistory(level).slice(0,5);return list.length?`<p class="muted mock-history" data-mock-history>${acct().recent}: ${list.map(item=>esc(item.score)).join(' · ')}</p>`:'';}
 function guide(id){return `<details class="topic-guide"><summary>${t.guide}</summary><div class="guide-body"><p class="muted">${t.guideIntro}</p>${topicExamples(id,locale).map(q=>`<details class="example"><summary>${esc(q.title)}</summary><div class="example-body"><p class="eyebrow">${t.example}</p><p>${esc(q.prompt)}</p>${q.orderItems?`<ul>${q.orderItems.map(value=>`<li>${esc(value)}</li>`).join('')}</ul>`:''}${drillExplanation(q)}</div></details>`).join('')}</div></details>`;}
 const drillUnits=()=>TOPICS.map(topic=>({...topic,title:topic[locale],description:topic.goal[locale]}));
 function drillSection(){
@@ -117,7 +140,7 @@ function learnHome(){
   app.innerHTML=`${hero()}<section class="learn-intro"><h2>${l.learnTitle}</h2><p>${l.learnIntro}</p><p class="pill">${l.progress}: ${done.size} ${l.of} ${d.lessons.length}</p></section>
 <section class="learn-section" aria-labelledby="what-title"><h2 id="what-title">${l.whatTitle}</h2><p>${l.whatIntro}</p><ul class="fact-grid">${d.facts.map(fact=>`<li class="fact"><span class="icon" aria-hidden="true">${fact.icon}</span><h3>${pick(fact.title)}</h3><p>${pick(fact.body)}</p></li>`).join('')}</ul><h3>${l.topicsTitle}</h3><p>${l.topicsBody}</p><p class="kid-note">${l.forKids}</p><p>${l.howJoin} <button type="button" class="link-button" data-view="register">${h.tabs.register} →</button></p><div class="sources muted"><p>${l.sources}</p><ul>${d.sources.map(source=>`<li>${ext(source.url,pick(source.label))}</li>`).join('')}</ul><p>${l.checked}: ${FACTS_CHECKED}</p></div></section>
 <section class="learn-section" aria-labelledby="roadmap-title"><h2 id="roadmap-title">${l.roadmapTitle}</h2><p>${l.roadmapIntro}</p><ol class="roadmap">${d.stages.map((stage,i)=>`<li class="stage"><p class="eyebrow">${l.stage} ${i+1}</p><h3><span aria-hidden="true">${stage.icon}</span> ${pick(stage.title)}</h3><p><strong>${l.stageGoal}:</strong> ${pick(stage.goal)}</p><ul>${stage.steps.map(step=>`<li>${pick(step)}</li>`).join('')}</ul>${stage.lessons.length?`<div class="stage-lessons" aria-label="${l.lessonsInStage}">${stage.lessons.map(id=>lessonChip(id,done)).join('')}</div>`:`<div class="stage-lessons"><button type="button" class="lesson-chip" data-mock>⏱️ ${h.mockTitle}</button><button type="button" class="lesson-chip" data-jump="archive-title">📄 ${h.pastTitle} ↓</button></div>`}</li>`).join('')}</ol></section>
-<section class="learn-section" aria-labelledby="lessons-title"><h2 id="lessons-title">${l.lessonsTitle}</h2><p>${l.lessonsIntro}</p><div class="lesson-grid">${d.lessons.map(lesson=>`<article class="lesson-card${done.has(lesson.id)?' is-done':''}" data-lesson-card="${lesson.id}"><span class="icon" aria-hidden="true">${lesson.icon}</span><h3>${esc(pick(lesson.title))}</h3><p>${esc(pick(lesson.summary))}</p><p class="pill">${done.has(lesson.id)?`✓ ${l.done}`:l.notStarted}</p><div class="card-actions"><button type="button" class="primary" data-lesson="${lesson.id}">${l.open}</button></div></article>`).join('')}</div><p class="muted">${l.saved}</p></section>${pastPapers()}`;
+<section class="learn-section" aria-labelledby="lessons-title"><h2 id="lessons-title">${l.lessonsTitle}</h2><p>${l.lessonsIntro}</p><div class="lesson-grid">${d.lessons.map(lesson=>`<article class="lesson-card${done.has(lesson.id)?' is-done':''}" data-lesson-card="${lesson.id}"><span class="icon" aria-hidden="true">${lesson.icon}</span><h3>${esc(pick(lesson.title))}</h3><p>${esc(pick(lesson.summary))}</p><p class="pill">${done.has(lesson.id)?`✓ ${l.done}`:l.notStarted}</p><div class="card-actions"><button type="button" class="primary" data-lesson="${lesson.id}">${l.open}</button></div></article>`).join('')}</div><p class="muted">${esc(progress.mode==='user'?acct().footerUser:acct().lessonGuest)}</p></section>${pastPapers()}`;
 }
 const familyTitle=id=>FAMILIES.find(f=>f.id===id)?.title[locale]||id;
 function lessonPractice(lesson){
@@ -141,7 +164,7 @@ function lessonPage(id){
 <div class="check-note amc-tip"><h2>${l.amcTip}</h2><p>${esc(pick(lesson.tip))}</p></div>
 ${lesson.models?.length?`<section class="model-list"><h2>${h.models}</h2><ul>${lesson.models.map(m=>`<li>${ext(aopsUrl(m.contest,m.number),h.modelLink(m.contest,m.number))}</li>`).join('')}</ul></section>`:''}
 <section class="lesson-practice" aria-labelledby="lesson-practice-title"><h2 id="lesson-practice-title">${l.practiceTitle}</h2><p>${l.practiceIntro}</p>${lesson.families?`<p class="muted">${l.related}: ${lesson.families.map(familyTitle).map(esc).join(list)}</p>`:''}<div class="actions">${lessonPractice(lesson)}</div></section>
-<div class="actions lesson-done"><button type="button" class="mark-done" data-lesson-done="${id}">${done?l.markUndo:l.markDone}</button></div>
+<div class="actions lesson-done"><button type="button" class="mark-done" data-lesson-done="${id}">${done?l.markUndo:l.markDone}</button></div>${saveNote()}
 <nav class="lesson-nav" aria-label="${l.lessonsTitle}">${prev?`<button type="button" data-lesson="${prev.id}">${l.prev}</button>`:'<span></span>'}${next?`<button type="button" data-lesson="${next.id}">${l.next}</button>`:''}</nav></article>`;
 }
 
@@ -225,8 +248,8 @@ function finishSet(){
   const s=rs;if(!s||s.complete)return;s.complete=true;stopTimer();
   if(s.type==='real')while(s.answers.length<s.items.length)s.answers.push(null);
   const sc=scoreFor(s.level,s.items,s.answers);
-  if(s.type==='real'){const key=realKey(s.level,s.area);setItem(key,String(Math.max(readNumber(key,s.items.length),sc.correct)));}
-  else{const key=realKey(s.level,'mock');setItem(key,String(Math.max(readNumber(key,150),sc.points)));}
+  if(s.type==='real')progress.recordReal(s.level,s.area,sc.correct);
+  else progress.recordMock(s.level,sc);
   renderResult(true);
 }
 function renderResult(focus=false){
@@ -234,7 +257,7 @@ function renderResult(focus=false){
   const aime=s.type==='mock'&&s.level!=='8'?`<p class="kid-note aime-line">${(s.level==='10'?sc.points>=100:sc.points>=85)?h.aimeYes[s.level]:h.aimeNo[s.level]}</p>`:s.level==='8'?`<p class="muted">${h.amc8Score}</p>`:'';
   app.innerHTML=`<section class="result amc-result" data-type="${s.type}"><p class="eyebrow">AMC ${s.level} · ${s.type==='mock'?h.mockTitle:esc(areaTitle(s.area,s.level))}</p><h1 tabindex="-1" id="result-title">${s.type==='mock'?h.mockResult:h.resultTitle}</h1>${s.timeUp?`<p role="status">${h.timeUp}</p>`:''}
 <div class="score-card"><p class="score-label">${h.score}</p><p class="score-value"><strong>${value} / ${max}</strong></p><div class="meter" aria-hidden="true"><span style="width:${value/max*100}%"></span></div><p class="score-breakdown"><span>✓ ${h.correctCount} ${sc.correct}</span><span>○ ${h.blankCount} ${sc.blank}</span><span>✕ ${h.wrongCount} ${sc.wrong}</span></p></div>${aime}
-<div class="actions">${s.type==='mock'?`<button class="primary" data-mock>${h.retry}</button>`:`<button class="primary" data-real="${s.area}">${h.retry}</button>`}<button class="ghost" data-hub>${h.backHub}</button></div>
+${saveNote()}<div class="actions">${s.type==='mock'?`<button class="primary" data-mock>${h.retry}</button>`:`<button class="primary" data-real="${s.area}">${h.retry}</button>`}<button class="ghost" data-hub>${h.backHub}</button></div>
 <h2>${h.review}</h2><div class="review-list">${s.items.map((p,i)=>{const a=s.answers[i],ok=a===p.answer;return `<details class="review-item" data-problem-id="${p.id}"><summary><span class="review-mark ${ok?'is-right':'is-retry'}" aria-hidden="true">${ok?'✓':a===null?'○':'✕'}</span><span>${i+1}. ${esc(pick(p.prompt))}</span></summary><div class="review-body"><p>${esc(pick(p.prompt))}</p>${options(p,a,true)}<div class="first-answer"><strong>${h.yourAnswer}</strong><p>${a===null?h.noAnswer:`(${LETTERS[a]}) ${esc(p.options[a])}`}</p></div>${citeLine(p)}${steps(p)}</div></details>`;}).join('')}</div></section>`;
   if(focus){app.scrollIntoView({block:'start'});document.querySelector('#result-title').focus({preventScroll:true});}
 }
@@ -281,10 +304,10 @@ function submitDrill(response){
   if(result.correct||s.attempts>=3){s.done=true;s.feedback=result.correct?'correct':'reveal';}else s.feedback=s.attempts===1?'gentle':'hint';
   renderDrill();if(!s.done)app.querySelector('[data-field]')?.focus();
 }
-function finishDrill(){const s=drill;s.complete=true;setItem(progressKey('amc8',s.id),String(Math.max(readDrillBest(s.id),s.score)));renderDrillResult(true);}
+function finishDrill(){const s=drill;s.complete=true;progress.recordDrill(s.id,s.score);renderDrillResult(true);}
 function renderDrillResult(focus=false){
   const s=drill,result=resultFor(s.score),units=drillUnits(),following=units[units.findIndex(u=>u.id===s.id)+1];hideTabs();
-  app.innerHTML=`<section class="result" data-passed="${result.passed}"><p class="eyebrow">${esc(units.find(u=>u.id===s.id)?.title||'')}</p><h1 tabindex="-1" id="result-title">${result.passed?t.pass:t.fail}</h1><div class="score-card"><p class="score-label">${t.score}</p><p class="score-value"><strong>${s.score} / 10</strong></p><div class="meter" aria-hidden="true"><span style="width:${s.score*10}%"></span></div></div><div class="actions"><button class="primary" data-start="${s.id}">${t.retry}</button>${result.passed&&following?`<button data-start="${following.id}">${t.continue}</button>`:''}<button class="ghost" data-hub>${t.back}</button></div><h2>${t.review}</h2><div class="review-list">${s.answers.map((answer,i)=>{
+  app.innerHTML=`<section class="result" data-passed="${result.passed}"><p class="eyebrow">${esc(units.find(u=>u.id===s.id)?.title||'')}</p><h1 tabindex="-1" id="result-title">${result.passed?t.pass:t.fail}</h1><div class="score-card"><p class="score-label">${t.score}</p><p class="score-value"><strong>${s.score} / 10</strong></p><div class="meter" aria-hidden="true"><span style="width:${s.score*10}%"></span></div></div>${saveNote()}<div class="actions"><button class="primary" data-start="${s.id}">${t.retry}</button>${result.passed&&following?`<button data-start="${following.id}">${t.continue}</button>`:''}<button class="ghost" data-hub>${t.back}</button></div><h2>${t.review}</h2><div class="review-list">${s.answers.map((answer,i)=>{
     const q=localizedQuestion(answer.question);
     return `<details class="review-item"><summary><span class="review-mark ${answer.correct?'is-right':'is-retry'}" aria-hidden="true">${answer.correct?'✓':'↻'}</span><span>${i+1}. ${esc(q.title||q.prompt)}</span></summary><div class="review-body"><p>${esc(q.prompt)}</p><div class="first-answer"><strong>${t.yourAnswer}</strong><p>${esc(displayedAnswer(q,answer.selected))}</p></div>${drillExplanation(q)}</div></details>`;
   }).join('')}</div></section>`;
@@ -309,6 +332,7 @@ document.querySelector('#locale').addEventListener('change',event=>{
 app.addEventListener('submit',event=>{if(event.target.id==='answer-form'){event.preventDefault();captureDraft();submitDrill(drill.draft);}});
 function onClick(event){
   const b=event.target.closest('button');if(!b||b.disabled)return;
+  if(b.hasAttribute('data-login')){void login(b);return;}
   if(b.hasAttribute('data-hub')){home();app.scrollIntoView({block:'start'});}
   else if(b.dataset.level){if(b.dataset.level===level)return;level=b.dataset.level;if(lessonId&&!levelData().lessons.some(l=>l.id===lessonId))lessonId=null;writeState(true);home();document.querySelector(`[data-level="${level}"]`)?.focus({preventScroll:true});}
   else if(b.dataset.view){if(b.dataset.view===view&&!lessonId)return;view=VIEWS.includes(b.dataset.view)?b.dataset.view:'practice';lessonId=null;writeState(true);home();scrollTo({top:0});document.querySelector(`#view-tabs [data-view="${view}"]`)?.focus();}
@@ -344,4 +368,16 @@ function onClick(event){
 }
 app.addEventListener('click',onClick);tabSlot?.addEventListener('click',onClick);
 window.addEventListener('popstate',()=>{readState();writeState();home();});
-readState();writeState();home();
+// Re-render the hub when account data arrives or changes; mid-question views
+// only refresh the account/status banners so the learner is never interrupted.
+let shownData='';
+const dataSignature=()=>JSON.stringify([progress.mode,progress.view()]);
+progress.addEventListener('change',()=>{
+  const signature=dataSignature();
+  if(signature!==shownData&&!rs&&!drill){shownData=signature;const y=scrollY;home();scrollTo(0,y);}else refreshAccount();
+});
+addEventListener('online',()=>void progress.sync());
+addEventListener('pagehide',()=>{if(progress.queue.length||progress.pendingImport)void progress.sync({keepalive:true});});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&(progress.queue.length||progress.pendingImport))void progress.sync({keepalive:true});});
+readState();writeState();shownData=dataSignature();home();
+void progress.init();

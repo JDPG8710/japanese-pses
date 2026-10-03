@@ -52,6 +52,8 @@ try {
   browser = await chromium.launch({ channel: 'chrome', headless: true });
   const origin = `http://127.0.0.1:${server.address().port}`;
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  // Signed-out visitor: the Worker answers GET /api/amc/progress with {authenticated:false}.
+  await page.route('**/api/amc/**', route => route.fulfill({ status: 200, contentType: 'application/json', body: '{"authenticated":false}' }));
   for (const width of WIDTHS) {
     await page.setViewportSize({ width, height: 900 });
     for (const level of LEVELS) for (const view of VIEWS) for (const locale of LOCALES) {

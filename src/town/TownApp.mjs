@@ -35,7 +35,7 @@ function refresh(){
   document.documentElement.lang=locale;document.title=w().title+' · Piko Game';$('locale').value=locale;
   const texts={'town-title':'title','town-tag':'tag','world-link':'back','chapter':'chapter','mission-label':'mission','progress-label':'progress','journal-label':'journal','local-note':'local','walk-tip':'walk','coins-label':'coins','xp-label':'xp','guide-label':'guide','shop-label':'shop','home-label':'home','character':'settings','privacy-link':'privacy','terms-link':'terms'};
   for(const [id,key]of Object.entries(texts))$(id).textContent=w()[key];
-  $('help').setAttribute('aria-label',w().help);$('world-link').href=`world.html?${new URLSearchParams({locale,...(params.get('country')?{country:params.get('country')}:{})})}`;
+  $('help').setAttribute('aria-label',w().help);$('world-link').href=`/?${new URLSearchParams({locale})}`;
   $('town-canvas').setAttribute('aria-label',`${w().title}. ${ARCADE_TEXT[locale].controls}. ${ARCADE_TEXT[locale].touch}`);
   $('coins').textContent=state.coins;$('xp').textContent=state.xp;
   townDifficulty(state);

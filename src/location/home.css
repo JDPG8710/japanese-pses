@@ -47,3 +47,9 @@ body.country-entry #country-home.country-picker{max-width:1240px;margin:auto;pad
 
 /* Equal primary entry controls, including the anchor element. */
 #country-home .about-play-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;max-width:600px;margin-top:24px}#country-home .about-play-actions .about-play{display:flex;align-items:center;justify-content:center;gap:8px;width:100%!important;min-width:0!important;min-height:64px;margin:0!important;padding:14px 18px;border:2px solid #fde047;border-radius:16px;font-family:inherit;font-size:16px;line-height:1.4;text-align:center;text-decoration:none;box-sizing:border-box} @media(max-width:760px){#country-home .about-play-actions{grid-template-columns:1fr;grid-auto-rows:1fr}}
+
+.about-play-actions{display:flex;flex-wrap:wrap;gap:12px}
+#country-home .about-play{display:inline-flex;align-items:center;justify-content:center;min-height:56px;padding:14px 20px;border-radius:15px;text-decoration:none;line-height:1.4}
+#country-home .about-play-secondary{background:#ffffff10!important;border:1px solid #ffffff55!important;color:#e6edf9!important}
+#country-home .about-nav nav{flex-wrap:wrap;justify-content:flex-end}
+#country-home #country-town{margin-bottom:24px}

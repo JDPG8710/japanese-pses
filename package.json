@@ -71,7 +71,8 @@
     "test:arcade:repairs:browser": "node tests/test_arcade_repairs_browser.mjs",
     "test:fruit:bombs": "node tests/test_fruit_bombs_browser.mjs",
     "test:breakout:layouts": "node tests/test_breakout_layouts.mjs",
-    "test:breakout:layouts:browser": "node tests/test_breakout_layouts_browser.mjs"
+    "test:breakout:layouts:browser": "node tests/test_breakout_layouts_browser.mjs",
+    "test:town:interaction": "node tests/test_town_residents.mjs && node tests/test_town_life_collisions.mjs && node tests/test_town_controls_browser.mjs && node tests/test_town_residents_browser.mjs"
   },
   "devDependencies": {
     "playwright-core": "^1.63.0",

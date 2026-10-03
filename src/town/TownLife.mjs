@@ -1,6 +1,8 @@
 /** Harmless, solid townsfolk with a short squash-and-spin reaction when bumped. */
 import {THREE, box, ball, makeAvatar, animateAvatar, disposeGroup} from './Models3D.mjs?v=2';
 
+import {TOWN_WORKERS,makeWorkingResident,animateWorkingResident,updateResidentSurprise} from './TownResidents.mjs';
+
 const WANDERERS = [
   {character: 'explorer', path: [[-8, 6], [8, 6], [8, -4], [-8, -4]], speed: 2.2, label: 'Kai'},
   {character: 'robot', path: [[-36, 30], [-22, 46], [-6, 34], [-28, 24]], speed: 1.9, label: 'Beep'},
@@ -114,7 +116,7 @@ function makeStars(environment) {
  * All animation uses simulation time; dispose releases this controller's effects/animals.
  */
 export function spawnTownLife(environment, {npcs = [], canOccupy = () => true} = {}) {
-  const wanderers = [], animals = [], stationary = [], bodies = [];
+  const wanderers = [], animals = [], stationary = [], workers = [], bodies = [];
   let time = 0, disposed = false, collisionCount = 0;
   function body(mesh, spec) {
     const b = {mesh, baseX: mesh.position.x, baseZ: mesh.position.z, baseY: mesh.position.y,
@@ -127,6 +129,10 @@ export function spawnTownLife(environment, {npcs = [], canOccupy = () => true} =
     const mesh = makeAvatar(spec.character);mesh.scale.setScalar(.92);
     mesh.position.set(spec.path[0][0], 0, spec.path[0][1]);environment.add(mesh);
     wanderers.push(body(mesh, {path: spec.path.map(([x, z]) => ({x, z})), i: 0, t: 0, speed: spec.speed, wait: 0}));
+  }
+  for(const spec of TOWN_WORKERS){
+    const resident=makeWorkingResident(spec);environment.add(resident.mesh,resident.station,resident.effects);
+    const b=body(resident.mesh,{worker:true,resident,yaw:spec.yaw});resident.body=b;workers.push(resident);
   }
   for (const spec of ANIMALS) {
     const mesh = makeAnimal(spec.kind);mesh.position.set(spec.x, 0, spec.z);environment.add(mesh);
@@ -171,6 +177,7 @@ export function spawnTownLife(environment, {npcs = [], canOccupy = () => true} =
       else {b.vx = 0;b.vz = 0;}
       renderBody(b, reducedMotion);
     }
+    for(const r of workers){animateWorkingResident(r,time,reducedMotion);updateResidentSurprise(r,dt,{player,reducedMotion});}
     if (!player) return null;
     // Visual hops never disable a body's collision; only its actual floor/flight altitude matters.
     const colliders = bodies.map(b => ({id: b.id, x: b.baseX + b.offsetX, y: b.baseY, z: b.baseZ + b.offsetZ, radius: b.radius, height: b.height, source: b}));
@@ -179,6 +186,7 @@ export function spawnTownLife(environment, {npcs = [], canOccupy = () => true} =
       const b = contact.source;
       if (b.cooldown > 0) continue;
       collisionCount++;b.cooldown = 1.35;b.reaction = 1.1;
+      if(b.resident)updateResidentSurprise(b.resident,0,{player,contact:true,reducedMotion});
       const impulse = reducedMotion ? 1 : vehicle === 'foot' ? 3.4 : vehicle === 'car' ? 5 : 6;
       b.vx -= nx * impulse;b.vz -= nz * impulse;
       renderBody(b, reducedMotion);
@@ -222,8 +230,9 @@ export function spawnTownLife(environment, {npcs = [], canOccupy = () => true} =
   function dispose() {
     if (disposed) return;disposed = true;
     for (const b of bodies) {environment.remove(b.stars);disposeGroup(b.stars);if (!b.stationary) {environment.remove(b.mesh);disposeGroup(b.mesh);}}
-    bodies.length = wanderers.length = animals.length = stationary.length = 0;
+    for(const r of workers){environment.remove(r.station,r.effects);disposeGroup(r.station);disposeGroup(r.effects);}
+    bodies.length = wanderers.length = animals.length = stationary.length = workers.length = 0;
   }
   return {update, dispose, navigationDetour, wandererCount: wanderers.length, animalCount: animals.length,
-    wanderers, animals, stationary, get collisionCount() {return collisionCount;}, get time() {return time;}};
+    wanderers, animals, stationary, workers, workerCount:workers.length, get surpriseCount(){return workers.reduce((n,r)=>n+r.triggerCount,0);}, get collisionCount() {return collisionCount;}, get time() {return time;}};
 }

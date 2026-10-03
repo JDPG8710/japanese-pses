@@ -68,6 +68,7 @@ export class TownScene {
   this.canvas.dataset.buildings=TOWN_BUILDINGS.map(b=>b.id).join(',');
   // Townsfolk and task characters share harmless physical contact reactions.
   this.townLife=spawnTownLife(this.environment,{npcs:this.npcs,canOccupy:(x,z,y)=>this.vehicle==='plane'?Math.abs(x)<=75&&Math.abs(z)<=75&&y>=flightFloor(x,z):this.vehicle==='car'?carCanMove(x,z):canWalk(x*25+550,z*25+380)});
+  this.canvas.dataset.workers=String(this.townLife.workerCount);
   this.canvas.dataset.life=`${this.townLife.wandererCount}w+${this.townLife.animalCount}a`;
   this.recoverTown();
 

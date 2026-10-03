@@ -17,7 +17,7 @@ try{
  await host.locator('#town-canvas').focus();await host.keyboard.down('s');await host.waitForTimeout(500);await host.keyboard.up('s');await guest.waitForTimeout(350);
  assert.ok(received.some(m=>m.type==='peer'&&m.peer.z<6),'remote browser sees actual keyboard motion');
  await host.locator('[data-emote="laugh"]').click();await guest.waitForTimeout(350);assert.ok(received.some(m=>m.type==='peer'&&m.peer.emote==='laugh'));
- await host.locator('[data-vehicle="select"]').selectOption('car');await guest.waitForTimeout(350);assert.ok(received.some(m=>m.type==='peer'&&m.peer.vehicle==='car'),'vehicle change is visible remotely');
+ await host.locator('button[data-vehicle="car"]').click();await guest.waitForTimeout(350);assert.ok(received.some(m=>m.type==='peer'&&m.peer.vehicle==='car'),'vehicle change is visible remotely');
  await host.screenshot({path:'.wrangler/town-online/two-players-desktop.png',fullPage:true});await guest.screenshot({path:'.wrangler/town-online/two-players-mobile.png',fullPage:true});
  await host.locator('[data-challenge-game]').selectOption('bubble');await host.locator('[data-online="invite"]').click();await guest.locator('[data-online="accept"]').waitFor();await guest.locator('[data-online="accept"]').click();
  await host.locator('.kids-message').waitFor();await guest.locator('.kids-message').waitFor();assert.equal(await host.locator('.kids-message').innerText(),await guest.locator('.kids-message').innerText(),'both clients receive the same seeded challenge');

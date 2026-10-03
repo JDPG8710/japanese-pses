@@ -30,15 +30,15 @@ try{
   assert.equal(await page.locator('#town-progression').isVisible(),true);assert.equal(await page.locator('#town-online').isVisible(),true);
   console.log(`ok - ${fullscreen} fullscreen, help, analog movement/steering + simultaneous jump and release`);
   if(fullscreen==='missing'){
-   await page.locator('.town-ride').selectOption('car');await page.locator('#town-canvas[data-vehicle="car"]').waitFor();assert.equal(await page.locator('[data-camera="jump"]').isVisible(),false);
+   await page.locator('button[data-vehicle="car"]').click();await page.locator('#town-canvas[data-vehicle="car"]').waitFor();assert.equal(await page.locator('[data-camera="jump"]').isVisible(),false);
    const before=await position(page);await page.locator('#town-canvas').focus();await page.keyboard.down('w');await page.waitForTimeout(500);await page.keyboard.up('w');const after=await position(page);assert.ok(Math.hypot(after[0]-before[0],after[2]-before[2])>2);await page.waitForTimeout(100);await page.reload();await page.locator('#town-canvas[data-vehicle="car"]').waitFor();
-   await page.locator('.town-ride').selectOption('plane');await page.locator('#town-canvas[data-vehicle="plane"]').waitFor();await page.locator('.scene-viewport').scrollIntoViewIfNeeded();
+   await page.locator('button[data-vehicle="plane"]').click();await page.locator('#town-canvas[data-vehicle="plane"]').waitFor();await page.locator('.scene-viewport').scrollIntoViewIfNeeded();
    const ps=await page.locator('.town-joystick').boundingBox(),pu=await page.locator('[data-camera="jump"]').boundingBox();
    const flightFinger={id:0,x:ps.x+ps.width/2,y:ps.y+ps.height/2-32},climbFinger={id:1,x:pu.x+pu.width/2,y:pu.y+pu.height/2};
    await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[flightFinger,climbFinger]});await page.waitForFunction(()=>Number(document.querySelector('#town-canvas').dataset.position.split(',')[1])>12);await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await page.locator('#town-canvas').focus();
    const airborne=await position(page);await page.keyboard.down('w');await page.waitForTimeout(450);await page.keyboard.up('w');const flown=await position(page);assert.ok(Math.hypot(flown[0]-airborne[0],flown[2]-airborne[2])>2);assert.ok(flown[1]>10);await page.screenshot({path:'.wrangler/town-exploration/plane.png',fullPage:true});
    const pd=await page.locator('.town-descend').boundingBox();await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{id:0,x:pd.x+pd.width/2,y:pd.y+pd.height/2}]});await page.waitForFunction(()=>Number(document.querySelector('#town-canvas').dataset.position.split(',')[1])===0);await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
-   await page.locator('.town-ride').selectOption('foot');await page.locator('#town-canvas[data-vehicle="foot"]').waitFor();assert.equal((await position(page))[1],0);
+   await page.locator('button[data-vehicle="foot"]').click();await page.locator('#town-canvas[data-vehicle="foot"]').waitFor();assert.equal((await position(page))[1],0);
    for(const width of [320,390,820]){await page.setViewportSize({width,height:844});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await page.screenshot({path:`.wrangler/town-exploration/town-${width}.png`,fullPage:true});}
    console.log('ok - cars drive and persist, aircraft climb / fly / descend, safe dismount and responsive layouts');
   }

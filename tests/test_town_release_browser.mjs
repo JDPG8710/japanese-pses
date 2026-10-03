@@ -40,7 +40,7 @@ try {
     await page.locator('#town-canvas[data-view="third"]').waitFor();
     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
     const bounds=await canvas.boundingBox();
-    const buttons=await page.locator('.world-controls button:visible,.town-fs-fab:visible,.town-joystick:visible,.town-ride:visible').all();
+    const buttons=await page.locator('.world-controls button:visible,.town-fs-fab:visible,.town-joystick:visible,.town-ride button:visible').all();
     const boxes=[];
     for(const button of buttons){
       const b=await button.boundingBox();

@@ -63,19 +63,25 @@ for(const [file,{html}] of sources){
  assert.doesNotMatch(html,/href="(?:https:\/\/piko-game\.com)?\/?(?:world|grades|privacy|terms|learn)\.html(?:[?"#])/i,`${file}: navigation must use final public URLs`);
 }
 const root=sources.get('index.html').html;
-assert.match(root,/href="\/amc8\?lang=en"/, 'home page must link to AMC 8');
+assert.match(root,/href="\/amc\?lang=en"/, 'home page must link to the AMC hub');
+assert.doesNotMatch(root,/href="\/amc8/, 'home page must link to /amc, not the old /amc8 URL');
 for(const [hreflang,href] of [['en','/en/'],['ja','/ja/'],['zh-Hans','/zh/'],['x-default','/']]){
   assert.ok(root.includes(`hreflang="${hreflang}" href="${origin}${href}"`),`root is missing ${hreflang} alternate`);
 }
 
 const learn=await readFile('learn.html','utf8');
 assert.match(learn,/<meta\s+name="robots"\s+content="noindex,follow/i,'parameterized lesson shell should be noindex');
+const amc=await readFile('amc.html','utf8');
+assert.match(amc,/<link\s+rel="canonical"\s+href="https:\/\/piko-game\.com\/amc"/i,'AMC hub must use its own canonical URL');
+assert.match(amc,/<meta\s+name="robots"\s+content="index,follow"/i);
 const amc8=await readFile('amc8.html','utf8');
-assert.match(amc8,/<link\s+rel="canonical"\s+href="https:\/\/piko-game\.com\/amc8"/i,'AMC 8 must use its own canonical URL');
+assert.match(amc8,/<meta\s+name="robots"\s+content="noindex,follow"/i,'old AMC 8 URL is a noindex redirect');
+assert.match(amc8,/<link\s+rel="canonical"\s+href="https:\/\/piko-game\.com\/amc"/i,'old AMC 8 URL points canonical to the hub');
 const sitemap=await readFile('sitemap.xml','utf8');
 assert.doesNotMatch(sitemap,/<loc>[^<]*\.html[?<]/,'Sitemap must only list final URLs');
 for(const [,path] of pages)assert.ok(sitemap.includes(`<loc>${origin}${path}</loc>`),`sitemap is missing ${path}`);
-assert.ok(sitemap.includes(`<loc>${origin}/amc8</loc>`),'sitemap is missing the AMC 8 page');
+assert.ok(sitemap.includes(`<loc>${origin}/amc</loc>`),'sitemap is missing the AMC hub');
+assert.ok(!sitemap.includes(`<loc>${origin}/amc8</loc>`),'the noindex AMC 8 redirect must not be in the sitemap');
 const arena=await readFile('arena.html','utf8');
 assert.match(arena,/<script type="application\/ld\+json">[\s\S]*VideoGame/,'arena must describe the latest game as a VideoGame');
 assert.match(arena,/19×19|19x19/,'arena SEO must mention the newly released 19x19 mode');

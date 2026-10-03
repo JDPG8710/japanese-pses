@@ -16,7 +16,7 @@ await rm(output, { recursive: true, force: true });
 await mkdir(output, { recursive: true });
 
 const publicRootFiles = new Set([
-  'index.html', 'amc8.html', 'arena.html', 'updates.html', 'town.html', 'world.html', 'grades.html', 'learn.html', 'privacy.html', 'terms.html', 'robots.txt', 'sitemap.xml', 'ads.txt', 'favicon.svg', 'site.webmanifest',
+  'index.html', 'amc.html', 'amc8.html', 'arena.html', 'updates.html', 'town.html', 'world.html', 'grades.html', 'learn.html', 'privacy.html', 'terms.html', 'robots.txt', 'sitemap.xml', 'ads.txt', 'favicon.svg', 'site.webmanifest',
   '404.html', 'about.html', '_routes.json', '_headers'
 ]);
 const rootFiles = (await readdir(root, { withFileTypes: true }))

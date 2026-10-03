@@ -25,8 +25,14 @@ for (const topic of TOPICS) {
 }
 assert.equal(resultFor(7).passed, false);
 assert.equal(resultFor(8).passed, true);
-assert.match(await readFile('index.html', 'utf8'), /href="\/amc8\?lang=en"/);
-assert.match(await readFile('amc8.html', 'utf8'), /src="\/src\/competitions\/PracticeApp\.mjs"/);
+assert.match(await readFile('index.html', 'utf8'), /href="\/amc\?lang=en"/);
+assert.match(await readFile('amc.html', 'utf8'), /src="\/src\/competitions\/AmcHubApp\.mjs"/);
+// The old AMC 8 URL forwards to the hub (level 8) and keeps lang/view/lesson.
+const amc8Stub = await readFile('amc8.html', 'utf8');
+assert.match(amc8Stub, /location\.replace\('\/amc\?'/);
+assert.match(amc8Stub, /o\.set\('level','8'\)/);
+assert.match(amc8Stub, /noindex,follow/);
+assert.doesNotMatch(amc8Stub, /course=jp|data-school/);
 // Learning guide: every text has natural zh/en/ja, every lesson links to real practice.
 const locales = ['zh', 'en', 'ja'];
 const checkText = (value, where) => {
@@ -50,7 +56,7 @@ assert.deepEqual(STAGES.flatMap(stage => stage.lessons).sort(), LESSONS.map(less
 for (const topic of TOPICS) assert.ok(LESSONS.some(lesson => lesson.id === lessonForTopic(topic.id)), topic.id);
 for (const locale of ['zh', 'ja']) assert.deepEqual(Object.keys(LEARN_TEXT[locale]).sort(), Object.keys(LEARN_TEXT.en).sort());
 assert.ok(SOURCES.every(source => source.url.startsWith('https://')));
-for (const file of ['AmcLessons.mjs', 'PracticeApp.mjs', 'PracticeData.mjs', 'PracticeText.mjs', 'AmcCurriculum.mjs', 'EnglishQuestionBank.mjs', 'practice.css']) {
+for (const file of ['AmcLessons.mjs', 'AmcHubApp.mjs', 'AmcHubText.mjs', 'AmcRegistration.mjs', 'AmcUpperLessons.mjs', 'amc-hub.css', 'PracticeApp.mjs', 'PracticeData.mjs', 'PracticeText.mjs', 'AmcCurriculum.mjs', 'EnglishQuestionBank.mjs', 'practice.css']) {
   await access(new URL(`../src/competitions/${file}`, import.meta.url));
 }
 console.log('AMC 8: 5 topics, 30 families, 600 variants, 3 locales, session integrity, 7 trilingual lessons in 3 stages and entry assets passed.');

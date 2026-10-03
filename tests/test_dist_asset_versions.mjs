@@ -96,9 +96,12 @@ for (const file of sources) {
 for (const [file, urls] of moduleUrls) if (urls.size > 1) failures.push(`${file} is loaded through ${urls.size} different URLs: ${[...urls].join(' , ')}`);
 
 // Spot checks on the pages that matter most for this bug.
-const amc8 = await readFile(path.join(dist, 'amc8.html'), 'utf8');
-assert.ok(amc8.includes(`/src/competitions/practice.css?v=${releaseId}`), 'amc8.html versions practice.css');
-assert.ok(amc8.includes(`/src/competitions/PracticeApp.mjs?v=${releaseId}`), 'amc8.html versions PracticeApp.mjs');
+const amc = await readFile(path.join(dist, 'amc.html'), 'utf8');
+assert.ok(amc.includes(`/src/competitions/practice.css?v=${releaseId}`), 'amc.html versions practice.css');
+assert.ok(amc.includes(`/src/competitions/amc-hub.css?v=${releaseId}`), 'amc.html versions amc-hub.css');
+assert.ok(amc.includes(`/src/competitions/AmcHubApp.mjs?v=${releaseId}`), 'amc.html versions AmcHubApp.mjs');
+const hubApp = await readFile(path.join(dist, 'src/competitions/AmcHubApp.mjs'), 'utf8');
+assert.ok(hubApp.includes(`./AmcBank10.mjs?v=${releaseId}`), 'AmcHubApp.mjs versions its imports');
 
 // _headers: pages revalidate, versioned code/styles are immutable.
 const headers = await readFile(path.join(dist, '_headers'), 'utf8');

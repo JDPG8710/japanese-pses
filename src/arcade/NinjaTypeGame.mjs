@@ -1,4 +1,5 @@
 /** 3D ninja typing — floating word panels approaching the camera. */
+import {normalizeDifficulty,challengeRandom} from '../town/TownProgression.mjs';
 import {
   createArcadeRenderer, resizeArcade3D, disposeArcade3D, boxMesh, THREE,
   spawnParticleBurst, updateParticles
@@ -66,8 +67,14 @@ function makeWordPanel(text) {
   return g;
 }
 
-export function createNinjaTypeGame({canvas, onHud, onEnd, locale = 'en', audio = null, autoStart = true} = {}) {
-  const D = NINJA_DIFFICULTY;
+export function ninjaDifficultyFor(difficulty) {
+ const s=normalizeDifficulty(difficulty).scale;
+ return Object.freeze({...NINJA_DIFFICULTY,clearWords:24+Math.round(s*10),fallSpeedStart:3.2+1.4*s,fallSpeedMax:7.5+1.8*s,spawnIntervalStart:1.8/(1+.3*s),spawnIntervalMin:.9/(1+.2*s),maxActive:3+Math.floor(s)});
+}
+
+export function createNinjaTypeGame({canvas, onHud, onEnd, locale = 'en', audio = null, autoStart = true, difficulty, seed=Date.now()} = {}) {
+  const D = ninjaDifficultyFor(difficulty);
+  let random=challengeRandom(seed);
   const graphics = createArcadeRenderer(canvas, {clear: 0x0c0814});
   const bag = [...wordsForLocale(locale)];
   let lives = D.lives;
@@ -97,7 +104,7 @@ export function createNinjaTypeGame({canvas, onHud, onEnd, locale = 'en', audio 
 
   function pickWord() {
     if (!bag.length) bag.push(...wordsForLocale(locale));
-    const i = Math.floor(Math.random() * bag.length);
+    const i = Math.floor(random() * bag.length);
     return bag.splice(i, 1)[0];
   }
 
@@ -132,8 +139,8 @@ export function createNinjaTypeGame({canvas, onHud, onEnd, locale = 'en', audio 
     if (active.length >= D.maxActive) return;
     const text = pickWord();
     const used = new Set(active.map(w => Math.round(w.x)));
-    let col = Math.floor(Math.random() * 5) - 2;
-    for (let t = 0; t < 8 && used.has(col); t++) col = Math.floor(Math.random() * 5) - 2;
+    let col = Math.floor(random() * 5) - 2;
+    for (let t = 0; t < 8 && used.has(col); t++) col = Math.floor(random() * 5) - 2;
     const mesh = graphics.ok ? makeWordPanel(text) : null;
     const x = col * 1.6;
     const z = -28;
@@ -193,6 +200,7 @@ export function createNinjaTypeGame({canvas, onHud, onEnd, locale = 'en', audio 
   }
 
   function finish(cleared) {
+    if(ended)return;
     ended = true; running = false;
     typeof cancelAnimationFrame === 'function' && cancelAnimationFrame(raf);
     onEnd?.({cleared, score, detail: `${typedCount} words`});
@@ -249,6 +257,8 @@ export function createNinjaTypeGame({canvas, onHud, onEnd, locale = 'en', audio 
   }
 
   function start() {
+    random=challengeRandom(seed);
+    bag.splice(0,bag.length,...wordsForLocale(locale));
     lives = D.lives; score = 0; typedCount = 0; buffer = ''; active = [];
     spawnTimer = 0.4; speed = D.fallSpeedStart; streak = 0; ended = false;
     if (wordGroup) while (wordGroup.children.length) wordGroup.remove(wordGroup.children[0]);
@@ -276,6 +286,6 @@ export function createNinjaTypeGame({canvas, onHud, onEnd, locale = 'en', audio 
   if (autoStart) start();
   return {
     start, pause, resume, destroy, tick, draw,
-    getState: () => ({lives, score, typedCount, buffer, active: active.length, ended, speed, gl: graphics.ok})
+    getState: () => ({difficulty:D, lives, score, typedCount, buffer, active: active.length, words:active.map(({text,x,z})=>({text,x,z})), ended, speed, gl: graphics.ok})
   };
 }

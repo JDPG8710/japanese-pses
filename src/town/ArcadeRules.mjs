@@ -1,4 +1,5 @@
 // Seeded, resumable challenges. Rewards are applied only on an unresolved stage.
+import {beginTownChallenge,settleTownChallenge,townDifficulty,normalizeDifficulty} from './TownProgression.mjs';
 export const MODES=['obby','tower','runner','memory','garden'];
 export const AVATARS=[
  {id:'explorer',color:0xf07850,skin:0xf5c797,zh:'探险家',en:'Explorer',ja:'たんけんか'},
@@ -29,19 +30,29 @@ export function restoreExpansion(raw){
  e.total=int(raw.total,0,1e9,0);
  for(const mode of MODES){
   e.best[mode]=int(raw.best?.[mode],0,1e9,0);const r=raw.runs?.[mode];
-  if(r&&r.mode===mode&&Number.isSafeInteger(r.seed))e.runs[mode]={mode,seed:r.seed>>>0,stage:int(r.stage,1,1e9,1),math:int(r.math,1,3,1),english:int(r.english,1,3,1),hearts:int(r.hearts,0,3,3),streak:int(r.streak,0,1e9,0),solved:r.solved===true,memoryIndex:int(r.memoryIndex,0,5,0),hinted:r.hinted===true};
+  if(r&&r.mode===mode&&Number.isSafeInteger(r.seed))e.runs[mode]={mode,seed:r.seed>>>0,stage:int(r.stage,1,1e9,1),math:int(r.math,1,3,1),english:int(r.english,1,3,1),hearts:int(r.hearts,0,3,3),streak:int(r.streak,0,1e9,0),solved:r.solved===true,memoryIndex:int(r.memoryIndex,0,9,0),hinted:r.hinted===true,...(r.difficulty?{difficulty:normalizeDifficulty(r.difficulty)}:{}),...(r.ticket&&r.ticket.gameId===mode&&Number.isSafeInteger(r.ticket.id)?{ticket:{...r.ticket,...normalizeDifficulty(r.ticket)}}:{})};
  }
  return e;
 }
-export function startRun(s,mode,seed=Date.now()){
+export function startRun(s,mode,seed=Date.now(),{shared=false}={}){
  if(!MODES.includes(mode))return null;
  const e=s.expansion??=newExpansion();
- return e.runs[mode]??=( {mode,seed:seed>>>0,stage:1,math:s.math,english:s.english,hearts:3,streak:0,solved:false,memoryIndex:0,hinted:false});
+ if(shared)delete e.runs[mode];
+ const r=e.runs[mode]??={mode,seed:seed>>>0,stage:1,math:shared?1:s.math,english:shared?1:s.english,hearts:3,streak:0,solved:false,memoryIndex:0,hinted:false};
+ const current=townDifficulty(s);
+ if(!r.solved&&r.difficulty&&(r.difficulty.level!==current.level||r.difficulty.infiniteRound!==current.infiniteRound)){
+  r.difficulty=current;r.ticket=null;r.hearts=3;r.memoryIndex=0;r.hinted=false;r.math=s.math;r.english=s.english;
+ }
+ if(!r.solved&&(!r.ticket||s.townProgress?.sessions?.[mode]?.id!==r.ticket.id)){
+  r.difficulty??=townDifficulty(s);r.ticket=beginTownChallenge(s,mode,{seed:r.seed,difficulty:r.difficulty});
+ }
+ return r;
 }
 function random(seed){let a=seed>>>0;return ()=>{a+=0x6d2b79f5;let t=a;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return ((t^(t>>>14))>>>0)/4294967296;};}
 export function questionFor(r){
- const rng=random((r.seed+Math.imul(r.stage,2654435761))>>>0),pick=n=>Math.floor(rng()*n),band=Math.min(4,Math.floor((r.stage-1)/8));
- const level=r.math||1,max=[0,10,30,80][level]+band*5;let a=1+pick(max),b=1+pick(level===1?9:12),answer,question,explanation;
+ const difficulty=r.difficulty||normalizeDifficulty({level:Math.min(20,r.stage)}),scale=difficulty.scale,round=r.difficulty?difficulty.level+difficulty.infiniteRound:r.stage;
+ const rng=random((r.seed+Math.imul(round,2654435761))>>>0),pick=n=>Math.floor(rng()*n),band=Math.floor(scale*19);
+ const level=r.math||1,max=[0,10,30,80][level]+band;let a=1+pick(max),b=1+pick(level===1?9:12),answer,question,explanation;
  const op=level===1?pick(2):pick(4);
  if(op===0){answer=a+b;question=`${a} + ${b} = ?`;explanation=`${a} + ${b} = ${answer}`;}
  else if(op===1){if(b>a)[a,b]=[b,a];answer=a-b;question=`${a} − ${b} = ?`;explanation=`${a} − ${b} = ${answer}`;}
@@ -55,11 +66,11 @@ export function questionFor(r){
   question=r.english===1?word[0]:r.english===2?`Find the ${word[0]}.`:`Please deliver the ${word[0]} to the blue gate.`;
   explanation=`${word[0]} = ${word[1]} · ${word[2]} · ${word[3]}`;
  }else if(r.mode==='garden'){
-  const crops=[['apples','🍎'],['carrots','🥕'],['tomatoes','🍅'],['bananas','🍌']],crop=crops[pick(crops.length)],rows=2+pick(r.math===1?3:7),each=1+pick(r.math===1?4:9);
+  const crops=[['apples','🍎'],['carrots','🥕'],['tomatoes','🍅'],['bananas','🍌']],crop=crops[pick(crops.length)],rows=2+pick((r.math===1?3:7)+Math.floor(scale*3)),each=1+pick((r.math===1?4:9)+Math.floor(scale*4));
   const noun=each===1?(crop[0]==='tomatoes'?'tomato':crop[0].slice(0,-1)):crop[0];answer=rows*each;question=r.english===1?`${rows} baskets × ${each} ${noun}`:`Harvest ${rows} baskets with ${each} ${noun} in each basket.`;
   explanation=`${rows} × ${each} = ${answer} ${crop[1]}`;
  }else if(r.mode==='memory'){
-  const sequence=Array.from({length:Math.min(5,2+Math.floor((r.stage-1)/4))},()=>pick(4));
+  const sequence=Array.from({length:Math.min(8,2+Math.floor(scale*4))},()=>pick(4));
   return {question:'memory',sequence,options:['RED','BLUE','YELLOW','GREEN'],colors:[0xf17f79,0x76b8ef,0xf5cf5a,0x85c999],answer:sequence[Math.min(r.memoryIndex,sequence.length-1)],explanation:sequence.map(n=>['RED','BLUE','YELLOW','GREEN'][n]).join(' → ')};
  }
  if(!options){options=[String(answer)];for(const delta of [1+pick(3),-(1+pick(3)),5,10]){const v=String(Math.max(0,answer+delta));if(!options.includes(v))options.push(v);if(options.length===3)break;}answer=String(answer);}
@@ -74,11 +85,13 @@ export function answerRun(s,mode,index){
   return {ok:false,shield,explanation:q.explanation,over:r.hearts===0};
  }
  if(mode==='memory'&&++r.memoryIndex<q.sequence.length)return {ok:true,partial:true};
- r.solved=true;r.streak++;const coins=3+Math.min(3,Math.floor(r.stage/10))+(r.stage%5===0?5:0);
- s.coins=Math.min(1e9,s.coins+coins);s.xp=Math.min(1e9,s.xp+4);s.expansion.total++;s.expansion.best[mode]=Math.max(s.expansion.best[mode]||0,r.stage);
- return {ok:true,coins,explanation:q.explanation};
+ r.solved=true;r.streak++;
+ if(!r.ticket)r.ticket=beginTownChallenge(s,mode,{seed:r.seed,difficulty:r.difficulty||townDifficulty(s)});
+ const reward=settleTownChallenge(s,r.ticket,{cleared:true,score:1});
+ s.expansion.total=Math.min(1e9,s.expansion.total+1);s.expansion.best[mode]=Math.max(s.expansion.best[mode]||0,r.stage);
+ return {ok:true,...reward,explanation:q.explanation};
 }
-export function nextStage(s,mode){const r=s.expansion?.runs[mode];if(!r?.solved)return false;r.stage=Math.min(1e9,r.stage+1);r.solved=false;r.hearts=3;r.memoryIndex=0;r.hinted=false;r.math=s.math;r.english=s.english;return true;}
+export function nextStage(s,mode){const r=s.expansion?.runs[mode];if(!r?.solved)return false;r.stage=Math.min(1e9,r.stage+1);r.solved=false;r.hearts=3;r.memoryIndex=0;r.hinted=false;r.math=s.math;r.english=s.english;r.difficulty=townDifficulty(s);r.ticket=beginTownChallenge(s,mode,{seed:r.seed,difficulty:r.difficulty});return true;}
 export function retryStage(s,mode){const r=s.expansion?.runs[mode];if(!r||r.solved||r.hearts>0)return false;r.hearts=3;r.memoryIndex=0;return true;}
 export function buyItem(s,id){const i=ITEMS.find(i=>i.id===id),e=s.expansion;if(!i||!e||s.coins<i.price)return false;if(i.kind==='use'){if(e.inventory[id]>=99)return false;e.inventory[id]++;}else{if(e.gear.includes(id))return false;e.gear.push(id);}s.coins-=i.price;return true;}
 export function useHint(s,mode){const r=s.expansion?.runs[mode];if(!r||r.solved||r.hinted||s.expansion.inventory.hint<1)return false;s.expansion.inventory.hint--;r.hinted=true;return true;}

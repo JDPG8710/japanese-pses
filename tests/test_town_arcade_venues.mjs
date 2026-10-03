@@ -12,7 +12,9 @@ for(const locale of ['zh','en','ja']){
   for(const id of ARCADE_IDS)assert.ok(t.games[id].title&&t.games[id].blurb);
 }
 const casual=TOWN_BUILDINGS.filter(b=>CASUAL_ARCADE_IDS.includes(b.id));
-assert.equal(casual.length,4);
+assert.equal(casual.length,6);
+assert.equal(TOWN_BUILDINGS.length,12);
+assert.equal(new Set(TOWN_BUILDINGS.map(b=>b.id)).size,TOWN_BUILDINGS.length);
 const edu=TOWN_BUILDINGS.filter(b=>!CASUAL_ARCADE_IDS.includes(b.id));
 const eduZ=edu.map(b=>b.z);
 assert.ok(new Set(eduZ).size>=4,'edu buildings must stagger across districts');

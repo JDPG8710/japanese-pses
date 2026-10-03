@@ -3,7 +3,7 @@ export const ARCADE_TEXT = {
   en: {
     section: 'Arcade',
     sectionKicker: 'CASUAL · 3D ARCADE',
-    sectionIntro: 'Four fun 3D games: racing, breakout, fruit slash, and typing.',
+    sectionIntro: 'Six fun arcades: racing, breakout, fruit slash, typing, rainbow bubbles, and rhythm drums.',
     play: 'Play',
     best: 'Best',
     score: 'Score',
@@ -21,6 +21,8 @@ export const ARCADE_TEXT = {
     tip: 'Tip',
     combo: 'Combo',
     games: {
+      bubble: {title:'Rainbow Bubbles',tag:'MATCH & POP',blurb:'Find the matching shape and pop its rainbow bubble before it floats away.',tip:'Tap a matching bubble or its shape pad, or press 1–6. Clear every target to win.'},
+      rhythm: {title:'Rhythm Parade',tag:'RHYTHM',blurb:'Catch a cheerful beat with four colorful drums.',tip:'Tap a drum or press 1–4 when its note reaches the white line.'},
       race: {
         title: 'Piko Circuit',
         tag: 'RACING',
@@ -78,7 +80,7 @@ export const ARCADE_TEXT = {
   zh: {
     section: '休闲街机',
     sectionKicker: '休闲 · 3D街机',
-    sectionIntro: '四款 3D 休闲街机：竞速、打砖块、切水果、打字。',
+    sectionIntro: '六款趣味街机：竞速、打砖块、切水果、打字、彩虹泡泡、节奏鼓队。',
     play: '开始',
     best: '最佳',
     score: '得分',
@@ -96,6 +98,8 @@ export const ARCADE_TEXT = {
     tip: '提示',
     combo: '连击',
     games: {
+      bubble: {title:'彩虹泡泡',tag:'图案配对',blurb:'看清目标图案，在泡泡飘走前找到它，戳出彩虹！',tip:'点击对应泡泡或图案按钮，或按 1–6。完成所有目标即通关。'},
+      rhythm: {title:'节奏鼓队',tag:'音乐节奏',blurb:'音符蹦蹦跳跳，四面彩鼓奏出欢乐节拍。',tip:'音符落到白线时，点击对应鼓或按 1–4。'},
       race: {
         title: '皮可环道',
         tag: '赛车',
@@ -153,7 +157,7 @@ export const ARCADE_TEXT = {
   ja: {
     section: 'アーケード',
     sectionKicker: 'カジュアル · 3D',
-    sectionIntro: '3Dゲームが4つ。レース・ブロックくずし・フルーツ・タイピング。',
+    sectionIntro: '6つの ゲーム。レース・ブロック・フルーツ・タイピング・あわ・ドラム。',
     play: 'あそぶ',
     best: 'ベスト',
     score: 'スコア',
@@ -171,6 +175,8 @@ export const ARCADE_TEXT = {
     tip: 'ヒント',
     combo: 'コンボ',
     games: {
+      bubble: {title:'にじいろの あわ',tag:'かたち あわせ',blurb:'おなじ かたちを みつけて、あわが きえるまえに わろう！',tip:'おなじ あわか かたちの ボタンを タップ。キーボードは1〜6。'},
+      rhythm: {title:'リズム たいこ',tag:'リズム',blurb:'4つの たいこで たのしい リズムを つくろう。',tip:'おとが しろい せんに きたら タップ。キーボードは1〜4。'},
       race: {
         title: 'ピコサーキット',
         tag: 'レース',

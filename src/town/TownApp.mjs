@@ -5,13 +5,16 @@ import {SAVE_KEY,PRODUCTS,FURNITURE,MISSIONS,PLACES,loadState,restoreState,saveS
 import {TownScene,AVATAR_COLORS} from './TownScene3D.mjs?v=5';
 import {createExpansion} from './TownExpansion.mjs?v=5';
 import {ARCADE_TEXT} from './ArcadeText.mjs?v=7';
+import {townDifficulty,progressionLabel,townPointsLabel} from './TownProgression.mjs';
+import {createTownMultiplayer} from './TownMultiplayer.mjs';
+import {createTownRemotePlayers} from './TownRemotePlayers.mjs';
 
 const $=id=>document.getElementById(id),esc=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let storage;try{storage=localStorage;}catch{}
 const params=new URLSearchParams(location.search);let savedLocale;try{savedLocale=storage?.getItem('world-locale');}catch{}
 let locale=[params.get('locale'),savedLocale,navigator.language?.slice(0,2),'en'].find(l=>TEXT[l]);
 const state=loadState(storage),w=()=>TEXT[locale],dialog=$('town-dialog');
-let modal=null,translated=false,feedback='',feedbackGood=false,selected=null,saveOK=true,scene,expansion,syncTownFs=()=>{};
+let modal=null,translated=false,feedback='',feedbackGood=false,selected=null,saveOK=true,scene,expansion,multiplayer,syncTownFs=()=>{};
 const label=p=>p[locale]||p.en;
 function persist(){saveOK=saveState(storage,state);$('save-status').textContent=saveOK?w().saved:w().saveFail;$('save-status').classList.toggle('save-error',!saveOK);}
 function button(action,text,cls=''){return `<button type="button" data-action="${action}" class="${cls}">${esc(text)}</button>`;}
@@ -32,6 +35,9 @@ function refresh(){
   $('help').setAttribute('aria-label',w().help);$('world-link').href=`world.html?${new URLSearchParams({locale,...(params.get('country')?{country:params.get('country')}:{})})}`;
   $('town-canvas').setAttribute('aria-label',`${w().title}. ${ARCADE_TEXT[locale].controls}. ${ARCADE_TEXT[locale].touch}`);
   $('coins').textContent=state.coins;$('xp').textContent=state.xp;
+  townDifficulty(state);
+  $('town-progression').textContent=`${progressionLabel(state,locale)} · ${townPointsLabel(state.townProgress.points,locale)} · ${{zh:'通关任一游戏即可晋级，20关后无限挑战',en:'Clear any game to advance. Endless play after level 20.',ja:'ゲームを クリアして レベルアップ。20の あとは むげんチャレンジ。'}[locale]}`;
+  multiplayer?.refreshLocale();
   const finished=state.mission>=10;
   $('mission-number').textContent=finished?'✦':String(state.mission+1).padStart(2,'0');
   $('mission-title').textContent=finished?w().done:w().missions[state.mission];
@@ -142,7 +148,17 @@ document.querySelectorAll('[data-direction]').forEach(el=>{
 });
 try{scene=new TownScene($('town-canvas'),{state,words:w,locale:()=>locale,onArrive:showPlace,onMove:()=>{if(state.started)persist();},onNear:updateNear,isPaused:()=>dialog.open||!state.started||!!expansion?.isArcadeOpen?.()});
 scene.onGraphicsError=()=>{const el=document.createElement('div');el.className='graphics-error';el.setAttribute('role','alert');el.textContent=ARCADE_TEXT[locale].webgl;document.querySelector('.world-card').append(el);};
-expansion=createExpansion({state,scene,persist,refresh,shell,close,getLocale:()=>locale});
+expansion=createExpansion({state,scene,persist,refresh,shell,close,getLocale:()=>locale,onActivity:game=>multiplayer?.setGame(game)});
+scene.remotePlayers=createTownRemotePlayers(scene);
+let townPresence={x:scene.position.x,y:scene.position.y,z:scene.position.z,heading:scene.avatar.rotation.y,vehicle:scene.vehicle};
+multiplayer=createTownMultiplayer({mount:$('town-online'),getLocale:()=>locale,getPresence:()=>{
+ if(!scene.mode)townPresence={x:scene.position.x,y:scene.position.y,z:scene.position.z,heading:Math.atan2(Math.sin(scene.avatar.rotation.y),Math.cos(scene.avatar.rotation.y)),vehicle:scene.vehicle};
+ const d=townDifficulty(state);return {...townPresence,avatar:state.expansion.character,outfit:state.avatar,game:expansion.getActivity(),level:d.level,infiniteRound:d.infiniteRound};
+},onPeers:peers=>scene.remotePlayers.sync(peers),onChallenge:challenge=>{
+ if(!state.started){state.started=true;persist();}
+ return expansion.startShared(challenge);
+}});
+window.addEventListener('pagehide',()=>{multiplayer?.destroy();scene.remotePlayers?.destroy();},{once:true});
 }catch(error){const el=document.createElement('div');el.className='graphics-error';el.setAttribute('role','alert');el.textContent=ARCADE_TEXT[locale].webgl;document.querySelector('.world-card').append(el);console.error('3D scene unavailable',error);scene={stop(){},travel(){},direction(){},near:null};}
 window.addEventListener('pagehide',()=>{if(state.started)persist();});
 window.addEventListener('storage',e=>{if(e.key===SAVE_KEY&&e.newValue){try{Object.assign(state,restoreState(JSON.parse(e.newValue)));scene.stop();if(dialog.open)close();refresh();}catch{}}});

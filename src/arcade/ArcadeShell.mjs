@@ -1,4 +1,5 @@
 import {arcadeText} from './ArcadeText.mjs';
+import {progressionLabel,townPointsLabel} from '../town/TownProgression.mjs';
 
 const BEST_PREFIX = 'piko-arcade-best:';
 
@@ -38,7 +39,7 @@ export function openArcadeShell({gameId, locale = 'en', onExit, onRetry}) {
       <header class="arcade-hud">
         <div class="arcade-hud-left">
           <strong class="arcade-title">${esc(copy.title)}</strong>
-          <span class="arcade-hard">${esc(t.hardHint)}</span>
+          <span class="arcade-hard">${esc(progressionLabel({level:1},locale))}</span>
         </div>
         <div class="arcade-hud-stats" aria-live="polite">
           <span data-hud="score">${esc(t.score)} 0</span>
@@ -101,8 +102,12 @@ export function openArcadeShell({gameId, locale = 'en', onExit, onRetry}) {
     if (best != null) root.querySelector('[data-hud="best"]').textContent = `${t.best} ${best}`;
   }
 
-  function showResult({cleared, score, detail = ''}) {
-    if (destroyed) return;
+  function setProgress(difficulty) {
+    root.querySelector('.arcade-hard').textContent = progressionLabel(difficulty,locale);
+  }
+
+  function showResult({cleared, score, detail = '', reward, next}) {
+    if (destroyed || ended) return;
     ended = true;
     overlay.dataset.outcome = cleared ? 'success' : 'retry';
     paused = false;
@@ -112,7 +117,8 @@ export function openArcadeShell({gameId, locale = 'en', onExit, onRetry}) {
     overlay.classList.remove('hidden');
     root.querySelector('[data-overlay-kicker]').textContent = cleared ? '★' : '×';
     root.querySelector('[data-overlay-title]').textContent = cleared ? t.cleared : t.gameOver;
-    root.querySelector('[data-overlay-body]').textContent = `${t.score} ${Math.floor(score)}${detail ? ` · ${detail}` : ''} · ${t.best} ${saved}`;
+    root.querySelector('[data-overlay-body]').textContent = `${t.score} ${Math.floor(score)}${detail ? ` · ${detail}` : ''} · ${t.best} ${saved}${reward?.awarded ? ` · +${townPointsLabel(reward.points,locale)} · ${progressionLabel(next,locale)}` : ''}`;
+    root.querySelector('[data-shell="retry"]').textContent = cleared ? ({zh:'下一关 →',ja:'つぎのレベル →',en:'Next challenge →'}[locale] || 'Next challenge →') : t.retry;
   }
 
   function setPaused(next) {
@@ -124,6 +130,7 @@ export function openArcadeShell({gameId, locale = 'en', onExit, onRetry}) {
       root.querySelector('[data-overlay-kicker]').textContent = 'Ⅱ';
       root.querySelector('[data-overlay-title]').textContent = t.paused;
       root.querySelector('[data-overlay-body]').textContent = copy.tip;
+      root.querySelector('[data-shell="retry"]').textContent = t.retry;
     } else {
       overlay.classList.add('hidden');
     }
@@ -143,6 +150,8 @@ export function openArcadeShell({gameId, locale = 'en', onExit, onRetry}) {
     destroyed = true;
     exitFs();
     resizeObs?.disconnect?.();
+    window.removeEventListener('resize', fit);
+    root.removeEventListener('click', onShellClick);
     root.remove();
     document.body.classList.remove('arcade-open');
   }
@@ -192,6 +201,7 @@ export function openArcadeShell({gameId, locale = 'en', onExit, onRetry}) {
     get paused() { return paused; },
     get ended() { return ended; },
     setHud,
+    setProgress,
     showResult,
     setPaused,
     destroy() {

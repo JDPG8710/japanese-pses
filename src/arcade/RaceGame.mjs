@@ -1,4 +1,5 @@
 /** Player-driven circuit racing with track/car select, power-ups, and AI traffic. */
+import {normalizeDifficulty} from '../town/TownProgression.mjs';
 import {
   createArcadeRenderer, resizeArcade3D, disposeArcade3D, boxMesh, sphereMesh, THREE,
   spawnParticleBurst, updateParticles
@@ -48,6 +49,11 @@ function wrapDelta(a, b) {
   return d;
 }
 
+export function raceDifficultyFor(difficulty) {
+ const scale=normalizeDifficulty(difficulty).scale;
+ return Object.freeze({...RACE_DIFFICULTY,aiCount:2+Math.floor(scale*2),aiSpeedMultiplier:1+.22*scale,itemRespawn:6.5+3*scale,offTrackSlow:.55-.09*scale});
+}
+
 export function createRaceGame({
   canvas,
   onHud,
@@ -57,9 +63,10 @@ export function createRaceGame({
   locale = 'en',
   trackId = null,
   carId = null,
-  skipLobby = false
+  skipLobby = false,
+  difficulty
 } = {}) {
-  const D = RACE_DIFFICULTY;
+  const D = raceDifficultyFor(difficulty);
   const tCopy = arcadeText(locale);
   const raceCopy = tCopy.race || {};
   const graphics = createArcadeRenderer(canvas, {clear: 0x0a1224});
@@ -368,7 +375,7 @@ export function createRaceGame({
         def, x:p.x+p.nx*lat,z:p.z+p.nz*lat,heading:p.heading,lateralVelocity:0,
         s: s0,
         lat,
-        speed: def.topSpeed * (0.62 + i * 0.08),
+        speed: def.topSpeed * (0.62 + i * 0.08) * D.aiSpeedMultiplier,
         mesh,
         lap: 1,
         progress: s0
@@ -844,6 +851,7 @@ export function createRaceGame({
     setControls,
     useItem: useHeldItem,
     getState: () => ({
+      difficulty:D,
       lane: 0,
       lives,
       score,

@@ -13,7 +13,9 @@ const CASUAL = [
   {id: 'fruit', x: -64, z: 10, color: 0xffd45e},
   {id: 'ninja', x: 60, z: -40, color: 0xc791ff},
   {id: 'breakout', x: 50, z: 70, color: 0x57dfff},
-  {id: 'race', x: -60, z: -44, color: 0xff6b4a}
+  {id: 'race', x: -60, z: -44, color: 0xff6b4a},
+  {id: 'bubble', x: -8, z: 72, color: 0x77d8eb},
+  {id: 'rhythm', x: 28, z: -52, color: 0xeb99c5}
 ];
 export const CASUAL_ARCADE_IDS = Object.freeze(CASUAL.map(b => b.id));
 export const TOWN_BUILDINGS = [...EDU, ...CASUAL];

@@ -1,4 +1,5 @@
 /** 3D fruit slash — blade trail, split halves, juice bursts. */
+import {normalizeDifficulty,challengeRandom} from '../town/TownProgression.mjs';
 import {
   createArcadeRenderer, resizeArcade3D, disposeArcade3D, sphereMesh, boxMesh, THREE,
   spawnParticleBurst, updateParticles, createSlashTrail
@@ -20,8 +21,14 @@ export const FRUIT_DIFFICULTY = Object.freeze({
 
 const FRUIT_COLORS = [0xff6b6b, 0xff9f43, 0xffd45e, 0x7dffb3, 0xc791ff, 0xff8fab];
 
-export function createFruitSlashGame({canvas, onHud, onEnd, audio = null, autoStart = true} = {}) {
-  const D = FRUIT_DIFFICULTY;
+export function fruitDifficultyFor(difficulty) {
+ const s=normalizeDifficulty(difficulty).scale;
+ return Object.freeze({...FRUIT_DIFFICULTY,clearWaves:6+Math.floor(s*3),throwIntervalStart:.85/(1+.28*s),throwIntervalMin:.42/(1+.2*s),bombChanceStart:.14+.06*s,bombChanceMax:.28+.04*s,fruitSpeed:7.5+.4*s,gravity:9.5+1.2*s,slashRadius:.85-.12*s});
+}
+
+export function createFruitSlashGame({canvas, onHud, onEnd, audio = null, autoStart = true, difficulty, seed=Date.now()} = {}) {
+  const D = fruitDifficultyFor(difficulty);
+  let random=challengeRandom(seed);
   const graphics = createArcadeRenderer(canvas, {clear: 0x152418});
   let lives = D.lives;
   let score = 0;
@@ -79,27 +86,28 @@ export function createFruitSlashGame({canvas, onHud, onEnd, audio = null, autoSt
   }
 
   function spawn() {
-    const isBomb = Math.random() < bombChance();
-    const color = isBomb ? 0x222830 : FRUIT_COLORS[Math.floor(Math.random() * FRUIT_COLORS.length)];
-    const x = (Math.random() - 0.5) * 8;
-    const speed = D.fruitSpeed + wave * 0.35 + Math.random() * 1.5;
+    const isBomb = random() < bombChance();
+    const color = isBomb ? 0x222830 : FRUIT_COLORS[Math.floor(random() * FRUIT_COLORS.length)];
+    const x = (random() - 0.5) * 8;
+    const speed = D.fruitSpeed + wave * 0.35 + random() * 1.5;
+    const z=(random()-.5)*2;
     const mesh = graphics.ok
       ? sphereMesh(isBomb ? 0.45 : 0.4, color, {segments: 12})
       : null;
     if (mesh) {
-      mesh.position.set(x, -2.5, (Math.random() - 0.5) * 2);
+      mesh.position.set(x, -2.5, z);
       itemGroup.add(mesh);
     }
     items.push({
-      x, y: -2.5, z: mesh?.position.z || 0,
-      vx: (Math.random() - 0.5) * 2.5,
+      x, y: -2.5, z,
+      vx: (random() - 0.5) * 2.5,
       vy: speed,
-      vz: (Math.random() - 0.5) * 0.8,
+      vz: (random() - 0.5) * 0.8,
       bomb: isBomb,
       alive: true,
       mesh,
       color,
-      spun: Math.random() * Math.PI * 2
+      spun: random() * Math.PI * 2
     });
   }
 
@@ -127,6 +135,7 @@ export function createFruitSlashGame({canvas, onHud, onEnd, audio = null, autoSt
   }
 
   function slashAt(point) {
+    if(!running||ended)return;
     let hit = false;
     for (const item of items) {
       if (!item.alive) continue;
@@ -184,9 +193,9 @@ export function createFruitSlashGame({canvas, onHud, onEnd, audio = null, autoSt
     spawnTimer -= dt;
     if (spawnTimer <= 0) {
       spawn();
-      if (Math.random() < 0.25) spawn();
+      if (random() < 0.25) spawn();
       const t = Math.max(D.throwIntervalMin, D.throwIntervalStart - wave * 0.04);
-      spawnTimer = t * (0.8 + Math.random() * 0.4);
+      spawnTimer = t * (0.8 + random() * 0.4);
     }
     items = items.filter(item => {
       if (!item.alive) {
@@ -236,6 +245,7 @@ export function createFruitSlashGame({canvas, onHud, onEnd, audio = null, autoSt
   }
 
   function finish(cleared) {
+    if(ended)return;
     ended = true; running = false;
     typeof cancelAnimationFrame === 'function' && cancelAnimationFrame(raf);
     onEnd?.({cleared, score, detail: `${creditedWaves} waves`});
@@ -253,6 +263,7 @@ export function createFruitSlashGame({canvas, onHud, onEnd, audio = null, autoSt
   }
 
   function onDown(e) {
+    if(!running||ended)return;
     slicing = true;
     lastPoint = pointerToWorld(e);
     if (lastPoint) {
@@ -289,6 +300,7 @@ export function createFruitSlashGame({canvas, onHud, onEnd, audio = null, autoSt
   }
 
   function start() {
+    random=challengeRandom(seed);
     lives = D.lives; score = 0; wave = 1; waveHits = 0; waveNeed = 5;
     combo = 0; creditedWaves = 0; items = []; halves = []; particles = []; spawnTimer = 0.3; ended = false;
     if (itemGroup) while (itemGroup.children.length) itemGroup.remove(itemGroup.children[0]);
@@ -315,5 +327,5 @@ export function createFruitSlashGame({canvas, onHud, onEnd, audio = null, autoSt
   buildScene();
   bind();
   if (autoStart) start();
-  return {start, pause, resume, destroy, tick, draw, getState: () => ({lives, score, wave, combo, creditedWaves, ended, gl: graphics.ok})};
+  return {start, pause, resume, destroy, tick, draw, getState: () => ({difficulty:D, lives, score, wave, combo, creditedWaves, items:items.filter(i=>i.alive).map(({x,y,z,vx,vy,vz,bomb})=>({x,y,z,vx,vy,vz,bomb})), ended, gl: graphics.ok})};
 }

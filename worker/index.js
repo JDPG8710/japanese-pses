@@ -1,3 +1,4 @@
+import { townRoute } from './town-api.mjs';
 import { worldRoute } from './world-games.mjs';
 import { goRoute } from './go-api.mjs';
 import { foundationRoute } from './foundation-games.mjs';
@@ -39,6 +40,7 @@ async function routeRequest(request, env) {
   const url = new URL(request.url);
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: corsHeaders(request, env) });
 
+  if (url.pathname.startsWith('/api/town/')) return townRoute(request, env);
   if (url.pathname === '/api/health') return handleHealth(request, env);
   if (url.pathname.startsWith('/api/arena/')) return goRoute(request, env, { authenticate, signJwt, verifyJwt, parseCookies, HttpError });
   if (url.pathname === '/api/play-counts') return playCountsRoute(request, env, { json, HttpError });

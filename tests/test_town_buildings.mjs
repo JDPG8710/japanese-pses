@@ -16,10 +16,10 @@ console.log('ok - underground town spawns recover without changing floating-cour
 for(const b of TOWN_BUILDINGS){const to={x:b.x*25+550,y:(b.z-2)*25+380};assert.ok(canWalk(to.x,to.y),`walk ${b.id}`);assert.ok(findPath(newState().player,to).length,`path ${b.id}`);assert.equal(buildingAt(b.x,b.z-2).id,b.id);assert.equal(canWalk((b.x+2.7)*25+550,b.z*25+380),false);assert.equal(canWalk(b.x*25+550,(b.z+2.7)*25+380),false);}
 console.log('ok - all building entrances are reachable and side / rear walls block movement');
 
-assert.deepEqual([...CASUAL_ARCADE_IDS],['fruit','ninja','breakout','race']);
+assert.deepEqual([...CASUAL_ARCADE_IDS],['fruit','ninja','breakout','race','bubble','rhythm']);
 for(const id of CASUAL_ARCADE_IDS)assert.ok(TOWN_BUILDINGS.some(b=>b.id===id),id);
 const casual=TOWN_BUILDINGS.filter(b=>CASUAL_ARCADE_IDS.includes(b.id));
-assert.equal(casual.length,4);
+assert.equal(casual.length,6);
 const zs=new Set(casual.map(b=>Math.round(b.z/4)));
 const xs=casual.map(b=>b.x);
 assert.ok(zs.size>=3,'arcade venues must sit in different districts (z clusters)');

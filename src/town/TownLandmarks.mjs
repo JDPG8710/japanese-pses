@@ -1,5 +1,5 @@
 import {THREE,box,ball} from './Models3D.mjs';
-export const LANDMARK_HEIGHTS={obby:14,tower:23,runner:15,memory:13,garden:12,gear:13,fruit:14,breakout:15,race:12,ninja:16};
+export const LANDMARK_HEIGHTS={obby:14,tower:23,runner:15,memory:13,garden:12,gear:13,fruit:14,breakout:15,race:12,ninja:16,bubble:13,rhythm:13};
 const COLORS=[0xff747d,0xffca58,0x69dfc0,0x65b9ff,0xaa86ef];
 function shape(g,geometry,x,y,z,color){const m=new THREE.Mesh(geometry,new THREE.MeshStandardMaterial({color,roughness:.65}));m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;g.add(m);return m;}
 const cylinder=(g,x,y,z,r,h,c)=>shape(g,new THREE.CylinderGeometry(r,r,h,12),x,y,z,c);
@@ -56,13 +56,17 @@ export function buildLandmark(parent,b,title){
   for(const x of [-2.3,2.3]){cylinder(g,x,6,1,.7,3.5,0x374960);cone(g,x,8.2,1,.9,1,0xffda64);}
   const wheel=shape(g,new THREE.TorusGeometry(1.7,.5,8,16),0,8,0,0x26314b);ring(g,0,8,-.1,1.15,0xf7d96a);for(let i=0;i<5;i++){const spoke=box(g,0,8,0,.12,2.3,.18,0xdbedf4);spoke.rotation.z=i*Math.PI/5;}
   for(const x of [-2,2])box(g,x,1.3,-2.95,.5,.3,.1,0x9ae9ff);
+ }else if(b.id==='bubble'){
+  box(g,0,4.3,0,6.5,.6,6.5,0x65b9df);for(let i=0;i<7;i++){const bubble=ball(g,Math.sin(i*2.4)*2,6+i*.6,Math.cos(i*2.4)*1.5,.85,COLORS[i%5]);bubble.material.roughness=.15;}ring(g,0,10.8,0,1.6,0xffffff);
+ }else if(b.id==='rhythm'){
+  box(g,0,4.3,0,6.5,.6,6.5,0x804f9d);for(let i=0;i<4;i++){cylinder(g,(i%2?1:-1)*1.5,5.4+Math.floor(i/2)*1.8,0,1,1.4,COLORS[i]);cylinder(g,(i%2?1:-1)*1.5,6.15+Math.floor(i/2)*1.8,0,1.1,.12,0xfff1d0);}for(const x of [-1,1]){const stick=box(g,x,10,0,.2,3,.2,0xffda9e);stick.rotation.z=x*.5;}
  }else if(b.id==='ninja'){
   for(let level=0;level<3;level++){const y=4.4+level*3,w=7-level*1.3;box(g,0,y,0,w,.35,w,0x2f3052);for(const side of [-1,1]){const roof=box(g,side*w*.22,y+.6,0,w*.56,.35,w,0x4d4770);roof.material.color.setHex(0x4d4770);roof.rotation.z=side*.28;}if(level<2)box(g,0,y+1.4,0,w-2,2.4,w-2,0xebc2aa);}
   for(const x of [-2,2]){cylinder(g,x,2.6,-2.9,.17,5,0xac394b);ball(g,x,3,-3.05,.38,0xffd582);}
   cone(g,0,14,0,.7,1.6,0xffd379);
  }
  // Distinct street-level facades, not just differently colored roofs.
- const facade={obby:[0x62cde3,0xffce62],tower:[0x9b87d8,0xffd173],runner:[0x397cb4,0x65eadc],memory:[0xce8fc8,0x84d8f1],garden:[0x79af66,0xf5efcc],gear:[0x3b697b,0xffc65d],fruit:[0xf58d83,0xffeeaf],breakout:[0x252c59,0x62e8ff],race:[0xd95058,0xffffff],ninja:[0x53394f,0xf7bd82]}[b.id];
+ const facade={obby:[0x62cde3,0xffce62],tower:[0x9b87d8,0xffd173],runner:[0x397cb4,0x65eadc],memory:[0xce8fc8,0x84d8f1],garden:[0x79af66,0xf5efcc],gear:[0x3b697b,0xffc65d],fruit:[0xf58d83,0xffeeaf],breakout:[0x252c59,0x62e8ff],race:[0xd95058,0xffffff],ninja:[0x53394f,0xf7bd82],bubble:[0x499cca,0xb3fff0],rhythm:[0x9a599e,0xffdc77]}[b.id];
  for(const side of [-1,1]){
   for(let row=0;row<3;row++)box(g,side*2.6,.65+row*1.05,-3,.58,.8,.2,b.id==='memory'?COLORS[(row+(side>0?2:0))%5]:facade[0]);
   box(g,side*2.25,1.7,-3.03,.13,3.3,.12,facade[1]);

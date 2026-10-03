@@ -6,7 +6,7 @@ import {fileURLToPath,pathToFileURL} from 'node:url';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 export async function startTownPreview(port=0,{built=false}={}){
   const base=built?path.join(root,'dist'):root;
-  const types={'.html':'text/html','.js':'text/javascript','.mjs':'text/javascript','.css':'text/css','.svg':'image/svg+xml','.png':'image/png','.webp':'image/webp','.json':'application/json'};
+  const types={'.html':'text/html','.js':'text/javascript','.mjs':'text/javascript','.css':'text/css','.svg':'image/svg+xml','.png':'image/png','.webp':'image/webp','.json':'application/json','.mp3':'audio/mpeg','.wav':'audio/wav'};
   const server=createServer(async(req,res)=>{
     try{
       let pathname=decodeURIComponent(new URL(req.url,'http://localhost').pathname);

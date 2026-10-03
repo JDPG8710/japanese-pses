@@ -9,7 +9,7 @@ import {createNinjaTypeGame, NINJA_DIFFICULTY, wordsForLocale} from '../src/arca
 import {validPlayKey} from '../src/stats/PlayKeys.mjs';
 import {readFile} from 'node:fs/promises';
 
-assert.deepEqual([...ARCADE_IDS], ['race', 'breakout', 'fruit', 'ninja']);
+assert.deepEqual([...ARCADE_IDS], ['race', 'breakout', 'fruit', 'ninja', 'bubble', 'rhythm']);
 for (const locale of ['en', 'zh', 'ja']) {
   const t = arcadeText(locale);
   assert.ok(t.section && t.play && t.games.race.title);

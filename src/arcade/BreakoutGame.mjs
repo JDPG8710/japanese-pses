@@ -1,4 +1,5 @@
 /** 3D perspective breakout — paddle, ball, brick wall, power-ups + spark VFX. */
+import {normalizeDifficulty,challengeRandom} from '../town/TownProgression.mjs';
 import {
   createArcadeRenderer, resizeArcade3D, disposeArcade3D, boxMesh, sphereMesh, THREE,
   spawnParticleBurst, updateParticles, capsulePowerMesh
@@ -23,8 +24,14 @@ export const BREAKOUT_POWERUPS = Object.freeze(['expand', 'multi', 'slow']);
 
 const POWER_COLORS = {expand: 0x6ff0ad, multi: 0xffd45e, slow: 0x57dfff};
 
-export function createBreakoutGame({canvas, onHud, onEnd, audio = null, autoStart = true} = {}) {
-  const D = BREAKOUT_DIFFICULTY;
+export function breakoutDifficultyFor(difficulty) {
+ const s=normalizeDifficulty(difficulty).scale;
+ return Object.freeze({...BREAKOUT_DIFFICULTY,paddleWidth:2.8-.45*s,ballSpeed:9.5+2*s,ballSpeedMax:14+2*s,rows:5+Math.floor(s*2),powerDropChance:.38-.07*s});
+}
+
+export function createBreakoutGame({canvas, onHud, onEnd, audio = null, autoStart = true, difficulty, seed=Date.now()} = {}) {
+  const D = breakoutDifficultyFor(difficulty);
+  let random=challengeRandom(seed);
   const graphics = createArcadeRenderer(canvas, {clear: 0x102038});
   let paddleX = 0;
   let paddleW = D.paddleWidth;
@@ -78,7 +85,7 @@ export function createBreakoutGame({canvas, onHud, onEnd, audio = null, autoStar
     const gap = 0.12;
     const bw = (D.playWidth - gap * (D.cols - 1)) / D.cols;
     const bd = 0.7;
-    const startZ = -4;
+    const startZ = -0.9; // Keep every difficulty row in front of the back wall.
     for (let r = 0; r < D.rows; r++) {
       for (let c = 0; c < D.cols; c++) {
         let hits = D.brickHitsMin;
@@ -141,8 +148,8 @@ export function createBreakoutGame({canvas, onHud, onEnd, audio = null, autoStar
   }
 
   function dropPower(x, z) {
-    if (Math.random() > D.powerDropChance) return;
-    const type = BREAKOUT_POWERUPS[Math.floor(Math.random() * BREAKOUT_POWERUPS.length)];
+    if (random() > D.powerDropChance) return;
+    const type = BREAKOUT_POWERUPS[Math.floor(random() * BREAKOUT_POWERUPS.length)];
     const mesh = graphics.ok ? capsulePowerMesh(POWER_COLORS[type]) : null;
     if (mesh && powerGroup) {
       mesh.position.set(x, 0.55, z);
@@ -200,7 +207,7 @@ export function createBreakoutGame({canvas, onHud, onEnd, audio = null, autoStar
       const spd = Math.min(D.ballSpeedMax, Math.hypot(ball.vx, ball.vz) * 1.03);
       ball.vx = offset * spd * 0.85;
       ball.vz = -Math.abs(Math.sqrt(Math.max(0.1, spd * spd - ball.vx * ball.vx)));
-      if (stickyUntil > 0 && Math.random() < 0.35) {
+      if (stickyUntil > 0 && random() < 0.35) {
         launched = false;
         ball.x = paddleX;
         ball.z = 5.2;
@@ -306,6 +313,7 @@ export function createBreakoutGame({canvas, onHud, onEnd, audio = null, autoStar
   }
 
   function finish(cleared) {
+    if(ended)return;
     ended = true; running = false;
     typeof cancelAnimationFrame === 'function' && cancelAnimationFrame(raf);
     onEnd?.({cleared, score, detail: cleared ? 'wall clear' : ''});
@@ -384,6 +392,7 @@ export function createBreakoutGame({canvas, onHud, onEnd, audio = null, autoStar
   }
 
   function start() {
+    random=challengeRandom(seed);
     keyHeld.left = false; keyHeld.right = false;
     lives = D.lives; score = 0; ended = false; paddleX = 0; paddleTargetX = 0;
     paddleW = D.paddleWidth; expandUntil = 0; stickyUntil = 0; slowMul = 1; accum = 0;
@@ -413,6 +422,6 @@ export function createBreakoutGame({canvas, onHud, onEnd, audio = null, autoStar
   if (autoStart) start();
   return {
     start, pause, resume, destroy, tick, draw,
-    getState: () => ({lives, score, remaining: remaining(), ended, bricks: bricks.length, powerups: powerups.length, balls: balls.length, gl: graphics.ok})
+    getState: () => ({difficulty:D, lives, score, remaining: remaining(), ended, bricks: bricks.length, powerups: powerups.length, balls: balls.length, gl: graphics.ok})
   };
 }

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {mkdir} from 'node:fs/promises';
 import {chromium} from 'playwright-core';
 import {startTownPreview} from '../scripts/preview-town.mjs';
+import {TOWN_BUILDINGS} from '../src/town/TownBuildings.mjs';
 
 // Always test the deployable build, not an unrelated source checkout.
 const preview=process.env.TOWN_TEST_ORIGIN
@@ -25,7 +26,7 @@ try {
       const gl=c.getContext('webgl2');return gl?.getParameter(gl.VERSION)||'';
     }),/WebGL 2/,'Town must create a real WebGL 2 context; 2D is not a valid release');
     assert.deepEqual((await canvas.getAttribute('data-buildings')).split(',').sort(),
-      ['obby','tower','runner','memory','garden','gear','fruit','ninja','breakout','race'].sort());
+      TOWN_BUILDINGS.map(b=>b.id).sort());
     await canvas.focus();
     const initial=await canvas.getAttribute('data-position');
     await page.keyboard.down('ArrowRight');
@@ -52,6 +53,6 @@ try {
     await page.screenshot({path:`.wrangler/town-release/${width}.png`,fullPage:true});
     assert.deepEqual(errors,[]);
     await context.close();
-    console.log(`Town release ${width}px: real WebGL 2, all 10 venues, movement, saved camera, layout and guide passed.`);
+    console.log(`Town release ${width}px: real WebGL 2, all ${TOWN_BUILDINGS.length} venues, movement, saved camera, layout and guide passed.`);
   }
 } finally {await browser.close();await preview.close();}

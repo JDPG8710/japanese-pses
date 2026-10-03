@@ -64,3 +64,11 @@ new_sqlite_classes = ["ChessRoom"]
 # npx wrangler secret put JWT_SECRET
 # npx wrangler secret put STRIPE_SECRET_KEY
 # npx wrangler secret put STRIPE_WEBHOOK_SECRET
+
+[[durable_objects.bindings]]
+name = "TOWN_ROOMS"
+class_name = "TownRoom"
+
+[[migrations]]
+tag = "town-v1"
+new_sqlite_classes = ["TownRoom"]

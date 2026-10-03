@@ -1,12 +1,14 @@
 // Pure course geometry and landing physics shared by the renderer and tests.
 // Every course is reproducible from the saved run, independently of the question RNG.
+import {normalizeDifficulty} from './TownProgression.mjs';
 export const PHYSICS={gravity:22,jump:9,speed:7.2,radius:.16};
 function rng(seed){let n=seed>>>0;return ()=>{n+=0x6d2b79f5;let t=n;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return ((t^(t>>>14))>>>0)/4294967296;};}
 const round=n=>Math.round(n*1000)/1000;
 export function generateCourse(run){
  if(!run||!['obby','tower'].includes(run.mode))return null;
- const random=rng((run.seed^Math.imul(run.stage,0x9e3779b1)^(run.mode==='tower'?0x7135:0x2197))>>>0);
- const pick=(min,max)=>min+random()*(max-min),tier=Math.min(4,Math.floor((run.stage-1)/5)),pattern=Math.floor(random()*3),count=5+Math.floor(random()*3)+Math.floor(tier/2);
+ const difficulty=run.difficulty||normalizeDifficulty({level:Math.min(20,run.stage)}),roundIndex=run.difficulty?difficulty.level+difficulty.infiniteRound:run.stage;
+ const random=rng((run.seed^Math.imul(roundIndex,0x9e3779b1)^(run.mode==='tower'?0x7135:0x2197))>>>0);
+ const pick=(min,max)=>min+random()*(max-min),tier=Math.min(4,difficulty.scale*4),pattern=Math.floor(random()*3),count=5+Math.floor(random()*3)+Math.floor(tier/2);
  const platforms=[{id:'start',x:0,y:0,z:7,w:4.4,d:4.2}],route=['start'];let angle=0;
  for(let i=0;i<count;i++){
   const previous=platforms.at(-1);

@@ -4,30 +4,40 @@ import {createRaceGame, RACE_DIFFICULTY, RACE_TRACKS, RACE_CARS, RACE_POWERUPS} 
 import {createBreakoutGame, BREAKOUT_DIFFICULTY} from './BreakoutGame.mjs?v=2';
 import {createFruitSlashGame, FRUIT_DIFFICULTY} from './FruitSlashGame.mjs';
 import {createNinjaTypeGame, NINJA_DIFFICULTY} from './NinjaTypeGame.mjs';
+import {createBubbleGame, BUBBLE_DIFFICULTY} from './BubbleGame.mjs';
+import {createRhythmGame, RHYTHM_DIFFICULTY} from './RhythmGame.mjs';
+import {beginTownChallenge,cancelTownChallenge,settleTownChallenge,townDifficulty} from '../town/TownProgression.mjs';
+import {loadState,saveState} from '../town/TownRules.mjs';
 import {recordPlay} from '../stats/PlayCounts.js';
 import {getTownAudio} from '../town/TownAudio.mjs?v=1';
 
-export const ARCADE_IDS = Object.freeze(['race', 'breakout', 'fruit', 'ninja']);
+export const ARCADE_IDS = Object.freeze(['race', 'breakout', 'fruit', 'ninja', 'bubble', 'rhythm']);
 
 export const ARCADE_DIFFICULTY = Object.freeze({
   race: RACE_DIFFICULTY,
   breakout: BREAKOUT_DIFFICULTY,
   fruit: FRUIT_DIFFICULTY,
-  ninja: NINJA_DIFFICULTY
+  ninja: NINJA_DIFFICULTY,
+  bubble: BUBBLE_DIFFICULTY,
+  rhythm: RHYTHM_DIFFICULTY
 });
 
 const ART = {
   race: ['🏎️ 🌙', '#ff6b4a'],
   breakout: ['🧱 ⚡', '#57dfff'],
   fruit: ['🍉 ✂️', '#ffd45e'],
-  ninja: ['🥷 ⌨️', '#c791ff']
+  ninja: ['🥷 ⌨️', '#c791ff'],
+  bubble: ['🫧 🌈', '#8adcf6'],
+  rhythm: ['🥁 🎵', '#ffb8d9']
 };
 
 const FACTORIES = {
   race: createRaceGame,
   breakout: createBreakoutGame,
   fruit: createFruitSlashGame,
-  ninja: createNinjaTypeGame
+  ninja: createNinjaTypeGame,
+  bubble: createBubbleGame,
+  rhythm: createRhythmGame
 };
 
 export function playKeyForArcade(id) {
@@ -42,7 +52,7 @@ export function arcadeSectionMarkup(locale = 'en', {esc = s => s, button = (a, t
     return `<article class="card arcade-card" data-arcade="${id}">
       <div class="card-art" style="--tint:${ART[id][1]}" aria-hidden="true">${ART[id][0]}</div>
       <div class="card-body">
-        <span class="tag">${esc(g.tag)} · ${esc(t.hardHint)}</span>
+        <span class="tag">${esc(g.tag)}</span>
         <h3>${esc(g.title)}</h3>
         <p>${esc(g.blurb)}</p>
         <p class="muted arcade-best">${esc(t.best)}: ${best}</p>
@@ -64,9 +74,15 @@ export function arcadeSectionMarkup(locale = 'en', {esc = s => s, button = (a, t
 
 let activeSession = null;
 
-export function startArcade(id, {locale = 'en', onExit} = {}) {
+export function startArcade(id, {locale = 'en', onExit, state, persist, onProgress, seed} = {}) {
   if (!ARCADE_IDS.includes(id)) return null;
   activeSession?.destroy?.();
+  let storage;try { storage = globalThis.localStorage; } catch {}
+  state ||= loadState(storage);
+  const save = () => { if (persist) persist(); else saveState(storage,state); };
+  let ticket = null;
+  let attempt = 0;
+  let firstSeed = seed;
   void recordPlay(playKeyForArcade(id));
   const audio = typeof window !== 'undefined' ? getTownAudio() : null;
   audio?.unlock?.();
@@ -78,20 +94,33 @@ export function startArcade(id, {locale = 'en', onExit} = {}) {
     gameId: id,
     locale,
     onExit() {
+      ++attempt;
       game?.destroy?.();
+      cancelTownChallenge(state,ticket);save();
       activeSession = null;
       audio?.exitToTown?.();
       onExit?.();
     },
     onRetry() {
       game?.destroy?.();
+      cancelTownChallenge(state,ticket);
       wasPaused = false;
+      audio?.resumeBgm?.();
       game = boot();
     }
   });
 
   function boot() {
+    const thisAttempt = ++attempt;
+    const difficulty = townDifficulty(state);
+    ticket = beginTownChallenge(state,id,{seed:firstSeed ?? Date.now()});
+    firstSeed = undefined;
+    const thisTicket = ticket;
+    save();
+    shell.setProgress(difficulty);
     return FACTORIES[id]({
+      difficulty,
+      seed:thisTicket.seed,
       canvas: shell.canvas,
       locale,
       audio,
@@ -101,8 +130,13 @@ export function startArcade(id, {locale = 'en', onExit} = {}) {
         shell.setHud({...stats, best: readBest(id)});
       },
       onEnd(result) {
+        if (thisAttempt !== attempt || shell.ended) return;
         game?.pause?.();
-        shell.showResult(result);
+        audio?.pauseBgm?.();
+        const reward = settleTownChallenge(state,thisTicket,result);
+        save();
+        onProgress?.(reward);
+        shell.showResult({...result,reward,next:townDifficulty(state)});
       }
     });
   }
@@ -116,9 +150,11 @@ export function startArcade(id, {locale = 'en', onExit} = {}) {
       if (shell.ended) return;
       if (shell.paused && !wasPaused) {
         game?.pause?.();
+        audio?.pauseBgm?.();
         wasPaused = true;
       } else if (!shell.paused && wasPaused) {
         game?.resume?.();
+        audio?.resumeBgm?.();
         wasPaused = false;
       }
     });
@@ -126,7 +162,9 @@ export function startArcade(id, {locale = 'en', onExit} = {}) {
 
   activeSession = {
     destroy() {
+      ++attempt;
       game?.destroy?.();
+      cancelTownChallenge(state,ticket);save();
       shell.destroy();
       activeSession = null;
     }
@@ -135,11 +173,11 @@ export function startArcade(id, {locale = 'en', onExit} = {}) {
 }
 
 /** Headless construction helper for smoke tests. */
-export function createArcadeHeadless(id, {locale = 'en'} = {}) {
+export function createArcadeHeadless(id, {locale = 'en', difficulty, seed} = {}) {
   const canvas = createStubCanvas();
   const factory = FACTORIES[id];
   if (!factory) throw new Error(`unknown arcade game: ${id}`);
-  const game = factory({canvas, locale, autoStart: false, onHud() {}, onEnd() {}});
+  const game = factory({canvas, locale, difficulty, seed, autoStart: false, onHud() {}, onEnd() {}});
   game.start();
   game.tick(1 / 60);
   game.draw?.();

@@ -1,0 +1,19 @@
+{
+  "title": "Piko — A Stroll Through Town",
+  "composer": "Original procedural Piko score",
+  "instrumentation": "Synthesized violin ensemble, viola, cello and pizzicato strings",
+  "bpm": 108,
+  "bars": 32,
+  "duration": 71.11111111111111,
+  "sampleRate": 44100,
+  "peak": 0.82,
+  "rms": 0.17153428294711523,
+  "events": 556,
+  "sections": [
+    "A",
+    "A variation",
+    "B",
+    "A return"
+  ],
+  "license": "Original project asset; no third-party samples"
+}

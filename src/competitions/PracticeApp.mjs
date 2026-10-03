@@ -47,7 +47,6 @@ function chrome(){
   document.documentElement.lang=locale==='zh'?'zh-Hans':locale;document.title=`${t[course]} · Piko Game`;
   document.querySelector('#locale').value=locale;
   document.querySelector('#language-label').textContent=t.language;
-  const school=document.querySelector('[data-school]');school.textContent=t.school;
   const other=document.querySelector('[data-other-course]');other.textContent=course==='eiken'?'AMC 8':t.eikenLink;other.href=`/${course==='eiken'?'amc8':'eiken'}.html?lang=${locale}`;
   other.hidden=course==='amc8';
   document.querySelector('#practice-footer').innerHTML=`<p>${storageOK?t.saved:t.unavailable}</p><a href="/index.html">${t.footerBack}</a>`;

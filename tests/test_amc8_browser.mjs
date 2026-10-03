@@ -37,6 +37,9 @@ try {
     await page.goto(`${origin}/amc8.html?lang=${locale}`);
     assert.equal(await page.locator('.course-card').count(), 5);
     assert.equal(await page.locator('[data-other-course]').isVisible(), false);
+    assert.equal(await page.locator('[data-school], a[href*="course=jp"]').count(), 0, 'AMC 8 has no link to the Japanese school course');
+    assert.equal(await page.locator('.topbar a.brand[href="/index.html"]').count(), 1, 'the brand still links home');
+    assert.equal(await page.locator('#locale').isVisible(), true);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), true);
   }
   await page.goto(`${origin}/amc8.html?lang=ja`);

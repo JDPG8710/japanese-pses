@@ -7,7 +7,7 @@ Choose the past tense of go.|went|goed|gone|Went describes going in the past; go
 Complete: She ___ to school every day.|walks|walk|walking|Use walks with she in the present tense.
 Which word names a person?|teacher|kitchen|blanket|A teacher is a person; a kitchen is a place and a blanket is a thing.
 Which word describes an action?|jump|juice|jeans|Jump tells what someone does.
-Which word can describe a noun?|soft|sofa|softly|Soft can describe a blanket; softly describes an action.
+Which word can describe a noun?|soft|sofa|sadly|Soft can describe a blanket; sofa is a thing and sadly describes an action.
 Choose the plural of mouse.|mice|mouses|mousen|Mouse has the irregular plural mice.
 Complete: I saw ___ owl.|an|a|some|Use an before the vowel sound in owl.
 Which question asks about a place?|Where is my bag?|What is in my bag?|Whose bag is this?|Where asks about a place.
@@ -41,7 +41,7 @@ What should a new paragraph usually introduce?|a new main idea|a new page number
 5:`Ava packed an umbrella after looking at dark clouds. What is the best inference?|She expected rain.|It had already snowed.|She disliked sunlight.|The umbrella and clouds support an expectation of rain.
 The library lights went out. Jo used a torch to finish reading. What can we infer?|Jo wanted to keep reading.|Jo had finished the book.|The library was outdoors.|Using a torch shows a wish to continue.
 The wind whispered through the leaves. Which technique is used?|personification|exaggeration|rhyming words|Whispered gives the wind a human action.
-Which sentence uses a simile?|The lake was like a mirror.|The lake was deep.|The lake covered two hectares.|Like makes an explicit comparison.
+Which sentence uses a simile?|The lake was like a mirror.|The lake was deep and cold.|The lake covered two hectares.|Like makes an explicit comparison.
 Which summary keeps the main idea: The class planted trees, watered them weekly and measured their growth?|The class cared for and studied trees.|The class only measured water.|The class cut down trees.|A summary combines the main actions without inventing details.
 Which source best checks a claim about yesterday's rainfall?|a dated weather record|a weather record from last year|a friend's guess about rain|A relevant dated measurement can support the claim.
 Noah returned a lost wallet without a reward. Which trait does this action best suggest?|honesty|impatience|carelessness|Returning another person's property supports honesty.
@@ -49,22 +49,22 @@ Which sentence gives evidence for Our garden attracts insects?|We counted six be
 Which sentence is the most precise?|The seedling grew 3 cm in a week.|The seedling grew a lot in 7 days.|The seedling grew quite tall lately.|A quantity and a time make the statement precise.
 Complete: The two teams disagreed; ___, they listened to each other.|however|therefore|for example|However marks a contrast with the disagreement.
 Which question encourages an explanation?|Why did the character change her plan?|Did the character change her plan?|When did the character change her plan?|Why asks for reasons.
-Which revision removes repetition: The tiny small seed fell?|The tiny seed fell.|The tiny small little seed fell.|The tiny seed seed fell.|Tiny and small repeat the same idea.`,
+Which revision removes repetition: The tiny small seed fell?|The tiny seed fell.|The small little seed fell.|The tiny seed seed fell.|Tiny and small repeat the same idea.`,
 6:`A poster says Everyone loves this game but reports no survey. What is missing?|evidence for the claim|a longer game name|a brighter border|Everyone is a broad claim requiring evidence.
 Which sentence correctly separates two independent clauses?|It rained; we stayed inside.|It rained, we stayed inside.|It rained we stayed inside.|A semicolon can join related independent clauses.
 One article describes benefits; another lists costs. What should a comparison include?|evidence from both|only the first title|only personal preference|A comparison considers both sources.
-Which revision is clearest: They put it there?|The pupils put the model on the shelf.|They put the model over there.|The pupils put it on that.|Specific nouns remove unclear references.
+Which revision is clearest: They put it there?|The pupils put the model on the shelf.|Someone put that thing over there.|They moved it to the place there.|Specific nouns remove unclear references.
 Which question tests a source's reliability?|Who collected the information and how?|Is the logo my favourite colour?|Does it have many exclamation marks?|Method and authorship help assess reliability.
 Which sentence expresses possibility rather than certainty?|The path might be wet.|The path is wet.|The path must be wet.|Might expresses possibility.
 Which detail weakens the claim All birds fly?|Penguins cannot fly.|Sparrows can fly.|Many birds have wings.|One valid counterexample disproves all.
-Which is a balanced conclusion about a small survey?|These pupils preferred A; others may differ.|Everyone everywhere prefers A.|No further research is possible.|The conclusion stays within the sample's limits.
+Which is a balanced conclusion about a small survey?|These pupils preferred A; others may differ.|Everyone everywhere always prefers A.|No further research will ever be needed.|The conclusion stays within the sample's limits.
 Which sentence uses formal language?|Please return the form by Friday.|Hey, chuck the form back.|Gimme that thing sometime.|Please and a precise request suit a formal notice.
 Which revision keeps the meaning of Despite the rain, the match continued?|Although it rained, the match continued.|Because it rained, the match stopped.|Before it rained, the match ended.|Although preserves the contrast.
 Which statement distinguishes fact from interpretation?|The chart rose by 5; this may indicate growth.|The chart rose by 5, so it proves every idea.|The chart looks nice, so growth is certain.|It separates a number from its possible meaning.
 What is the best first step when editing an argument?|Check whether reasons support the conclusion.|Check whether every word is long enough.|Add as many unrelated facts as possible.|An argument needs relevant support.`,
 7:`A survey asks only club members whether their club is enjoyable. What is a limitation?|The sample may favour the club.|It includes too many non-members.|It measures every child's opinion.|Membership can make the sample unrepresentative.
 Which statement confuses correlation with cause?|Ice-cream sales and swimming rise, so ice cream causes swimming.|Ice-cream sales and swimming both rise in warm weather.|Ice-cream sales and swimming rise, but more evidence is needed.|Two things changing together does not prove causation.
-Which conclusion follows from Some pupils cycle?|At least one pupil cycles.|Every pupil cycles.|No pupil cycles.|Some establishes existence, not universality.
+Which conclusion follows from Some pupils cycle?|At least one pupil cycles.|Every single pupil cycles.|Not one pupil cycles.|Some establishes existence, not universality.
 Which evidence is strongest for a local bus timetable?|the operator's current timetable|a timetable photo from five years ago|a neighbour's guess about times|The current operator is the relevant primary source.
 Which phrase signals uncertainty?|The results suggest|The results prove everything|There is no possible doubt|Suggest leaves room for other explanations.
 Why acknowledge a counterargument?|to examine a competing explanation|to hide the competing evidence|to change the topic of the essay|Considering alternatives strengthens evaluation.

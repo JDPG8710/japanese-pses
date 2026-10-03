@@ -3936,6 +3936,81 @@ export class ContextMatchGame extends CurriculumQuizGame {
       options: shuffleCopy([...new Set(question.options)]).slice(0, 4)
     }));
   }
+
+  // 長文も選択肢も省略しない。全選択肢は同じ文字サイズとカード幅で表示する。
+  // 採点・ヒント・10問の進行は CurriculumQuizGame と共有する。
+  loop() {
+    if (!this.running) return;
+    if (!this.canvas.parentElement) return super.loop();
+    if (!this.englishPanel) {
+      this.englishCanvasAriaHidden = this.canvas.getAttribute('aria-hidden');
+      this.canvas.setAttribute('aria-hidden', 'true');
+      this.englishPanel = document.createElement('section');
+      this.englishPanel.dataset.englishQuiz = '';
+      this.englishPanel.style.cssText = 'position:absolute;inset:0;overflow:auto;overscroll-behavior:contain;padding:16px;background:#020617;color:#f8fafc;touch-action:pan-y;box-sizing:border-box;text-align:left;';
+      this.canvas.parentElement.appendChild(this.englishPanel);
+    }
+    const question = this.questions[this.qIndex];
+    if (this.renderedEnglishQuestion !== question) {
+      this.renderedEnglishQuestion = question;
+      this.englishPanel.replaceChildren();
+      const progress = document.createElement('p');
+      progress.textContent = `外国語・英語・小学${this.grade}年　${this.qIndex + 1} / ${this.questions.length}`;
+      progress.style.cssText = 'font-size:14px;margin:0 0 12px;color:#7dd3fc;';
+      const prompt = document.createElement('p');
+      prompt.dataset.englishPrompt = '';
+      prompt.tabIndex = -1;
+      prompt.textContent = question.prompt;
+      prompt.style.cssText = 'white-space:pre-wrap;overflow-wrap:anywhere;font-size:17px;line-height:1.65;margin:0 0 16px;';
+      const options = document.createElement('div');
+      options.dataset.englishOptions = '';
+      options.style.cssText = 'display:grid;grid-template-columns:minmax(0,1fr);grid-auto-rows:1fr;gap:8px;';
+      this.englishButtons = question.options.map((option, index) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = `${String.fromCharCode(65 + index)}. ${option}`;
+        button.style.cssText = 'width:100%;min-height:56px;padding:12px;border:2px solid #60a5fa;border-radius:12px;font:600 16px/1.6 sans-serif;text-align:left;white-space:normal;overflow-wrap:anywhere;background:#172554;color:#fff;cursor:pointer;';
+        button.addEventListener('click', () => {
+          const box = this.canvas.getBoundingClientRect();
+          const target = this.getOptionRect(this.getOptionLayout(), index);
+          this.handlePointer({
+            clientX: box.left + (target.x + target.w / 2) * box.width / getLogicalCanvasWidth(this.canvas),
+            clientY: box.top + (target.y + target.h / 2) * box.height / getLogicalCanvasHeight(this.canvas)
+          });
+        });
+        options.appendChild(button);
+        return button;
+      });
+      this.englishFeedback = document.createElement('p');
+      this.englishFeedback.setAttribute('role', 'status');
+      this.englishFeedback.style.cssText = 'font-size:16px;line-height:1.6;margin:12px 0 0;overflow-wrap:anywhere;';
+      this.englishPanel.append(progress, prompt, options, this.englishFeedback);
+      this.englishPanel.scrollTop = 0;
+      if (this.qIndex > 0) prompt.focus({ preventScroll: true });
+    }
+    this.englishButtons.forEach((button, index) => {
+      const option = question.options[index];
+      const eliminated = !this.locked && option === this.hintEliminatedOption;
+      button.disabled = this.locked || eliminated;
+      button.style.opacity = eliminated ? '0.45' : '1';
+      button.style.background = this.locked && option === question.correct ? '#065f46'
+        : this.locked && option === this.selectedOption ? '#9f1239' : '#172554';
+    });
+    this.englishFeedback.textContent = this.feedback;
+    this.englishFrameId = requestAnimationFrame(() => this.loop());
+  }
+
+  destroy() {
+    super.destroy();
+    if (this.englishFrameId != null) cancelAnimationFrame(this.englishFrameId);
+    if (this.englishPanel) {
+      if (this.englishCanvasAriaHidden == null) this.canvas.removeAttribute('aria-hidden');
+      else this.canvas.setAttribute('aria-hidden', this.englishCanvasAriaHidden);
+    }
+    this.englishPanel?.remove();
+    this.englishPanel = null;
+    this.renderedEnglishQuestion = null;
+  }
 }
 
 class LegacyContextMatchGame {

@@ -1,7 +1,7 @@
 // Fails when any English multiple-choice item lets a child find the answer by
 // option shape alone (length, word count, punctuation, form, topic, echo).
 import assert from 'node:assert/strict';
-import {auditChoiceSet,pickDistractors,repairChoices,CHOICE_RULES} from '../src/runtime/ChoiceQuality.mjs';
+import {auditChoiceSet,assertChoiceSet,pickDistractors,repairChoices,CHOICE_RULES} from '../src/runtime/ChoiceQuality.mjs';
 import {collectEnglishChoiceItems,collectRunnerItems,runnerIssues,positionStats,summarize} from '../scripts/audit-english-choices.mjs';
 import {getEnglishQuestionBank} from '../src/competitions/EnglishQuestionBank.mjs';
 import {makeFoundationRounds} from '../src/world/FoundationRules.mjs';
@@ -17,12 +17,19 @@ const bad=[
  [{correct:'The seedling grew 3 cm.',choices:['The seedling grew 3 cm.','The seedling grew a lot.','The seedling grew tall.']},'odd-digits'],
  [{correct:'cat',choices:['cat','red','blue','green']},'odd-category'],
  [{prompt:'Mia went to the library.\nWhere did Mia go?',correct:'the library',choices:['the library','the museum','the station','the bakery']},'stem-echo'],
- [{correct:'Hello.',choices:['Hello.','hello','Goodbye.']},'duplicate-option']
+ [{correct:'Hello.',choices:['Hello.','hello','Goodbye.']},'duplicate-option'],
+ // Rules merged from the DING worktree's checks:
+ [{correct:'Open your book.',choices:['Open your book.','Close your book.','Open your bag.','Open my book.']},'convergence'],
+ [{prompt:'On Monday, Aki went to the library after school.\n\nWhere did Aki go?',correct:'the library',choices:['the library','the bookshop','the classroom','the study room']},'verbatim-echo'],
+ [{correct:'私は図書館で本を読む。',choices:['私は図書館で本を読む。','私は明日の午後に図書館で本をたくさん読みます。','私は教室で手紙を書く。','私は学校で地図を見る。']},'isolated-length'],
+ [{correct:'Red.',choices:['Red.','!!!','Blue.','Green.']},'empty-option']
 ];
 for(const [item,rule] of bad)assert.ok(auditChoiceSet(item).some(i=>i.rule===rule),`${rule} not detected: ${JSON.stringify(item)}`);
 assert.deepEqual(auditChoiceSet({correct:"girl's",choices:["girl's",'girls',"girls'"]}),[]);
-assert.deepEqual(auditChoiceSet({correct:'I like apples.',choices:['I like apples.','I like oranges.','I have apples.',"I don't like apples."]}),[]);
-ok('validator flags length, word-count, punctuation, digits, topic, stem-echo and duplicate giveaways');
+assert.deepEqual(auditChoiceSet({correct:'I like apples.',choices:['I like apples.','I like oranges.',"I don't like apples.","I don't like oranges."]}),[]);
+assert.deepEqual(auditChoiceSet({prompt:'On Monday, Aki and Ken wanted to go to the bookshop, but it was closed. Aki went to the library instead.\n\nWhere did Aki go?',correct:'the library',choices:['the library','the bookshop','the classroom','the study room']}),[]);
+assert.throws(()=>assertChoiceSet({id:'x',correct:'Open your book.',options:['Open your book.','Close your book.','Open your bag.','Open my book.']}),/convergence/);
+ok('validator flags length, word-count, punctuation, digits, topic, stem-echo, duplicate, convergence, verbatim-echo, isolated-length and empty giveaways');
 
 // 2. Generator helper keeps distractors close to the answer.
 const picked=pickDistractors('the library',['the beach','the community center','the town hall','the art museum','the recycling center','the zoo'],{count:3});
@@ -38,7 +45,7 @@ ok(`${main.total} unique English option sets pass every rule`);
 const runner=summarize(collectRunnerItems(),runnerIssues);
 assert.equal(runner.flagged,0);ok(`${runner.total} town picture-word sets use one topic per question`);
 
-// 4. Translation items offer a near-miss option (same frame or same action).
+// 4. Translation items offer near-miss options in a 2x2 (frame x action).
 for(const mode of ['BASIC','EIKEN3','EIKEN2']){
  const bank=getEnglishQuestionBank(mode);
  for(const q of bank){assert.equal(q.options.length,4);assert.equal(q.options[0],q.correct);}

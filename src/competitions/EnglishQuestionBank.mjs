@@ -1,99 +1,33 @@
 // Pure question generation: safe to import without creating game UI.
-// Distractors are chosen to be as confusable as the correct answer: same
-// sentence frame or same action, similar length, and (for reading) things that
-// are really mentioned in the passage. See src/runtime/ChoiceQuality.mjs.
-import {pickDistractors,distractorDistance,auditChoiceSet} from '../runtime/ChoiceQuality.mjs?v=1';
+// Translation items use a 2x2 design: the answer keeps the sentence frame and
+// the action; one distractor changes the action, one changes the frame
+// (meaning, not just wording) and one changes both. Every option therefore
+// shares exactly one part with two others, so neither length nor "the one
+// that looks like all the others" gives the answer away. Reading items come
+// from EnglishReadingBank.mjs. All sets are checked by
+// src/runtime/ChoiceQuality.mjs (tests/test_english_choice_quality.mjs).
+import { ACTION_DISTRACTORS, FRAME_DISTRACTORS } from './EnglishTranslationDistractors.mjs?v=1';
+import { makeEnglishReadingBank } from './EnglishReadingBank.mjs?v=1';
 
-function expandNaturalEnglishPairs(actions, frames, prefix) {
+function expandNaturalEnglishPairs(actions, frames, prefix, mode) {
   const pairs = [];
   actions.forEach(([action, japanese], actionIndex) => {
     frames.forEach(([englishFrame, japaneseFrame], frameIndex) => {
+      const alternateAction = ACTION_DISTRACTORS[mode][actionIndex][frameIndex % 2];
+      const alternateFrame = FRAME_DISTRACTORS[mode][frameIndex][actionIndex % 2];
       pairs.push({
         id: `${prefix}_${actionIndex}_${frameIndex}`,
         eng: englishFrame.replace('{action}', action),
-        jpn: japaneseFrame.replace('{action}', japanese)
+        jpn: japaneseFrame.replace('{action}', japanese),
+        distractors: [
+          japaneseFrame.replace('{action}', alternateAction),
+          alternateFrame.replace('{action}', japanese),
+          alternateFrame.replace('{action}', alternateAction)
+        ]
       });
     });
   });
   return pairs;
-}
-
-function makeEnglishReadingBank(longMode = false) {
-  const names = ['Aki', 'Ben', 'Mika', 'Ken', 'Yui', 'Sora', 'Emma', 'Leo', 'Hana', 'Riku'];
-  const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-  const scenarios = [
-    ['the library', 'borrow a book about space', 'prepare for a science project', 'found a useful diagram'],
-    ['the community center', 'practice a short speech', 'welcome new students', 'spoke with more confidence'],
-    ['the school garden', 'water the tomato plants', 'help the plants grow', 'noticed three new flowers'],
-    ['the science museum', 'join a robot workshop', 'learn how sensors work', 'built a small moving car'],
-    ['the riverside park', 'collect plastic litter', 'protect birds and fish', 'filled two recycling bags'],
-    ['the train station', 'make a barrier-free map', 'help visitors move safely', 'found a new elevator'],
-    ['the sports center', 'practice swimming', 'improve endurance', 'completed ten laps'],
-    ['the town hall', 'interview a city worker', 'study disaster preparation', 'learned about emergency water'],
-    ['the art museum', 'sketch a landscape painting', 'study the use of color', 'shared the sketch with classmates'],
-    ['the local bakery', 'learn how bread is made', 'write a report about local jobs', 'watched the dough rise'],
-    ['the animal shelter', 'prepare clean water bowls', 'support rescued animals', 'helped five dogs'],
-    ['the school kitchen', 'cook vegetable soup', 'learn about healthy meals', 'used locally grown carrots'],
-    ['the beach', 'count different shells', 'compare the coastal environment', 'recorded six kinds of shells'],
-    ['the music room', 'rehearse a flute piece', 'perform at the school festival', 'kept the rhythm correctly'],
-    ['the history museum', 'examine an old farming tool', 'understand life in the past', 'wrote notes about its shape'],
-    ['the fire station', 'ask about rescue equipment', 'make a community safety guide', 'learned how firefighters train'],
-    ['the recycling center', 'sort used containers', 'reduce waste at school', 'understood three recycling marks'],
-    ['the weather station', 'check rainfall records', 'compare this month with last month', 'discovered a wetter week'],
-    ['the nursing home', 'read a picture book aloud', 'spend time with older residents', 'received helpful storytelling advice'],
-    ['the shopping street', 'survey reusable bag use', 'study environmentally friendly habits', 'collected forty responses']
-  ];
-  const fields = [0, 1, 2, 3];
-  const format = (type, value, name) => type === 2 ? `To ${value}.` : type === 3 ? `${name} ${value}.` : value;
-  return Array.from({ length: 200 }, (_, index) => {
-    const name = names[index % names.length];
-    const friend = names[(index + 3) % names.length];
-    const scenarioIndex = Math.floor(index / names.length) % scenarios.length;
-    const scenario = scenarios[scenarioIndex];
-    const day = days[index % days.length];
-    const questionType = fields[index % 4];
-    const correct = format(questionType, scenario[questionType], name);
-    // The decoy scenario is really mentioned in the passage, so the child has
-    // to read which detail belongs to whom instead of spotting the only option
-    // that appears in the text.
-    const decoyRanking = scenarios.map((item, i) => ({ item, i }))
-      .filter(entry => entry.i !== scenarioIndex)
-      .sort((a, b) => distractorDistance(correct, format(questionType, a.item[questionType], name)) - distractorDistance(correct, format(questionType, b.item[questionType], name)) || a.i - b.i);
-    const decoy = decoyRanking[index % 3].item;
-    const [place, action, reason, outcome] = scenario;
-    const [dPlace, dAction, dReason, dOutcome] = decoy;
-    const passage = longMode
-      ? `On ${day}, ${name} visited ${place} with a small school team. The team had first planned to go to ${dPlace}, but that visit was moved to another week. Their main task was to ${action}, while another group was asked to ${dAction}. Before starting, they discussed safety rules and divided the work fairly. ${name}'s team chose this activity because they wanted to ${reason}. ${friend}, who was in the other group, wanted to ${dReason}. Although one part of the task was difficult, the team exchanged ideas and continued carefully. By the end of the visit, ${friend} ${dOutcome}, while ${name} ${outcome} and wrote a reflection for the next class.`
-      : `On ${day}, ${name} wanted to visit ${dPlace}, but it was closed, so ${name} went to ${place} after school. ${name} planned to ${action}, not ${dAction}. ${name}'s class hoped to ${reason}, while ${friend} wanted to ${dReason}. In the end, ${friend} ${dOutcome}, and ${name} ${outcome}.`;
-    const prompts = [`Where did ${name} go?`, `What did ${name} plan to do?`, `Why did ${name} choose the activity?`, `What happened to ${name} at the end?`];
-    const prompt = `${passage}\n\n${prompts[questionType]}`;
-    const decoyOption = format(questionType, decoy[questionType], name);
-    const pool = scenarios.filter(item => item !== scenario && item !== decoy).map(item => format(questionType, item[questionType], name));
-    const options = [correct, ...pickDistractors(correct, pool, { count: 3, prompt, variety: Math.floor(index / 4), fixed: [decoyOption] })];
-    return {
-      id: `${longMode ? 'LONG' : 'SHORT'}_${index}`,
-      passage,
-      prompt,
-      correct,
-      options
-    };
-  });
-}
-
-// Translation distractors: one option keeps the same action but changes the
-// sentence frame (tests the grammar), two keep the same frame but change the
-// action (tests vocabulary). All four therefore look alike.
-function translationOptions(pairs, pair, index, actionCount, frameCount) {
-  const actionIndex = Math.floor(index / frameCount), frameIndex = index % frameCount;
-  const sameAction = pairs.filter((item, i) => Math.floor(i / frameCount) === actionIndex && i !== index).map(item => item.jpn);
-  const sameFrame = pairs.filter((item, i) => i % frameCount === frameIndex && i !== index).map(item => item.jpn);
-  const [frameTwin] = pickDistractors(pair.jpn, sameAction, { count: 1, variety: actionIndex });
-  const vocabulary = pickDistractors(pair.jpn, sameFrame, { count: 3, variety: actionIndex + frameIndex, fixed: [frameTwin] });
-  const options = [pair.jpn, ...vocabulary];
-  if (auditChoiceSet({ correct: pair.jpn, choices: options }).length) {
-    return [pair.jpn, ...pickDistractors(pair.jpn, [...sameAction, ...sameFrame], { count: 3, variety: index })];
-  }
-  return options;
 }
 
 const BANK_CACHE = new Map();
@@ -157,16 +91,15 @@ function buildEnglishQuestionBank(mode) {
   if (mode === 'SHORT_READING') return makeEnglishReadingBank(false);
   if (mode === 'LONG_READING') return makeEnglishReadingBank(true);
   const pairs = mode === 'EIKEN2'
-    ? expandNaturalEnglishPairs(eiken2Actions, eiken2Frames, 'E2')
+    ? expandNaturalEnglishPairs(eiken2Actions, eiken2Frames, 'E2', 'EIKEN2')
     : mode === 'EIKEN3'
-      ? expandNaturalEnglishPairs(eiken3Actions, eiken3Frames, 'E3')
-      : expandNaturalEnglishPairs(basicActions, basicFrames, 'BASIC');
-  const frameCount = mode === 'EIKEN2' ? eiken2Frames.length : mode === 'EIKEN3' ? eiken3Frames.length : basicFrames.length;
-  return pairs.map((pair, index) => ({
+      ? expandNaturalEnglishPairs(eiken3Actions, eiken3Frames, 'E3', 'EIKEN3')
+      : expandNaturalEnglishPairs(basicActions, basicFrames, 'BASIC', 'BASIC');
+  return pairs.map(pair => ({
     id: pair.id,
     prompt: `「${pair.eng}」の意味として最も近いものは？`,
     correct: pair.jpn,
-    options: translationOptions(pairs, pair, index, pairs.length / frameCount, frameCount)
+    options: [pair.jpn, ...pair.distractors]
   }));
 }
 

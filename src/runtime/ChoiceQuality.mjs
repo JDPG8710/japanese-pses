@@ -2,8 +2,11 @@
 // The goal is that a child cannot find the answer by shape alone: the correct
 // option must not be the odd one out by length, word count, punctuation,
 // capitalisation, script, word form or topic, and it must not be the only
-// option that copies words from the question. Pure module: safe in browser,
-// worker and Node tests.
+// option that copies words from the question. It must also not be the one
+// option that sits "in the middle" of the others (the answer every distractor
+// was derived from), and a reading answer must not be the only option whose
+// wording appears in the passage. Pure module: safe in browser, worker and
+// Node tests.
 
 export const CHOICE_RULES=Object.freeze({
  minOptions:3,
@@ -13,6 +16,12 @@ export const CHOICE_RULES=Object.freeze({
  spreadRatio:1.8,spreadChars:5,
  // Word counts: longest - shortest <= max(spreadWords, shortest*0.6).
  spreadWords:2,
+ // Any single option (answer or distractor) far longer/shorter than its
+ // nearest neighbour: gap > isolatedChars and ratio > isolatedRatio.
+ isolatedRatio:1.3,isolatedChars:4,
+ // Convergence: the answer's mean similarity to the other options exceeds
+ // every distractor's by at least this margin (majority-vote giveaway).
+ convergenceMargin:0.08,
  // Generator tolerance when picking distractors.
  pickRatio:0.4,pickChars:2
 });
@@ -63,12 +72,18 @@ export function auditChoiceSet({prompt='',correct,choices,allow=[]}){
  if(list.length<CHOICE_RULES.minOptions)add('too-few-options',`${list.length} options`);
  const norms=list.map(normalizeOption);if(new Set(norms).size!==norms.length)add('duplicate-option',list.join(' | '));
  const hits=list.filter(c=>c===answer).length;if(hits!==1)add('answer-count',`correct appears ${hits} times`);
+ if(list.some(c=>!/[\p{L}\p{N}\p{Extended_Pictographic}]/u.test(c)))add('empty-option','an option has no letters, digits or picture');
  if(hits<1||list.length<2)return issues;
  const p=optionProfile(answer),others=list.filter(c=>c!==answer).map(optionProfile),all=[p,...others];
  const lens=all.map(x=>x.length),min=Math.min(...lens),max=Math.max(...lens),dMax=Math.max(...others.map(x=>x.length)),dMin=Math.min(...others.map(x=>x.length));
  if(p.length>dMax&&p.length>dMax*CHOICE_RULES.outlierRatio&&p.length-dMax>=CHOICE_RULES.outlierChars)add('answer-longest',`${p.length} vs ≤${dMax}`);
  if(p.length<dMin&&p.length*CHOICE_RULES.outlierRatio<dMin&&dMin-p.length>=CHOICE_RULES.outlierChars)add('answer-shortest',`${p.length} vs ≥${dMin}`);
  if(max>Math.max(min*CHOICE_RULES.spreadRatio,min+CHOICE_RULES.spreadChars))add('length-spread',`${min}..${max}`);
+ // A lone very long or very short option (even a distractor) invites
+ // "pick the longest" or "drop the odd one" guessing.
+ const sorted=[...lens].sort((a,b)=>a-b),n=sorted.length;
+ const isolated=(big,small)=>big-small>CHOICE_RULES.isolatedChars&&big>small*CHOICE_RULES.isolatedRatio;
+ if(n>=3&&(isolated(sorted[n-1],sorted[n-2])||isolated(sorted[1],sorted[0])))add('isolated-length',sorted.join('/'));
  const wc=all.map(x=>x.words),wMin=Math.min(...wc),wMax=Math.max(...wc);
  if(p.script==='latin'&&wMax-wMin>Math.max(CHOICE_RULES.spreadWords,Math.ceil(wMin*0.6)))add('word-spread',`${wMin}..${wMax} words`);
  // Odd-one-out: every distractor agrees on a feature and the answer differs.
@@ -88,8 +103,37 @@ export function auditChoiceSet({prompt='',correct,choices,allow=[]}){
   const echo=c=>tokens(c).some(w=>stem.has(w));
   if(echo(answer)&&!list.filter(c=>c!==answer).some(echo))add('stem-echo','only the answer repeats words from the question');
  }
+ // Verbatim echo: only the answer's wording appears in the passage/prompt, so
+ // matching text (not reading) finds it. Reading items need a decoy that is
+ // also mentioned.
+ const passage=` ${phraseText(prompt)} `;
+ if(passage.trim()&&/[A-Za-z]{3}/.test(prompt)){
+  const names=new Set((String(prompt).match(/\b[A-Z][a-z]+\b/g)||[]));
+  const inPassage=c=>{const core=phraseText(c).replace(/^to /,'');if(core.length<3)return false;if(passage.includes(` ${core} `))return true;
+   const first=String(c).trim().split(/\s+/)[0];const rest=core.split(' ').slice(1).join(' ');return names.has(first)&&rest.length>=6&&passage.includes(` ${rest} `);};
+  if(inPassage(answer)&&!list.filter(c=>c!==answer).some(inPassage))add('verbatim-echo','only the answer is worded as in the passage');
+ }
+ // Convergence: when every distractor is a one-detail edit of the answer, the
+ // answer is the option that resembles all the others, and a child can pick
+ // it by majority vote without understanding. Edits must be symmetric (e.g.
+ // a 2x2 of two details) so no option is the centre.
+ if(list.length>=3){
+  const mean=c=>list.filter(o=>o!==c).reduce((sum,o)=>sum+similarity(c,o),0)/(list.length-1);
+  const own=mean(answer),best=Math.max(...list.filter(c=>c!==answer).map(mean));
+  if(own-best>=CHOICE_RULES.convergenceMargin)add('convergence',`answer ${own.toFixed(2)} vs ≤${best.toFixed(2)} mean similarity`);
+ }
  return issues;
 }
+
+// Throws when a set fails any rule. For generators and tests that want to
+// fail fast; `key` names the options field (options or choices).
+export function assertChoiceSet(question,{key='options'}={}){
+ const issues=auditChoiceSet({prompt:question.prompt,correct:question.correct,choices:question[key],allow:question.allow});
+ if(issues.length)throw new Error(`Choice quality ${question.id||'(unknown)'}: ${issues.map(i=>`${i.rule} (${i.detail})`).join('; ')}`);
+ return question;
+}
+
+const phraseText=text=>String(text).normalize('NFKC').toLowerCase().replace(/[’‘]/g,"'").replace(/[^\p{L}\p{N}' ]/gu,' ').replace(/\s+/g,' ').trim();
 
 // Character-bigram Dice similarity (0..1). A "near miss" distractor shares
 // most of its letters/characters with the answer (e.g. 我喜欢苹果 / 我喜欢橙子).

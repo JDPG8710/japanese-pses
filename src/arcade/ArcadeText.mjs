@@ -21,7 +21,7 @@ export const ARCADE_TEXT = {
     tip: 'Tip',
     combo: 'Combo',
     games: {
-      bubble: {title:'Little Designer',tag:'DRAW & BUILD',blurb:'Build detailed aircraft, sports cars, trucks and flagship phones in your product design studio.',tip:'Drag or click to install parts, customize colors and draw. Capture the studio or export artwork.'},
+      bubble: {title:'Little Designer',tag:'DRAW & BUILD',blurb:'Design aircraft, vehicles, phones, rockets, robots, boats and buildings on a full-screen canvas. Explore your work in 3D.',tip:'Open floating menus to assemble, draw and color. Drag in 3D to rotate; pinch or scroll to zoom.'},
       rhythm: {title:'Rhythm Parade',tag:'RHYTHM',blurb:'Catch a cheerful beat with four colorful drums.',tip:'Tap a drum or press 1–4 when its note reaches the white line.'},
       race: {
         title: 'Piko Circuit',
@@ -98,7 +98,7 @@ export const ARCADE_TEXT = {
     tip: '提示',
     combo: '连击',
     games: {
-      bubble: {title:'小小设计师',tag:'绘画组装',blurb:'组装客机、跑车、卡车和旗舰手机，打造你的产品设计。',tip:'拖拽或点击零件组装，再自由配色、绘画。屏幕截图保存工作台，导出作品保存高清图片。'},
+      bubble: {title:'小小设计师',tag:'绘画组装',blurb:'全屏设计飞机、汽车、手机、火箭、机器人、船舶和建筑，旋转欣赏自己的 3D 作品。',tip:'打开悬浮菜单组装、配色和绘画。3D 预览中拖动旋转，双指或滚轮缩放。'},
       rhythm: {title:'节奏鼓队',tag:'音乐节奏',blurb:'跟随星光伴奏敲准鼓点，挑战连击！',tip:'点击开始音乐。音符抵达白线时敲鼓，按 D/F/J/K 或 1–4。'},
       race: {
         title: '皮可环道',
@@ -175,7 +175,7 @@ export const ARCADE_TEXT = {
     tip: 'ヒント',
     combo: 'コンボ',
     games: {
-      bubble: {title:'ちいさな デザイナー',tag:'おえかき',blurb:'ひこうき、スポーツカー、トラック、スマホを くわしく デザイン！',tip:'パーツを タップか ドラッグで くみたてよう。いろや えを くふうして スクリーンショットで ほぞん。'},
+      bubble: {title:'ちいさな デザイナー',tag:'おえかき',blurb:'ひこうき・くるま・スマホ・ロケット・ロボット・ふね・たてものを デザイン。3D で くるっと みよう！',tip:'メニューを ひらいて くみたて・いろぬり。3D は ドラッグで かいてん、2ほんゆびで ズーム。'},
       rhythm: {title:'リズム たいこ',tag:'リズム',blurb:'4つの たいこで たのしい リズムを つくろう。',tip:'おとが しろい せんに きたら タップ。キーボードは1〜4。'},
       race: {
         title: 'ピコサーキット',

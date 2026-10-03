@@ -1,8 +1,8 @@
 import {rankedAttempt} from './ArcadeRanking.mjs';
-import {arcadeText} from './ArcadeText.mjs?v=3';
+import {arcadeText} from './ArcadeText.mjs';
 import {openArcadeShell, readBest, createStubCanvas} from './ArcadeShell.mjs';
-import {createRaceGame, RACE_DIFFICULTY, RACE_TRACKS, RACE_CARS, RACE_POWERUPS} from './RaceGame.mjs?v=5';
-import {createBreakoutGame, BREAKOUT_DIFFICULTY} from './BreakoutGame.mjs?v=2';
+import {createRaceGame, RACE_DIFFICULTY, RACE_TRACKS, RACE_CARS, RACE_POWERUPS} from './RaceGame.mjs';
+import {createBreakoutGame, BREAKOUT_DIFFICULTY} from './BreakoutGame.mjs';
 import {createFruitSlashGame, FRUIT_DIFFICULTY} from './FruitSlashGame.mjs';
 import {createNinjaTypeGame, NINJA_DIFFICULTY} from './NinjaTypeGame.mjs';
 import {createBubbleGame, BUBBLE_DIFFICULTY} from './BubbleGame.mjs';
@@ -10,7 +10,7 @@ import {createRhythmGame, RHYTHM_DIFFICULTY} from './RhythmGame.mjs';
 import {beginTownChallenge,cancelTownChallenge,settleTownChallenge,townDifficulty} from '../town/TownProgression.mjs';
 import {loadState,saveState} from '../town/TownRules.mjs';
 import {recordPlay} from '../stats/PlayCounts.js';
-import {getTownAudio} from '../town/TownAudio.mjs?v=1';
+import {getTownAudio} from '../town/TownAudio.mjs';
 
 export const ARCADE_IDS = Object.freeze(['race', 'breakout', 'fruit', 'ninja', 'bubble', 'rhythm']);
 

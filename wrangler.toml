@@ -15,6 +15,7 @@ PLAY_COUNT_ORIGINS = "https://piko-game.com,https://manabi-pop.pages.dev"
 DEV_ORIGINS = "http://localhost:4173,http://127.0.0.1:4173"
 TURNSTILE_HOSTNAMES = "piko-game.com,manabi-pop.pages.dev"
 GOOGLE_CLIENT_ID = "406705820118-aa4p2gkig81k4fn9ofh4igs0v6lku7ep.apps.googleusercontent.com"
+LINE_CHANNEL_ID = "2011844745"
 APPLE_CLIENT_ID = "REPLACE_WITH_APPLE_SERVICES_ID"
 # Google H5 Games Ads の公開Publisher ID（例: ca-pub-123...）は取得後に設定します。
 # GOOGLE_H5_ADS_CLIENT = "ca-pub-..."

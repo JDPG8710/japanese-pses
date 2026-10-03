@@ -1,3 +1,4 @@
+import {rankedAttempt} from './ArcadeRanking.mjs';
 import {arcadeText} from './ArcadeText.mjs?v=3';
 import {openArcadeShell, readBest, createStubCanvas} from './ArcadeShell.mjs';
 import {createRaceGame, RACE_DIFFICULTY, RACE_TRACKS, RACE_CARS, RACE_POWERUPS} from './RaceGame.mjs?v=5';
@@ -27,7 +28,7 @@ const ART = {
   breakout: ['🧱 ⚡', '#57dfff'],
   fruit: ['🍉 ✂️', '#ffd45e'],
   ninja: ['🥷 ⌨️', '#c791ff'],
-  bubble: ['🫧 🌈', '#8adcf6'],
+  bubble: ['🎨 ✈️', '#8adcf6'],
   rhythm: ['🥁 🎵', '#ffb8d9']
 };
 
@@ -116,6 +117,7 @@ export function startArcade(id, {locale = 'en', onExit, state, persist, onProgre
     ticket = beginTownChallenge(state,id,{seed:firstSeed ?? Date.now()});
     firstSeed = undefined;
     const thisTicket = ticket;
+    const ranked=typeof window!=='undefined'?rankedAttempt(id,difficulty.level):null;
     save();
     shell.setProgress(difficulty);
     return FACTORIES[id]({
@@ -137,6 +139,7 @@ export function startArcade(id, {locale = 'en', onExit, state, persist, onProgre
         save();
         onProgress?.(reward);
         shell.showResult({...result,reward,next:townDifficulty(state)});
+        if(ranked)ranked.finish(result.score).then(()=>shell.refreshRanking()).catch(e=>shell.setRankStatus(e.status===401?'login':'error'));
       }
     });
   }
@@ -145,7 +148,7 @@ export function startArcade(id, {locale = 'en', onExit, state, persist, onProgre
 
   // Keep the canvas loop in sync with the shell pause toggle.
   shell.root.addEventListener('click', event => {
-    if (!event.target.closest('[data-shell="pause"]')) return;
+    if (!event.target.closest('[data-shell="pause"],[data-shell="board"]')) return;
     queueMicrotask(() => {
       if (shell.ended) return;
       if (shell.paused && !wasPaused) {

@@ -8,7 +8,7 @@ const origin = 'https://piko-game.com';
 const clientId = 'oauth-regression-client';
 const { privateKey, publicKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
 const jwk = { ...publicKey.export({ format: 'jwk' }), kid: 'test-key', alg: 'RS256', use: 'sig' };
-let nonce, tokenExchanges = 0;
+let nonce, lineNonce, lineIdentityError = false, tokenExchanges = 0;
 const json = value => new Response(JSON.stringify(value), { headers: { 'content-type': 'application/json' } });
 const compiled = await build({ entryPoints: ['worker/index.js'], bundle: true, write: false, format: 'esm', platform: 'browser' });
 const options = {
@@ -17,9 +17,26 @@ const options = {
   bindings: {
     APP_ORIGIN: origin, API_ORIGIN: origin, JWT_SECRET: 'oauth-regression-session-secret',
     GOOGLE_CLIENT_ID: clientId, GOOGLE_CLIENT_SECRET: 'oauth-regression-provider-secret',
+    LINE_CHANNEL_ID: 'line-test-channel', LINE_CHANNEL_SECRET: 'line-test-secret',
     TURNSTILE_SECRET_KEY: 'oauth-regression-turnstile-secret', TURNSTILE_HOSTNAMES: 'piko-game.com'
   },
   outboundService: async request => {
+    if (request.url === 'https://api.line.me/oauth2/v2.1/token') {
+      const body = new URLSearchParams(await request.text());
+      assert.equal(body.get('client_id'), 'line-test-channel');
+      assert.equal(body.get('client_secret'), 'line-test-secret');
+      assert.equal(body.get('redirect_uri'), `${origin}/api/auth/line`);
+      assert.ok(body.get('code_verifier'));
+      return json({ id_token: 'line-server-identity' });
+    }
+    if (request.url === 'https://api.line.me/oauth2/v2.1/verify') {
+      const body = new URLSearchParams(await request.text());
+      assert.equal(body.get('id_token'), 'line-server-identity');
+      assert.equal(body.get('client_id'), 'line-test-channel');
+      assert.equal(body.get('nonce'), lineNonce);
+      return json({ iss: 'https://access.line.me', sub: 'line-user', aud: 'line-test-channel',
+        nonce: lineIdentityError ? 'wrong-nonce' : lineNonce, exp: Math.floor(Date.now()/1000) + 3600, name: 'LINE Test' });
+    }
     if (request.url === 'https://challenges.cloudflare.com/turnstile/v0/siteverify') {
       const form = await request.formData();
       return json({ success: form.get('response') === 'test-challenge', hostname: 'piko-game.com', action: 'access' });
@@ -87,6 +104,39 @@ try {
   const expired = await mf.dispatchFetch(`${origin}/api/auth/google?error=access_denied`, { redirect: 'manual' });
   check(expired.status === 302 && expired.headers.get('location') === `${origin}/?auth=error&reason=invalid_state`, 'missing state remains rejected');
   check(tokenExchanges === 1, 'cancelled and invalid callbacks do not exchange tokens');
+  const providers = await mf.dispatchFetch(`${origin}/api/auth/providers`);
+  check((await providers.json()).providers.includes('line'), 'configured LINE is available');
+  async function startLine() {
+    const response = await mf.dispatchFetch(`${origin}/api/auth/line`, {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ turnstileToken: 'test-challenge' }), redirect: 'manual'
+    });
+    check(response.status === 200, 'LINE authorization starts');
+    const authorize = new URL((await response.json()).authorizeUrl);
+    check(authorize.origin === 'https://access.line.me', 'LINE authorization uses official host');
+    check(authorize.searchParams.get('scope') === 'openid profile', 'no email permission requested');
+    check(authorize.searchParams.get('code_challenge_method') === 'S256', 'LINE uses PKCE');
+    check(authorize.searchParams.get('disable_auto_login') === 'false', 'LINE auto login enabled');
+    lineNonce = authorize.searchParams.get('nonce');
+    return { state: authorize.searchParams.get('state'), cookie: response.headers.get('set-cookie').split(';')[0] };
+  }
+  const line = await startLine();
+  const lineCallback = `${origin}/api/auth/line?code=line-code&state=${line.state}`;
+  const lineCompleted = await mf.dispatchFetch(lineCallback, { headers: { cookie: line.cookie }, redirect: 'manual' });
+  check(lineCompleted.headers.get('location') === `${origin}/?auth=success`, 'verified LINE login succeeds');
+  const lineSession = await mf.dispatchFetch(`${origin}/api/auth/session`, {
+    headers: { cookie: lineCompleted.headers.get('set-cookie').split(';')[0] }
+  });
+  const lineUser = await lineSession.json();
+  check(lineUser.authenticated && lineUser.user.provider === 'line', 'LINE session authenticates');
+  const lineReplay = await mf.dispatchFetch(lineCallback, { headers: { cookie: line.cookie }, redirect: 'manual' });
+  check(lineReplay.headers.get('location').includes('invalid_state'), 'LINE replay rejected');
+  const badIdentity = await startLine();
+  lineIdentityError = true;
+  const rejected = await mf.dispatchFetch(`${origin}/api/auth/line?code=line-code&state=${badIdentity.state}`, {
+    headers: { cookie: badIdentity.cookie }, redirect: 'manual'
+  });
+  check(rejected.headers.get('location').includes('identity_validation_failed') && !rejected.headers.has('set-cookie'), 'invalid LINE identity cannot issue a session');
   console.log(`OAuth: ${checks} checks passed (PKCE, signed identity, session cookie, raw scopes, replay and cancellation).`);
 } finally {
   await mf.dispose();

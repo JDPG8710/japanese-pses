@@ -1,20 +1,25 @@
-import {sphereMesh,boxMesh} from './Arcade3D.mjs';
-import {createKidsStage,KID_COLORS,KID_SYMBOLS,seeded,kidScale} from './KidsArcade.mjs';
-export const RHYTHM_DIFFICULTY=Object.freeze({lives:4,notes:10,interval:1.5,window:.48});
-export function createRhythmGame({canvas,onHud,onEnd,audio=null,locale='en',difficulty,seed=1,autoStart=true}={}){
- const scale=kidScale(difficulty),D={...RHYTHM_DIFFICULTY,notes:10+Math.ceil(scale*14),interval:1.5-scale*.43,window:.48-scale*.15};
- let rng,notes=[],clock=0,score=0,lives=4,hits=0,ended=false,flash=-1,flashTime=0;
- let hitLine;
- const meshes=[],pads=[],stage=createKidsStage({canvas,count:4,locale,onPress:press,tick,draw,clear:0x28244b});
- if(stage.gl.ok){for(let i=0;i<4;i++){const p=boxMesh(2.5,.4,2,KID_COLORS[i]);p.position.set((i-1.5)*3,0,0);stage.gl.scene.add(p);pads.push(p);const m=sphereMesh(.5,KID_COLORS[i]);m.visible=false;stage.gl.scene.add(m);meshes.push(m);}hitLine=boxMesh(13,.08,.1,0xffffff);hitLine.position.y=.35;stage.gl.scene.add(hitLine);}
- const text={zh:['等音符落到白线，再敲对应鼓！','好节奏！'],en:['Tap the matching drum when its note reaches the white line!','Nice beat!'],ja:['おとが しろい せんに きたら おなじ ドラムを たたこう！','いい リズム！']}[locale]||['Tap at the white line!','Nice beat!'];
- function hud(){onHud?.({score,lives,extra:`${hits}/${D.notes}`});const next=notes.find(n=>!n.done);stage.message(flashTime>0?text[1]:`${text[0]}${next?' '+KID_SYMBOLS[next.lane]:''}`);}
- function press(index){if(!stage.running||ended||!Number.isInteger(index)||index<0||index>3)return false;const note=notes.find(n=>!n.done&&n.lane===index&&Math.abs(n.at-clock)<=D.window);if(note){note.done=true;hits++;score+=Math.abs(note.at-clock)<D.window*.45?20:10;flash=index;flashTime=.25;audio?.correct?.();if(hits>=D.notes)finish(true);hud();return true;}lives--;audio?.error?.();if(lives<=0)finish(false);hud();return false;}
- function finish(cleared){if(ended)return;ended=true;stage.pause();onEnd?.({cleared,score,detail:`${hits}/${D.notes}`});}
- function tick(dt){if(!stage.running||ended||!Number.isFinite(dt)||dt<=0)return;clock+=Math.min(dt,.1);flashTime=Math.max(0,flashTime-dt);for(const n of notes){if(!n.done&&clock>n.at+D.window){n.done=true;lives--;if(lives<=0){finish(false);break;}}}if(!ended&&notes.every(n=>n.done))finish(hits>=D.notes);hud();}
- function draw(){const lineY=stage.playY(.85);if(hitLine)hitLine.position.y=lineY;for(let lane=0;lane<meshes.length;lane++){const n=notes.find(n=>!n.done&&n.lane===lane&&n.at-clock<3),m=meshes[lane];m.visible=!!n;if(n)m.position.set((lane-1.5)*3,lineY+(n.at-clock)*2,0);pads[lane].position.y=lineY-.3;pads[lane].scale.y=flash===lane&&flashTime>0?1.6:1;}stage.highlight(flashTime>0?flash:-1);}
- function start(){rng=seeded(seed);clock=score=hits=0;lives=4;ended=false;notes=Array.from({length:D.notes+3},(_,i)=>({lane:Math.floor(rng()*4),at:2+i*D.interval,done:false}));stage.resume();hud();stage.render();}
- function resume(){if(!ended)stage.resume();}
- if(autoStart)start();
- return {start,pause:stage.pause,resume,destroy:stage.destroy,tick,draw:stage.render,press,getState:()=>({game:'rhythm',score,lives,hits,clock,notes:notes.map(n=>({...n})),ended,difficulty:D,gl:stage.gl.ok})};
+import {canvasStage,controls,canvasLabel} from './CanvasStage.mjs';
+export const RHYTHM_DIFFICULTY=Object.freeze({lives:8,notes:48,interval:.5,window:.22});
+const colors=['#ff687e','#63ccff','#ffd469','#98ebc7'];
+export function createRhythmGame({canvas,onHud,onEnd,audio,locale='en',difficulty,autoStart=true}={}){
+ const bpm=100+Math.round((difficulty?.scale||0)*20),beat=60/bpm,D={...RHYTHM_DIFFICULTY,interval:beat};
+ let clock=0,score=0,lives=8,hits=0,combo=0,maxCombo=0,ended=false,notes=[],judgement='',flash=-1,flashUntil=0,nextBeat=0,ac=null,musicStarted=!canvas.ownerDocument;
+ const words={zh:['星光鼓队','精准','很好','错过','连击','点击开始音乐'],ja:['ほしの たいこ','ぴったり','いいね','ミス','コンボ','タップで スタート'],en:['STARLIGHT DRUMS','PERFECT','GOOD','MISS','COMBO','Tap to start music']}[locale];
+ const stage=canvasStage(canvas,tick,draw);
+ const ui=controls(canvas,`<button data-music-start>${words[5]}</button><div class="drum-pads">${colors.map((c,i)=>`<button data-kids-pad="${i}" style="background:${c}">${['D','F','J','K'][i]} · ${i+1} 🥁</button>`).join('')}</div>`,e=>{if(e.target.closest('[data-music-start]')){unlock();e.target.hidden=true;}const b=e.target.closest('[data-kids-pad]');if(b){unlock();press(Number(b.dataset.kidsPad));}});
+ function unlock(){musicStarted=true;if(!ac){const A=globalThis.AudioContext||globalThis.webkitAudioContext;if(A)ac=new A();}ac?.resume();audio?.pauseBgm?.();}
+ function tone(freq,duration=.12,type='sine',volume=.1){if(!ac||ac.state!=='running'||audio?.isMuted?.())return;const o=ac.createOscillator(),g=ac.createGain();o.type=type;o.frequency.setValueAtTime(freq,ac.currentTime);g.gain.setValueAtTime(volume,ac.currentTime);g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+duration);o.connect(g).connect(ac.destination);o.start();o.stop(ac.currentTime+duration);}
+ function hud(){onHud?.({score,lives,extra:`${hits}/${D.notes} · ${combo} ${words[4]} · ${bpm} BPM`});}
+ function press(lane){if(!stage.running||ended)return false;const n=notes.find(n=>!n.done&&n.lane===lane&&Math.abs(n.at-clock)<=D.window);flash=lane;flashUntil=clock+.18;tone([150,220,330,440][lane]);if(n){n.done=true;hits++;combo++;maxCombo=Math.max(combo,maxCombo);const perfect=Math.abs(n.at-clock)<.09;score+=(perfect?100:60)+Math.min(combo,20)*5;judgement=words[perfect?1:2];}else{combo=0;lives--;judgement=words[3];}if(lives<=0)finish(false);else if(hits===D.notes)finish(true);hud();return !!n;}
+ function finish(cleared){if(ended)return;ended=true;pause();onEnd?.({cleared,score,detail:`${hits}/${D.notes} · ${words[4]} ${maxCombo}`});}
+ function tick(dt){if(!musicStarted||!stage.running||ended||!Number.isFinite(dt)||dt<=0)return;clock+=Math.min(dt,.1);while(clock>=nextBeat*beat){const i=nextBeat++;tone(i%4===0?65:95,.13,'triangle',.2);tone([262,330,392,523,392,330,294,392][i%8],beat*.7,'sine',.07);if(i%4===0)tone([131,175,196,165][Math.floor(i/4)%4],beat*2,'triangle',.08);}for(const n of notes)if(!n.done&&clock>n.at+D.window){n.done=true;lives--;combo=0;judgement=words[3];}if(lives<=0)finish(false);else if(notes.every(n=>n.done))finish(hits>=D.notes*.7);hud();}
+ function draw(c){const bg=c.createLinearGradient(0,0,960,540);bg.addColorStop(0,'#161337');bg.addColorStop(1,'#342252');c.fillStyle=bg;c.fillRect(0,0,960,540);c.textAlign='center';c.fillStyle='#fff';c.font='bold 26px sans-serif';canvasLabel(c,words[0],480,38);c.font='16px sans-serif';canvasLabel(c,`${bpm} BPM · STARLIGHT / 01`,480,65);
+ for(let i=0;i<4;i++){const x=160+i*160;c.fillStyle=flash===i&&clock<flashUntil?colors[i]+'88':'#ffffff0c';c.fillRect(x,85,150,365);c.strokeStyle=colors[i];c.lineWidth=2;c.strokeRect(x,85,150,365);for(const n of notes){const y=405-(n.at-clock)*130;if(n.lane!==i||n.done||y<85||y>440)continue;c.fillStyle=colors[i];c.fillRect(x+12,y-10,126,20);c.fillStyle='#fff';c.fillRect(x+20,y-7,110,3);}c.fillStyle=colors[i];c.beginPath();c.arc(x+75,405,27,0,Math.PI*2);c.fill();c.fillStyle='#24203c';c.font='bold 24px sans-serif';canvasLabel(c,['D','F','J','K'][i],x+75,414);}
+ c.strokeStyle='#fff';c.lineWidth=3;c.beginPath();c.moveTo(150,405);c.lineTo(800,405);c.stroke();c.fillStyle='#fff';c.font='bold 24px sans-serif';canvasLabel(c,`${judgement}  ${combo>1?combo+' '+words[4]:''}`,480,485);}
+ function key(e){if(e.repeat)return;const lane=['d','f','j','k'].indexOf(e.key.toLowerCase());const i=lane>=0?lane:Number(e.key)-1;if(i>=0&&i<4){e.preventDefault();unlock();press(i);}}
+ globalThis.window?.addEventListener('keydown',key);
+ function pause(){stage.pause();ac?.suspend();if(ui)ui.hidden=true;}
+ function resume(){stage.resume();ac?.resume();if(ui)ui.hidden=false;}
+ function start(){clock=score=hits=combo=maxCombo=nextBeat=0;lives=8;ended=false;notes=Array.from({length:D.notes},(_,i)=>({lane:[0,1,0,2,0,1,3,2,0,2,1,3,2,1,0,3][i%16],at:(4+i)*beat,done:false}));resume();hud();stage.render();}
+ if(autoStart)start();return {start,pause,resume,tick,press,draw:stage.render,destroy(){stage.destroy();ui?.remove();ac?.close();globalThis.window?.removeEventListener('keydown',key);},getState:()=>({game:'rhythm',score,lives,hits,combo,clock,notes:notes.map(n=>({...n})),ended,difficulty:D,gl:false})};
 }

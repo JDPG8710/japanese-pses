@@ -1,4 +1,7 @@
 const copy = {
+  'LINEでログイン': ['Log in with LINE', '通过LINE登录'],
+  'このログイン方法はまだ使えません。': ['This login method is not available yet.', '此登录方式尚未开通。'],
+  'ログインを始められませんでした。もう一度ためしてみてね。': ['Could not start login. Please try again.', '无法开始登录，请重试。'],
   'メールで登録・ログイン（準備中）': ['Email sign-up / login (coming soon)', '邮箱注册／登录（准备中）'],
   'WeChatで登録・ログイン（準備中）': ['WeChat sign-up / login (coming soon)', '微信注册／登录（准备中）'],
   'メールの登録・ログインは準備中です。今はGoogleでログインするか、そのまま遊んでね。': ['Email sign-up and login are not available yet. Use Google or keep playing without an account.', '邮箱注册与登录尚未开通。现在可以使用Google登录，或直接继续游玩。'],

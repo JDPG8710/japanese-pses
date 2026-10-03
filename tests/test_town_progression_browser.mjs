@@ -21,13 +21,7 @@ try{
    openTestArcade();
   });
   async function complete(){
-   for(let i=0;i<40;i++){
-    if(await page.locator('[data-overlay][data-outcome="success"]').isVisible())return;
-    const prompt=await page.locator('.kids-message').innerText();const match=prompt.match(/寻找\s+([★◆●▲♥☀])/);
-    assert.ok(match,`visible shape cue: ${prompt}`);
-    await page.locator(`[data-kids-pad="${symbols.indexOf(match[1])}"]`).click();
-   }
-   throw Error('challenge did not clear');
+   const ids=await page.locator('[data-part]').evaluateAll(nodes=>nodes.map(n=>n.dataset.part));for(const id of ids)await page.locator('[data-part="'+id+'"]').click();await page.locator('[data-rotate="15"]').click();await page.locator('[data-finish]').click();await page.locator('[data-overlay][data-outcome="success"]').waitFor();
   }
   await complete();
   assert.equal(await page.evaluate(()=>testState.townProgress.level),20);
@@ -48,22 +42,16 @@ try{
   assert.equal(await page.evaluate(()=>Object.keys(testState.townProgress.sessions).length),0);
   assert.equal(await page.evaluate(()=>testState.townProgress.points),49);
   await page.evaluate(()=>openTestArcade());
-  for(let i=0;i<3;i++){
-   const prompt=await page.locator('.kids-message').innerText(),match=prompt.match(/寻找\s+([★◆●▲♥☀])/);
-   const wrong=(symbols.indexOf(match[1])+1)%6;await page.locator(`[data-kids-pad="${wrong}"]`).click();
-  }
-  await page.locator('[data-overlay][data-outcome="retry"]').waitFor();
+  await page.locator('[data-finish]').click();
+  assert.equal(await page.locator('[data-overlay][data-outcome="success"]').isVisible(),false);
   assert.equal(await page.evaluate(()=>testState.townProgress.points),49);
-  assert.equal(await page.evaluate(()=>testState.townProgress.infiniteRound),1);
-  await page.locator('[data-shell="retry"]').click();
-  assert.equal(await page.locator('.kids-controls:visible').count(),1);
   await page.locator('.arcade-hud [data-shell="pause"]').click();
-  assert.equal(await page.locator('.kids-controls:visible').count(),0);
+  assert.equal(await page.locator('.designer-studio:visible').count(),0);
   await page.locator('.arcade-hud [data-shell="pause"]').click();
-  assert.equal(await page.locator('.kids-controls:visible').count(),1);
+  assert.equal(await page.locator('.designer-studio:visible').count(),1);
   await page.locator('.arcade-hud [data-shell="back"]').click();
   assert.equal(await page.evaluate(()=>testState.townProgress.points),49);
   assert.deepEqual(errors,[]);
-  await context.close();console.log(`Town progression browser ${width}px: real shape inputs, levels 19/20/endless, rewards, no replay, failure, pause, retry and exit passed.`);
+  await context.close();console.log(`Town progression browser ${width}px: real product part inputs, levels 19/20/endless, rewards, no replay, failure, pause, retry and exit passed.`);
  }
 }finally{await browser.close();await preview.close();}

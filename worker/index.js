@@ -1,3 +1,4 @@
+import {arcadeRoute} from './arcade-games.mjs';
 import { townRoute } from './town-api.mjs';
 import { worldRoute } from './world-games.mjs';
 import { goRoute } from './go-api.mjs';
@@ -12,6 +13,8 @@ const GOOGLE_JWKS_URL = 'https://www.googleapis.com/oauth2/v3/certs';
 const APPLE_AUTHORIZE_URL = 'https://appleid.apple.com/auth/authorize';
 const APPLE_TOKEN_URL = 'https://appleid.apple.com/auth/token';
 const APPLE_JWKS_URL = 'https://appleid.apple.com/auth/keys';
+const LINE_AUTHORIZE_URL = 'https://access.line.me/oauth2/v2.1/authorize';
+const LINE_TOKEN_URL = 'https://api.line.me/oauth2/v2.1/token';
 const STRIPE_CHECKOUT_URL = 'https://api.stripe.com/v1/checkout/sessions';
 const MEMBERSHIP_PRICE_JPY = 500;
 const MEMBERSHIP_OFFER_ID = 'PSES_AD_FREE_LIFETIME_JPY_500';
@@ -46,11 +49,16 @@ async function routeRequest(request, env) {
   if (url.pathname === '/api/play-counts') return playCountsRoute(request, env, { json, HttpError });
   if (url.pathname === '/api/site-visits') return siteVisitsRoute(request, env, { json, HttpError });
   if (url.pathname === '/api/location' && request.method === 'GET') return countryResponse(request, env);
+  if (url.pathname.startsWith('/api/arcade/')) return arcadeRoute(request, env, { authenticate, json, HttpError });
   if (url.pathname.startsWith('/api/world/')) return worldRoute(request, env, { authenticate, json, HttpError });
   if (url.pathname.startsWith('/api/foundation/')) return foundationRoute(request, env, { authenticate, json, HttpError });
   if (url.pathname === '/api/auth/turnstile-verify' && request.method === 'POST') return handleTurnstile(request, env);
   if (url.pathname === '/api/auth/google') return handleOAuth('google', request, env);
   if (url.pathname === '/api/auth/apple') return handleOAuth('apple', request, env);
+  if (url.pathname === '/api/auth/line') return handleOAuth('line', request, env);
+  if (url.pathname === '/api/auth/providers' && request.method === 'GET') {
+    return json({ providers: ['google', ...(env.LINE_CHANNEL_ID && env.LINE_CHANNEL_SECRET ? ['line'] : [])] }, 200, request, env);
+  }
   if (url.pathname === '/api/auth/session' && request.method === 'GET') return handleSession(request, env);
   if (url.pathname === '/api/auth/logout' && request.method === 'POST') return handleLogout(request, env);
   if (url.pathname === '/api/membership' && request.method === 'GET') return handleMembership(request, env);
@@ -108,6 +116,10 @@ async function handleOAuth(provider, request, env) {
   }
   if (request.method !== 'POST') return json({ error: 'METHOD_NOT_ALLOWED' }, 405, request, env);
 
+  if (provider === 'line') {
+    requiredEnv(env, 'LINE_CHANNEL_ID');
+    requiredEnv(env, 'LINE_CHANNEL_SECRET');
+  }
   const body = await readJson(request);
   const turnstile = await verifyTurnstile(body['cf-turnstile-response'] || body.turnstileToken, request, env, 'access');
   if (!turnstile.success) return json({ error: 'TURNSTILE_FAILED', errorCodes: turnstile['error-codes'] || [] }, 400, request, env);
@@ -132,11 +144,15 @@ async function handleOAuth(provider, request, env) {
         scope: 'openid email profile', state, nonce, code_challenge: await sha256Base64Url(verifier),
         code_challenge_method: 'S256', prompt: 'select_account'
       })
-    : new URLSearchParams({
+    : provider === 'line' ? new URLSearchParams({
+        client_id: requiredEnv(env, 'LINE_CHANNEL_ID'), redirect_uri: redirectUri, response_type: 'code',
+        scope: 'openid profile', state, nonce, code_challenge: await sha256Base64Url(verifier),
+        code_challenge_method: 'S256', disable_auto_login: 'false'
+      }) : new URLSearchParams({
         client_id: requiredEnv(env, 'APPLE_CLIENT_ID'), redirect_uri: redirectUri, response_type: 'code id_token',
         response_mode: 'form_post', scope: 'name email', state, nonce
       });
-  const authorizeUrl = `${provider === 'google' ? GOOGLE_AUTHORIZE_URL : APPLE_AUTHORIZE_URL}?${params}`;
+  const authorizeUrl = `${provider === 'google' ? GOOGLE_AUTHORIZE_URL : provider === 'line' ? LINE_AUTHORIZE_URL : APPLE_AUTHORIZE_URL}?${params}`;
   return json({ authorizeUrl }, 200, request, env, { 'Set-Cookie': oauthCookie(state, provider, request, env) });
 }
 
@@ -151,23 +167,27 @@ async function finishOAuth(provider, request, env, callback) {
   if (!state || !constantTimeEqual(state, cookieState || '') || !oauth || oauth.provider !== provider) {
     return oauthFailureRedirect(env, 'invalid_state');
   }
-  await database.prepare('DELETE FROM oauth_transactions WHERE state = ?1').bind(state).run();
+  const consumed = await database.prepare('DELETE FROM oauth_transactions WHERE state = ?1').bind(state).run();
+  if (consumed.meta.changes !== 1) return oauthFailureRedirect(env, 'invalid_state');
   if (callback.error || !callback.code) return oauthFailureRedirect(env, callback.error || 'missing_code');
 
   const tokenBody = new URLSearchParams({
     code: callback.code, grant_type: 'authorization_code', redirect_uri: oauth.redirectUri,
-    client_id: provider === 'google' ? requiredEnv(env, 'GOOGLE_CLIENT_ID') : requiredEnv(env, 'APPLE_CLIENT_ID'),
-    client_secret: provider === 'google' ? requiredEnv(env, 'GOOGLE_CLIENT_SECRET') : requiredEnv(env, 'APPLE_CLIENT_SECRET')
+    client_id: provider === 'google' ? requiredEnv(env, 'GOOGLE_CLIENT_ID') : provider === 'line' ? requiredEnv(env, 'LINE_CHANNEL_ID') : requiredEnv(env, 'APPLE_CLIENT_ID'),
+    client_secret: provider === 'google' ? requiredEnv(env, 'GOOGLE_CLIENT_SECRET') : provider === 'line' ? requiredEnv(env, 'LINE_CHANNEL_SECRET') : requiredEnv(env, 'APPLE_CLIENT_SECRET')
   });
-  if (provider === 'google') tokenBody.set('code_verifier', oauth.verifier);
+  if (provider === 'google' || provider === 'line') tokenBody.set('code_verifier', oauth.verifier);
   let claims;
   try {
-    const tokenResponse = await fetch(provider === 'google' ? GOOGLE_TOKEN_URL : APPLE_TOKEN_URL, {
-      method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: tokenBody
+    const tokenResponse = await fetch(provider === 'google' ? GOOGLE_TOKEN_URL : provider === 'line' ? LINE_TOKEN_URL : APPLE_TOKEN_URL, {
+      method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: tokenBody,
+      signal: AbortSignal.timeout(10000)
     });
     const tokens = await tokenResponse.json();
     if (!tokenResponse.ok || !tokens.id_token) return oauthFailureRedirect(env, 'token_exchange_failed');
-    claims = await verifyProviderIdToken(tokens.id_token, provider, oauth.nonce, env);
+    claims = provider === 'line'
+      ? await verifyLineIdToken(tokens.id_token, oauth.nonce, env)
+      : await verifyProviderIdToken(tokens.id_token, provider, oauth.nonce, env);
   } catch (error) {
     console.warn('OAuth identity validation rejected', provider, error instanceof Error ? error.message : 'unknown');
     return oauthFailureRedirect(env, 'identity_validation_failed');
@@ -175,11 +195,27 @@ async function finishOAuth(provider, request, env, callback) {
   const userId = `${provider}:${claims.sub}`;
   const displayName = provider === 'apple'
     ? parseAppleName(callback.user) || claims.email?.split('@')[0] || 'Appleユーザー'
-    : claims.name || claims.email?.split('@')[0] || 'Googleユーザー';
+    : claims.name || claims.email?.split('@')[0] || (provider === 'line' ? 'LINEユーザー' : 'Googleユーザー');
   const session = await createSession({ id: userId, provider, providerSubject: claims.sub, displayName, email: claims.email || null }, env);
   const target = new URL(env.APP_ORIGIN || new URL(request.url).origin);
   target.searchParams.set('auth', 'success');
   return new Response(null, { status: 302, headers: { location: target.toString(), 'Set-Cookie': sessionCookie(session.token, request, env), 'cache-control': 'no-store' } });
+}
+
+async function verifyLineIdToken(idToken, expectedNonce, env) {
+  const response = await fetch('https://api.line.me/oauth2/v2.1/verify', {
+    method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ id_token: idToken, client_id: requiredEnv(env, 'LINE_CHANNEL_ID'), nonce: expectedNonce }),
+    signal: AbortSignal.timeout(10000)
+  });
+  if (!response.ok) throw new Error('LINE identity rejected');
+  const claims = await response.json();
+  if (claims.iss !== 'https://access.line.me' || claims.aud !== env.LINE_CHANNEL_ID ||
+      claims.nonce !== expectedNonce || typeof claims.sub !== 'string' || !claims.sub ||
+      !Number.isFinite(claims.exp) || claims.exp * 1000 <= Date.now()) {
+    throw new Error('LINE identity claims rejected');
+  }
+  return claims;
 }
 
 async function verifyProviderIdToken(idToken, provider, expectedNonce, env) {

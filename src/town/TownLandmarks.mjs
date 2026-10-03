@@ -57,7 +57,7 @@ export function buildLandmark(parent,b,title){
   const wheel=shape(g,new THREE.TorusGeometry(1.7,.5,8,16),0,8,0,0x26314b);ring(g,0,8,-.1,1.15,0xf7d96a);for(let i=0;i<5;i++){const spoke=box(g,0,8,0,.12,2.3,.18,0xdbedf4);spoke.rotation.z=i*Math.PI/5;}
   for(const x of [-2,2])box(g,x,1.3,-2.95,.5,.3,.1,0x9ae9ff);
  }else if(b.id==='bubble'){
-  box(g,0,4.3,0,6.5,.6,6.5,0x65b9df);for(let i=0;i<7;i++){const bubble=ball(g,Math.sin(i*2.4)*2,6+i*.6,Math.cos(i*2.4)*1.5,.85,COLORS[i%5]);bubble.material.roughness=.15;}ring(g,0,10.8,0,1.6,0xffffff);
+  box(g,0,4.3,0,6.5,.6,6.5,0x65b9df);box(g,0,7,0,5,3,.5,0xfff3d4);for(let i=0;i<5;i++){const pencil=cylinder(g,(i-2)*1.1,10,0,.25,3,COLORS[i]);pencil.rotation.z=(i-2)*.15;cone(g,(i-2)*1.1,11.7,0,.25,.5,0xffd4a0);}
  }else if(b.id==='rhythm'){
   box(g,0,4.3,0,6.5,.6,6.5,0x804f9d);for(let i=0;i<4;i++){cylinder(g,(i%2?1:-1)*1.5,5.4+Math.floor(i/2)*1.8,0,1,1.4,COLORS[i]);cylinder(g,(i%2?1:-1)*1.5,6.15+Math.floor(i/2)*1.8,0,1.1,.12,0xfff1d0);}for(const x of [-1,1]){const stick=box(g,x,10,0,.2,3,.2,0xffda9e);stick.rotation.z=x*.5;}
  }else if(b.id==='ninja'){

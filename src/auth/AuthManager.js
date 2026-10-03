@@ -18,6 +18,12 @@ export class AuthManager extends EventTarget {
       return this.session;
     }
     const session = await this.getSession();
+    try {
+      const response = await this.fetchImpl(`${this.apiBase}/auth/providers`, { credentials: 'include' });
+      const result = response.ok ? await response.json() : {};
+      this.modal.element.querySelector('[data-provider="line"]').hidden = !result.providers?.includes('line');
+      this.modal.updateButtonState();
+    } catch { /* Keep unconfigured providers hidden. */ }
     this.session = session?.authenticated
       ? { mode: 'authenticated', ...session }
       : { mode: 'anonymous', authenticated: false, user: null };
@@ -40,7 +46,7 @@ export class AuthManager extends EventTarget {
   async handleSubmit({ provider, turnstileToken }) {
     this.modal.setBusy(true);
     try {
-      if (provider !== 'google') throw new Error('いま使えるログイン方法はGoogleだけです。');
+      if (!['google', 'line'].includes(provider)) throw new Error('このログイン方法はまだ使えません。');
       const response = await this.fetchImpl(`${this.apiBase}/auth/${provider}`, {
         method: 'POST', credentials: 'include', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ 'cf-turnstile-response': turnstileToken })
       });
@@ -61,5 +67,5 @@ async function readJson(response) {
 function authErrorMessage(result) {
   if (result?.error === 'TURNSTILE_FAILED') return '安全チェックの時間が切れました。もう一度チェックしてね。';
   if (result?.error === 'SERVER_MISCONFIGURED') return 'ログインの準備をしています。少し待ってから、もう一度ためしてみてね。';
-  return 'Googleログインを始められませんでした。もう一度ためしてみてね。';
+  return 'ログインを始められませんでした。もう一度ためしてみてね。';
 }

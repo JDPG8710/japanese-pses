@@ -3,7 +3,7 @@ export const ARCADE_TEXT = {
   en: {
     section: 'Arcade',
     sectionKicker: 'CASUAL · 3D ARCADE',
-    sectionIntro: 'Six fun arcades: racing, breakout, fruit slash, typing, rainbow bubbles, and rhythm drums.',
+    sectionIntro: 'Six fun arcades: racing, breakout, fruit slash, typing, creative design, and rhythm drums.',
     play: 'Play',
     best: 'Best',
     score: 'Score',
@@ -21,7 +21,7 @@ export const ARCADE_TEXT = {
     tip: 'Tip',
     combo: 'Combo',
     games: {
-      bubble: {title:'Rainbow Bubbles',tag:'MATCH & POP',blurb:'Find the matching shape and pop its rainbow bubble before it floats away.',tip:'Tap a matching bubble or its shape pad, or press 1–6. Clear every target to win.'},
+      bubble: {title:'Little Designer',tag:'DRAW & BUILD',blurb:'Build detailed aircraft, sports cars, trucks and flagship phones in your product design studio.',tip:'Drag or click to install parts, customize colors and draw. Capture the studio or export artwork.'},
       rhythm: {title:'Rhythm Parade',tag:'RHYTHM',blurb:'Catch a cheerful beat with four colorful drums.',tip:'Tap a drum or press 1–4 when its note reaches the white line.'},
       race: {
         title: 'Piko Circuit',
@@ -80,7 +80,7 @@ export const ARCADE_TEXT = {
   zh: {
     section: '休闲街机',
     sectionKicker: '休闲 · 3D街机',
-    sectionIntro: '六款趣味街机：竞速、打砖块、切水果、打字、彩虹泡泡、节奏鼓队。',
+    sectionIntro: '六款趣味街机：竞速、打砖块、切水果、打字、小小设计师、节奏鼓队。',
     play: '开始',
     best: '最佳',
     score: '得分',
@@ -98,8 +98,8 @@ export const ARCADE_TEXT = {
     tip: '提示',
     combo: '连击',
     games: {
-      bubble: {title:'彩虹泡泡',tag:'图案配对',blurb:'看清目标图案，在泡泡飘走前找到它，戳出彩虹！',tip:'点击对应泡泡或图案按钮，或按 1–6。完成所有目标即通关。'},
-      rhythm: {title:'节奏鼓队',tag:'音乐节奏',blurb:'音符蹦蹦跳跳，四面彩鼓奏出欢乐节拍。',tip:'音符落到白线时，点击对应鼓或按 1–4。'},
+      bubble: {title:'小小设计师',tag:'绘画组装',blurb:'组装客机、跑车、卡车和旗舰手机，打造你的产品设计。',tip:'拖拽或点击零件组装，再自由配色、绘画。屏幕截图保存工作台，导出作品保存高清图片。'},
+      rhythm: {title:'节奏鼓队',tag:'音乐节奏',blurb:'跟随星光伴奏敲准鼓点，挑战连击！',tip:'点击开始音乐。音符抵达白线时敲鼓，按 D/F/J/K 或 1–4。'},
       race: {
         title: '皮可环道',
         tag: '赛车',
@@ -157,7 +157,7 @@ export const ARCADE_TEXT = {
   ja: {
     section: 'アーケード',
     sectionKicker: 'カジュアル · 3D',
-    sectionIntro: '6つの ゲーム。レース・ブロック・フルーツ・タイピング・あわ・ドラム。',
+    sectionIntro: '6つの ゲーム。レース・ブロック・フルーツ・タイピング・デザイン・ドラム。',
     play: 'あそぶ',
     best: 'ベスト',
     score: 'スコア',
@@ -175,7 +175,7 @@ export const ARCADE_TEXT = {
     tip: 'ヒント',
     combo: 'コンボ',
     games: {
-      bubble: {title:'にじいろの あわ',tag:'かたち あわせ',blurb:'おなじ かたちを みつけて、あわが きえるまえに わろう！',tip:'おなじ あわか かたちの ボタンを タップ。キーボードは1〜6。'},
+      bubble: {title:'ちいさな デザイナー',tag:'おえかき',blurb:'ひこうき、スポーツカー、トラック、スマホを くわしく デザイン！',tip:'パーツを タップか ドラッグで くみたてよう。いろや えを くふうして スクリーンショットで ほぞん。'},
       rhythm: {title:'リズム たいこ',tag:'リズム',blurb:'4つの たいこで たのしい リズムを つくろう。',tip:'おとが しろい せんに きたら タップ。キーボードは1〜4。'},
       race: {
         title: 'ピコサーキット',

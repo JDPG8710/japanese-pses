@@ -18,6 +18,9 @@ export class LoginModal extends EventTarget {
     this.element.innerHTML = `
       <style>
         #auth-modal section{box-sizing:border-box;max-height:calc(100dvh - 32px);overflow:auto;overflow-wrap:anywhere}
+        #auth-modal [data-provider="line"]{background:#06c755;color:#fff;border:0;border-radius:12px;min-height:56px;padding:12px 16px;font-weight:700}
+        #auth-modal [data-provider="line"][hidden]{display:none!important}
+        #auth-modal [data-provider="line"]:disabled{opacity:.4;cursor:not-allowed}
         #auth-upcoming[hidden],#auth-upcoming.hidden{display:none!important}
         #auth-modal [data-upcoming]{background:#eaf5ee;color:#193e37;border:2px solid #44836d;min-height:56px;padding:10px 14px;white-space:normal;line-height:1.5}
         #auth-modal #auth-upcoming{background:#edf5ff;color:#193953;border:1px solid #5995b7}
@@ -51,6 +54,7 @@ export class LoginModal extends EventTarget {
         <p id="auth-error" role="alert" class="mt-2 hidden rounded-xl border border-rose-400/40 bg-rose-500/10 p-3 text-sm font-bold text-rose-200"></p>
         <div class="mt-5 grid gap-3">
           <button type="button" data-provider="google" disabled class="min-h-14 rounded-2xl border border-slate-500 bg-white px-4 font-bold text-slate-900 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40">Googleでログイン</button>
+          <button type="button" data-provider="line" hidden disabled class="min-h-14 rounded-2xl bg-[#06C755] px-4 font-bold text-white disabled:cursor-not-allowed disabled:opacity-40">LINEでログイン</button>
           <button type="button" data-upcoming="email" class="min-h-14 rounded-2xl border border-slate-500 bg-slate-800 px-4 font-bold text-white">メールで登録・ログイン（準備中）</button>
           <button type="button" data-upcoming="wechat" class="min-h-14 rounded-2xl border border-emerald-500 bg-emerald-950 px-4 font-bold text-white">WeChatで登録・ログイン（準備中）</button>
           <p id="auth-upcoming" role="status" class="hidden rounded-xl border border-sky-400 bg-slate-800 p-3 text-sm leading-6 text-white"></p>
@@ -62,6 +66,7 @@ export class LoginModal extends EventTarget {
     document.body.appendChild(this.element);
     localizeAuth(this.element);
     this.element.querySelector('[data-provider="google"]').addEventListener('click', () => this.submit('google'));
+    this.element.querySelector('[data-provider="line"]').addEventListener('click', () => this.submit('line'));
     this.element.querySelectorAll('[data-upcoming]').forEach(button => button.addEventListener('click', () => {
       const status = this.element.querySelector('#auth-upcoming');
       status.textContent = authText(button.dataset.upcoming === 'email'
@@ -110,8 +115,9 @@ export class LoginModal extends EventTarget {
   }
 
   updateButtonState() {
-    const googleButton = this.element.querySelector('[data-provider="google"]');
-    if (googleButton) googleButton.disabled = this.busy || !this.token;
+    this.element.querySelectorAll('[data-provider]').forEach(button => {
+      button.disabled = this.busy || !this.token || button.hidden;
+    });
     const closeButton = this.element.querySelector('[data-action="close"]');
     if (closeButton) closeButton.disabled = this.busy;
   }
@@ -130,6 +136,7 @@ export class LoginModal extends EventTarget {
   }
 
   submit(provider) {
+    if (this.busy || this.element.querySelector(`[data-provider="${provider}"]`)?.hidden) return;
     if (!this.token) {
       this.showError('もう少し待ってね。上の安全チェックが終わるとログインできます。', { reset: false });
       return;

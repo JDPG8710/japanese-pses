@@ -97,6 +97,7 @@ function createTownAudio() {
       synth.unlock();
       synth.playCoin();
     },
+    wallHit(){synth.unlock();synth.createTone({freq:290,type:'sine',duration:.09,peakGain:.075,pitchBend:{targetFreq:180,duration:.08}});},
     slash() {
       synth.unlock();
       synth.playSlash();
@@ -159,7 +160,7 @@ export function createSilentTownAudio() {
   return {
     unlock: noop, isMuted: () => true, toggleMute: () => true, setMuted: noop,
     startTown: noop, enterArcade: noop, enterCourse: noop, exitToTown: noop,
-    pauseBgm: noop, resumeBgm: noop, click: noop, brick: noop, powerup: noop,
+    pauseBgm: noop, resumeBgm: noop, click: noop, brick: noop, powerup: noop,wallHit:noop,
     slash: noop, fruitCut: noop, bomb: noop, raceHit: noop, typeOk: noop,
     typeMiss: noop, wordClear: noop, correct: noop, error: noop, victory: noop,
     destroy: noop

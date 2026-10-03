@@ -1,15 +1,16 @@
 import assert from 'node:assert/strict';
 import {breakoutBrickLayout,advanceBreakoutBall,stabilizeBreakoutBall,BREAKOUT_BACK_Z} from '../src/arcade/BreakoutPhysics.mjs';
 import {breakoutDifficultyFor} from '../src/arcade/BreakoutGame.mjs';
+import {breakoutLayoutFor} from '../src/arcade/BreakoutLayouts.mjs';
 import {createFruitSlashGame,FRUIT_SIZES,FRUIT_BOMBS,FRUIT_TYPES} from '../src/arcade/FruitSlashGame.mjs';
 import {createStubCanvas} from '../src/arcade/ArcadeShell.mjs';
 for(let level=1;level<=20;level++){
- const D=breakoutDifficultyFor({level}),bricks=breakoutBrickLayout(D).map(b=>({...b,hits:2}));
+ const D=breakoutDifficultyFor({level}),bricks=breakoutBrickLayout(D).map(b=>({...b,hits:2})),walls=breakoutLayoutFor(D).walls;
  for(const b of bricks){assert.ok(b.x-b.w/2>-D.playWidth/2+D.ballRadius*2);assert.ok(b.x+b.w/2<D.playWidth/2-D.ballRadius*2);assert.ok(b.z-b.d/2>BREAKOUT_BACK_Z+D.ballRadius*2);}
  const ball={x:0,z:5.2,vx:3,vz:-D.ballSpeed};let frame=0;
  for(;frame<60000&&bricks.some(b=>b.hits>0);frame++){
   const paddleX=Math.max(-D.playWidth/2+D.paddleWidth/2,Math.min(D.playWidth/2-D.paddleWidth/2,ball.x+.75*Math.sin(frame*.017)));
-  advanceBreakoutBall(ball,1/120,{D,paddleX,paddleW:D.paddleWidth,bricks,onBrick:b=>b.hits--});
+  advanceBreakoutBall(ball,1/120,{D,paddleX,paddleW:D.paddleWidth,bricks,walls,onBrick:b=>b.hits--});
   assert.ok(Math.abs(ball.vz)>=Math.hypot(ball.vx,ball.vz)*.3999);assert.ok(ball.z<7.5,'following paddle must not lose the ball');
  }
  assert.equal(bricks.filter(b=>b.hits>0).length,0,`level ${level}: every brick can be cleared in the real field`);

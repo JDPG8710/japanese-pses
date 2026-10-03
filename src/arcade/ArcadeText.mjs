@@ -32,8 +32,8 @@ export const ARCADE_TEXT = {
       breakout: {
         title: 'Brick Siege',
         tag: 'BREAKOUT',
-        blurb: 'Bounce the ball, smash the bricks, and catch power-ups with your paddle.',
-        tip: 'Drag or use ← → · click or press Space to launch'
+        blurb: 'Twenty brick patterns and bumper routes: find a path, smash the bricks, and catch power-ups.',
+        tip: 'Drag or use ← → · click/Space to launch · gold-capped steel walls bounce the ball and cannot be cleared'
       },
       fruit: {
         title: 'Fruit Storm',
@@ -109,8 +109,8 @@ export const ARCADE_TEXT = {
       breakout: {
         title: '打砖块围城',
         tag: '打砖块',
-        blurb: '小板、快球、多层砖。把墙清掉才算赢。',
-        tip: '拖动指针或 ← → · 点击 / 空格发球'
+        blurb: '20 种砖阵与挡墙路线，绕开钢墙、击碎彩砖，接住道具！',
+        tip: '拖动或 ← → · 点击/空格发球 · 金色顶边钢墙不可消除，要绕行或借它反弹'
       },
       fruit: {
         title: '水果风暴',
@@ -186,8 +186,8 @@ export const ARCADE_TEXT = {
       breakout: {
         title: 'ブロック包囲',
         tag: 'ブロックくずし',
-        blurb: 'ボールをはじいてブロックをくずそう。パワーアップもキャッチしてね。',
-        tip: 'ドラッグ / ← → · クリックかスペースで発射'
+        blurb: '20のブロック模様と壁のコース。道を見つけてブロックをくずそう！',
+        tip: 'ドラッグ / ← → · クリック/スペースで発射 · 金色のふちの壁はこわせない。はね返りを使おう'
       },
       fruit: {
         title: 'フルーツストーム',

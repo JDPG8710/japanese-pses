@@ -1,6 +1,7 @@
 /** 3D perspective breakout — paddle, ball, brick wall, power-ups + spark VFX. */
 import {normalizeDifficulty,challengeRandom} from '../town/TownProgression.mjs';
 import {breakoutBrickLayout,advanceBreakoutBall,BREAKOUT_BACK_Z,stabilizeBreakoutBall} from './BreakoutPhysics.mjs';
+import {breakoutLayoutFor} from './BreakoutLayouts.mjs';
 import {
   createArcadeRenderer, resizeArcade3D, disposeArcade3D, boxMesh, sphereMesh, THREE,
   spawnParticleBurst, updateParticles, capsulePowerMesh
@@ -26,12 +27,14 @@ export const BREAKOUT_POWERUPS = Object.freeze(['expand', 'multi', 'slow']);
 const POWER_COLORS = {expand: 0x6ff0ad, multi: 0xffd45e, slow: 0x57dfff};
 
 export function breakoutDifficultyFor(difficulty) {
- const s=normalizeDifficulty(difficulty).scale;
- return Object.freeze({...BREAKOUT_DIFFICULTY,paddleWidth:2.8-.45*s,ballSpeed:9.5+2*s,ballSpeedMax:14+2*s,rows:5+Math.floor(s*2),powerDropChance:.38-.07*s});
+ const normalized=normalizeDifficulty(difficulty),s=normalized.scale;
+ return Object.freeze({...BREAKOUT_DIFFICULTY,...normalized,paddleWidth:2.8-.45*s,ballSpeed:9.5+2*s,ballSpeedMax:14+2*s,rows:7,powerDropChance:.38-.07*s});
 }
 
-export function createBreakoutGame({canvas, onHud, onEnd, audio = null, autoStart = true, difficulty, seed=Date.now()} = {}) {
+export function createBreakoutGame({canvas, onHud, onEnd, audio = null, autoStart = true, difficulty, seed=Date.now(),locale='en'} = {}) {
   const D = breakoutDifficultyFor(difficulty);
+  const layout=breakoutLayoutFor(D,locale);
+  let walls=[],wallGroup=null,wallHits=0;
   let random=challengeRandom(seed);
   const graphics = createArcadeRenderer(canvas, {clear: 0x102038});
   let paddleX = 0;
@@ -68,7 +71,7 @@ export function createBreakoutGame({canvas, onHud, onEnd, audio = null, autoStar
     if (expandUntil > 0) bits.push('⬌');
     if (balls.length > 1) bits.push(`●×${balls.length}`);
     if (slowMul < 1) bits.push('❄');
-    onHud?.({score, lives, extra: `🧱 ${remaining()}${bits.length ? ' · ' + bits.join(' ') : ''}`});
+    onHud?.({score, lives, extra: `${layout.name} · 🧱 ${remaining()} · 🛡 ${walls.length}${bits.length ? ' · ' + bits.join(' ') : ''}`});
   }
 
   function makeBallState(x, z, vx, vz) {
@@ -95,6 +98,12 @@ export function createBreakoutGame({canvas, onHud, onEnd, audio = null, autoStar
         }
         bricks.push({x, z, w: bw, d: bd, hits, max: hits, mesh, color});
     }
+    walls=layout.walls.map(w=>({...w,flash:0}));wallHits=0;
+    if(wallGroup)while(wallGroup.children.length){const child=wallGroup.children[0];wallGroup.remove(child);child.traverse(o=>{o.geometry?.dispose();o.material?.dispose();});}
+    for(const w of walls){if(!graphics.ok)continue;const body=boxMesh(w.w,.7,w.d,0x7089a4,{metalness:.3,roughness:.45});body.position.set(w.x,.4,w.z);wallGroup.add(body);w.mesh=body;
+      const cap=boxMesh(w.w,.055,w.d,0xffdb84);cap.position.set(w.x,.78,w.z);wallGroup.add(cap);
+    }
+    if(canvas?.dataset){canvas.dataset.breakoutLayout=layout.id;canvas.dataset.breakoutWalls=String(walls.length);}
   }
 
   function buildScene() {
@@ -119,6 +128,7 @@ export function createBreakoutGame({canvas, onHud, onEnd, audio = null, autoStar
     scene.add(back);
     brickGroup = new THREE.Group();
     scene.add(brickGroup);
+    wallGroup=new THREE.Group();scene.add(wallGroup);
     ballGroup = new THREE.Group();
     scene.add(ballGroup);
     powerGroup = new THREE.Group();
@@ -186,7 +196,7 @@ export function createBreakoutGame({canvas, onHud, onEnd, audio = null, autoStar
   }
 
   function stepBall(ball, dt) {
-    advanceBreakoutBall(ball,dt*slowMul,{D,paddleX,paddleW,bricks,onPaddle(b){
+    advanceBreakoutBall(ball,dt*slowMul,{D,paddleX,paddleW,bricks,walls,onWall(w){wallHits++;if(w.flash<=0)try{audio?.wallHit?.();}catch{}w.flash=.16;},onPaddle(b){
       if(stickyUntil>0&&random()<.35){launched=false;b.x=paddleX;b.z=5.2;}
     },onBrick(b){
       b.hits--;score+=10*b.max;
@@ -197,6 +207,7 @@ export function createBreakoutGame({canvas, onHud, onEnd, audio = null, autoStar
 
   function tick(dt) {
     if (!running || ended) return;
+    for(const w of walls){w.flash=Math.max(0,w.flash-dt);if(w.mesh){w.mesh.material.emissive.setHex(0xffc35c);w.mesh.material.emissiveIntensity=w.flash*3;}}
     // Keyboard: hold to move continuously (pointer still sets paddleTargetX directly).
     if (keyHeld.left || keyHeld.right) {
       const dir = (keyHeld.right ? 1 : 0) - (keyHeld.left ? 1 : 0);
@@ -397,6 +408,6 @@ export function createBreakoutGame({canvas, onHud, onEnd, audio = null, autoStar
   if (autoStart) start();
   return {
     start, pause, resume, destroy, tick, draw,
-    getState: () => ({difficulty:D, lives, score, remaining: remaining(), ended, bricks: bricks.length, powerups: powerups.length, balls: balls.length, ballStates:balls.map(({x,z,vx,vz})=>({x,z,vx,vz})), brickStates:bricks.map(({x,z,w,d,hits})=>({x,z,w,d,hits})), paddleX, launched, gl: graphics.ok})
+    getState: () => ({difficulty:D, lives, score, remaining: remaining(), ended, bricks: bricks.length, powerups: powerups.length, balls: balls.length, ballStates:balls.map(({x,z,vx,vz})=>({x,z,vx,vz})), brickStates:bricks.map(({x,z,w,d,hits})=>({x,z,w,d,hits})), paddleX, launched, layoutId:layout.id,layoutName:layout.name,wallHits,wallStates:walls.map(({x,z,w,d})=>({x,z,w,d})), gl: graphics.ok})
   };
 }

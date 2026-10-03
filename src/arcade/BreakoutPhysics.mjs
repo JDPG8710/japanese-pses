@@ -1,9 +1,7 @@
 export const BREAKOUT_BACK_Z=-6;
+import {breakoutLayoutFor} from './BreakoutLayouts.mjs';
 export function breakoutBrickLayout(D){
- const gap=.12,margin=D.ballRadius*2+.12,width=D.playWidth-margin*2,w=(width-gap*(D.cols-1))/D.cols;
- const d=.55,front=-.8,rear=BREAKOUT_BACK_Z+d/2+D.ballRadius*2+.18;
- const stride=Math.min(.82,(front-rear)/Math.max(1,D.rows-1));
- return Array.from({length:D.rows*D.cols},(_,i)=>({x:-width/2+w/2+(i%D.cols)*(w+gap),z:front-Math.floor(i/D.cols)*stride,w,d,row:Math.floor(i/D.cols),col:i%D.cols}));
+ return breakoutLayoutFor(D).bricks;
 }
 export function stabilizeBreakoutBall(ball,maxSpeed=Infinity){
  const speed=Math.min(maxSpeed,Math.max(.1,Math.hypot(ball.vx,ball.vz)));
@@ -21,7 +19,7 @@ function sweepBox(x,z,dx,dz,b,r){
  if(enter>exit||enter<-.000001||enter>1||exit<0)return null;
  return {t:Math.max(0,enter),...normal};
 }
-export function advanceBreakoutBall(ball,dt,{D,paddleX,paddleW,bricks,onBrick,onPaddle}){
+export function advanceBreakoutBall(ball,dt,{D,paddleX,paddleW,bricks,walls=[],onBrick,onPaddle,onWall}){
  let remaining=dt;stabilizeBreakoutBall(ball,D.ballSpeedMax);
  for(let iteration=0;iteration<10&&remaining>1e-7;iteration++){
   const dx=ball.vx*remaining,dz=ball.vz*remaining,half=D.playWidth/2-D.ballRadius,back=BREAKOUT_BACK_Z+D.ballRadius;
@@ -32,11 +30,12 @@ export function advanceBreakoutBall(ball,dt,{D,paddleX,paddleW,bricks,onBrick,on
   if(dz<0)consider({t:(back-ball.z)/dz,axis:'z',sign:1});
   if(dz>0)consider((()=>{const h=sweepBox(ball.x,ball.z,dx,dz,{x:paddleX,z:6.2,w:paddleW,d:.7},D.ballRadius);return h?.axis==='z'&&h.sign===-1?{...h,paddle:true}:null;})());
   for(const brick of bricks)if(brick.hits>0){const h=sweepBox(ball.x,ball.z,dx,dz,brick,D.ballRadius);if(h)consider({...h,brick});}
+  for(const wall of walls){const h=sweepBox(ball.x,ball.z,dx,dz,wall,D.ballRadius);if(h)consider({...h,wall});}
   if(!hit){ball.x+=dx;ball.z+=dz;break;}
   ball.x+=dx*hit.t;ball.z+=dz*hit.t;ball[hit.axis]+=hit.sign*.0001;remaining*=1-hit.t;
   if(hit.paddle){const speed=Math.min(D.ballSpeedMax,Math.hypot(ball.vx,ball.vz)*1.03),offset=Math.max(-1,Math.min(1,(ball.x-paddleX)/(paddleW/2))),angle=offset*Math.PI/3;
    ball.vx=Math.sin(angle)*speed;ball.vz=-Math.cos(angle)*speed;onPaddle?.(ball);
-  }else {ball[hit.axis==='x'?'vx':'vz']*= -1;if(hit.brick)onBrick?.(hit.brick);}
+  }else {ball[hit.axis==='x'?'vx':'vz']*= -1;if(hit.brick)onBrick?.(hit.brick);if(hit.wall)onWall?.(hit.wall);}
   stabilizeBreakoutBall(ball,D.ballSpeedMax);
  }
 }

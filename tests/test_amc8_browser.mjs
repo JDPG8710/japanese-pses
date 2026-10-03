@@ -124,6 +124,7 @@ try {
       await page.locator(`[data-view="learn"]`).click();
       assert.equal(new URL(page.url()).searchParams.get('view'), 'learn');
       assert.equal(await page.locator('[data-view="learn"]').getAttribute('aria-current'), 'page');
+      assert.equal(await page.locator('.topbar #view-tabs [data-view]').count(), 2, 'Practise / Learn tabs sit in the sticky top bar');
       assert.equal(await page.locator('.lesson-card').count(), LESSONS.length);
       assert.equal(await page.locator('.fact').count(), 6);
       assert.equal(await page.locator('.roadmap > .stage').count(), 3);
@@ -162,6 +163,8 @@ try {
   await page.locator('[data-lesson="counting"]').last().click();
   await page.locator('.lesson-practice [data-start="counting"]').click();
   assert.ok(await page.locator('[data-question-id^="amc-v2-"]').count(), 'lesson practice link opens the question bank');
+  assert.equal(await page.locator('#view-tabs').isHidden(), true, 'tabs are hidden during a question set');
+  assert.equal(await page.evaluate(() => getComputedStyle(document.querySelector('.topbar')).position), 'sticky');
   assert.equal(new URL(page.url()).searchParams.get('view'), null);
   await page.locator('[data-home]').first().click();
   assert.equal(await page.locator('.course-card').count(), 5);

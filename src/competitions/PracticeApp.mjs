@@ -68,10 +68,15 @@ function explanation(q){
 function guide(id){return `<details class="topic-guide"><summary>${t.guide}</summary><div class="guide-body"><p class="muted">${t.guideIntro}</p>${topicExamples(id,locale).map(q=>`<details class="example"><summary>${esc(q.title)}</summary><div class="example-body"><p class="eyebrow">${t.example}</p><p>${esc(q.prompt)}</p>${q.orderItems?`<ul>${q.orderItems.map(value=>`<li>${esc(value)}</li>`).join('')}</ul>`:''}${explanation(q)}</div></details>`).join('')}</div></details>`;}
 const lt=()=>LEARN_TEXT[locale],pick=value=>value[locale];
 function hero(){const prefix=course==='amc8'?'amc':'eiken';return `<section class="hero"><p class="eyebrow">PIKO GAME · ${course==='eiken'?'ENGLISH':'MATH EXPLORER'}</p><h1>${t[course]}</h1><p>${t[`${prefix}Intro`]}</p></section>`;}
+// The Practise / Learn switch sits in the sticky top bar; it is hidden during a
+// 10-question set and on the results screen so the question has the focus.
+const tabSlot=document.querySelector('#view-tabs');
+function hideTabs(){if(tabSlot){tabSlot.hidden=true;tabSlot.innerHTML='';}}
 function tabs(){
-  if(course!=='amc8')return '';
+  if(course!=='amc8'){hideTabs();return '';}
   const l=lt();
-  return `<nav class="view-tabs" aria-label="${t.amc8}">${[['practice','✏️',l.practiceTab],['learn','📘',l.learnTab]].map(([id,icon,label])=>`<button type="button" data-view="${id}" ${view===id?'aria-current="page"':''}><span aria-hidden="true">${icon}</span> ${label}</button>`).join('')}</nav>`;
+  if(tabSlot){tabSlot.hidden=false;tabSlot.innerHTML=`<nav class="view-tabs" aria-label="${t.amc8}">${[['practice','✏️',l.practiceTab],['learn','📘',l.learnTab]].map(([id,icon,label])=>`<button type="button" data-view="${id}" ${view===id?'aria-current="page"':''}><span aria-hidden="true">${icon}</span> ${label}</button>`).join('')}</nav>`;}
+  return '';
 }
 function archive(){return `<section class="archive" aria-labelledby="archive-title"><h2 id="archive-title" tabindex="-1">${t.archive}</h2><p>${t.archiveIntro}</p><ul class="archive-list">${ARCHIVE.map(paper=>`<li><a href="${paper.url}" target="_blank" rel="noopener noreferrer">${paper.year} AMC 8 — ${t.open} ↗</a><span class="muted">25 ${t.questions}</span></li>`).join('')}</ul><p><a href="${OFFICIAL_SAMPLE}" target="_blank" rel="noopener noreferrer">${t.official} ↗</a></p><p class="muted">${t.credit}</p></section>`;}
 const topicTitle=id=>units().find(u=>u.id===id)?.title||id;
@@ -88,7 +93,7 @@ function lessonPage(id){
   const l=lt(),index=LESSONS.findIndex(lesson=>lesson.id===id),lesson=LESSONS[index],done=doneLessons().has(id);
   const stageIndex=STAGES.findIndex(stage=>stage.id===lesson.stage),prev=LESSONS[index-1],next=LESSONS[index+1],list=locale==='en'?', ':'、';
   document.title=`${pick(lesson.title)} · ${t.amc8} · Piko Game`;
-  app.innerHTML=`${tabs()}<div class="practice-toolbar"><button type="button" data-lesson-list>${l.backToLearn}</button><span>${l.stage} ${stageIndex+1} · ${index+1} / ${LESSONS.length}</span></div><article class="lesson" data-lesson-id="${id}" aria-labelledby="lesson-title"><p class="eyebrow"><span aria-hidden="true">${lesson.icon}</span> ${pick(STAGES[stageIndex].title)}</p><h1 tabindex="-1" id="lesson-title">${esc(pick(lesson.title))}</h1>${done?`<p class="pill">✓ ${l.done}</p>`:''}
+  app.innerHTML=`${tabs()}<div class="practice-toolbar"><button type="button" class="ghost" data-lesson-list>${l.backToLearn}</button><span>${l.stage} ${stageIndex+1} · ${index+1} / ${LESSONS.length}</span></div><article class="lesson" data-lesson-id="${id}" aria-labelledby="lesson-title"><p class="eyebrow"><span aria-hidden="true">${lesson.icon}</span> ${pick(STAGES[stageIndex].title)}</p><h1 tabindex="-1" id="lesson-title">${esc(pick(lesson.title))}</h1>${done?`<p class="pill">✓ ${l.done}</p>`:''}
 <div class="lesson-short"><h2>${l.inShort}</h2><p>${esc(pick(lesson.short))}</p></div><p>${esc(pick(lesson.body))}</p>
 <h2>${l.ideas}</h2><ul class="idea-list">${lesson.ideas.map(idea=>`<li>${esc(pick(idea))}</li>`).join('')}</ul>
 <section class="explanation worked-example" aria-labelledby="example-title"><h2 id="example-title">${l.example}</h2><p class="example-problem">${esc(pick(lesson.example.problem))}</p><h3>${l.stepByStep}</h3><ol>${lesson.example.steps.map(step=>`<li>${esc(pick(step))}</li>`).join('')}</ol><p class="answer-line"><strong>${l.answer}</strong><span>${esc(pick(lesson.example.answer))}</span></p></section>
@@ -102,13 +107,13 @@ function home(){
   session=null;
   if(course==='amc8'&&view==='learn'){if(lessonId)lessonPage(lessonId);else learnHome();return;}
   const prefix=course==='amc8'?'amc':'eiken';
-  app.innerHTML=`${hero()}${tabs()}<div class="course-intro"><p class="muted">${t[`${prefix}Note`]}</p>${course==='amc8'?`<p>${t.steps}</p>`:''}</div><section class="course-grid ${course==='eiken'?'two-columns':''}" aria-label="${t[course]}">${units().map(u=>`<article class="course-card"><span class="icon" aria-hidden="true">${u.icon}</span><h2>${esc(u.title)}</h2><p>${esc(u.description)}</p>${course==='amc8'?`<p class="muted">${t.familyCount}</p>`:''}<p class="pill">${t.best}: ${readBest(u.id)}/10</p><div class="card-actions"><button class="primary" data-start="${u.id}">${t.start}</button>${course==='amc8'&&lessonForTopic(u.id)?`<button type="button" data-lesson="${lessonForTopic(u.id)}">📘 ${lt().learnLink}</button>`:''}</div>${course==='amc8'?guide(u.id):''}</article>`).join('')}</section>${course==='amc8'?archive():''}`;
+  app.innerHTML=`${hero()}${tabs()}<div class="course-intro"><p class="muted">${t[`${prefix}Note`]}</p>${course==='amc8'?`<p>${t.steps}</p>`:''}</div><section class="course-grid ${course==='eiken'?'two-columns':''}" aria-label="${t[course]}">${units().map(u=>`<article class="course-card"><span class="icon" aria-hidden="true">${u.icon}</span><h2>${esc(u.title)}</h2><p>${esc(u.description)}</p>${course==='amc8'?`<p class="muted">${t.familyCount}</p>`:''}<div class="best"><p class="pill">${t.best}: ${readBest(u.id)}/10</p><div class="meter" aria-hidden="true"><span style="width:${readBest(u.id)*10}%"></span></div></div><div class="card-actions"><button class="primary" data-start="${u.id}">${t.start}</button>${course==='amc8'&&lessonForTopic(u.id)?`<button type="button" class="secondary" data-lesson="${lessonForTopic(u.id)}">📘 ${lt().learnLink}</button>`:''}</div>${course==='amc8'?guide(u.id):''}</article>`).join('')}</section>${course==='amc8'?archive():''}`;
 }
 function start(id){
   if(!units().some(u=>u.id===id))return;
   if(view==='learn'){view='practice';lessonId=null;writeView();}
   try{session={id,questions:createSession(bank(id)),index:0,score:0,answers:[],complete:false};beginQuestion();}
-  catch(error){session=null;app.innerHTML=`<p role="alert">${t.error}</p><button data-home>${t.back}</button>`;console.error(error);}
+  catch(error){session=null;hideTabs();app.innerHTML=`<p role="alert">${t.error}</p><button data-home>${t.back}</button>`;console.error(error);}
 }
 function beginQuestion(){
   const s=session,q=s.questions[s.index];s.attempts=0;s.done=false;s.feedback=null;s.disabledOptions=[];
@@ -123,8 +128,8 @@ function answerControls(q){
   return `<form id="answer-form" novalidate><p id="answer-help" class="muted">${t.numericHelp}</p><div class="answer-fields">${fields.map((field,i)=>`<label for="response-${i}"><span>${esc(field.label)}</span><input id="response-${i}" data-field="${i}" type="text" inputmode="text" autocomplete="off" spellcheck="false" aria-describedby="answer-help feedback" value="${esc(values[i])}" ${s.done?'disabled':''}></label>`).join('')}</div><button class="primary" type="submit" ${s.done?'disabled':''}>${t.submit}</button></form>`;
 }
 function renderQuestion(focus=false){
-  const s=session,q=localizedQuestion(s.questions[s.index]),unit=units().find(u=>u.id===s.id);
-  app.innerHTML=`<div class="practice-toolbar"><button data-home>${t.exit}</button><span>${esc(unit.title)} · ${t.progress} ${s.index+1} / 10</span></div><section class="question" data-question-id="${q.id}" data-kind="${q.kind}"><div class="question-meta"><span class="pill">${t.kinds[q.kind]}</span><span>${t.attempt}: ${s.attempts}/3</span></div><progress max="10" value="${s.index}" aria-label="${t.progress}"></progress>${q.title?`<p class="eyebrow">${esc(q.title)}</p>`:''}<h1 tabindex="-1" id="prompt">${esc(q.prompt)}</h1>${answerControls(q)}<p id="feedback" role="status" aria-live="polite">${s.feedback==='invalid'?t.invalid:s.feedback==='gentle'?t.gentle:s.feedback==='hint'?esc(q.hint||t.eikenHint):s.feedback==='correct'?t.good:s.feedback==='reveal'?t.answer:''}</p>${s.done?`${explanation(q)}<p class="muted">${t.learned}</p><button class="primary next-question" data-next>${t.next}</button>`:''}</section>`;
+  const s=session,q=localizedQuestion(s.questions[s.index]),unit=units().find(u=>u.id===s.id);hideTabs();
+  app.innerHTML=`<div class="practice-toolbar"><button class="ghost" data-home>← ${t.exit}</button><span>${esc(unit.title)} · ${t.progress} ${s.index+1} / 10</span></div><section class="question" data-question-id="${q.id}" data-kind="${q.kind}"><div class="question-meta"><span class="pill">${t.kinds[q.kind]}</span><span>${t.attempt}: ${s.attempts}/3</span></div><progress max="10" value="${s.index}" aria-label="${t.progress}"></progress>${q.title?`<p class="eyebrow">${esc(q.title)}</p>`:''}<h1 tabindex="-1" id="prompt">${esc(q.prompt)}</h1>${answerControls(q)}<p id="feedback" class="feedback" data-state="${s.feedback||''}" role="status" aria-live="polite">${s.feedback==='invalid'?t.invalid:s.feedback==='gentle'?t.gentle:s.feedback==='hint'?esc(q.hint||t.eikenHint):s.feedback==='correct'?t.good:s.feedback==='reveal'?t.answer:''}</p>${s.done?`${explanation(q)}<p class="muted">${t.learned}</p><button class="primary next-question" data-next>${t.next}</button>`:''}</section>`;
   if(focus){app.scrollIntoView({block:'start'});document.querySelector('#prompt').focus({preventScroll:true});}
 }
 function captureDraft(){
@@ -151,10 +156,10 @@ function finish(){
   renderResult(true);
 }
 function renderResult(focus=false){
-  const s=session,result=resultFor(s.score),following=units()[units().findIndex(u=>u.id===s.id)+1];
-  app.innerHTML=`<section class="result"><p class="eyebrow">${t.review}</p><h1 tabindex="-1" id="result-title">${result.passed?t.pass:t.fail}</h1><p>${t.score}: <strong>${s.score} / 10</strong></p><div class="actions"><button class="primary" data-start="${s.id}">${t.retry}</button>${result.passed&&following?`<button data-start="${following.id}">${t.continue}</button>`:''}<button data-home>${t.back}</button></div><h2>${t.review}</h2><div class="review-list">${s.answers.map((answer,i)=>{
+  const s=session,result=resultFor(s.score),following=units()[units().findIndex(u=>u.id===s.id)+1];hideTabs();
+  app.innerHTML=`<section class="result" data-passed="${result.passed}"><p class="eyebrow">${esc(units().find(u=>u.id===s.id)?.title||'')}</p><h1 tabindex="-1" id="result-title">${result.passed?t.pass:t.fail}</h1><div class="score-card"><p class="score-label">${t.score}</p><p class="score-value"><strong>${s.score} / 10</strong></p><div class="meter" aria-hidden="true"><span style="width:${s.score*10}%"></span></div></div><div class="actions"><button class="primary" data-start="${s.id}">${t.retry}</button>${result.passed&&following?`<button data-start="${following.id}">${t.continue}</button>`:''}<button class="ghost" data-home>${t.back}</button></div><h2>${t.review}</h2><div class="review-list">${s.answers.map((answer,i)=>{
     const q=localizedQuestion(answer.question);
-    return `<details class="review-item"><summary><span aria-hidden="true">${answer.correct?'✓':'↻'}</span><span>${i+1}. ${esc(q.title||q.prompt)}</span></summary><div class="review-body"><p>${esc(q.prompt)}</p><div class="first-answer"><strong>${t.yourAnswer}</strong><p>${esc(displayedAnswer(q,answer.selected))}</p></div>${explanation(q)}</div></details>`;
+    return `<details class="review-item"><summary><span class="review-mark ${answer.correct?'is-right':'is-retry'}" aria-hidden="true">${answer.correct?'✓':'↻'}</span><span>${i+1}. ${esc(q.title||q.prompt)}</span></summary><div class="review-body"><p>${esc(q.prompt)}</p><div class="first-answer"><strong>${t.yourAnswer}</strong><p>${esc(displayedAnswer(q,answer.selected))}</p></div>${explanation(q)}</div></details>`;
   }).join('')}</div></section>`;
   if(focus){app.scrollIntoView({block:'start'});document.querySelector('#result-title').focus({preventScroll:true});}
 }
@@ -163,10 +168,10 @@ document.querySelector('#locale').addEventListener('change',event=>{
   if(session?.complete)renderResult();else if(session)renderQuestion();else home();
 });
 app.addEventListener('submit',event=>{if(event.target.id==='answer-form'){event.preventDefault();captureDraft();submit(session.draft);}});
-app.addEventListener('click',event=>{
+function onClick(event){
   const b=event.target.closest('button');if(!b||b.disabled)return;
   if(b.hasAttribute('data-home')){home();app.scrollIntoView({block:'start'});}
-  else if(b.dataset.view){if(b.dataset.view===view&&!lessonId)return;view=b.dataset.view==='learn'?'learn':'practice';lessonId=null;writeView(true);chrome();home();app.scrollIntoView({block:'start'});app.querySelector(`[data-view="${view}"]`)?.focus();}
+  else if(b.dataset.view){if(b.dataset.view===view&&!lessonId)return;view=b.dataset.view==='learn'?'learn':'practice';lessonId=null;writeView(true);chrome();home();scrollTo({top:0});document.querySelector(`[data-view="${view}"]`)?.focus();}
   else if(b.dataset.lesson){view='learn';lessonId=b.dataset.lesson;writeView(true);chrome();home();app.scrollIntoView({block:'start'});document.querySelector('#lesson-title')?.focus({preventScroll:true});}
   else if(b.hasAttribute('data-lesson-list')){const from=lessonId;lessonId=null;writeView(true);chrome();home();const card=app.querySelector(`[data-lesson-card="${from}"]`);if(card){card.scrollIntoView({block:'center'});card.querySelector('button')?.focus({preventScroll:true});}}
   else if(b.dataset.lessonDone){const done=!doneLessons().has(b.dataset.lessonDone);setLessonDone(b.dataset.lessonDone,done);lessonPage(b.dataset.lessonDone);const again=app.querySelector('[data-lesson-done]');again?.focus({preventScroll:true});}
@@ -182,7 +187,8 @@ app.addEventListener('click',event=>{
     app.querySelector('#feedback').textContent=t.move;
   }
   else if(b.hasAttribute('data-next')&&session?.done&&!session.complete){session.index++;if(session.index===10)finish();else beginQuestion();}
-});
+}
+app.addEventListener('click',onClick);tabSlot?.addEventListener('click',onClick);
 // Older history entries may carry the previous ?lang; the learner's current choice wins.
 window.addEventListener('popstate',()=>{readView();if(params.get('lang')!==locale&&params.has('lang')){params.set('lang',locale);writeView();}chrome();home();});
 chrome();home();

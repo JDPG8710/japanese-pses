@@ -102,3 +102,25 @@
   .reg-table td::before{content:attr(data-label);display:block;font-size:.74rem;font-weight:750;color:var(--muted);letter-spacing:.02em}
   .path-steps li{padding:14px}
 }
+
+/* Equal tiles. practice.css lays card grids out with align-items:start, so each
+   card was only as tall as its own text (ja/en titles and goals wrap to
+   different line counts) and the buttons ended up at different heights.
+   Every card grid on the hub now has equal columns and equal rows (the tallest
+   card sets the row height for the whole grid), and cards are flex columns
+   whose score bar and buttons are pushed to the bottom. When a drill card's
+   "Methods and examples" panel is open, rows size to content again so the
+   other rows do not grow with it. */
+.course-grid,.lesson-grid,.fact-grid,.archive-list{align-items:stretch;grid-auto-rows:1fr}
+.course-grid:has(.topic-guide[open]){grid-auto-rows:auto}
+.course-card{display:flex;flex-direction:column;height:100%}
+.course-card>.icon{flex:none}
+.course-card>.best{margin-top:auto;padding-top:12px}
+.course-card>.card-actions{margin-top:14px}
+.course-card>.topic-guide{margin-top:14px}
+.lesson-card{height:100%}
+.lesson-card>.icon,.fact>.icon{flex:none}
+.fact{height:100%}
+.archive-list li{display:flex;flex-direction:column;justify-content:space-between}
+.level-switch{align-items:stretch}
+.level-switch button{justify-content:flex-start;height:100%}

@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildLearningContent } from './build-learning-content.mjs';
+import { versionDist } from './asset-versioning.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const output = path.resolve(root, 'dist');
@@ -41,15 +42,16 @@ for (const file of releaseFiles) {
   releaseHash.update(await readFile(file));
 }
 const releaseId = releaseHash.digest('hex').slice(0, 12);
-const versionedFiles = releaseFiles.filter(file => ['.html', '.js', '.mjs'].includes(path.extname(file)));
-for (const file of versionedFiles) {
-  const source = await readFile(file, 'utf8');
-  await writeFile(file, source.replace(/\?v=[A-Za-z0-9._-]+/g, `?v=${releaseId}`), 'utf8');
-}
+// Version every same-origin static reference (HTML, CSS, JS/MJS) with the
+// release id so browsers and the Cloudflare zone cache never mix releases.
+// See scripts/asset-versioning.mjs and tests/test_dist_asset_versions.mjs.
+const versionedFiles = await versionDist(output, releaseFiles, releaseId);
+await writeFile(path.join(output, 'release.json'), `${JSON.stringify({ releaseId })}\n`, 'utf8');
 
 const files = await collectFiles(output);
 const totalBytes = (await Promise.all(files.map(file => stat(file)))).reduce((sum, info) => sum + info.size, 0);
 console.log(`ビルド完了: ${files.length}ファイル / ${totalBytes}バイト -> ${output}`);
+console.log(`リリースID: ${releaseId}（${versionedFiles}ファイルの参照に ?v= を付与）`);
 console.log('教材JSONは静的成果物に含めず、Cloudflare D1から配信します。');
 
 async function collectFiles(directory) {

@@ -1,13 +1,46 @@
+# Caching policy (see scripts/asset-versioning.mjs):
+# - Pages and routes (HTML, /, /amc8, /en/, …) must always be revalidated so a
+#   deploy is visible immediately.
+# - Code and styles are referenced with ?v=<releaseId>; each release gets new
+#   URLs, so those files can be cached for a year.
+# - /assets/* is mostly versioned too, but some images (e.g. flags) are built
+#   from template strings at runtime, so they keep a shorter lifetime.
+# Each specific rule first detaches the default Cache-Control so values are not
+# joined with a comma.
 /*
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=()
+  Cache-Control: no-cache
+
+/src/*
+  ! Cache-Control
+  Cache-Control: public, max-age=31536000, immutable
+
+/css/*
+  ! Cache-Control
+  Cache-Control: public, max-age=31536000, immutable
+
+/js/*
+  ! Cache-Control
+  Cache-Control: public, max-age=31536000, immutable
+
+/*.js
+  ! Cache-Control
+  Cache-Control: public, max-age=31536000, immutable
 
 /assets/*
-  Cache-Control: public, max-age=604800
+  ! Cache-Control
+  Cache-Control: public, max-age=86400
 
 /robots.txt
+  ! Cache-Control
   Cache-Control: public, max-age=300, must-revalidate
 
 /sitemap.xml
+  ! Cache-Control
   Cache-Control: public, max-age=300, must-revalidate
+
+/src/*.html
+  ! Cache-Control
+  Cache-Control: no-cache

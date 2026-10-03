@@ -23,7 +23,7 @@ for(let clear=1;clear<=120;clear++){
  assert.equal(state.townProgress.clears,clear);
 }
 assert.equal(state.townProgress.level,20);assert.equal(state.townProgress.infiniteRound,101);
-assert.match(progressionLabel(state,'zh'),/无限挑战/);
+assert.match(progressionLabel(state,'zh'),/无尽挑战/);
 
 // Failure, cancellation, invalid score and stale retry callbacks never award or unlock.
 for(const result of [{cleared:false,score:100},{cleared:true,score:0},{cleared:true,score:NaN},{cleared:true,score:Infinity},{cleared:true,score:-1},{}]){

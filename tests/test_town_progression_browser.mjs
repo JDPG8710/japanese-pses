@@ -34,11 +34,11 @@ try{
   await complete();
   assert.equal(await page.evaluate(()=>testState.townProgress.infiniteRound),1);
   assert.equal(await page.evaluate(()=>testState.townProgress.points),49);
-  assert.match(await page.locator('[data-overlay-body]').innerText(),/无限挑战/);
+  assert.match(await page.locator('[data-overlay-body]').innerText(),/无尽挑战/);
   await page.screenshot({path:`.wrangler/town-progression/clear20-${width}.png`,fullPage:true});
   assert.equal(await page.locator('[data-shell="retry"]:visible').count(),0);
   await page.locator('[data-overlay]').waitFor({state:'hidden'});
-  assert.match(await page.locator('.arcade-hard').innerText(),/无限挑战/);
+  assert.match(await page.locator('.arcade-hard').innerText(),/无尽挑战/);
   if(!await page.locator('[data-town-exit]').isVisible())await page.locator('[data-panel=session]').click();await page.locator('[data-town-exit]').click();
   assert.equal(await page.locator('.arcade-shell').count(),0);
   assert.equal(await page.evaluate(()=>Object.keys(testState.townProgress.sessions).length),0);

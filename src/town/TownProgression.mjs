@@ -75,9 +75,9 @@ export function settleTownChallenge(state, ticket, result = {}) {
 }
 export function progressionLabel(value, locale = 'en') {
   const d = normalizeDifficulty(value?.townProgress || value);
-  if (d.infiniteRound) return ({zh:`无限挑战 · 第 ${d.infiniteRound} 轮`,ja:`むげんチャレンジ · ${d.infiniteRound} かいめ`,en:`Endless challenge · Round ${d.infiniteRound}`})[locale] || `Endless · ${d.infiniteRound}`;
-  return ({zh:`小镇第 ${d.level} / 20 关`,ja:`まちのレベル ${d.level} / 20`,en:`Town level ${d.level} / 20`})[locale] || `Town ${d.level} / 20`;
+  if (d.infiniteRound) return ({zh:`无尽挑战 · 第 ${d.infiniteRound} 轮`,ja:`エンドレスチャレンジ · ${d.infiniteRound}かいめ`,en:`Endless challenge · Round ${d.infiniteRound}`})[locale] || `Endless · ${d.infiniteRound}`;
+  return ({zh:`小镇等级 ${d.level} / 20`,ja:`まちのレベル ${d.level} / 20`,en:`Town level ${d.level} / 20`})[locale] || `Town ${d.level} / 20`;
 }
 export function townPointsLabel(points, locale = 'en') {
-  return ({zh:`小镇积分 ${points}`,ja:`まちポイント ${points}`,en:`Town points ${points}`})[locale] || `Town points ${points}`;
+  return ({zh:`小镇积分 ${points}`,ja:`まちポイント ${points}`,en:`${points} town points`})[locale] || `Town points ${points}`;
 }

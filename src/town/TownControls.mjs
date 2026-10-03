@@ -1,8 +1,8 @@
 import {setupTownInteractionLock} from './TownInteractionLock.mjs';
 const COPY={
- zh:{stick:'滑动摇杆：上下前进后退，左右转向',carTip:'驾驶：摇杆上下油门、左右转向；进入建筑前选择步行',planeTip:'飞行：摇杆移动转向，按住 ↑ / ↓ 升降；选择步行可安全落地',ride:'交通工具',foot:'步行',car:'驾驶汽车',plane:'驾驶飞机',up:'爬升',down:'下降',tip:'左下摇杆移动与转向 · 拖动画面观察 · ↑ 跳跃 / 飞机爬升'},
- en:{stick:'Joystick: up/down to move, left/right to steer',carTip:'Drive with the stick; choose Walk before entering buildings.',planeTip:'Steer with the stick, hold ↑ / ↓ for altitude. Choose Walk to land safely.',ride:'Travel mode',foot:'Walk',car:'Drive car',plane:'Fly plane',up:'Climb',down:'Descend',tip:'Drag the left stick to move and steer · Drag the scene to look · ↑ Jump / climb'},
- ja:{stick:'スティック：上下で前後、左右で方向転換',carTip:'スティックで運転。建物に入る前に「歩く」を選ぼう。',planeTip:'スティックで飛行、↑ / ↓ を押して昇降。「歩く」で安全に着地。',ride:'のりもの',foot:'歩く',car:'車を運転',plane:'飛行機に乗る',up:'上昇',down:'下降',tip:'左のスティックで移動と方向転換 · 画面をドラッグで見回す · ↑ ジャンプ／上昇'}
+ zh:{stick:'摇杆：上下前进后退，左右转弯',carTip:'开车：摇杆上下踩油门，左右转弯；进建筑前先换成步行',planeTip:'开飞机：摇杆控制方向，按住 ↑ / ↓ 升降；换成步行就能安全降落',ride:'交通工具',foot:'步行',car:'开汽车',plane:'开飞机',up:'上升',down:'下降',tip:'左下摇杆走路转弯 · 拖动画面看四周 · ↑ 跳跃 / 飞机上升'},
+ en:{stick:'Stick: up/down to move, left/right to turn',carTip:'Drive with the stick. Switch to Walk before going into buildings.',planeTip:'Steer with the stick and hold ↑ / ↓ to go up or down. Switch to Walk to land safely.',ride:'Get around',foot:'Walk',car:'Drive',plane:'Fly',up:'Up',down:'Down',tip:'Left stick: move & turn · Drag to look around · ↑ Jump / fly up'},
+ ja:{stick:'スティック：上下で前・うしろ、左右でまがる',carTip:'スティックでうんてん。たてものに入るまえに「歩く」にしてね。',planeTip:'スティックでとぶ。↑ / ↓ でのぼる・おりる。「歩く」にすると、ふわっとおりるよ！',ride:'のりもの',foot:'歩く',car:'くるま',plane:'ひこうき',up:'のぼる',down:'おりる',tip:'左のスティックで歩く・まがる · ドラッグで見まわす · ↑ ジャンプ／のぼる'}
 };
 export function setupTownControls({scene,overlay,getLocale,onChange}){
  const abort=new AbortController(),signal=abort.signal,w=()=>COPY[getLocale()]||COPY.en;

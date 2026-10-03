@@ -3,18 +3,18 @@ import {beginTownChallenge,settleTownChallenge,townDifficulty,normalizeDifficult
 export const MODES=['obby','tower','runner','memory','garden'];
 export const AVATARS=[
  {id:'explorer',color:0xf07850,skin:0xf5c797,zh:'探险家',en:'Explorer',ja:'たんけんか'},
- {id:'robot',color:0x69bbda,skin:0xd4e8ee,zh:'小机器人',en:'Little robot',ja:'ロボット'},
- {id:'cat',color:0xb292e5,skin:0xffd6b1,zh:'猫咪伙伴',en:'Cat friend',ja:'ねこフレンド'},
+ {id:'robot',color:0x69bbda,skin:0xd4e8ee,zh:'小机器人',en:'Robo buddy',ja:'ロボくん'},
+ {id:'cat',color:0xb292e5,skin:0xffd6b1,zh:'猫咪小伙伴',en:'Kitty pal',ja:'ねこのあいぼう'},
  {id:'astro',color:0xe6eefb,skin:0xd4b093,zh:'宇航员',en:'Astronaut',ja:'うちゅうひこうし'},
- {id:'frog',color:0x77bc72,skin:0xf1c993,zh:'青蛙队长',en:'Frog captain',ja:'かえるキャプテン'},
- {id:'builder',color:0xf5c94e,skin:0x976441,zh:'建造师',en:'Builder',ja:'ビルダー'}
+ {id:'frog',color:0x77bc72,skin:0xf1c993,zh:'青蛙队长',en:'Captain Frog',ja:'かえるたいちょう'},
+ {id:'builder',color:0xf5c94e,skin:0x976441,zh:'小小建造师',en:'Builder',ja:'けんちくやさん'}
 ];
 export const ITEMS=[
- {id:'shoes',price:18,icon:'👟',kind:'gear',zh:'轻快运动鞋',en:'Speed shoes',ja:'スピードシューズ',effect:'speed'},
- {id:'spring',price:24,icon:'🦘',kind:'gear',zh:'弹跳靴',en:'Spring boots',ja:'ジャンプブーツ',effect:'jump'},
- {id:'backpack',price:12,icon:'🎒',kind:'style',zh:'冒险背包',en:'Adventure pack',ja:'ぼうけんリュック',effect:'backpack'},
+ {id:'shoes',price:18,icon:'👟',kind:'gear',zh:'飞毛腿跑鞋',en:'Speedy sneakers',ja:'びゅんびゅんシューズ',effect:'speed'},
+ {id:'spring',price:24,icon:'🦘',kind:'gear',zh:'弹簧靴',en:'Spring boots',ja:'ぴょんぴょんブーツ',effect:'jump'},
+ {id:'backpack',price:12,icon:'🎒',kind:'style',zh:'探险背包',en:'Explorer backpack',ja:'ぼうけんリュック',effect:'backpack'},
  {id:'crown',price:30,icon:'👑',kind:'style',zh:'星星王冠',en:'Star crown',ja:'スタークラウン',effect:'crown'},
- {id:'shield',price:8,icon:'🛡',kind:'use',zh:'练习护盾',en:'Practice shield',ja:'れんしゅうシールド',effect:'shield'},
+ {id:'shield',price:8,icon:'🛡',kind:'use',zh:'答错护盾',en:'Oops shield',ja:'まちがいガード',effect:'shield'},
  {id:'hint',price:6,icon:'💡',kind:'use',zh:'提示卡',en:'Hint card',ja:'ヒントカード',effect:'hint'}
 ];
 const int=(v,lo,hi,d)=>Number.isSafeInteger(v)&&v>=lo&&v<=hi?v:d;

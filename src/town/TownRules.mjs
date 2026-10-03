@@ -10,12 +10,12 @@ export const PRODUCTS = [
   {id:'milk',icon:'🥛',en:'carton of milk',plural:'cartons of milk',zh:'牛奶',ja:'ミルク',price:5}
 ];
 export const FURNITURE = [
-  {id:'plant',icon:'🪴',price:0,zh:'开业绿植',en:'Welcome plant',ja:'おいわいの はち'},
-  {id:'books',icon:'📚',price:8,zh:'故事书',en:'Story books',ja:'えほん'},
+  {id:'plant',icon:'🪴',price:0,zh:'开业小盆栽',en:'Welcome plant',ja:'おいわいのうえき'},
+  {id:'books',icon:'📚',price:8,zh:'故事书',en:'Storybooks',ja:'えほん'},
   {id:'lamp',icon:'💡',price:12,zh:'小夜灯',en:'Little lamp',ja:'ランプ'},
-  {id:'bear',icon:'🧸',price:15,zh:'小熊伙伴',en:'Teddy bear',ja:'くまの ぬいぐるみ'},
+  {id:'bear',icon:'🧸',price:15,zh:'小熊玩偶',en:'Teddy bear',ja:'くまのぬいぐるみ'},
   {id:'flowers',icon:'🌷',price:10,zh:'郁金香',en:'Tulips',ja:'チューリップ'},
-  {id:'globe',icon:'🌎',price:20,zh:'世界地球仪',en:'World globe',ja:'ちきゅうぎ'}
+  {id:'globe',icon:'🌎',price:20,zh:'地球仪',en:'Globe',ja:'ちきゅうぎ'}
 ];
 export const MISSIONS = [
   {place:'guide',kind:'welcome'},

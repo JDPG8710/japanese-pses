@@ -21,8 +21,8 @@ export const ARCADE_TEXT = {
     tip: 'Tip',
     combo: 'Combo',
     games: {
-      bubble: {title:'Little Designer',tag:'DRAW & BUILD',blurb:'Design planes, cars, phones, rockets, robots, boats and houses on a big canvas – then spin your creation in 3D!',tip:'Open the floating menus to build, draw and colour. In 3D, drag to spin; pinch or scroll to zoom.'},
-      rhythm: {title:'Rhythm Parade',tag:'RHYTHM',blurb:'Bang four bright drums to a happy beat and build a combo!',tip:'Tap a drum (or press D/F/J/K or 1–4) when its note hits the white line.'},
+      bubble: {title:'Dream Builder',tag:'DRAW & BUILD',blurb:'Design planes, cars, phones, rockets, robots, boats and houses on a big canvas – then spin your creation in 3D!',tip:'Open the floating menus to build, draw and colour. In 3D, drag to spin; pinch or scroll to zoom.'},
+      rhythm: {title:'Beat Parade',tag:'RHYTHM',blurb:'Bang four bright drums to a happy beat and build a combo!',tip:'Tap a drum (or press D/F/J/K or 1–4) when its note hits the white line.'},
       race: {
         title: 'Piko Circuit',
         tag: 'RACING',
@@ -36,13 +36,13 @@ export const ARCADE_TEXT = {
         tip: 'Drag or ← → · click/Space to launch · gold-edged steel walls can\'t be broken – bounce off them!'
       },
       fruit: {
-        title: 'Fruit Storm',
+        title: 'Fruit Frenzy',
         tag: 'SLICE',
         blurb: '55 seconds of flying fruit! Slice it all, dodge the bombs and build a big combo.',
         tip: 'Small/medium/large fruit: 30/20/10 + combo · bomb −1 life, spiky −2, clock −5s, ice freezes your blade'
       },
       ninja: {
-        title: 'Ninja Typing',
+        title: 'Type Ninja',
         tag: 'TYPING',
         blurb: 'Type the glowing words before they reach you!',
         tip: 'Keyboard only · type each glowing word'
@@ -80,7 +80,7 @@ export const ARCADE_TEXT = {
   zh: {
     section: '游戏街',
     sectionKicker: '轻松玩 · 3D 街机',
-    sectionIntro: '六款好玩的小游戏：赛车、打砖块、切水果、打字、小小设计师和节奏鼓。',
+    sectionIntro: '六款好玩的小游戏：赛车、打砖块、切水果、打字、搭建设计和打鼓。',
     play: '开始',
     best: '最高分',
     score: '得分',
@@ -98,8 +98,8 @@ export const ARCADE_TEXT = {
     tip: '提示',
     combo: '连击',
     games: {
-      bubble: {title:'小小设计师',tag:'画画 · 组装',blurb:'在大画布上设计飞机、汽车、手机、火箭、机器人、小船和房子，还能转着看 3D 作品！',tip:'打开浮动菜单来组装、上色和画画。3D 里拖动可以旋转，双指或滚轮可以缩放。'},
-      rhythm: {title:'节奏鼓队',tag:'音乐节奏',blurb:'跟着星光音乐敲准鼓点，冲连击！',tip:'点一下开始音乐。音符碰到白线时敲鼓，可按 D/F/J/K 或 1–4。'},
+      bubble: {title:'奇思妙想工坊',tag:'画画 · 组装',blurb:'在大画布上设计飞机、汽车、手机、火箭、机器人、小船和房子，还能转着看 3D 作品！',tip:'打开浮动菜单来组装、上色和画画。3D 里拖动可以旋转，双指或滚轮可以缩放。'},
+      rhythm: {title:'咚咚鼓乐队',tag:'音乐节奏',blurb:'跟着星光音乐敲准鼓点，冲连击！',tip:'点一下开始音乐。音符碰到白线时敲鼓，可按 D/F/J/K 或 1–4。'},
       race: {
         title: '皮可赛道',
         tag: '赛车',
@@ -107,19 +107,19 @@ export const ARCADE_TEXT = {
         tip: '↑/W 油门 · ↓/S 刹车 · ←→/A D 转向 · 空格用道具 · 手机点屏幕按钮'
       },
       breakout: {
-        title: '砖块大作战',
+        title: '砰砰打砖块',
         tag: '打砖块',
         blurb: '20 种砖阵和挡板路线：绕开钢墙，打碎彩砖，接住道具！',
         tip: '拖动或按 ← → · 点击/空格发球 · 金边钢墙打不碎，绕过去或借它反弹'
       },
       fruit: {
-        title: '水果风暴',
+        title: '水果切切乐',
         tag: '切水果',
         blurb: '55 秒切水果挑战：六种水果、三种大小，躲开四种炸弹，冲连击！',
         tip: '小/中/大水果：30/20/10 分＋连击 · 普通炸弹扣 1 命、尖刺扣 2 命、时钟扣 5 秒、冰块冻住刀刃'
       },
       ninja: {
-        title: '忍者打字',
+        title: '指尖小忍者',
         tag: '打字',
         blurb: '发光的单词板飞过来啦，在它碰到你之前打出来！',
         tip: '只用键盘 · 打出飞来的发光单词'
@@ -175,8 +175,8 @@ export const ARCADE_TEXT = {
     tip: 'ヒント',
     combo: 'コンボ',
     games: {
-      bubble: {title:'ちいさなデザイナー',tag:'おえかき・くみたて',blurb:'ひこうき・くるま・スマホ・ロケット・ロボット・ふね・おうちをデザイン。3Dでくるっと見てみよう！',tip:'メニューをひらいて、くみたて・いろぬり。3Dはドラッグでまわして、2本ゆびでズーム。'},
-      rhythm: {title:'リズムたいこ',tag:'リズム',blurb:'4つのたいこで、たのしいリズムにのってたたこう！',tip:'おんぷが白いせんにきたら、たいこをタップ。キーボードは D/F/J/K か 1〜4。'},
+      bubble: {title:'つくってラボ',tag:'おえかき・くみたて',blurb:'ひこうき・くるま・スマホ・ロケット・ロボット・ふね・おうちをデザイン。3Dでくるっと見てみよう！',tip:'メニューをひらいて、くみたて・いろぬり。3Dはドラッグでまわして、2本ゆびでズーム。'},
+      rhythm: {title:'ドンドンたいこ',tag:'リズム',blurb:'4つのたいこで、たのしいリズムにのってたたこう！',tip:'おんぷが白いせんにきたら、たいこをタップ。キーボードは D/F/J/K か 1〜4。'},
       race: {
         title: 'ピコサーキット',
         tag: 'レース',
@@ -184,19 +184,19 @@ export const ARCADE_TEXT = {
         tip: '↑/W アクセル · ↓/S ブレーキ · ←→/A D ハンドル · スペース：アイテム · スマホは画面ボタン'
       },
       breakout: {
-        title: 'ブロックだいさくせん',
+        title: 'ドカンくずし',
         tag: 'ブロックくずし',
         blurb: '20しゅるいのブロックとかべのコース！みちを見つけて、ブロックをくずそう！',
         tip: 'ドラッグか ← → · クリック/スペースでボールを出す · 金のふちのかべはこわれないよ。はねかえりをつかおう'
       },
       fruit: {
-        title: 'フルーツストーム',
+        title: 'スパッとぎり',
         tag: 'フルーツぎり',
         blurb: '55びょうのフルーツチャレンジ！とんでくるフルーツをきって、ばくだんはよけよう。',
         tip: '小/中/大：30/20/10点＋コンボ · ばくだん −1ライフ、トゲ −2、とけい −5びょう、こおりは刃がとまる'
       },
       ninja: {
-        title: 'にんじゃタイピング',
+        title: 'にんにんタイプ',
         tag: 'タイピング',
         blurb: 'ちかづいてくることばパネルを、とどくまえにタイプしよう！',
         tip: 'キーボードだけ · ひかることばをうとう'

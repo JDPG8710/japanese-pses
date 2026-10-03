@@ -4,7 +4,7 @@ const colors=['#ff687e','#63ccff','#ffd469','#98ebc7'];
 export function createRhythmGame({canvas,onHud,onEnd,audio,locale='en',difficulty,autoStart=true}={}){
  const bpm=100+Math.round((difficulty?.scale||0)*20),beat=60/bpm,D={...RHYTHM_DIFFICULTY,interval:beat};
  let clock=0,score=0,lives=8,hits=0,combo=0,maxCombo=0,ended=false,notes=[],judgement='',flash=-1,flashUntil=0,nextBeat=0,ac=null,musicStarted=!canvas.ownerDocument;
- const words={zh:['星光鼓队','完美','不错','没敲到','连击','点一下开始音乐'],ja:['きらきらたいこ','パーフェクト','グッド','ミス','コンボ','タップでスタート'],en:['STARLIGHT DRUMS','PERFECT','GOOD','MISS','COMBO','Tap to start the music']}[locale];
+ const words={zh:['咚咚鼓乐队','完美','不错','没敲到','连击','点一下开始音乐'],ja:['ドンドンたいこ','パーフェクト','グッド','ミス','コンボ','タップでスタート'],en:['BEAT PARADE','PERFECT','GOOD','MISS','COMBO','Tap to start the music']}[locale];
  const stage=canvasStage(canvas,tick,draw);
  const ui=controls(canvas,`<button data-music-start>${words[5]}</button><div class="drum-pads">${colors.map((c,i)=>`<button data-kids-pad="${i}" style="background:${c}">${['D','F','J','K'][i]} · ${i+1} 🥁</button>`).join('')}</div>`,e=>{if(e.target.closest('[data-music-start]')){unlock();e.target.hidden=true;}const b=e.target.closest('[data-kids-pad]');if(b){unlock();press(Number(b.dataset.kidsPad));}});
  function unlock(){musicStarted=true;if(!ac){const A=globalThis.AudioContext||globalThis.webkitAudioContext;if(A)ac=new A();}ac?.resume();audio?.pauseBgm?.();}

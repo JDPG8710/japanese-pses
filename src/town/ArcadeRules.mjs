@@ -13,7 +13,7 @@ export const ITEMS=[
  {id:'shoes',price:18,icon:'👟',kind:'gear',zh:'飞毛腿跑鞋',en:'Speedy sneakers',ja:'びゅんびゅんシューズ',effect:'speed'},
  {id:'spring',price:24,icon:'🦘',kind:'gear',zh:'弹簧靴',en:'Spring boots',ja:'ぴょんぴょんブーツ',effect:'jump'},
  {id:'backpack',price:12,icon:'🎒',kind:'style',zh:'探险背包',en:'Explorer backpack',ja:'ぼうけんリュック',effect:'backpack'},
- {id:'crown',price:30,icon:'👑',kind:'style',zh:'星星王冠',en:'Star crown',ja:'スタークラウン',effect:'crown'},
+ {id:'crown',price:30,icon:'👑',kind:'style',zh:'星星王冠',en:'Star crown',ja:'キラキラかんむり',effect:'crown'},
  {id:'shield',price:8,icon:'🛡',kind:'use',zh:'答错护盾',en:'Oops shield',ja:'まちがいガード',effect:'shield'},
  {id:'hint',price:6,icon:'💡',kind:'use',zh:'提示卡',en:'Hint card',ja:'ヒントカード',effect:'hint'}
 ];

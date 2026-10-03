@@ -210,8 +210,21 @@ assert.doesNotMatch(app, /<span>🔤 English<\/span>|HOME SWEET HOME/, 'TownApp 
 const html = readFileSync(new URL('../town.html', import.meta.url), 'utf8');
 for (const id of ['town-eyebrow', 'guide-sub', 'shop-sub', 'home-sub', 'town-footer', 'town-map', 'town-dpad', 'town-places']) assert.match(html, new RegExp(`id="${id}"`), `town.html #${id} must be localisable`);
 
+// Naming standard (docs/TOWN_GLOSSARY.md): Japanese game names are transcreated and at most 7 characters.
+const jaNames = [
+  ...Object.entries(ARCADE_TEXT.ja.games).map(([id, g]) => [`arcade ${id}`, g.title]),
+  ...Object.entries(TOWN_ARCADE.ja.modes).map(([id, m]) => [`island ${id}`, m[0]]),
+  ...(readFileSync(new URL('../src/town/TownMultiplayer.mjs', import.meta.url), 'utf8').match(/ja:\{[^]*?games:\[([^\]]*)\]/)?.[1].match(/'[^']*'/g) || []).map(q => ['online invite list', q.slice(1, -1)])
+];
+assert.ok(jaNames.length >= 22, `expected the Japanese game names, found ${jaNames.length}`);
+let jaNameCount = 0;
+for (const [where, name] of jaNames) {
+  jaNameCount++;
+  if ([...name].length > 7) report(`ja game name (${where})`, `「${name}」 is ${[...name].length} characters; keep Japanese game names to 7 or fewer`);
+}
+
 if (problems.length) {
   console.error(problems.map(p => '  - ' + p).join('\n'));
   assert.fail(`${problems.length} town i18n problem(s)`);
 }
-console.log(`Town i18n: ${Object.values(counts).reduce((a, b) => a + b, 0)} dictionary/catalogue strings, ${staticKeys} source-block keys and ${staticTriples} inline triples checked in zh/en/ja — no missing keys, untranslated copies or script leaks.`);
+console.log(`Town i18n: ${Object.values(counts).reduce((a, b) => a + b, 0)} dictionary/catalogue strings, ${staticKeys} source-block keys and ${staticTriples} inline triples checked in zh/en/ja — no missing keys, untranslated copies or script leaks; ${jaNameCount} Japanese game names are 7 characters or fewer.`);

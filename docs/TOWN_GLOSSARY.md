@@ -44,24 +44,36 @@ copies, CJK characters in English and Chinese-only hanzi in Japanese.
 | Lives (arcade) | 生命 | Lives | ライフ |
 | Combo | 连击 | Combo | コンボ |
 
+## Naming standard: transcreation, not translation
+
+Game and place names are **transcreated**: each language names things the way a native kids' game in that market would, instead of translating the meaning 1:1 (a calque such as 记忆地板 / Memory Floor / メモリーフロア reads as 直译 and is not used).
+
+- **中文**: playful kids'-game patterns — 叠词 (切切、翻翻、跳跳), 拟声 (砰砰、咚咚), and endings like 乐 / 闯关 / 小X.
+- **English**: short and punchy — alliteration (Fruit Frenzy, Brick Blitz) or an action verb (Climb, Dash, Hop); two or three words.
+- **日本語**: ひらがな first, オノマトペ (ドカン、スパッと、ドンドン、ぴょん) and native genre words (〜くずし、〜ぎり、たいこ、ラボ); **at most 7 characters** so names fit buttons, signs and the 375px lobby (checked by tests/test_town_i18n.mjs).
+- Brand names keep **Piko** (Piko Town, Piko Circuit / 皮可赛道 / ピコサーキット).
+- The three names of one game do not need to mean the same thing; they need to feel equally fun and say what you do.
+
 ## Game and place names
 
 | id | 中文 | English | 日本語 |
 |---|---|---|---|
-| Learning islands (portal) | 学习群岛 | Learning Islands | まなびアイランド |
-| obby | 数学跳跳岛 | Maths Sky Islands | さんすうスカイアイランド |
-| tower | 算术高塔 | Number Tower | すうじタワー |
-| runner | 英语传送门 | English Portals | えいごゲート |
-| memory | 记忆地板 | Memory Floor | メモリーフロア |
-| garden | 双语小农场 | Word & Number Farm | まなびのはたけ |
+| Learning islands (portal) | 闯关群岛 | Quest Islands | ぼうけんじま |
+| obby | 数学跳跳岛 | Maths Hop Islands | ぴょんさんすう |
+| tower | 数字登高塔 | Number Climb | のぼれ！タワー |
+| runner | 单词闯关门 | Word Dash | えいごダッシュ |
+| memory | 翻翻记忆格 | Tile Recall | おぼえてタイル |
+| garden | 欢乐小农场 | Happy Harvest | わくわくはたけ |
 | race | 皮可赛道 | Piko Circuit | ピコサーキット |
-| breakout | 砖块大作战 | Brick Blitz | ブロックだいさくせん (short: ブロックくずし) |
-| fruit | 水果风暴 | Fruit Storm | フルーツストーム |
-| ninja | 忍者打字 | Ninja Typing | にんじゃタイピング |
-| bubble (designer) | 小小设计师 | Little Designer | ちいさなデザイナー |
-| rhythm | 节奏鼓队 | Rhythm Parade | リズムたいこ |
+| breakout | 砰砰打砖块 | Brick Blitz | ドカンくずし |
+| fruit | 水果切切乐 | Fruit Frenzy | スパッとぎり |
+| ninja | 指尖小忍者 | Type Ninja | にんにんタイプ |
+| bubble (designer) | 奇思妙想工坊 | Dream Builder | つくってラボ |
+| rhythm | 咚咚鼓乐队 | Beat Parade | ドンドンたいこ |
+| Sunshine Shop | 阳光小卖部 | Sunshine Shop | ひだまりショップ |
 | Arcade section | 游戏街 | Arcade | ゲームセンター |
-| Districts | 果园区 · 忍者道场 · 游戏街 · 夜间赛道 · 学习街 · 广场 | Orchard · Ninja Dojo · Arcade Alley · Night Track · Learning Lane · Plaza | くだものばたけ · にんじゃどうじょう · ゲームよこちょう · ナイトコース · まなびストリート · ひろば |
+| Districts | 果园区 · 忍者道场 · 游戏街 · 夜间赛道 · 学习街 · 广场 | Orchard · Ninja Dojo · Arcade Alley · Night Track · Learning Lane · Plaza | くだものばたけ · にんじゃどうじょう · ゲームよこちょう · ナイトコース · まなびどおり · ひろば |
+| Star crown (item) | 星星王冠 | Star crown | キラキラかんむり |
 
 ## Rules of thumb
 

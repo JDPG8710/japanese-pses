@@ -1,5 +1,6 @@
 /** Editable product kits: every visible mechanical detail is an independent layer. */
 import {EXTRA_DESIGN_KITS} from './DesignerExtraKits.mjs';
+import {ENGINE_COUNTS,ENGINE_PROFILES,engineComponents} from './DesignerEngineering.mjs';
 const part=(id,zh,en,ja,kind,x,y,w,h,extra={})=>({id,names:{zh,en,ja},kind,x,y,tx:x,ty:y,w,h,z:2,required:true,color:'#b9c8d8',...extra});
 const p=part;
 const carBody='M -337 31 Q -335 -11 -276 -27 L -190 -42 L -123 -78 Q -84 -96 -24 -94 L 91 -87 Q 140 -79 199 -43 L 288 -14 Q 330 -4 338 26 L 330 61 L -328 61 Z';
@@ -89,7 +90,8 @@ function phoneParts(ring=false){return [
  p('brand','我的品牌标志','My brand badge','じぶんのブランドマーク','wordmark',590,377,84,20,{z:3,color:'#5c746d',required:false}),
  p('case','透明手机壳','Clear case','クリアケース','case',590,294,198,413,{z:6,color:'#cbded6',required:false})];}
 kits.pro.parts=phoneParts();kits.ring.parts=phoneParts(true);
-export const DESIGN_CATEGORIES=Object.freeze(['plane','car','phone','rocket','robot','boat','building']);
-export const DESIGN_KITS=Object.freeze({...kits,...EXTRA_DESIGN_KITS});
+const mechanicalKits=Object.fromEntries(ENGINE_COUNTS.map(count=>['engine-'+count,{category:'mechanical',name:ENGINE_PROFILES[count].name,subtitle:ENGINE_PROFILES[count].spec,engineProfile:ENGINE_PROFILES[count],bounds:{x:220,y:160,w:460,h:330},parts:engineComponents(count,{prefix:'engine-'+count}).map(p=>({...p,placed:false,required:!p.id.includes('-bolt-')}))}]));
+export const DESIGN_CATEGORIES=Object.freeze(['plane','car','phone','rocket','robot','boat','building','mechanical']);
+export const DESIGN_KITS=Object.freeze({...kits,...EXTRA_DESIGN_KITS,...mechanicalKits});
 export const DESIGN_PALETTE=['#eceff2','#b7a694','#313e51','#e65843','#eab85f','#5c8972','#3887b0','#7e6ac4','#e6a2b6','#111a27'];
-export const resolveKit=id=>DESIGN_KITS[id]||DESIGN_KITS[{plane:'airliner',car:'sport',phone:'pro',boat:'yacht',building:'house'}[id]]||null;
+export const resolveKit=id=>DESIGN_KITS[id]||DESIGN_KITS[{plane:'airliner',car:'sport',phone:'pro',boat:'yacht',building:'house',mechanical:'engine-4'}[id]]||null;

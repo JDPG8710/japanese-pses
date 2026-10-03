@@ -46,7 +46,7 @@
     "db:seed": "node scripts/import-game-data-d1.mjs --remote",
     "deploy:worker": "wrangler deploy --config wrangler.toml",
     "test:production-ui": "node tests/test_login_lifecycle_browser.mjs && node tests/test_japanese_entry_browser.mjs",
-    "predeploy:pages": "node scripts/check-release-source.mjs && npm run build && npm run test:assets && npm run test:english && npm run test:english:browser && npm run test:learning && npm run test:content && npm run test:seo && npm run test:production-ui && npm run test:amc8 && npm run test:town:i18n && npm run test:town:release && npm run test:town:exploration",
+    "predeploy:pages": "node scripts/check-release-source.mjs && npm run build && npm run test:assets && npm run test:english && npm run test:english:browser && npm run test:learning && npm run test:content && npm run test:seo && npm run test:production-ui && npm run test:amc8 && npm run test:town:i18n && npm run test:town:release && npm run test:town:exploration && npm run test:designer",
     "deploy:pages": "wrangler pages deploy ./dist --project-name=manabi-pop --branch main",
     "deploy": "npm run test && npm run build && npm run db:migrate && npm run db:seed && npm run deploy:worker && npm run deploy:pages",
     "monitor:production": "node scripts/monitor-production.mjs",
@@ -74,8 +74,8 @@
     "test:breakout:layouts": "node tests/test_breakout_layouts.mjs",
     "test:breakout:layouts:browser": "node tests/test_breakout_layouts_browser.mjs",
     "test:town:interaction": "node tests/test_town_residents.mjs && node tests/test_town_life_collisions.mjs && node tests/test_town_controls_browser.mjs && node tests/test_town_residents_browser.mjs",
-    "test:town:home": "node tests/test_town_home_browser.mjs",
-    "test:designer": "node tests/test_designer.mjs && node tests/test_designer_3d.mjs && node tests/test_designer_engineering.mjs && node tests/test_designer_focus_browser.mjs && node tests/test_designer_browser.mjs && node tests/test_designer_engineering_browser.mjs"
+    "test:designer": "node tests/test_designer.mjs && node tests/test_designer_3d.mjs && node tests/test_designer_engineering.mjs && node tests/test_designer_celebration.mjs && node tests/test_designer_celebration_browser.mjs && node tests/test_designer_engine_names_browser.mjs && node tests/test_town_loading_browser.mjs && node tests/test_designer_engineering_browser.mjs && node tests/test_designer_focus_browser.mjs && node tests/test_creative_browser.mjs && node tests/test_town_progression_browser.mjs",
+    "test:town:home": "node tests/test_town_home_browser.mjs"
   },
   "devDependencies": {
     "playwright-core": "^1.63.0",

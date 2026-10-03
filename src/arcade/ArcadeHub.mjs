@@ -5,7 +5,7 @@ import {createRaceGame, RACE_DIFFICULTY, RACE_TRACKS, RACE_CARS, RACE_POWERUPS} 
 import {createBreakoutGame, BREAKOUT_DIFFICULTY} from './BreakoutGame.mjs';
 import {createFruitSlashGame, FRUIT_DIFFICULTY} from './FruitSlashGame.mjs';
 import {createNinjaTypeGame, NINJA_DIFFICULTY} from './NinjaTypeGame.mjs';
-import {createBubbleGame, BUBBLE_DIFFICULTY} from './BubbleGame.mjs';
+import {createBubbleGame, warmDesignerAssets, BUBBLE_DIFFICULTY} from './BubbleGame.mjs';
 import {createRhythmGame, RHYTHM_DIFFICULTY} from './RhythmGame.mjs';
 import {beginTownChallenge,cancelTownChallenge,settleTownChallenge,townDifficulty} from '../town/TownProgression.mjs';
 import {loadState,saveState} from '../town/TownRules.mjs';
@@ -13,6 +13,9 @@ import {recordPlay} from '../stats/PlayCounts.js';
 import {getTownAudio} from '../town/TownAudio.mjs';
 
 export const ARCADE_IDS = Object.freeze(['race', 'breakout', 'fruit', 'ninja', 'bubble', 'rhythm']);
+// Importing this module readies all six game factories and their local content.
+// The remaining image work belongs to the procedural designer gallery.
+export const preloadArcadeAssets=options=>warmDesignerAssets(options);
 
 export const ARCADE_DIFFICULTY = Object.freeze({
   race: RACE_DIFFICULTY,
@@ -133,7 +136,7 @@ export function startArcade(id, {locale = 'en', onExit, state, persist, onProgre
       },
       onEnd(result) {
         if (thisAttempt !== attempt || shell.ended) return;
-        game?.pause?.();
+        if(!result.celebration)game?.pause?.();
         audio?.pauseBgm?.();
         const reward = settleTownChallenge(state,thisTicket,result);
         save();

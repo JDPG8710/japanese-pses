@@ -677,15 +677,15 @@ button {
   #japanese-hud .glass-panel { display:flex; align-items:center; width:100%; min-width:0; max-width:none; height:48px; min-height:48px !important; margin:0; padding-inline:.4rem !important; font-size:13px; line-height:16px; justify-content:center; text-align:center; white-space:normal; overflow:hidden; overflow-wrap:anywhere; }
   #japanese-hud #user-profile-btn { width:100%; max-width:none; gap:4px; }
   #japanese-hud #user-profile-btn span:last-child { display:none; }
-  #grade-tabs-container { top:116px !important; }
+  #grade-tabs-container { top:168px !important; }
 }
 @media (max-width: 768px) {
-  #subject-nav { top:168px !important; }
-  .map-node-layer { top:228px; }
+  #subject-nav { top:220px !important; }
+  .map-node-layer { top:280px; }
 }
 @media (min-width: 769px) and (max-width: 1023px) {
-  .map-caption { top:10.5rem; }
-  .map-node-layer { top:13.75rem; }
+  .map-caption { top:13.75rem; }
+  .map-node-layer { top:17rem; }
 }
 @media (max-width: 640px) {
   #japanese-hud .glass-panel { font-size:11px; gap:2px; }

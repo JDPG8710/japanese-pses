@@ -21,7 +21,7 @@ try{
    openTestArcade();
   });
   async function complete(){
-   await page.locator('[data-panel=parts]').click();const ids=await page.locator('[data-part]').evaluateAll(nodes=>nodes.map(n=>n.dataset.part));for(const id of ids)await page.locator('[data-part="'+id+'"]').click();await page.locator('[data-panel=transform]').click();await page.locator('[data-rotate="15"]').click();await page.locator('[data-panel=save]').click();await page.locator('[data-finish]').click();await page.locator('[data-overlay][data-outcome="success"]').waitFor();
+   await page.locator('[data-panel=parts]').click();const ids=await page.locator('[data-part]').evaluateAll(nodes=>nodes.map(n=>n.dataset.part));for(const id of ids)await page.locator('[data-part="'+id+'"]').click();await page.locator('[data-panel=transform]').click();await page.locator('[data-rotate="15"]').click();await page.locator('[data-panel=save]').click();await page.locator('[data-finish]').click();await page.locator('.designer-celebration-bar:visible').waitFor();assert.equal(await page.locator('[data-overlay]').isVisible(),false);const frame=await page.evaluate(()=>document.querySelector('.designer-3d-canvas').toDataURL());await page.waitForTimeout(500);assert.notEqual(await page.evaluate(()=>document.querySelector('.designer-3d-canvas').toDataURL()),frame,'Real town completion animates the work before showing results');await page.locator('[data-overlay][data-outcome="success"]').waitFor();
   }
   await complete();
   assert.equal(await page.evaluate(()=>testState.townProgress.level),20);

@@ -20,8 +20,13 @@
   <link rel="stylesheet" href="src/town/expansion.css?v=3">
   <link rel="stylesheet" href="src/arcade/arcade.css?v=3">
   <link rel="stylesheet" href="src/town/multiplayer.css?v=1">
+  <style>
+  [data-town-loading]{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;background:#edf5ee;color:#254c43;font:16px system-ui;padding:24px}[data-town-loading]>div{width:min(440px,100%);padding:30px;border-radius:26px;background:#ffffffef;box-shadow:0 18px 70px #315b4020;text-align:center}[data-town-loading] .loading-town-art{font-size:56px;letter-spacing:8px;margin-bottom:16px}[data-town-loading] h2{font-size:24px;line-height:1.4;margin:10px 0}[data-town-loading] progress{display:block;width:100%;height:18px;margin:22px 0 10px;accent-color:#518776}[data-load-percent]{font-weight:700;font-size:24px}[data-load-status]{min-height:48px;line-height:1.5;color:#5f786d;margin:14px 0}[data-town-loading] button{min-height:48px;padding:8px 22px;border:0;border-radius:10px;background:#365e52;color:white;font:600 16px system-ui}[data-game-preload]{position:fixed;right:12px;bottom:12px;z-index:30;border-radius:12px;background:#fffffff0;color:#345b4e;box-shadow:0 4px 16px #25433420;padding:10px 14px;font:12px system-ui;pointer-events:none}[data-town-loading][hidden],[data-game-preload][hidden]{display:none!important}
+  </style>
 </head>
 <body>
+  <section data-town-loading data-progress="0" aria-label="Town loading" role="status"><div><div class="loading-town-art" aria-hidden="true">✳ ⌂ 🌳</div><small>PIKO TOWN</small><h2>Preparing Piko Town</h2><progress max="100" value="0" aria-label="Town loading progress"></progress><strong data-load-percent>0%</strong><p data-load-status>Loading town and games…</p><button type="button" hidden>Reload</button></div></section>
+  <div data-game-preload hidden role="status" aria-live="polite"></div>
   <header class="town-header"><a class="brand" href="/"><span class="brand-star">✳</span> Piko <span>Town</span></a><nav><a id="world-link" href="/">Home</a><button id="help" class="icon-button" type="button">?</button><button id="character" type="button">My character</button><label><span class="sr-only">Language / 语言 / ことば</span><select id="locale"><option value="zh">中文</option><option value="en">English</option><option value="ja">日本語</option></select></label></nav></header>
   <main class="town-main">
     <section class="page-heading"><div><p class="eyebrow" id="town-eyebrow">PIKO TOWN · 3D ADVENTURES</p><h1 id="town-title">Piko Learning Town</h1><p id="town-tag"></p></div><div class="wallet"><span>✦ <b id="coins">0</b><small id="coins-label"></small></span><span>✧ <b id="xp">0</b><small id="xp-label"></small></span></div></section>
@@ -43,7 +48,7 @@
   </main>
   <footer><span id="town-footer">✳ Piko Game · Made for little discoveries.</span><div><a id="town-guide-link" href="/en/guides/town-shop">Shop example, step by step</a><a id="privacy-link" href="privacy">Privacy</a><a id="terms-link" href="terms">Terms</a></div></footer>
   <dialog id="town-dialog" aria-labelledby="dialog-title"><div id="dialog-body"></div></dialog>
-  <noscript><p>This town needs JavaScript. 请启用 JavaScript 来探索小镇。JavaScriptを有効にしてください。</p></noscript>
-  <script type="module" src="src/town/TownApp.mjs?v=6"></script>
+  <noscript><style>[data-town-loading]{display:none!important}</style><p>This town needs JavaScript. 请启用 JavaScript 来探索小镇。JavaScriptを有効にしてください。</p></noscript>
+  <script type="module" src="src/town/TownBootstrap.mjs"></script>
 </body>
 </html>

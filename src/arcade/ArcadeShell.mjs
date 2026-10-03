@@ -122,8 +122,14 @@ export function openArcadeShell({gameId, locale = 'en', onExit, onRetry}) {
     if(destroyed)return;cancelAdvance();rankStatus=null;overlay.classList.add('hidden');ended=false;paused=false;pauseBtn.disabled=false;pauseBtn.textContent=t.pause;root.querySelector('[data-shell="retry"]').hidden=false;root.querySelector('[data-auto-next]')?.remove();onRetry?.();
   }
 
-  function showResult({cleared, score, detail = '', reward, next}) {
+  function showResult({cleared, score, detail = '', reward, next, celebration}) {
     if (destroyed || ended) return;
+    if(celebration&&typeof celebration.then==='function'){
+      pauseBtn.disabled=true;
+      writeBest(gameId,score);
+      celebration.then(()=>{if(!destroyed)showResult({cleared,score,detail,reward,next});});
+      return;
+    }
     ended = true;
     overlay.dataset.outcome = cleared ? 'success' : 'retry';
     paused = false;

@@ -1,6 +1,11 @@
 // Original practice material. It follows CEFR communication goals and uses
 // EIKEN-like task families (gap fill, dialogue completion and word order), but
 // it does not reproduce or claim to be an official EIKEN examination.
+// Option sets are checked by src/runtime/ChoiceQuality.mjs: wrong options are
+// written to look and sound like the answer so they cannot be ruled out by
+// length, punctuation, topic or "majority vote" alone. Translation
+// alternatives live in FoundationEnglishDistractors.mjs (keyed by pair id).
+import {TRANSLATION_DISTRACTORS} from './FoundationEnglishDistractors.mjs';
 export const ENGLISH_FRAMEWORK_SOURCES={
  cefr:'https://www.coe.int/en/web/common-european-framework-reference-languages/level-descriptions',
  eiken:'https://www.eiken.or.jp/eiken/en/grades/grade_5/'
@@ -39,16 +44,16 @@ const copy={
 };
 
 const DIALOGUES=[
- ['A: Good morning.\nB: ___','Good morning.',['Good night.','I am a book.','Eight pencils.'],'Pre-A1','A greeting needs a greeting in reply.'],
- ['A: Thank you.\nB: ___',"You're welcome.",['Hello.','I am seven.','A red bag.'],'Pre-A1',"“You're welcome” is a polite reply to thanks."],
- ['A: What is this?\nB: ___','It is a pencil.',['I am fine.','At eight.','Yes, I do.'],'Pre-A1','The question asks for the name of an object.'],
- ['A: How are you?\nB: ___','I am fine, thank you.',['It is Monday.','Two cats.','Open the door.'],'Pre-A1','This response says how the speaker feels.'],
- ['A: Where is the library?\nB: ___','It is next to the park.',['It is three o’clock.','I like books.','Yes, she can.'],'A1','Where asks for a place.'],
- ['A: What time do you get up?\nB: ___','At seven.',['In the kitchen.','On Monday books.','Because it is red.'],'A1','What time asks for a time.'],
- ['A: Do you like music?\nB: ___','Yes, I do.',['Yes, I am.','Yes, it is.','At the station.'],'A1','A do-question is answered with do or do not.'],
- ['A: Why did you choose this book?\nB: ___','Because I like science.',['At the library.','For three years old.','It is on the desk.'],'A2','Why asks for a reason.'],
- ['A: Could you help me carry this box?\nB: ___','Of course.',['The box is blue.','Yesterday morning.','Two kilometres.'],'A2','“Of course” accepts the request politely.'],
- ['A: Which bag is cheaper?\nB: ___','The blue one is.',['At half past three.','Yes, it can.','Because I walked.'],'A2','Which asks the speaker to select one item.']
+ ['Ken is eating breakfast before school.\nA: Hi, Ken!\nB: ___','Good morning.',['Good afternoon.','Good evening.','Good night.'],'Pre-A1','Breakfast before school happens in the morning, so we say “Good morning”.'],
+ ['A: Thank you.\nB: ___',"You're welcome.",['Excuse me.',"I'm sorry.","You're right."],'Pre-A1',"“You're welcome” is a polite reply to thanks."],
+ ['A: Is this your pencil?\nB: ___','Yes, it is.',['Yes, I am.','Yes, we are.','Yes, you are.'],'Pre-A1','Use “it is” to answer a question about one object.'],
+ ['A: How are you?\nB: ___','I am fine, thank you.',['I am eight years old.','I am from Japan.','I am at school.'],'Pre-A1','This response says how the speaker feels.'],
+ ['A: Where is the library?\nB: ___','It is next to the park.',['It is open until five.','It is a big library.','It is my favorite book.'],'A1','Where asks for a place.'],
+ ['A: What time do you get up?\nB: ___','At seven.',['On Monday.','In my room.','For an hour.'],'A1','What time asks for a time.'],
+ ['A: Do you like music?\nB: ___','Yes, I do.',['Yes, I am.','Yes, I can.','Yes, I have.'],'A1','A do-question is answered with do or do not.'],
+ ['A: I enjoy science. I chose a book about stars.\nB: Why did you choose this book?\nA: ___','Because I like science.',['Because I dislike science.','Because it is about sport.','Because it is about music.'],'A2','The speaker enjoys science, and stars are a science topic.'],
+ ['A: Could you help me carry this box?\nB: ___','Of course.',['Yes, I do.','Yes, it is.','Me too.'],'A2','“Of course” accepts the request politely.'],
+ ['A: Which bag is cheaper?\nB: ___','The blue one is.',['The blue one does.','Yes, it is cheaper.','Because it is blue.'],'A2','Which asks the speaker to select one item.']
 ];
 
 // Multiple-choice word-order and short-reading questions use wholly original
@@ -62,27 +67,31 @@ const WORD_ORDERS=[
  ['Put the words in order: school / at eight / I / go to','I go to school at eight.',['I go at school to eight.','Go to I school at eight.','At school I eight go to.'],'A1','Place the subject first and the time expression last.'],
  ['Put the words in order: tennis / on Sunday / She / plays','She plays tennis on Sunday.',['She tennis plays on Sunday.','On Sunday plays she tennis.','Plays she on Sunday tennis.'],'A1','A statement uses subject, verb, object, then time.'],
  ['Put the words in order: the library / Where / is','Where is the library?',['Where the library is?','Is where the library?','The library where is?'],'A1','A where-question puts “is” before the subject.'],
- ['Put the words in order: some water / want / I','I want some water.',['I some water want.','Want I some water.','Some water I want?'],'A1','Use subject, verb, then object.'],
+ ['Put the words in order: some water / want / I','I want some water.',['I some water want.','Want I some water.','Some water I want.'],'A1','Use subject, verb, then object.'],
  ['Put the words in order: because / science / I / like / it / chose / I','I chose it because I like science.',['Because science I chose it I like.','I because chose it I science like.','I chose because science it I like.'],'A2','Join the choice and its reason with “because”.'],
  ['Put the words in order: has lived / for three years / He / here','He has lived here for three years.',['He here has lived three years for.','For three years has he here lived.','He lived has for here three years.'],'A2','Use present perfect, place, then duration.'],
  ['Put the words in order: should / at home / save water / We','We should save water at home.',['We save should at home water.','Should we at home save water.','At home should water we save.'],'A2','Place the modal before the main verb.']
 ];
 
 const SHORT_READINGS=[
- ['Mia has a red bag. It has one book.\nWhat color is the bag?','Red.',['Blue.','Green.','Yellow.'],'Pre-A1','The first sentence says the bag is red.'],
- ['Tom has a dog and a cat.\nHow many pets does Tom have?','Two.',['One.','Three.','Four.'],'Pre-A1','A dog and a cat make two pets.'],
- ['Ben gets up at seven. He goes to school at eight.\nWhen does Ben go to school?','At eight.',['At seven.','At nine.','On Sunday.'],'A1','The second sentence gives the school time.'],
+ ['Mia has a red bag and a blue hat. The bag has one book.\nWhat color is the bag?','Red.',['Blue.','Pink.','Green.'],'Pre-A1','The first sentence says the bag is red; the hat is blue.'],
+ ['Tom has a dog and a cat. His friend Ken has three fish.\nHow many pets does Tom have?','Two.',['One.','Three.','Four.'],'Pre-A1','A dog and a cat make two pets. The three fish belong to Ken.'],
+ ['Ben gets up at seven. He goes to school at eight.\nWhen does Ben go to school?','At eight.',['At seven.','At nine.','At six.'],'A1','The second sentence gives the school time.'],
  ['The library is next to the park. The bank is across from it.\nWhat is next to the park?','The library.',['The bank.','The station.','The school.'],'A1','The first sentence names the place next to the park.'],
- ['Amy likes music, but her brother likes science.\nWhat does Amy like?','Music.',['Science.','Tennis.','Art.'],'A1','The first part tells us Amy likes music.'],
- ['The class planned a picnic for Friday. It may rain, so they will meet in the gym instead.\nWhy will they meet in the gym?','It may rain.',['It is Friday.','The gym is new.','They lost the food.'],'A2','The text gives rain as the reason for changing the place.'],
- ['Leo chose the blue bag because it was cheaper than the red one.\nWhy did Leo choose the blue bag?','It was cheaper.',['It was bigger.','It was red.','It was heavier.'],'A2','The word “because” introduces Leo’s reason.'],
- ['The museum opens at nine, but our train arrives at ten.\nCan we enter the museum when it opens?','No, we cannot.',['Yes, at nine.','Yes, before nine.','The text does not say.'],'A2','The train arrives after the museum opens.']
+ ['Amy likes music, but her brother likes science.\nWhat does Amy like?','Music.',['Science.','Tennis.','Math.'],'A1','The first part tells us Amy likes music.'],
+ ['It is Friday, the day of the class picnic. It may rain, so they will meet in the gym instead. The gym is new.\nWhy will they meet in the gym?','It may rain.',['It is Friday.','It may snow.','The gym is new.'],'A2','The word “so” shows that rain is the reason for changing the place.'],
+ ['Leo looked at a red bag and a blue bag. The red one was bigger, but it was heavier too. Leo chose the blue bag because it was cheaper.\nWhy did Leo choose the blue bag?','It was cheaper.',['It was bigger.','It was newer.','It was heavier.'],'A2','The word “because” introduces Leo’s reason; the bigger, heavier bag was the red one.'],
+ ['The museum opens at nine, but our train arrives at ten.\nCan we enter the museum when it opens?','No, we cannot.',['Yes, we can.','Yes, at nine.','No, it is closed.'],'A2','The train arrives after the museum opens, and the museum is open, not closed.']
 ];
 
 export function englishPool(stage,locale='zh'){
  const cefr=CEFR_BY_STAGE[Math.max(0,Math.min(6,Number(stage)||0))],maximum=LEVEL_ORDER[normalizedLevel(cefr)],strings=copy[locale]||copy.en;
  const pairs=EN_ZH_TRANSLATIONS.filter(pair=>LEVEL_ORDER[normalizedLevel(pair.cefr)]<=maximum);
- const pairChoices=(pair,key)=>[pair,...pairs.filter(item=>item.id!==pair.id&&item[key]!==pair[key])].slice(0,4).map(item=>item[key]);
+ const pairChoices=(pair,key)=>{
+  const alternatives=TRANSLATION_DISTRACTORS[pair.id];
+  if(!alternatives||alternatives.length!==3)throw new Error(`Missing reviewed distractors for ${pair.id}`);
+  return [pair[key],...alternatives.map(item=>item[key])];
+ };
  const translations=pairs.flatMap(pair=>[
   {id:`${pair.id}-en-zh`,kind:'choice',format:'translation-en-zh',cefr,prompt:strings.toZh(pair.en),correct:pair.zh,choices:pairChoices(pair,'zh'),hint:strings.hint,explanation:`${pair.en} — ${pair.zh}`,lang:'zh-en'},
   {id:`${pair.id}-zh-en`,kind:'choice',format:'translation-zh-en',cefr,prompt:strings.toEn(pair.zh),correct:pair.en,choices:pairChoices(pair,'en'),hint:strings.hint,explanation:`${pair.zh} — ${pair.en}`,lang:'zh-en'}

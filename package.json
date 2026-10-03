@@ -4,7 +4,9 @@
   "private": true,
   "description": "譌･譛ｬ縺ｮ蟆丞ｭｦ逕溷髄縺第弌蝗ｳ謨呵ご繧ｲ繝ｼ繝",
   "scripts": {
-    "test": "node tests/test_e2e_runner.js",
+    "test": "node tests/test_e2e_runner.js && node tests/test_english_choice_quality.mjs && node tests/test_english_reading.mjs && node tests/test_foundation_english_choices.mjs",
+    "test:english": "node tests/test_english_options.js && node tests/test_english_choice_quality.mjs && node tests/test_english_reading.mjs && node tests/test_foundation_english_choices.mjs",
+    "test:english:browser": "node tests/test_english_options_browser.mjs",
     "test:town": "node tests/test_town.mjs",
     "test:town:upgrade": "node tests/test_town_progression.mjs && node tests/test_town_kids.mjs && node tests/test_town_life_collisions.mjs && node tests/test_town_online.mjs",
     "test:town:upgrade:browser": "node tests/test_town_progression_browser.mjs && node tests/test_town_kids_browser.mjs && node tests/test_town_online_browser.mjs",
@@ -38,7 +40,7 @@
     "db:seed": "node scripts/import-game-data-d1.mjs --remote",
     "deploy:worker": "wrangler deploy --config wrangler.toml",
     "test:production-ui": "node tests/test_login_lifecycle_browser.mjs && node tests/test_japanese_entry_browser.mjs",
-    "predeploy:pages": "node scripts/check-release-source.mjs && npm run build && npm run test:learning && npm run test:content && npm run test:seo && npm run test:production-ui && npm run test:town:release && npm run test:town:exploration",
+    "predeploy:pages": "node scripts/check-release-source.mjs && npm run build && npm run test:english && npm run test:english:browser && npm run test:learning && npm run test:content && npm run test:seo && npm run test:production-ui && npm run test:town:release && npm run test:town:exploration",
     "deploy:pages": "wrangler pages deploy ./dist --project-name=manabi-pop --branch main",
     "deploy": "npm run test && npm run build && npm run db:migrate && npm run db:seed && npm run deploy:worker && npm run deploy:pages",
     "monitor:production": "node scripts/monitor-production.mjs",
@@ -57,7 +59,9 @@
     "test:race:browser": "node scripts/build.mjs && node tests/test_race_browser.mjs",
     "preview:race": "node scripts/preview-race.mjs",
     "test:town:feedback": "node scripts/build.mjs && node tests/test_town_feedback_browser.mjs",
-    "test:town:music": "node tests/test_town_music_browser.mjs"
+    "test:town:music": "node tests/test_town_music_browser.mjs",
+    "test:english-choices": "node tests/test_english_choice_quality.mjs",
+    "audit:english-choices": "node scripts/audit-english-choices.mjs"
   },
   "devDependencies": {
     "playwright-core": "^1.63.0",

@@ -76,9 +76,12 @@ try {
   }
   assert.match(await page.locator('.result strong').first().textContent(), /10/);
   assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('piko-amc-guest:v1') || '{}').progress?.drill?.number?.best), 10, 'signed-out drill best kept in the browser guest store');
-  await page.goto(`${origin}/`);
+  await page.goto(`${origin}/?locale=en`);
   assert.equal(await page.locator('.about-play-actions a[href="/amc?lang=en"]').count(), 1);
   await page.locator('#country-home-play-now').click();
+  await page.locator('#learning-routes').waitFor();
+  assert.equal(await page.locator('[data-learning-route]').count(),7);
+  await page.goto(`${origin}/?choose-country=1&locale=en`);
   await page.locator('#country-amc').waitFor();
   assert.match(await page.locator('#country-amc').getAttribute('href'), /^\/amc\?lang=/);
   await page.setViewportSize({ width: 1280, height: 800 });

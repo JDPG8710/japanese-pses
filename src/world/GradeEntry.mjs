@@ -1,4 +1,4 @@
-import {PROFILES,SUBJECTS,defaultProfile,profileOptions,yearLabel} from './GradePaths.mjs';
+import {PROFILES,SUBJECTS,defaultProfile,yearLabel} from './GradePaths.mjs';
 import {readCountry,normalizeCountry,languageForCountry} from '../location/Country.mjs';
 import {TEXT} from './WorldText.mjs';
 import {FOUNDATION_TEXT} from './FoundationText.mjs';
@@ -16,7 +16,7 @@ const strings={
 };
 const params=new URLSearchParams(location.search);let storage;try{storage=localStorage;}catch{}
 const country=normalizeCountry(params.get('country'))||readCountry(storage),locale=['en','zh','ja'].includes(params.get('locale'))?params.get('locale'):languageForCountry(country),w=strings[locale],names=TEXT[locale],fw=FOUNDATION_TEXT[locale];
-const allowed=profileOptions(country||undefined);let saved;try{saved=JSON.parse(storage.getItem(`piko-grade-${country||'INT'}`));}catch{}
+const allowed=Object.keys(PROFILES);let saved;try{saved=JSON.parse(storage.getItem(`piko-grade-${country||'INT'}`));}catch{}
 let profile=params.get('curriculum')||saved?.profile||defaultProfile(country)||((country==='JP'||!country)&&locale==='zh'?'CN63':''),year=params.get('year')||saved?.year||'',subject='all';
 if(!allowed.includes(profile))profile='';if(!PROFILES[profile]?.years.includes(year))year='';
 const app=document.querySelector('#grade-app'),icons=['🌱','🪁','🚀','🌈','🪐','⭐','🌻','🧭','🎈'];

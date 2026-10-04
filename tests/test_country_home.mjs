@@ -29,7 +29,7 @@ assert.equal(findCountry(data,-140,0),null);
 for(let lon=-180;lon<180;lon+=15)for(let lat=-75;lat<80;lat+=15){const p=project(lon,lat,110,25);if(p[2]>.01){const q=unproject(p[0],p[1],110,25);assert.ok(Math.abs(((q[0]-lon+540)%360)-180)<1e-8);assert.ok(Math.abs(q[1]-lat)<1e-8);}}
 assert.equal(unproject(2,0,0,0),null);
 const homeSource=await readFile('src/location/CountryHome.mjs','utf8');
-assert.ok(homeSource.includes("chosen==='JP'?'?course=jp':`grades.html?country=${chosen}`"),'primary start must open the selected school-year adventure');
+assert.ok(homeSource.includes("chosen==='JP'?'?course=jp':`grades.html?country=${chosen}&locale=${locale}`"),'primary start must open the selected school-year adventure');
 assert.ok(homeSource.includes('#country-home-play-now'),'About play-now must unblock country picker');
 assert.ok(homeSource.includes("get('course')==='jp'"),'Japanese course must skip country entry');
 assert.ok(homeSource.includes('nativeRegionName(c.code)'),'country picker must use each country’s own language');

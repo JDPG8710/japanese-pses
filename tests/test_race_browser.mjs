@@ -9,8 +9,10 @@ try {
  for(const viewport of [{width:1440,height:900},{width:390,height:844}]) {
   const context=await browser.newContext({viewport,hasTouch:viewport.width<500,isMobile:viewport.width<500});
   // Deterministic simulation; browser events and WebGL rendering remain real.
-  await context.addInitScript(()=>{window.requestAnimationFrame=()=>0;});
+  await context.addInitScript(()=>{let id=0,now=0;const frames=new Map();window.requestAnimationFrame=fn=>{frames.set(++id,fn);return id;};window.cancelAnimationFrame=id=>frames.delete(id);window.advanceRaceFrames=steps=>{for(let i=0;i<steps;i++){const current=[...frames.values()];frames.clear();now+=100;for(const fn of current)fn(now);}};});
   const page=await context.newPage(),errors=[];
+  // This static preview has no ranking backend; keep the real shell flow with an empty board.
+  await page.route('**/api/arcade/leaderboard?*',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({entries:[]})}));
   page.on('pageerror',e=>errors.push(e.message));
   page.on('console',m=>{if(m.type()==='error'&&!m.text().includes('favicon'))errors.push(m.text())});
   for(const track of ['sunrise','harbor','mountain','neon']) {
@@ -75,7 +77,7 @@ try {
     assert.equal(outcome.ended,true);assert.equal(outcome.lap>3,true);
     assert.equal(await page.locator('[data-overlay]').isVisible(),true);
     assert.equal(await page.locator('[data-overlay]').getAttribute('data-outcome'),'success');
-    await page.locator('[data-shell="retry"]').click();await page.locator('[data-race-play]').click();
+    await page.evaluate(()=>window.advanceRaceFrames(24));await page.locator('[data-race-play]').waitFor();assert.equal(await page.locator('[data-overlay]').isVisible(),false);await page.locator('[data-race-play]').click();
     assert.equal(await page.evaluate(()=>game.getState().lives),4);
    }
    // An ordinary steering mistake must visibly hit a solid barrier, with recoverable momentum.

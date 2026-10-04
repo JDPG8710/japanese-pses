@@ -7,9 +7,9 @@ const harness=`<!doctype html><html lang="zh"><meta charset="utf-8"><meta name="
 import {openArcadeShell} from '/src/arcade/ArcadeShell.mjs';
 import {createRaceGame} from '/src/arcade/RaceGame.mjs';
 import {getTownAudio} from '/src/town/TownAudio.mjs';
-const params=new URLSearchParams(location.search);
-window.shell=openArcadeShell({gameId:'race',locale:'zh',onExit:()=>{window.game.destroy();shell.destroy()},onRetry:()=>window.game.start()});
-window.game=createRaceGame({canvas:shell.canvas,locale:'zh',audio:getTownAudio(),onHud:s=>shell.setHud(s),onEnd:r=>shell.showResult(r)});
+const params=new URLSearchParams(location.search);const locale=['zh','en','ja'].includes(params.get('locale'))?params.get('locale'):'zh';
+window.shell=openArcadeShell({gameId:'race',locale,onExit:()=>{window.game.destroy();shell.destroy()},onRetry:()=>window.game.start()});
+window.game=createRaceGame({canvas:shell.canvas,locale,audio:getTownAudio(),onHud:s=>shell.setHud(s),onEnd:r=>shell.showResult(r)});
 shell.root.addEventListener('click',e=>{if(e.target.closest('[data-shell="pause"]'))queueMicrotask(()=>shell.paused?game.pause():game.resume())});
 </script></html>`;
 export async function startRacePreview(port=0) {

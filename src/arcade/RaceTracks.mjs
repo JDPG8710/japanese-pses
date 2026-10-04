@@ -84,10 +84,18 @@ export const RACE_TRACKS = Object.freeze([
   {id:'mountain', width:12.5, difficulty:3, legacyLength:buildPathMetrics(mountain(0,0,1,56)).total,
    vertices:[[-265,-190],[230,-190],[275,-35],[100,25],[180,180],[-80,215],[-265,100],[-115,-25]],
    theme:{clear:0x6a8f7a,fog:0x7a9a88,asphalt:0x333840,shoulder:0x5a6b4a,accent:0xc4e09a,deco:'rocks',banking:0.12}},
+  {id:'grandtour', width:17, difficulty:2, legacyLength:500, laps:1,
+   vertices:[[-700,-450],[700,-450],[930,-80],[650,530],[100,690],[-750,450],[-900,-100]],
+   theme:{clear:0x87b8e8,fog:0xa8c8e8,asphalt:0x2a3140,shoulder:0xd4a574,accent:0xffc857,deco:'trees',banking:.04}},
+  {id:'offroad', width:19, difficulty:3, legacyLength:320, laps:2,
+   vertices:[[-540,-300],[480,-300],[620,50],[320,380],[-30,420],[-510,300],[-640,0]],
+   surfaces:[{s:.12,lateral:-4,width:10,length:40,kind:'grass'},{s:.24,lateral:4,width:10,length:45,kind:'water'},{s:.36,lateral:-3,width:11,length:50,kind:'mud'},{s:.48,lateral:4,width:10,length:40,kind:'grass'},{s:.61,lateral:-4,width:10,length:42,kind:'water'},{s:.73,lateral:3,width:12,length:50,kind:'mud'},{s:.86,lateral:-4,width:10,length:42,kind:'grass'}],
+   obstacles:[{s:.17,lateral:4,radius:1.4,kind:'rock'},{s:.3,lateral:-4,radius:1.6,kind:'log'},{s:.41,lateral:4,radius:1.4,kind:'tires'},{s:.55,lateral:-4,radius:1.3,kind:'rock'},{s:.68,lateral:4,radius:1.6,kind:'log'},{s:.8,lateral:-4,radius:1.4,kind:'tires'}],
+   theme:{clear:0xabcaba,fog:0xa8c9b6,asphalt:0x886644,shoulder:0x537b3c,accent:0xffbd66,deco:'rocks',banking:.06}},
   {id:'neon', width:13, difficulty:3, legacyLength:buildPathMetrics(neonCity(0,0,1.1,60)).total,
    vertices:[[-260,-170],[260,-170],[260,65],[95,65],[95,190],[-260,190],[-260,55],[-125,-40]],
    theme:{clear:0x0a0618,fog:0x120a28,asphalt:0x1a1430,shoulder:0x3a2060,accent:0xff4fd8,deco:'neon',banking:0.08}}
-].map(({vertices,...t})=>Object.freeze({...t,laps:3,itemSlots:ITEM_SLOTS,path:circuit(vertices,t.legacyLength),theme:Object.freeze(t.theme)})));
+].map(({vertices,...t})=>Object.freeze({...t,laps:t.laps||3,itemSlots:t.id==='grandtour'?Array.from({length:42},(_,i)=>.04+i*.92/42):t.id==='offroad'?Array.from({length:28},(_,i)=>(i+.7)/28):ITEM_SLOTS,path:circuit(vertices,t.legacyLength),theme:Object.freeze(t.theme)})));
 
 /** Shared shape for selection thumbnails and the live minimap. */
 export function trackMap(track) {

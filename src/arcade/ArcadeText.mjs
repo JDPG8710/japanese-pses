@@ -27,7 +27,7 @@ export const ARCADE_TEXT = {
         title: 'Piko Circuit',
         tag: 'RACING',
         blurb: 'Pick a track and a car, then hit the gas, brake, steer and grab items!',
-        tip: '↑/W go · ↓/S brake · ←→/A D steer · Space: item · phone: on-screen buttons'
+        tip: '↑/W go · ↓/S brake · ←→/A D steer · E/Space: item · F: special · phone: on-screen buttons'
       },
       breakout: {
         title: 'Brick Blitz',
@@ -104,7 +104,7 @@ export const ARCADE_TEXT = {
         title: '皮可赛道',
         tag: '赛车',
         blurb: '先挑赛道和赛车，再自己踩油门、刹车、转弯，捡道具跑完全程！',
-        tip: '↑/W 油门 · ↓/S 刹车 · ←→/A D 转向 · 空格用道具 · 手机点屏幕按钮'
+        tip: '↑/W 油门 · ↓/S 刹车 · ←→/A D 转向 · E/空格用道具 · F 专属特技 · 手机点屏幕按钮'
       },
       breakout: {
         title: '砰砰打砖块',
@@ -181,7 +181,7 @@ export const ARCADE_TEXT = {
         title: 'ピコサーキット',
         tag: 'レース',
         blurb: 'コースとくるまをえらんで、アクセル・ブレーキ・ハンドルでぐるっと走ろう！',
-        tip: '↑/W アクセル · ↓/S ブレーキ · ←→/A D ハンドル · スペース：アイテム · スマホは画面ボタン'
+        tip: '↑/W アクセル · ↓/S ブレーキ · ←→/A D ハンドル · E/Space：アイテム · F：専用スキル · スマホは画面ボタン'
       },
       breakout: {
         title: 'ドカンくずし',

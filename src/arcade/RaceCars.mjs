@@ -3,6 +3,7 @@
 export const RACE_CARS = Object.freeze([
   Object.freeze({
     id: 'sports',
+    skill:'cornerFocus', skillDuration:6, skillCooldown:18,
     accel: 38,
     topSpeed: 42,
     brake: 52,
@@ -15,6 +16,7 @@ export const RACE_CARS = Object.freeze([
   }),
   Object.freeze({
     id: 'gt',
+    skill:'armor', skillDuration:7, skillCooldown:22,
     accel: 30,
     topSpeed: 52,
     brake: 44,
@@ -27,8 +29,10 @@ export const RACE_CARS = Object.freeze([
   }),
   Object.freeze({
     id: 'openwheel',
+    skill:'drs', skillDuration:5, skillCooldown:20,
     accel: 48,
-    topSpeed: 46,
+    topSpeed: 280/3.6,
+    speedCap: 280/3.6,
     brake: 58,
     handling: 2.9,
     grip: 1.12,
@@ -39,6 +43,7 @@ export const RACE_CARS = Object.freeze([
   }),
   Object.freeze({
     id: 'kart',
+    skill:'hop', skillDuration:4, skillCooldown:18,
     accel: 44,
     topSpeed: 34,
     brake: 60,
@@ -48,7 +53,10 @@ export const RACE_CARS = Object.freeze([
     color: 0xffd45e,
     accent: 0xff6b4a,
     profile: 'kart'
-  })
+  }),
+  Object.freeze({id:"supercar",accel:52,topSpeed:280/3.6,speedCap:280/3.6,brake:62,handling:2.1,grip:1.05,mass:.95,color:0x8a65ef,accent:0x5af4e1,profile:"coupe",skill:"overdrive",skillDuration:5,skillCooldown:22}),
+  Object.freeze({id:"bumper",accel:35,topSpeed:32,brake:64,handling:3.6,grip:1.18,mass:1.4,color:0xff8eb4,accent:0x79e8fa,profile:"kart",skill:"pulse",skillDuration:2,skillCooldown:20}),
+  Object.freeze({id:"rally",accel:40,topSpeed:48,brake:55,handling:2.5,grip:1.25,mass:1.15,color:0xffae4b,accent:0x293742,profile:"gt",skill:"trailGrip",skillDuration:6,skillCooldown:20})
 ]);
 
 export function getRaceCar(id) {
@@ -132,7 +140,7 @@ export function makeRaceCarMesh(THREE, boxMesh, carDef, {ghost=false}={}) {
   const geo=new THREE.ExtrudeGeometry(shape,{depth:.24,bevelEnabled:true,bevelSize:.09,bevelThickness:.06,bevelSegments:3});geo.rotateX(Math.PI/2);geo.translate(0,.51,0);mesh(geo,paint);
   box(.65,.42,.22,interior,0,.68,-.5);box(.65,.13,.65,interior,0,.46,-.22);
   const wheel=mesh(new THREE.TorusGeometry(.17,.025,8,20),rubber,0,.73,.2);wheel.rotation.x=-.4;
-  if(open){box(1.9,.065,.42,carbon,0,.27,2.05);box(1.75,.07,.37,carbon,0,.89,-1.93);for(const x of [-.55,.55])box(.055,.52,.07,carbon,x,.61,-1.93);tube([[-.33,.61,-.53],[-.35,.95,-.37],[0,1.01,.42],[.35,.95,-.37],[.33,.61,-.53]],.032,carbon);}
+  if(open){box(1.9,.065,.42,carbon,0,.27,2.05);g.userData.drsWing=box(1.75,.07,.37,carbon,0,.89,-1.93);for(const x of [-.55,.55])box(.055,.52,.07,carbon,x,.61,-1.93);tube([[-.33,.61,-.53],[-.35,.95,-.37],[0,1.01,.42],[.35,.95,-.37],[.33,.61,-.53]],.032,carbon);}
   else tube([[-.9,.25,-1.1],[-1,.25,1],[0,.25,1.18],[1,.25,1],[.9,.25,-1.1]],.055,chrome);
  }
  for(const side of [-1,1])for(const z of [-wheelZ,wheelZ]){
@@ -150,10 +158,20 @@ export function makeRaceCarMesh(THREE, boxMesh, carDef, {ghost=false}={}) {
   if(open||kart)for(const y of [.28,.43])tube([[side*.4,y,z-.13],[side*wheelX,radius,z]],.022,chrome);
   else {const arch=mesh(new THREE.TorusGeometry(radius+.055,.045,8,24,Math.PI),paint,side*.95,radius,z);arch.rotation.y=Math.PI/2;}
  }
+ if(carDef.id==='supercar'){
+  box(2.05,.12,.48,carbon,0,.9,-1.95);for(const side of [-1,1]){box(.08,.32,.2,carbon,side*.63,.7,-1.9);box(.05,.22,.5,carbon,side*.965,.49,-.67);}box(.38,.025,2.2,matForAccent(),0,.83,.45);
+ }
+ if(carDef.id==='bumper'){
+  const rim=mesh(new THREE.TorusGeometry(1,.17,10,32),rubber,0,.35,0);rim.rotation.x=Math.PI/2;rim.scale.y=1.16;
+  for(const side of [-1,1]){mesh(new THREE.SphereGeometry(.18,16,10),white,side*.32,.63,1.03);mesh(new THREE.SphereGeometry(.085,12,8),carbon,side*.32,.63,1.18);}
+  tube([[0,.5,-.9],[0,1.6,-.9]],.025,chrome);mesh(new THREE.SphereGeometry(.1,12,8),paint,0,1.6,-.9);
+ }
+ if(carDef.id==='rally'){box(1.3,.13,.95,carbon,0,1.32,-.35);for(const x of [-.46,0,.46])mesh(new THREE.SphereGeometry(.13,12,8),white,x,1.46,.15);for(const side of [-1,1])box(.16,.2,.55,carbon,side*.98,.3,-1.5);}
+ function matForAccent(){return new THREE.MeshStandardMaterial({color:carDef.accent,roughness:.3});}
  // Batch stationary details by material to keep desktop/mobile draw calls bounded.
  function batch(parent){
   const buckets=new Map();for(const child of [...parent.children]){
-   if(!child.isMesh||damage.some(d=>d.mesh===child)||child.material===red)continue;
+   if(!child.isMesh||damage.some(d=>d.mesh===child)||child===g.userData.drsWing||child.material===red)continue;
    child.updateMatrix();const transformed=child.geometry.clone().applyMatrix4(child.matrix);const geo=transformed.index?transformed.toNonIndexed():transformed;if(geo!==transformed)transformed.dispose();
    if(!buckets.has(child.material))buckets.set(child.material,[]);buckets.get(child.material).push(geo);parent.remove(child);child.geometry.dispose();
   }
@@ -165,9 +183,10 @@ export function makeRaceCarMesh(THREE, boxMesh, carDef, {ghost=false}={}) {
  return g;
 }
 
-export function updateRaceCar(mesh,{speed=0,steering=0,brake=0,impact=0,damage=0,dt=0}={}) {
+export function updateRaceCar(mesh,{speed=0,steering=0,brake=0,impact=0,damage=0,drs=false,dt=0}={}) {
  if(!mesh)return;
  const data=mesh.userData;
+ if(data.drsWing)data.drsWing.rotation.x=drs?-.4:0;
  data.chassis.rotation.z=steering*Math.min(Math.abs(speed)/45,1)*.025+Math.sin(impact*34)*Math.min(impact,.3)*.08;
  data.chassis.rotation.x=brake*Math.min(Math.abs(speed)/35,1)*.018;
  data.chassis.position.y=Math.sin(impact*28)*Math.min(impact,.3)*.025;

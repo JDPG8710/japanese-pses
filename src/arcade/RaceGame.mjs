@@ -1,3 +1,6 @@
+import {RACE_POWERUPS,POWER_COLORS,itemIcon,makeRaceItemMesh,disposeItem} from './RaceItems.mjs';
+import {raceExpansion} from './RaceContent.mjs';
+import {segmentDistance,hitRival,advanceRivalStatus,surfaceAt,SURFACE_FACTOR} from './RaceCombat.mjs';
 /** Player-driven circuit racing with track/car select, power-ups, and AI traffic. */
 import {normalizeDifficulty} from '../town/TownProgression.mjs';
 import {
@@ -11,10 +14,10 @@ import {
 import {buildRaceScenery, disposeRaceScene} from './RaceScenery.mjs?v=1';
 import {RACE_CARS, getRaceCar, makeRaceCarMesh, updateRaceCar} from './RaceCars.mjs?v=2';
 
-import {barrierContact,carContact} from './RacePhysics.mjs';
+import {barrierContact,carContact,support} from './RacePhysics.mjs';
 
 export {RACE_TRACKS, RACE_CARS};
-export const RACE_POWERUPS = Object.freeze(['boost', 'shield', 'oil', 'magnet']);
+export {RACE_POWERUPS};
 
 export const RACE_DIFFICULTY = Object.freeze({
   laps: 3,
@@ -24,19 +27,13 @@ export const RACE_DIFFICULTY = Object.freeze({
   spawnIntervalMin: 0.5, // kept for smoke-test compat (item respawn floor)
   itemRespawn: 6.5,
   offTrackSlow: 0.55,
-  boostDuration: 1.6,
-  shieldDuration: 4.0,
+  boostDuration: 3,
+  shieldDuration: 6.0,
   oilDuration: 2.2,
-  magnetDuration: 3.5,
+  magnetDuration: 12,
   finishGraceMs: 400
 });
 
-const POWER_COLORS = {
-  boost: 0xff9f43,
-  shield: 0x57dfff,
-  oil: 0x6b5b4a,
-  magnet: 0xc791ff
-};
 
 function esc(s) {
   return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -68,7 +65,8 @@ export function createRaceGame({
 } = {}) {
   const D = raceDifficultyFor(difficulty);
   const tCopy = arcadeText(locale);
-  const raceCopy = tCopy.race || {};
+  const expansion=raceExpansion(locale);
+  const raceCopy={...tCopy.race,...expansion,tracks:{...tCopy.race.tracks,...expansion.tracks},cars:{...tCopy.race.cars,...expansion.cars},powerups:{...tCopy.race.powerups,...expansion.powerups}};
   const graphics = createArcadeRenderer(canvas, {clear: 0x0a1224});
 
   let selectedTrackId = trackId || RACE_TRACKS[0].id;
@@ -105,6 +103,7 @@ export function createRaceGame({
   let oilT = 0;
   let magnetT = 0;
   let heldItem = null;
+  let skillT=0,skillCooldown=0,projectiles=[],playerFx=null,surfaceKind="road",notice="",noticeT=0,attackHits=0,usedItems=0,surfaceFxClock=0;
   let particles = [];
   let items = [];
   let hazards = [];
@@ -155,7 +154,7 @@ export function createRaceGame({
       <div class="race-lobby-card">
         <p class="race-lobby-kicker">${esc(raceCopy.lobbyKicker || 'CIRCUIT')}</p>
         <h2>${esc(raceCopy.lobbyTitle || tCopy.games.race.title)}</h2>
-        <p class="muted">${esc(raceCopy.lobbyHint || '')}</p>
+        <p class="muted">${esc(raceCopy.hint)}</p>
         <h3>${esc(raceCopy.pickTrack || 'Track')}</h3>
         <div class="race-lobby-grid" data-pick="track">
           ${RACE_TRACKS.map(tr => `
@@ -170,7 +169,7 @@ export function createRaceGame({
           ${RACE_CARS.map(c => `
             <button type="button" class="race-pick ${c.id === selectedCarId ? 'active' : ''}" data-car="${c.id}">
               <strong>${esc(labelCar(c.id))}</strong>
-              <small>${esc(raceCopy.cars?.[c.id]?.blurb || '')}</small>
+              <small>${esc(raceCopy.cars?.[c.id]?.blurb || '')}</small><span class="race-length">${Math.round(c.topSpeed*3.6)} km/h · ${esc(raceCopy.skills[c.skill])}</span>
             </button>`).join('')}
         </div>
         <button type="button" class="primary wide race-lobby-play" data-race-play>${esc(tCopy.play)}</button>
@@ -218,10 +217,10 @@ export function createRaceGame({
   }
   function impact(kind,strength,x,z){
     if(strength<1.8||invuln>0)return;
-    const shielded=shieldT>0;
+    const shielded=shieldT>0||(skillT>0&&carDef.skill==='armor');
     invuln=450;impactT=.9;impactStrength=Math.min(1,strength/25);collisionCount++;
     lastCollision={kind,strength,shielded,time:raceTime};
-    if(shielded)shieldT=0;
+    if(shielded&&shieldT>0)shieldT=0;
     else {damage=Math.min(1,damage+strength/100);if(strength>9)lives--;}
     try{audio?.raceHit?.(strength);}catch{}
     if(fxGroup){
@@ -261,7 +260,7 @@ export function createRaceGame({
         <button type="button" data-touch="brake" aria-label="${labels[2]}">${labels[2]}</button>
         <button type="button" data-touch="throttle" class="primary" aria-label="${labels[3]}">${labels[3]}</button>
       </div>
-      <button type="button" class="race-touch-item" data-touch="item" aria-label="${esc(raceCopy.useItem || 'Item')}">${esc(raceCopy.useItem || 'Item')}</button>`;
+      <div class="race-action-buttons"><button type="button" class="race-touch-item" data-touch="item"></button><button type="button" class="race-touch-skill" data-touch="skill"></button></div>`;
     stage.append(touchEl);
     const pointers = new Map();
     const update = () => {
@@ -273,11 +272,11 @@ export function createRaceGame({
     };
     const down = e => {
       const b = e.target.closest('[data-touch]');
-      if (!b) return;
+      if (!b || b.disabled || ['item','skill'].includes(b.dataset.touch)) return;
       e.preventDefault();
       b.setPointerCapture(e.pointerId);
       pointers.set(e.pointerId, b.dataset.touch);
-      if (b.dataset.touch === 'item') useHeldItem();
+
       update();
     };
     const up = e => { pointers.delete(e.pointerId); update(); };
@@ -285,13 +284,17 @@ export function createRaceGame({
     touchEl.addEventListener('pointerup', up);
     touchEl.addEventListener('pointercancel', up);
     touchEl.addEventListener('lostpointercapture', up);
-    touchEl._raceHandlers = {down, up, pointers};
+    const click=e=>{const action=e.target.closest('[data-touch]')?.dataset.touch;if(action==='item')useHeldItem();if(action==='skill')useSkill();};
+    touchEl.addEventListener('click',click);
+    touchEl._raceHandlers = {down, up, pointers,click};
+    updateActionUI();
   }
 
   function unmountTouch() {
     if (!touchEl) return;
     const h = touchEl._raceHandlers;
     if (h) {
+      touchEl.removeEventListener('click',h.click);
       touchEl.removeEventListener('pointerdown', h.down);
       touchEl.removeEventListener('pointerup', h.up);
       touchEl.removeEventListener('pointercancel', h.up);
@@ -308,6 +311,7 @@ export function createRaceGame({
       return;
     }
     disposeRaceScene(graphics.scene);
+    playerFx=null;
     skidPool=[];skidIndex=0;skidClock=0;
     const {scene, camera, renderer} = graphics;
     worldGroup = new THREE.Group();
@@ -323,6 +327,7 @@ export function createRaceGame({
 
     playerMesh = makeRaceCarMesh(THREE, boxMesh, carDef);
     scene.add(playerMesh);
+    initPlayerFx();
     if(track.id==='neon')for(const side of [-1,1]){
       const lamp=new THREE.SpotLight(0xd6e8ff,48,65,.38,.6,1.3);lamp.position.set(side*.62,.55,2.1);
       lamp.target.position.set(side*.8,.05,36);playerMesh.add(lamp,lamp.target);
@@ -346,13 +351,13 @@ export function createRaceGame({
       const type = types[i % types.length];
       const mesh = graphics.ok
         ? (() => {
-          const m = sphereMesh(0.45, POWER_COLORS[type], {emissive: POWER_COLORS[type], emissiveIntensity: 0.7, segments: 10});
+          const m = makeRaceItemMesh(type);
           m.position.set(p.x + p.nx * lateral, 0.7, p.z + p.nz * lateral);
           itemGroup.add(m);
           return m;
         })()
         : null;
-      items.push({s, lateral, type, mesh, alive: true, respawn: 0});
+      items.push({s,lateral,type,mesh,x:p.x+p.nx*lateral,z:p.z+p.nz*lateral,drawX:p.x+p.nx*lateral,drawZ:p.z+p.nz*lateral,alive:true,respawn:0});
     });
   }
 
@@ -361,7 +366,8 @@ export function createRaceGame({
     if (trafficGroup) while (trafficGroup.children.length) trafficGroup.remove(trafficGroup.children[0]);
     const count = D.aiCount;
     for (let i = 0; i < count; i++) {
-      const def = RACE_CARS[(i + 1) % RACE_CARS.length];
+      const pool=track.id==='offroad'?['rally','bumper','gt','kart']:track.id==='grandtour'?['supercar','openwheel','gt','sports']:RACE_CARS.map(c=>c.id);
+      const def=getRaceCar(pool[(i+(track.id==='offroad'||track.id==='grandtour'?0:1))%pool.length]);
       const s0 = .02+(18+i*14)/metrics.total;
       const lat = (i % 2 ? 1 : -1) * 1.4;
       const p = pointAtProgress(track.path, metrics, s0);
@@ -372,6 +378,7 @@ export function createRaceGame({
         trafficGroup.add(mesh);
       }
       aiCars.push({
+        slowT:0,stunT:0,slipT:0,shieldT:0,hitCount:0,lastHit:null,
         def, x:p.x+p.nx*lat,z:p.z+p.nz*lat,heading:p.heading,lateralVelocity:0,
         s: s0,
         lat,
@@ -408,7 +415,8 @@ export function createRaceGame({
   function hud() {
     const pos = racePosition();
     const itemLabel = heldItem ? labelPower(heldItem) : '—';
-    const spd = Math.floor(Math.abs(speed) * 3.6);
+    const spd = Math.round(Math.abs(speed) * 3.6);
+    updateActionUI();
     onHud?.({
       score,
       lives,
@@ -440,39 +448,100 @@ export function createRaceGame({
     return Math.max(-1, Math.min(1, s));
   }
 
-  function useHeldItem() {
-    if (!heldItem || phase !== 'racing') return;
-    const type = heldItem;
-    heldItem = null;
-    try { audio?.powerup?.(); } catch {}
-    if (type === 'boost') {
-      boostT = D.boostDuration;
-    } else if (type === 'shield') {
-      shieldT = D.shieldDuration;
-    } else if (type === 'oil') {
-      const behind = pointAtProgress(track.path, metrics, (progress - 0.04 + 1) % 1);
-      const hx = behind.x;
-      const hz = behind.z;
-      const mesh = graphics.ok
-        ? (() => {
-          const m = boxMesh(2.2, 0.06, 2.2, 0x2a2218);
-          m.position.set(hx, 0.05, hz);
-          m.material.transparent = true;
-          m.material.opacity = 0.75;
-          fxGroup.add(m);
-          return m;
-        })()
-        : null;
-      hazards.push({x: hx, z: hz, mesh, life: 8, kind: 'oil'});
-    } else if (type === 'magnet') {
-      magnetT = D.magnetDuration;
+  function tell(text){notice=text;noticeT=2.8;hud();}
+  function updateActionUI(){
+    if(!touchEl)return;
+    const item=touchEl.querySelector('[data-touch=item]'),skill=touchEl.querySelector('[data-touch=skill]');
+    const signature=heldItem||'empty';
+    if(item.dataset.item!==signature){item.dataset.item=signature;item.innerHTML=heldItem?`<img src="${itemIcon(heldItem)}" alt=""><span>${esc(labelPower(heldItem))}</span><small>${esc(raceCopy.itemReady)}</small>`:`<span>＋</span><small>${esc(raceCopy.emptyItem)}</small>`;}
+    item.disabled=!heldItem||!running;item.setAttribute('aria-label',heldItem?labelPower(heldItem)+' · '+raceCopy.itemReady:raceCopy.emptyItem);
+    const label=raceCopy.skills[carDef.skill],status=skillT>0?skillT.toFixed(1)+'s':skillCooldown>0?Math.ceil(skillCooldown)+'s':raceCopy.ready;
+    const signatureSkill=label+status;if(skill.dataset.signature!==signatureSkill){skill.dataset.signature=signatureSkill;skill.innerHTML=`<span>✦ ${esc(label)}</span><small>${esc(status)} · F</small>`;}skill.disabled=skillCooldown>0||!running;skill.dataset.skill=carDef.skill;skill.dataset.active=String(skillT>0);skill.setAttribute('aria-label',label+' · '+status);
+    if(raceUI){let effects=raceUI.querySelector('.race-effect-status');if(!effects){effects=document.createElement('div');effects.className='race-effect-status';effects.setAttribute('role','status');raceUI.append(effects);}
+      effects.textContent=[noticeT>0?notice:'',boostT>0?raceCopy.effects.boost+' '+boostT.toFixed(1)+'s':'',shieldT>0?raceCopy.effects.shield+' '+shieldT.toFixed(1)+'s':'',magnetT>0?raceCopy.effects.magnet+' '+magnetT.toFixed(1)+'s':'',oilT>0?raceCopy.effects.oil:'',surfaceKind!=='road'?raceCopy.surface[surfaceKind]:''].filter(Boolean).join(' · ');
     }
-    hud();
+  }
+  function burst(x,z,type='rocket'){
+    if(!graphics.ok||!fxGroup)return;
+    particles.push(...spawnParticleBurst(fxGroup,new THREE.Vector3(x,.8,z),{count:14,color:POWER_COLORS[type]||0xaaf7ff,speed:5,life:.7,size:.11}));
+  }
+  function initPlayerFx(){
+    if(!graphics.ok||!playerMesh)return;
+    playerFx=new THREE.Group();playerMesh.add(playerFx);
+    const shield=new THREE.Mesh(new THREE.SphereGeometry(1,24,16),new THREE.MeshBasicMaterial({color:0x62dfff,transparent:true,opacity:.23,wireframe:true,depthWrite:false}));shield.position.y=.75;shield.scale.set(1.5,1.25,2.7);playerFx.add(shield);
+    const flames=[];for(const side of [-1,1]){const f=new THREE.Mesh(new THREE.ConeGeometry(.22,1.7,12),new THREE.MeshBasicMaterial({color:0xffb434,transparent:true,opacity:.9,depthWrite:false}));f.position.set(side*.48,.35,-2.7);f.rotation.x=-Math.PI/2;playerFx.add(f);flames.push(f);}
+    const magnet=new THREE.Group();for(const radius of [2.4,4]){const ring=new THREE.Mesh(new THREE.TorusGeometry(radius,.035,6,48),new THREE.MeshBasicMaterial({color:0xec688e,transparent:true,opacity:.65,depthWrite:false}));ring.rotation.x=Math.PI/2;ring.position.y=.1;magnet.add(ring);}const icon=makeRaceItemMesh('magnet');icon.scale.setScalar(.6);icon.position.y=1.8;magnet.add(icon);playerFx.add(magnet);
+    const special=new THREE.Mesh(new THREE.TorusGeometry(2,.09,8,48),new THREE.MeshBasicMaterial({color:0x83ffe1,transparent:true,opacity:.8,depthWrite:false}));special.rotation.x=Math.PI/2;special.position.y=.2;playerFx.add(special);
+    playerFx.userData={shield,flames,magnet,special};updatePlayerFx();
+  }
+  function updatePlayerFx(){
+    if(!playerFx)return;const f=playerFx.userData;
+    f.shield.visible=shieldT>0||(skillT>0&&carDef.skill==='armor');
+    for(const flame of f.flames){flame.visible=boostT>0||(skillT>0&&carDef.skill==='overdrive');flame.scale.y=.8+Math.sin(raceTime*39)*.2;}
+    f.magnet.visible=magnetT>0;f.magnet.rotation.y=raceTime*1.8;
+    f.special.visible=skillT>0;f.special.scale.setScalar(carDef.skill==='pulse'?1+(carDef.skillDuration-skillT)*7:1+Math.sin(raceTime*7)*.1);
+  }
+  function useSkill(){
+    if(!running||phase!=='racing'||skillCooldown>0)return false;
+    skillT=carDef.skillDuration;skillCooldown=carDef.skillCooldown;
+    if(carDef.skill==='pulse'){for(const ai of aiCars)if(Math.hypot(ai.x-px,ai.z-pz)<22){if(hitRival(ai,'pulse'))attackHits++;burst(ai.x,ai.z,'shield');}}
+    if(carDef.skill==='hop'){oilT=0;driftX=driftZ=0;}
+    burst(px,pz,'shield');tell(raceCopy.skills[carDef.skill]+' · '+raceCopy.used);updatePlayerFx();return true;
+  }
+  function addHazard(kind,x,z,radius=2.5){
+    let mesh=null;
+    if(graphics.ok){if(kind==='banana'){mesh=makeRaceItemMesh(kind);mesh.scale.setScalar(1.5);mesh.rotation.x=-Math.PI/2;mesh.position.set(x,.15,z);}else{mesh=new THREE.Group();const puddle=new THREE.Mesh(new THREE.CircleGeometry(radius,32),new THREE.MeshStandardMaterial({color:kind==='oil'?0x252630:0x43bee1,transparent:true,opacity:.8,roughness:.18,metalness:.2,side:THREE.DoubleSide}));puddle.rotation.x=-Math.PI/2;mesh.add(puddle);for(const r of [.45,.8]){const ring=new THREE.Mesh(new THREE.TorusGeometry(radius*r,.035,6,32),new THREE.MeshBasicMaterial({color:kind==='oil'?0x7d6a9b:0xc1f5ff,transparent:true,opacity:.6}));ring.rotation.x=Math.PI/2;ring.position.y=.02;mesh.add(ring);}mesh.position.set(x,.075,z);}fxGroup.add(mesh);}
+    hazards.push({kind,x,z,radius,mesh,life:12,age:0,hits:new Set(),playerHit:false});
+  }
+  function useHeldItem(){
+    if(!heldItem||phase!=='racing'||!running)return false;
+    const type=heldItem;heldItem=null;usedItems++;try{audio?.powerup?.();}catch{}
+    if(type==='boost')boostT=D.boostDuration;
+    else if(type==='shield')shieldT=D.shieldDuration;
+    else if(type==='magnet')magnetT=D.magnetDuration;
+    else if(type==='oil'||type==='banana'){
+      const rear=aiCars.filter(ai=>{const delta=(progress-ai.progress+1)%1;return delta*metrics.total<80;}).sort((a,b)=>Math.hypot(a.x-px,a.z-pz)-Math.hypot(b.x-px,b.z-pz))[0];
+      const p=pointAtProgress(track.path,metrics,progress-5/metrics.total),lateral=type==='banana'&&rear?rear.lat:(px-p.x)*p.nx+(pz-p.z)*p.nz;
+      addHazard(type,p.x+p.nx*lateral,p.z+p.nz*lateral);
+    }
+    else{
+      const mesh=graphics.ok?makeRaceItemMesh(type):null;
+      const ahead=pointAtProgress(track.path,metrics,progress+22/metrics.total);
+      const candidates=aiCars.filter(ai=>{let delta=ai.progress-progress;if(delta<0)delta++;return delta*metrics.total<220&&Math.hypot(ai.x-px,ai.z-pz)<190;}).sort((a,b)=>Math.hypot(a.x-px,a.z-pz)-Math.hypot(b.x-px,b.z-pz));
+      const targetAi=type==='splash'&&candidates[0]&&Math.hypot(candidates[0].x-px,candidates[0].z-pz)<90?candidates[0]:null;
+      const landing=targetAi?pointAtProgress(track.path,metrics,targetAi.progress+targetAi.speed*.7/metrics.total):ahead;
+      const projectile={kind:type,x:px+Math.sin(heading)*3,z:pz+Math.cos(heading)*3,vx:Math.sin(heading)*90,vz:Math.cos(heading)*90,mesh,life:4,age:0,target:type==='rocket'?candidates[0]:null,endX:landing.x+landing.nx*(targetAi?.lat||0),endZ:landing.z+landing.nz*(targetAi?.lat||0),startX:px,startZ:pz};
+      if(mesh){mesh.position.set(projectile.x,.9,projectile.z);mesh.rotation.x=Math.PI/2;fxGroup.add(mesh);}projectiles.push(projectile);
+    }
+    burst(px,pz,type);tell(labelPower(type)+' · '+raceCopy.used);updatePlayerFx();return true;
+  }
+  function updateCombat(dt){
+    projectiles=projectiles.filter(p=>{
+      p.life-=dt;p.age+=dt;const previousX=p.x,previousZ=p.z;
+      if(p.kind==='splash'){
+        const f=Math.min(1,p.age/.7);p.x=p.startX+(p.endX-p.startX)*f;p.z=p.startZ+(p.endZ-p.startZ)*f;
+        if(p.mesh)p.mesh.position.set(p.x,.3+Math.sin(f*Math.PI)*3,p.z);
+        if(f===1){addHazard('splash',p.x,p.z,3.5);burst(p.x,p.z,'splash');disposeItem(p.mesh);return false;}
+      }else{
+        if(p.target){const dx=p.target.x-p.x,dz=p.target.z-p.z,len=Math.hypot(dx,dz)||1;p.vx=dx/len*90;p.vz=dz/len*90;}
+        p.x+=p.vx*dt;p.z+=p.vz*dt;
+        if(p.mesh){p.mesh.position.set(p.x,.85,p.z);p.mesh.rotation.y=Math.atan2(p.vx,p.vz);}
+        for(const ai of aiCars)if(segmentDistance(previousX,previousZ,p.x,p.z,ai.x,ai.z)<2.8){const success=hitRival(ai,'rocket');if(success)attackHits++;burst(ai.x,ai.z,'rocket');tell(success?raceCopy.hit:raceCopy.blocked);disposeItem(p.mesh);return false;}
+      }
+      if(p.life<=0){disposeItem(p.mesh);return false;}return true;
+    });
+    hazards=hazards.filter(h=>{
+      h.life-=dt;h.age+=dt;if(h.life<=0){disposeItem(h.mesh);return false;}
+      if(h.age>1&&!h.playerHit&&Math.hypot(px-h.x,pz-h.z)<h.radius+1){h.playerHit=true;if(shieldT>0){shieldT=0;tell(raceCopy.blocked);}else if(!(skillT>0&&['armor','hop'].includes(carDef.skill))){oilT=D.oilDuration;speed*=.55;driftX=Math.cos(heading)*4;driftZ=-Math.sin(heading)*4;yawKick=.65;}}
+      for(const ai of aiCars)if(!h.hits.has(ai)&&Math.hypot(ai.x-h.x,ai.z-h.z)<h.radius+1){h.hits.add(ai);const success=hitRival(ai,h.kind);if(success)attackHits++;burst(ai.x,ai.z,h.kind);tell(success?raceCopy.hit:raceCopy.blocked);}
+      return true;
+    });
   }
 
   function physicsStep(dt) {
     if (!running || ended || phase !== 'racing') return;
     raceTime += dt;
+    skillT=Math.max(0,skillT-dt);skillCooldown=Math.max(0,skillCooldown-dt);noticeT=Math.max(0,noticeT-dt);
     impactT=Math.max(0,impactT-dt);
     heading+=yawKick*dt;yawKick*=Math.exp(-dt*5);
     driftX*=Math.exp(-dt*3);driftZ*=Math.exp(-dt*3);
@@ -484,16 +553,19 @@ export function createRaceGame({
 
     const proj = projectOnPath(track.path, metrics, px, pz);
     const onTrack = proj.dist <= track.width * 0.55;
-    const gripMul = (onTrack ? 1 : D.offTrackSlow) * (oilT > 0 ? 0.35 : 1) * carDef.grip;
-    const top = carDef.topSpeed * (onTrack ? 1 : 0.7) * (boostT > 0 ? 1.35 : 1);
+    surfaceKind=surfaceAt(track,metrics,proj,px,pz);
+    const terrainFactor=skillT>0&&carDef.skill==='trailGrip'?1:SURFACE_FACTOR[surfaceKind];
+    const cornerFocus=skillT>0&&carDef.skill==='cornerFocus',drsActive=skillT>0&&carDef.skill==='drs';
+    const gripMul=(onTrack?1:D.offTrackSlow)*(oilT>0?.35:1)*carDef.grip*Math.max(.45,terrainFactor)*(cornerFocus?1.4:drsActive?1.2:1);
+    const top=Math.min(carDef.speedCap||Infinity,carDef.topSpeed*(onTrack?1:.7)*terrainFactor*(boostT>0?1.35:1));
     const thr = inputThrottle();
     const brk = inputBrake();
     const steerIn = inputSteer();
 
     if (thr > 0) {
-      speed += carDef.accel * 0.62 * thr * dt / carDef.mass;
+      speed += carDef.accel*.62*thr*dt/carDef.mass*terrainFactor*(boostT>0?1.65:1)*(skillT>0&&carDef.skill==='overdrive'?1.85:drsActive?1.25:1);
     } else {
-      speed *= Math.pow(0.7, dt); // coast friction
+      speed *= Math.pow(drsActive?.94:.7, dt); // coast friction
     }
     if (brk > 0) {
       if (speed > 0.8) speed -= carDef.brake * brk * dt;
@@ -513,6 +585,11 @@ export function createRaceGame({
     px += (forwardX * speed+driftX) * dt;
     pz += (forwardZ * speed+driftZ) * dt;
 
+    for(const obstacle of track.obstacles||[]){
+      if(skillT>0&&carDef.skill==='hop')continue;
+      const p=pointAtProgress(track.path,metrics,obstacle.s),ox=p.x+p.nx*obstacle.lateral,oz=p.z+p.nz*obstacle.lateral,dx=px-ox,dz=pz-oz,len=Math.hypot(dx,dz),radius=obstacle.radius+support(carDef,heading,dx/(len||1),dz/(len||1));
+      if(len<radius){const nx=dx/(len||1),nz=dz/(len||1),strength=Math.abs(speed);px=ox+nx*radius;pz=oz+nz*radius;speed*=.3;driftX+=nx*2;driftZ+=nz*2;impact('obstacle',strength,ox,oz);}
+    }
     // Physical guardrails preserve tangential momentum; no magnetic pull to the road.
     const contact=barrierContact(playerBody(),projectOnPath(track.path,metrics,px,pz),track.width);
     if(contact){
@@ -546,26 +623,22 @@ export function createRaceGame({
         it.respawn -= dt;
         if (it.respawn <= 0) {
           it.alive = true;
-          if (it.mesh) it.mesh.visible = true;
+          it.drawX=it.x;it.drawZ=it.z;if (it.mesh) {it.mesh.visible = true;it.mesh.position.set(it.x,.7,it.z);}
         }
         continue;
       }
       const ip = pointAtProgress(track.path, metrics, it.s);
       const ix = ip.x + ip.nx * it.lateral;
       const iz = ip.z + ip.nz * it.lateral;
-      let attract = false;
-      if (magnetT > 0 && Math.hypot(px - ix, pz - iz) < 8) attract = true;
-      if (attract && it.mesh) {
-        it.mesh.position.x += (px - it.mesh.position.x) * dt * 4;
-        it.mesh.position.z += (pz - it.mesh.position.z) * dt * 4;
-      }
-      const mx = it.mesh ? it.mesh.position.x : ix;
-      const mz = it.mesh ? it.mesh.position.z : iz;
-      if (Math.hypot(px - mx, pz - mz) < 1.6) {
+      const attract=magnetT>0&&Math.hypot(px-ix,pz-iz)<18;
+      const factor=Math.min(1,dt*(attract?12:5));it.drawX+=((attract?px:ix)-it.drawX)*factor;it.drawZ+=((attract?pz:iz)-it.drawZ)*factor;
+      if(it.mesh){it.mesh.position.x=it.drawX;it.mesh.position.z=it.drawZ;}
+      const mx=it.drawX,mz=it.drawZ;
+      if (!heldItem && Math.hypot(px - mx, pz - mz) < 2.2) {
         it.alive = false;
         it.respawn = Math.max(D.spawnIntervalMin, D.itemRespawn);
         if (it.mesh) it.mesh.visible = false;
-        heldItem = it.type;
+        heldItem = it.type;notice=labelPower(it.type)+' · '+raceCopy.itemReady;noticeT=3;
         score += 40;
         try { audio?.powerup?.(); } catch {}
         if (fxGroup && graphics.ok) {
@@ -580,32 +653,18 @@ export function createRaceGame({
       }
     }
 
-    // oil hazards
-    hazards = hazards.filter(h => {
-      h.life -= dt;
-      if (h.life <= 0) {
-        if (h.mesh) {fxGroup?.remove(h.mesh);h.mesh.geometry.dispose();h.mesh.material.dispose();}
-        return false;
-      }
-      if (Math.hypot(px - h.x, pz - h.z) < 1.8 && oilT <= 0) {
-        oilT = D.oilDuration;
-        try { audio?.raceHit?.(); } catch {}
-      }
-      for (const ai of aiCars) {
-        if (!ai.mesh) continue;
-        if (Math.hypot(ai.mesh.position.x - h.x, ai.mesh.position.z - h.z) < 1.8) {
-          ai.speed *= 0.5;
-        }
-      }
-      return true;
-    });
+    updateCombat(dt);
 
     // Rivals slow for upcoming bends and carry impulse momentum after contact.
     for(const ai of aiCars){
+      advanceRivalStatus(ai,dt);
       const current=pointAtProgress(track.path,metrics,ai.progress),ahead=pointAtProgress(track.path,metrics,ai.progress+24/metrics.total);
       const bend=Math.abs(Math.atan2(Math.sin(ahead.heading-current.heading),Math.cos(ahead.heading-current.heading)));
-      const targetSpeed=ai.def.topSpeed*(.72-Math.min(.36,bend*.4));
-      ai.speed+=(targetSpeed-ai.speed)*Math.min(1,dt*.8);
+      const aiSurface=surfaceAt(track,metrics,{...current,s:ai.progress},ai.x,ai.z);
+      const targetSpeed=ai.def.topSpeed*(.72-Math.min(.36,bend*.4))*(ai.slowT>0?.38:1)*SURFACE_FACTOR[aiSurface];
+      if(ai.stunT>0)ai.speed=0;else ai.speed+=(targetSpeed-ai.speed)*Math.min(1,dt*.8);
+      if(ai.slipT>0)ai.lateralVelocity+=Math.sin(raceTime*9)*dt*9;
+      for(const obstacle of track.obstacles||[]){const aheadDistance=((obstacle.s-ai.progress+1)%1)*metrics.total;if(aheadDistance<45&&Math.abs(ai.lat-obstacle.lateral)<obstacle.radius+1.6)ai.lat+=(Math.sign(-obstacle.lateral)*track.width*.24-ai.lat)*Math.min(1,dt*3);}
       ai.lateralVelocity*=Math.exp(-dt*4);ai.lat=Math.max(-track.width*.3,Math.min(track.width*.3,ai.lat+ai.lateralVelocity*dt));
       const prev=ai.progress;ai.progress=(ai.progress+ai.speed*dt/metrics.total+1)%1;
       if(prev>.8&&ai.progress<.2)ai.lap++;ai.s=ai.progress;
@@ -622,20 +681,23 @@ export function createRaceGame({
         yawKick+=(Math.cos(heading)*hit.nx-Math.sin(heading)*hit.nz)*Math.min(.8,hit.impact*.035);
         impact('car',hit.impact,(px+ai.x)/2,(pz+ai.z)/2);
       }
-      if(ai.mesh){ai.mesh.position.set(ai.x,.055,ai.z);ai.mesh.rotation.y=p.heading;updateRaceCar(ai.mesh,{speed:ai.speed,steering:-bend*.5,brake:ai.speed>targetSpeed+2,dt});}
+      if(ai.mesh){ai.mesh.position.set(ai.x,.055,ai.z);ai.mesh.rotation.y=p.heading+(ai.slipT>0?Math.sin(raceTime*9)*.35:0);updateRaceCar(ai.mesh,{speed:ai.speed,steering:-bend*.5,brake:ai.speed>targetSpeed+2,dt});}
     }
     // Resolve a car push against the rail in the same frame, even during damage cooldown.
     const finalContact=barrierContact(playerBody(),projectOnPath(track.path,metrics,px,pz),track.width);
     if(finalContact){px=finalContact.x;pz=finalContact.z;acceptVelocity(finalContact.vx,finalContact.vz);impact('barrier',finalContact.impact,finalContact.contactX,finalContact.contactZ);}
     if(playerMesh){
-      playerMesh.position.set(px,.055,pz);playerMesh.rotation.y=heading;playerMesh.visible=true;
-      updateRaceCar(playerMesh,{speed,steering,brake:brk,impact:reducedMotion?0:impactT,damage,dt});
+      playerMesh.position.set(px,skillT>0&&carDef.skill==='hop'?.45+Math.abs(Math.sin(raceTime*7))*.6:.055,pz);playerMesh.rotation.y=heading;playerMesh.visible=true;
+      updateRaceCar(playerMesh,{speed,steering,brake:brk,drs:drsActive,impact:reducedMotion?0:impactT,damage,dt});
       skidClock+=dt;
       if((brk&&speed>12||Math.hypot(driftX,driftZ)>2)&&skidClock>.045){
         for(const side of [-1,1]){const mark=skidPool[skidIndex++%skidPool.length];mark.visible=true;mark.position.set(px+Math.cos(heading)*side*.91-Math.sin(heading)*1.35,.055,pz-Math.sin(heading)*side*.91-Math.cos(heading)*1.35);mark.rotation.set(-Math.PI/2,0,-heading);mark.scale.y=Math.max(.25,Math.abs(speed)*skidClock);}
         skidClock=0;
       }else if(skidClock>.1)skidClock=0;
     }
+    surfaceFxClock+=dt;
+    if(graphics.ok&&surfaceKind!=='road'&&Math.abs(speed)>4&&surfaceFxClock>.15){surfaceFxClock=0;particles.push(...spawnParticleBurst(fxGroup,new THREE.Vector3(px,.18,pz),{count:reducedMotion?2:5,color:surfaceKind==='water'?0xa1ecff:surfaceKind==='mud'?0x9a714c:0x93b666,speed:2,life:.35,size:.045}));}
+    updatePlayerFx();
     updateRaceUI();
     if(lives<=0)return finish(false);
 
@@ -695,12 +757,13 @@ export function createRaceGame({
   }
 
   function onKeyDown(e) {
-    const k = ({KeyW:'w',KeyS:'s',KeyA:'a',KeyD:'d',KeyE:'e',Space:' '})[e.code] || e.key;
+    const k = ({KeyW:'w',KeyS:'s',KeyA:'a',KeyD:'d',KeyE:'e',KeyF:'f',Space:' '})[e.code] || e.key;
     if (k === 'ArrowUp' || k === 'w' || k === 'W') { keys.throttle = true; e.preventDefault(); }
     if (k === 'ArrowDown' || k === 's' || k === 'S') { keys.brake = true; e.preventDefault(); }
     if (k === 'ArrowLeft' || k === 'a' || k === 'A') { keys.left = true; e.preventDefault(); }
     if (k === 'ArrowRight' || k === 'd' || k === 'D') { keys.right = true; e.preventDefault(); }
-    if (k === ' ' || k === 'e' || k === 'E') { useHeldItem(); e.preventDefault(); }
+    if (k === ' ' || k === 'e' || k === 'E') { if(!e.repeat)useHeldItem(); e.preventDefault(); }
+    if(k==='f'||k==='F'){if(!e.repeat)useSkill();e.preventDefault();}
   }
   function onKeyUp(e) {
     const k = ({KeyW:'w',KeyS:'s',KeyA:'a',KeyD:'d',KeyE:'e',Space:' '})[e.code] || e.key;
@@ -753,6 +816,7 @@ export function createRaceGame({
     distance = 0;
     boostT = shieldT = oilT = magnetT = 0;
     heldItem = null;
+    skillT=skillCooldown=attackHits=usedItems=noticeT=surfaceFxClock=0;notice="";projectiles=[];surfaceKind="road";
     hazards = [];
     particles = [];
     ended = false;
@@ -760,8 +824,9 @@ export function createRaceGame({
     mountTouch();
     mountRaceUI();
     running = true;
+    updateActionUI();
     last = performance.now?.() || 0;
-    hud();
+    hud();updatePlayerFx();
     typeof cancelAnimationFrame === 'function' && cancelAnimationFrame(raf);
     if (typeof requestAnimationFrame === 'function') raf = requestAnimationFrame(loop);
   }
@@ -791,6 +856,7 @@ export function createRaceGame({
   function pause() {
     clearInput();
     running = false;
+    updateActionUI();
     typeof cancelAnimationFrame === 'function' && cancelAnimationFrame(raf);
   }
   function resume() {
@@ -850,6 +916,7 @@ export function createRaceGame({
     draw,
     setControls,
     useItem: useHeldItem,
+    useSkill,
     getState: () => ({
       difficulty:D,
       lane: 0,
@@ -860,12 +927,15 @@ export function createRaceGame({
       heading,
       x: px, z: pz, steering,
       trackLength:metrics.total,damage,collisionCount,lastCollision,impactT,particleCount:particles.length,
-      rivals:aiCars.map(a=>({x:a.x,z:a.z,speed:a.speed,heading:a.heading})),
+      rivals:aiCars.map(a=>({x:a.x,z:a.z,speed:a.speed,heading:a.heading,progress:a.progress,slowT:a.slowT,stunT:a.stunT,slipT:a.slipT,hitCount:a.hitCount,lastHit:a.lastHit})),
       lap,
       progress,
       trackId: track.id,
       carId: carDef.id,
-      heldItem,
+      heldItem,skill:carDef.skill,skillT,skillCooldown,usedItems,attackHits,surface:surfaceKind,
+      effects:{boost:boostT,shield:shieldT,magnet:magnetT,slip:oilT},
+      pickups:items.map(it=>({type:it.type,x:it.x,z:it.z,s:it.s,alive:it.alive})),
+      projectiles:projectiles.map(p=>({kind:p.kind,x:p.x,z:p.z})),hazards:hazards.map(h=>({kind:h.kind,x:h.x,z:h.z,life:h.life})),
       phase,
       cars: aiCars.length,
       ended,

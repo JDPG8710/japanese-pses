@@ -46,7 +46,7 @@
     "db:seed": "node scripts/import-game-data-d1.mjs --remote",
     "deploy:worker": "wrangler deploy --config wrangler.toml",
     "test:production-ui": "node tests/test_login_lifecycle_browser.mjs && node tests/test_japanese_entry_browser.mjs",
-    "predeploy:pages": "node scripts/check-release-source.mjs && npm run build && npm run test:assets && npm run test:english && npm run test:english:browser && npm run test:learning && npm run test:content && npm run test:seo && npm run test:production-ui && npm run test:amc8 && npm run test:town:i18n && npm run test:town:release && npm run test:town:exploration && npm run test:designer",
+    "predeploy:pages": "node scripts/check-release-source.mjs && npm run build && npm run test:assets && npm run test:english && npm run test:english:browser && npm run test:learning && npm run test:content && npm run test:seo && npm run test:production-ui && npm run test:amc8 && npm run test:town:i18n && npm run test:town:release && npm run test:town:exploration && npm run test:designer && npm run test:race:release",
     "deploy:pages": "wrangler pages deploy ./dist --project-name=manabi-pop --branch main",
     "deploy": "npm run test && npm run build && npm run db:migrate && npm run db:seed && npm run deploy:worker && npm run deploy:pages",
     "monitor:production": "node scripts/monitor-production.mjs",
@@ -61,8 +61,8 @@
     "test:town:presentation": "node tests/test_town_presentation.mjs",
     "test:town:release": "node tests/test_town_release_browser.mjs",
     "test:town:exploration": "node tests/test_town_vehicles.mjs && node tests/test_town_exploration_browser.mjs",
-    "test:race": "node tests/test_race_handling.mjs && node tests/test_race_collisions.mjs && node tests/test_race_models.mjs && node tests/test_arcade_smoke.mjs",
-    "test:race:browser": "node scripts/build.mjs && node tests/test_race_browser.mjs",
+    "test:race": "node tests/test_race_handling.mjs && node tests/test_race_collisions.mjs && node tests/test_race_models.mjs && node tests/test_arcade_smoke.mjs && node tests/test_race_expansion.mjs",
+    "test:race:browser": "node scripts/build.mjs && node tests/test_race_browser.mjs && node tests/test_race_expansion_browser.mjs",
     "preview:race": "node scripts/preview-race.mjs",
     "test:town:feedback": "node scripts/build.mjs && node tests/test_town_feedback_browser.mjs",
     "test:town:music": "node tests/test_town_music_browser.mjs",
@@ -75,7 +75,8 @@
     "test:breakout:layouts:browser": "node tests/test_breakout_layouts_browser.mjs",
     "test:town:interaction": "node tests/test_town_residents.mjs && node tests/test_town_life_collisions.mjs && node tests/test_town_controls_browser.mjs && node tests/test_town_residents_browser.mjs",
     "test:designer": "node tests/test_designer.mjs && node tests/test_designer_3d.mjs && node tests/test_designer_engineering.mjs && node tests/test_designer_celebration.mjs && node tests/test_designer_celebration_browser.mjs && node tests/test_designer_engine_names_browser.mjs && node tests/test_town_loading_browser.mjs && node tests/test_designer_engineering_browser.mjs && node tests/test_designer_focus_browser.mjs && node tests/test_creative_browser.mjs && node tests/test_town_progression_browser.mjs",
-    "test:town:home": "node tests/test_town_home_browser.mjs"
+    "test:town:home": "node tests/test_town_home_browser.mjs",
+    "test:race:release": "npm run test:race && node tests/test_race_browser.mjs && node tests/test_race_expansion_browser.mjs"
   },
   "devDependencies": {
     "playwright-core": "^1.63.0",

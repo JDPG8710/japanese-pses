@@ -44,10 +44,10 @@ assert.ok(keyboardGame.getState().heading>initial);
 window.dispatchEvent(new Event('blur'));const speed=keyboardGame.getState().speed;step(keyboardGame);
 assert.ok(keyboardGame.getState().speed<speed,'focus loss releases held input');
 keyboardGame.destroy();delete globalThis.window;
-console.log('Race handling: 16 car/track pairs, camera-relative A/D, reverse, neutral, pause, keyboard/blur, road normals and seams passed');
+console.log('Race handling: all car/track pairs, camera-relative A/D, reverse, neutral, pause, keyboard/blur, road normals and seams passed');
 
 // Drive complete races through the public controls; verify both clear and DNF contracts.
-for(const id of ['sunrise','harbor','mountain','neon']) {
+for(const id of RACE_TRACKS.map(t=>t.id)) {
  const track=getRaceTrack(id),metrics=buildPathMetrics(track.path);let result=null,calls=0;
  const run=createRaceGame({trackId:id,carId:'sports',skipLobby:true,onEnd:r=>{result=r;calls++;}});
  for(let i=0;i<30000&&!run.getState().ended;i++) {
@@ -61,4 +61,4 @@ for(const id of ['sunrise','harbor','mountain','neon']) {
  assert.equal(calls,1);run.tick(1);assert.equal(calls,1,'result emitted once');
  run.start();assert.equal(run.getState().ended,false);assert.equal(run.getState().lives,4);assert.equal(run.getState().score,0);run.destroy();
 }
-console.log('Race outcomes: four three-lap clears, single settlement and retry passed');
+console.log('Race outcomes: six circuit clears, single settlement and retry passed');

@@ -1,6 +1,6 @@
 /** Track-local scenery: continuous asphalt, physical light/shadow, and layered landscapes. */
 import {THREE} from './Arcade3D.mjs?v=3';
-import {pointAtProgress, projectOnPath} from './RaceTracks.mjs?v=1';
+import {pointAtProgress, projectOnPath, buildPathMetrics} from './RaceTracks.mjs?v=1';
 
 export function disposeRaceScene(scene) {
   const geometries = new Set(), materials = new Set(), textures = new Set();
@@ -139,9 +139,10 @@ export function buildRaceScenery({scene, renderer, group, track, metrics}) {
   land.rotateX(-Math.PI / 2);
   const pos = land.attributes.position;
   const colors = [];
+  const terrainPath=track.path.filter((_,i)=>i%6===0),terrainMetrics=buildPathMetrics(terrainPath);
   for (let i=0;i<pos.count;i++) {
     const x=pos.getX(i), z=pos.getZ(i), r=Math.hypot(x,z);
-    const roadDistance=projectOnPath(track.path,metrics,x,z).dist;
+    const roadDistance=projectOnPath(terrainPath,terrainMetrics,x,z).dist;
     const hills = Math.max(0,roadDistance-30)*Math.exp(-Math.max(0,roadDistance-140)/200);
     const ridge = 0.22 + 0.25 * Math.sin(x*0.025+1)*Math.cos(z*0.029) + 0.12*Math.sin(x*0.056+z*0.042);
     const h = harbor ? (roadDistance>48?-.9:-.13) : Math.max(0,hills*ridge*(alpine ? 1.2 : night ? 0.3 : 0.52))-0.13;
@@ -168,8 +169,9 @@ export function buildRaceScenery({scene, renderer, group, track, metrics}) {
     }
   }
 
-  const asphaltTex = noiseTexture([82,86,88],36,1);
-  const road = new THREE.Mesh(roadRibbon(track.path,track.width,0.02,0,metrics),new THREE.MeshStandardMaterial({map:asphaltTex,color:night?0x7b8398:0xb3b6b9,roughness:0.94}));
+  const offroad=track.id==='offroad';
+  const asphaltTex = noiseTexture(offroad?[143,110,69]:[82,86,88],36,1);
+  const road = new THREE.Mesh(roadRibbon(track.path,track.width,0.02,0,metrics),new THREE.MeshStandardMaterial({map:asphaltTex,color:offroad?0xc9a175:night?0x7b8398:0xb3b6b9,roughness:0.94}));
   road.receiveShadow=true; group.add(road);
   for(const side of [-1,1]) {
     const shoulder=new THREE.Mesh(roadRibbon(track.path,0.8,0.012,side*(track.width/2+0.4),metrics),new THREE.MeshStandardMaterial({color:0xacaba0,roughness:1}));
@@ -200,6 +202,12 @@ export function buildRaceScenery({scene, renderer, group, track, metrics}) {
     }
     if(i%4===0) {const a=sample(i/count,0),b=sample((i+1.2)/count,0);line(0xd7d3bf,a,b,0.03,0.09,0.015);}
   }
+  for(const area of track.surfaces||[]){
+    const vertices=[],indices=[];for(let i=0;i<=12;i++){const p=pointAtProgress(track.path,metrics,area.s+(i/12-.5)*area.length/metrics.total);for(const side of [-1,1])vertices.push(p.x+p.nx*(area.lateral+side*area.width/2),.065,p.z+p.nz*(area.lateral+side*area.width/2));if(i<12){const k=i*2;indices.push(k,k+1,k+2,k+1,k+3,k+2);}}
+    const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));geo.setIndex(indices);geo.computeVertexNormals();const patch=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({color:{grass:0x608535,mud:0x58402a,water:0x3cabc7}[area.kind],roughness:area.kind==='water'?.18:1,metalness:area.kind==='water'?.25:0,side:THREE.DoubleSide}));patch.userData.surface=area.kind;patch.receiveShadow=true;group.add(patch);
+    for(let j=0;j<8;j++){const p=sample(area.s+(j/8-.5)*area.length/metrics.total,area.lateral+(j%3-1)*area.width*.25);if(area.kind==='grass')prop('cone',0x74a340,p.x,.18,p.z,.13,.4,.13);if(area.kind==='water')box(0x95dce9,p.x,.074,p.z,1.5,.012,.07,p.heading);}
+  }
+  for(const obstacle of track.obstacles||[]){const p=sample(obstacle.s,obstacle.lateral),r=obstacle.radius;if(obstacle.kind==='rock')prop('sphere',0x777970,p.x,.75,p.z,r,1.25,r,p.heading);else if(obstacle.kind==='log'){box(0x765035,p.x,.5,p.z,r*2,.9,1.1,p.heading);for(const side of [-1,1])box(0xb79059,p.x+Math.cos(p.heading)*side*r,.5,p.z-Math.sin(p.heading)*side*r,.05,.8,1,p.heading);}else for(let k=0;k<3;k++)prop('cylinder',0x263035,p.x,.22+k*.36,p.z,r,.35,r);}
   // Checkerboard start line and an overhead gantry give the track a readable scale.
   const start=pointAtProgress(track.path,metrics,0);
   const at=(x,z)=>({x:start.x+Math.cos(start.heading)*x+Math.sin(start.heading)*z,z:start.z-Math.sin(start.heading)*x+Math.cos(start.heading)*z});

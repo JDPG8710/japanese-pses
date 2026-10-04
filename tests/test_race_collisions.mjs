@@ -16,7 +16,7 @@ for(const t of RACE_TRACKS){
   assert.ok(!(cross(a,b,c)*cross(a,b,d)<0&&cross(c,d,a)*cross(c,d,b)<0),'no track self-intersection');
  }
 }
-assert.equal(new Set(RACE_TRACKS.map(t=>trackMap(t).points)).size,4,'four distinct route previews');
+assert.equal(new Set(RACE_TRACKS.map(t=>trackMap(t).points)).size,RACE_TRACKS.length,'distinct route previews');
 const projection={x:0,z:0,nx:1,nz:0};
 const scrape=barrierContact({x:8,z:0,heading:0,car,vx:12,vz:40},projection,14);
 assert.ok(scrape&&scrape.vx<0,'rail reflects outward momentum');assert.equal(scrape.vz,40,'side scrape preserves tangent speed');

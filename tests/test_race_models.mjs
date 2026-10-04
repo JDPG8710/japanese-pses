@@ -17,4 +17,4 @@ for(const car of RACE_CARS){
  let calls=0;model.traverse(o=>{if(o.isMesh)calls++;});assert.ok(calls<65,'batched detail keeps each car under 65 mesh draws');
  const scene=new THREE.Scene();scene.add(model);disposeRaceScene(scene);assert.equal(scene.children.length,0);
 }
-console.log('Race models: four distinct metre-scale profiles, wheel motion, brake lights, panel damage/reset, batched draw budget and disposal passed');
+console.log('Race models: seven distinct metre-scale vehicles, wheel motion, brake lights, panel damage/reset, batched draw budget and disposal passed');

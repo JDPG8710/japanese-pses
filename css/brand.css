@@ -1,0 +1,66 @@
+/* Piko Game identity: all page shells share these colours and the same SVG. */
+:root{--piko-canvas:#faf9f5;--piko-surface:#fff;--piko-ink:#20354b;--piko-muted:#536477;--piko-line:#dce2e7;--piko-blue:#245b9b;--piko-blue-hover:#194577;--piko-blue-soft:#eaf2fc;--piko-yellow:#ffcf56;--piko-green:#27634a;--piko-purple:#65449b;--piko-font:ui-rounded,'Yu Gothic',system-ui,sans-serif}
+html:has(body[data-piko-brand-page]){background:var(--piko-canvas)}
+body[data-piko-brand-page]{background:var(--piko-canvas);color:var(--piko-ink);font-family:var(--piko-font)}
+body[data-piko-brand-page]::before{display:none}
+body[data-piko-brand-page] :focus-visible{outline-color:var(--piko-blue)}
+body[data-piko-brand-page]>header:not(#japanese-hud),body[data-piko-brand-page]>.topbar,#country-home .home-header,#country-home .country-nav,.project-nav{background:var(--piko-canvas);color:var(--piko-ink);border-bottom:1px solid var(--piko-line)}
+[data-piko-brand]{display:inline-flex!important;align-items:center!important;justify-content:flex-start!important;gap:10px!important;min-height:56px;max-width:100%;margin:0!important;padding:0!important;border:0!important;background:none!important;color:var(--piko-ink)!important;font-family:var(--piko-font)!important;font-size:22px!important;font-weight:850!important;letter-spacing:0!important;line-height:1.2!important;text-decoration:none!important;white-space:nowrap;filter:none!important;animation:none!important}
+[data-piko-brand] .piko-brand-mark{display:block!important;flex:0 0 38px!important;width:38px!important;height:38px!important;max-width:none!important;border:0!important;border-radius:0!important;margin:0!important;padding:0!important;background:none!important;filter:none!important;object-fit:contain!important}
+[data-piko-brand] .piko-brand-name{display:inline!important;position:static!important;width:auto!important;height:auto!important;margin:0!important;padding:0!important;border:0!important;background:none!important;clip:auto!important;overflow:visible!important;color:var(--piko-ink)!important;font:inherit!important;font-weight:850!important;letter-spacing:0!important;text-transform:none!important;white-space:nowrap!important;-webkit-text-stroke:0!important}
+body[data-piko-brand-page]>header nav a:not([data-piko-brand]),body[data-piko-brand-page] .top-actions>a,body[data-piko-brand-page] .top-actions>button,body[data-piko-brand-page] .top-actions select,body[data-piko-brand-page] .topbar>.pill,body[data-piko-brand-page] .town-header button,body[data-piko-brand-page] .town-header select,body[data-piko-brand-page] .project-nav select{background:var(--piko-surface);border-color:var(--piko-line);color:var(--piko-ink);box-shadow:none}
+body[data-piko-brand-page] :is(.primary,.button-primary,.guide-play,#project-guide-primary){background:var(--piko-blue);border-color:var(--piko-blue);color:#fff;box-shadow:none}
+body[data-piko-brand-page] :is(.primary,.button-primary,.guide-play,#project-guide-primary):hover{background:var(--piko-blue-hover);color:#fff}
+body[data-piko-brand-page]>footer{color:var(--piko-muted)}
+body[data-piko-brand-page] :is(.static-intro,.card,.panel,.kid-game-card){border-color:var(--piko-line);box-shadow:0 3px 12px #20354b08}
+/* Existing modules use local variable names. Map their UI palette to the brand. */
+body[data-piko-brand-page]{--bg:var(--piko-canvas);--surface:var(--piko-surface);--surface-2:var(--piko-blue-soft);--text:var(--piko-ink);--text-2:var(--piko-muted);--brand:var(--piko-blue);--brand-hover:var(--piko-blue-hover);--brand-active:var(--piko-blue-hover);--brand-soft:var(--piko-blue-soft);--brand-ring:#245b9b40;--ink:var(--piko-ink);--muted:var(--piko-muted);--line:var(--piko-line);--green:var(--piko-blue);--border:var(--piko-line);--soft:var(--piko-blue-soft)}
+body[data-piko-brand-page] :is(.grade-hero,.world-page .hero,.project-shell>.hero){background:var(--piko-blue-soft);border-color:var(--piko-line);color:var(--piko-ink);box-shadow:none}
+body[data-piko-brand-page] :is(.grade-hero,.world-page .hero,.project-shell>.hero) :is(h1,h2,p){color:var(--piko-ink)}
+body[data-piko-brand-page] :is(.grade-hero,.world-page .hero,.project-shell>.hero) .eyebrow{color:var(--piko-blue)}
+body[data-piko-brand-page] .grade-hero:after{display:none}
+/* The school-year map has the same light shell; locked/completed states remain distinct. */
+body[data-piko-brand-page] :is(.grade-return,.grade-map-head h2,.grade-total,.grade-total strong,.grade-controls label,.grade-note){color:var(--piko-ink)}
+body[data-piko-brand-page] :is(.year-card,.subject-tabs button,.grade-controls select,.grade-empty,.journey-gate,.quest-world,.gate-stage,.gate-orbit,.world-title>span,.grade-curriculum-note){background:var(--piko-surface);border-color:var(--piko-line);color:var(--piko-ink);box-shadow:none}
+body[data-piko-brand-page] :is(.year-card:hover,.journey-gate.is-open:hover,.journey-gate.is-complete:hover,.subject-tabs button:hover){background:var(--piko-blue-soft);border-color:var(--piko-blue)}
+body[data-piko-brand-page] :is(.year-card[aria-pressed=true],.subject-tabs button[aria-pressed=true],.gate-stage.is-open){background:var(--piko-blue-soft);border-color:var(--piko-blue);color:var(--piko-blue);box-shadow:0 0 0 2px #245b9b20}
+body[data-piko-brand-page] :is(.year-card>small,.world-title p,.gate-copy>p:not(.gate-number),.gate-status){color:var(--piko-muted)}
+body[data-piko-brand-page] :is(.world-title h3,.gate-copy h4){color:var(--piko-ink)}
+body[data-piko-brand-page] .gate-stage.is-complete{background:#e7f3eb;border-color:var(--piko-green);color:var(--piko-green)}
+body[data-piko-brand-page] :is(.gate-stage.is-locked,.journey-gate.is-locked){background:#f0f2f5;color:#64748b;border-color:var(--piko-line)}
+body[data-piko-brand-page] .quest-world{--world:var(--piko-blue)}
+body[data-piko-brand-page] :is(.world-english,.world-coding){--world:var(--piko-purple)}
+body[data-piko-brand-page] :is(.world-language,.world-art){--world:#9c4260}
+body[data-piko-brand-page] .world-science{--world:var(--piko-green)}
+body[data-piko-brand-page] .world-music{--world:#815108}
+body[data-piko-brand-page] .grade-total>div{background:var(--piko-line)}
+body[data-piko-brand-page] .grade-total i{background:var(--piko-blue)}
+/* Untimed/timed learning keeps its geometry and semantic clues with a readable brand shell. */
+body[data-piko-brand-page].quest-adventure :is(.board,.quest-stage,.quest-feedback,.quest-dots,.quest-parts){background:var(--piko-surface);border-color:var(--piko-line);color:var(--piko-ink);box-shadow:none}
+body[data-piko-brand-page].quest-adventure :is(.board h1,.board h2,.quest-prompt,.quest-note,.quest-board){color:var(--piko-ink)}
+body[data-piko-brand-page].quest-adventure :is(.quest-choice,.quest-keypad button,.quest-controls .pill:not(.primary)){background:var(--piko-blue-soft);border-color:#b7cce6;color:var(--piko-ink)}
+body[data-piko-brand-page].quest-adventure .quest-choice>span{background:#d5e4f7;color:var(--piko-blue)}
+body[data-piko-brand-page].quest-adventure .quest-choice[aria-pressed=true]{background:#d5e4f7;border-color:var(--piko-blue);box-shadow:inset 5px 0 var(--piko-blue)}
+body[data-piko-brand-page].quest-adventure .quest-explain{background:#fff2d8;border-color:#e8cd91;color:#71490d}
+body[data-piko-brand-page].quest-adventure .target{color:var(--piko-ink)}
+body[data-piko-brand-page].quest-adventure .eyebrow{color:var(--piko-blue)}
+body[data-piko-brand-page] .town-entry>b{background:var(--piko-blue);color:#fff}
+body[data-piko-brand-page][data-course] .hero{background:var(--piko-blue-soft);box-shadow:none}
+body[data-piko-brand-page][data-course] .hero:after{display:none}
+body[data-piko-brand-page][data-course] .level-switch button[aria-pressed=true]{background:var(--piko-blue-soft);border-color:var(--piko-blue);box-shadow:0 0 0 3px #245b9b20}
+/* Japanese-course identity fits the existing eight-control HUD and its menu offsets. */
+.pses-game-brand-shell{background:var(--piko-blue-soft);border-radius:20px;min-height:88px}
+.pses-game-brand-shell:before{display:none}
+#learning-mode-game-title[data-piko-brand]{font-size:32px!important}
+#japanese-hud .japanese-brand-title{margin:0;line-height:1}
+#japanese-hud>div:first-child>div>p{display:none}
+#japanese-hud [data-piko-brand]{padding:0 12px!important;border-radius:12px!important;background:var(--piko-canvas)!important}
+#japanese-hud .glass-panel{background:var(--piko-canvas);border-color:#b7cce6;color:var(--piko-ink);box-shadow:none}
+@media(max-width:1023px){#japanese-hud>div:first-child>div{display:flex;grid-row:1;grid-column:1/-1;align-items:center;justify-content:flex-start;min-height:56px}#japanese-hud>div:first-child>div>p{display:none}#japanese-hud .japanese-brand-title{display:block}#japanese-hud [data-piko-brand]{pointer-events:auto;min-height:56px}}
+@media(min-width:1024px) and (max-width:1279px){#japanese-hud>div:first-child>div{display:block}#japanese-hud>div:first-child>div>p{display:none}#japanese-hud .piko-brand-name{display:none!important}#japanese-hud [data-piko-brand]{padding:0!important}#japanese-hud [data-piko-brand] .piko-brand-mark{flex-basis:30px!important;width:30px!important;height:30px!important}}
+@media(max-width:600px){[data-piko-brand]{font-size:20px!important}[data-piko-brand] .piko-brand-mark{flex-basis:34px!important;width:34px!important;height:34px!important}body[data-piko-brand-page]>header:not(#japanese-hud){flex-wrap:wrap}}
+@media print{[data-piko-brand]{display:none!important}}
+@media(max-width:1023px){body[data-piko-brand-page] #grade-tabs-container{top:228px!important}}
+@media(max-width:768px){body[data-piko-brand-page] #subject-nav{top:280px!important}body[data-piko-brand-page] .map-node-layer{top:340px}}
+@media(min-width:769px) and (max-width:1023px){body[data-piko-brand-page] .map-caption{top:17.5rem}body[data-piko-brand-page] .map-node-layer{top:20.75rem}}
+@media(min-width:1280px){#japanese-hud{top:8px!important}#japanese-hud>div:first-child,#japanese-hud>div:first-child>div{flex-shrink:0}#japanese-hud .japanese-brand-title{overflow:visible}#japanese-hud .glass-panel{padding-inline:8px!important}#japanese-hud>div:last-child{gap:8px}}

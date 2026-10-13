@@ -57,7 +57,7 @@ button {
   position: absolute;
   inset: 0;
   overflow: hidden;
-  background: #6dc6e8 url('../assets/maps/manabi-adventure-map.webp') center center / cover no-repeat;
+  background: #6dc6e8 url('../assets/maps/manabi-adventure-map.webp?v=952c2a95f0a6') center center / cover no-repeat;
   font-family: "Arial Rounded MT Bold", "Hiragino Maru Gothic ProN", "Noto Sans JP", system-ui, sans-serif;
 }
 
@@ -65,15 +65,15 @@ button {
 /* Keep purchased IDs stable while giving the illustrated map matching decorations. */
 .cartoon-map-world[data-theme="skin_nebula_aurora"],.shop-map-preview[data-theme="skin_nebula_aurora"] {
   background-position:center bottom,center;
-  background-image:url('../assets/maps/garden-decoration.svg'),url('../assets/maps/manabi-adventure-map.webp');
+  background-image:url('../assets/maps/garden-decoration.svg?v=952c2a95f0a6'),url('../assets/maps/manabi-adventure-map.webp?v=952c2a95f0a6');
 }
 .cartoon-map-world[data-theme="skin_cyber_neon"],.shop-map-preview[data-theme="skin_cyber_neon"] {
   background-position:center top,center;
-  background-image:url('../assets/maps/festival-decoration.svg'),url('../assets/maps/manabi-adventure-map.webp');
+  background-image:url('../assets/maps/festival-decoration.svg?v=952c2a95f0a6'),url('../assets/maps/manabi-adventure-map.webp?v=952c2a95f0a6');
 }
 .cartoon-map-world[data-theme="skin_nebula_aurora"] .map-art-shade {background:linear-gradient(180deg,#ffe5ec18,transparent 55%,#97b95820)}
 .cartoon-map-world[data-theme="skin_cyber_neon"] .map-art-shade {background:linear-gradient(180deg,#fff1c52b,transparent 55%,#ffc68a20)}
-.shop-map-preview{width:104px;height:72px;flex-shrink:0;border:2px solid #fff2cf;border-radius:12px;background:#6dc6e8 center/cover no-repeat;background-image:url('../assets/maps/manabi-adventure-map.webp')}
+.shop-map-preview{width:104px;height:72px;flex-shrink:0;border:2px solid #fff2cf;border-radius:12px;background:#6dc6e8 center/cover no-repeat;background-image:url('../assets/maps/manabi-adventure-map.webp?v=952c2a95f0a6')}
 @media(max-width:480px){.shop-map-preview{width:72px;height:64px}}
 
 .map-art-shade {

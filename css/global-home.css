@@ -42,3 +42,6 @@ body.country-entry #country-home.piko-home{padding:0;background:#faf9f5;color:#2
 .piko-home .home-courses{border-top:4px solid var(--blue)}
 .piko-home .home-skill-grade{display:inline-flex;align-items:center;min-height:56px;margin-top:12px;padding:8px 16px;border:1px solid #b7cce6;border-radius:12px;color:var(--blue);font-size:16px;font-weight:800}
 @media(max-width:600px){.piko-home .home-grade-entry{padding:14px;gap:12px;flex-wrap:wrap}.piko-home .home-grade-entry>span{font-size:26px}.piko-home .home-grade-entry h2{font-size:19px}.piko-home .home-grade-entry b{justify-content:flex-start;width:100%;margin-left:38px;white-space:normal;min-height:56px}}
+
+/* Public guides sit beside the direct workshop action. */
+.piko-home .home-project-item{display:flex;flex-direction:column;gap:6px;min-width:0}.piko-home .home-project-item .home-project-card{flex:1}.piko-home .home-project-item>.home-project-guide,.piko-home .home-skill-guide a,.piko-home .home-secondary-guides a{display:flex;align-items:center;min-height:44px;padding:8px 4px;font-weight:700;overflow-wrap:anywhere}.piko-home .home-secondary-guides{display:flex;flex-wrap:wrap;gap:8px 24px;margin-top:16px}.piko-home .home-skill-guide{margin-top:12px}
